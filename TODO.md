@@ -1,0 +1,11 @@
+- [ ] Print instruction received and execution steps in a log for debug purpose
+- [ ] Use qemu to learn instruction
+- [ ] Explore and prepare RISCV compliance
+- [~] Define the architecture of the first testbench
+      Goal: Write a testbench reading / feeding a memory content into the processor
+- [X] Understand vexrisc and picorv32 make file
+- [X] Write a simple program, compile it, understand the asm
+- [~] Understand the linker description to be able to initialize the processor instruction memory
+- [X] transform object into hex file
+- [X] Understand the toolchain
+- [X] Read RISCV unpriviligied specification
