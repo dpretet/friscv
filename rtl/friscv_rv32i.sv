@@ -82,28 +82,18 @@ module friscv_rv32i
     logic [XLEN-1:0] x30;
     logic [XLEN-1:0] x31;
 
-    logic            alu_en;
-    logic            alu_ready;
+    logic                      alu_en;
+    logic                      alu_ready;
+    logic [`ALU_INSTBUS_W-1:0] alu_instbus;
 
-    logic [7    -1:0] opcode;
-    logic [3    -1:0] funct3;
-    logic [7    -1:0] funct7;
-    logic [5    -1:0] rs1;
-    logic [5    -1:0] rs2;
-    logic [5    -1:0] rd;
-    logic [5    -1:0] zimm;
-    logic [12   -1:0] imm12;
-    logic [20   -1:0] imm20;
-    logic [12   -1:0] csr;
-    logic [5    -1:0] shamt;
 
-    friscv_rv32i_control 
+    friscv_rv32i_control
     #(
     .ADDRW     (INST_ADDRW),
     .BOOT_ADDR (BOOT_ADDR),
     .XLEN      (XLEN)
     )
-    control_unit 
+    control_unit
     (
     .aclk          (aclk         ),
     .aresetn       (aresetn      ),
@@ -114,17 +104,7 @@ module friscv_rv32i
     .inst_ready    (inst_ready   ),
     .alu_en        (alu_en       ),
     .alu_ready     (alu_ready    ),
-    .opcode        (opcode       ),
-    .funct3        (funct3       ),
-    .funct7        (funct7       ),
-    .rs1           (rs1          ),
-    .rs2           (rs2          ),
-    .rd            (rd           ),
-    .zimm          (zimm         ),
-    .imm12         (imm12        ),
-    .imm20         (imm20        ),
-    .csr           (csr          ),
-    .shamt         (shamt        ),
+    .alu_instbus   (alu_instbus  ),
     .regs_rs1_addr (ctrl_rs1_addr),
     .regs_rs1_val  (ctrl_rs1_val ),
     .regs_rs2_addr (ctrl_rs2_addr),
@@ -132,29 +112,19 @@ module friscv_rv32i
     );
 
 
-    friscv_rv32i_alu 
+    friscv_rv32i_alu
     #(
     .ADDRW     (DATA_ADDRW),
     .XLEN      (XLEN)
     )
-    alu 
+    alu
     (
     .aclk          (aclk        ),
     .aresetn       (aresetn     ),
     .srst          (srst        ),
     .alu_en        (alu_en      ),
     .alu_ready     (alu_ready   ),
-    .opcode        (opcode      ),
-    .funct3        (funct3      ),
-    .funct7        (funct7      ),
-    .rs1           (rs1         ),
-    .rs2           (rs2         ),
-    .rd            (rd          ),
-    .zimm          (zimm        ),
-    .imm12         (imm12       ),
-    .imm20         (imm20       ),
-    .csr           (csr         ),
-    .shamt         (shamt       ),
+    .alu_instbus   (alu_instbus  ),
     .regs_rs1_addr (alu_rs1_addr),
     .regs_rs1_val  (alu_rs1_val ),
     .regs_rs2_addr (alu_rs2_addr),
@@ -171,11 +141,11 @@ module friscv_rv32i
     );
 
 
-    friscv_registers 
+    friscv_registers
     #(
     .XLEN (XLEN)
     )
-    isa_registers 
+    isa_registers
     (
     .aclk          (aclk         ),
     .aresetn       (aresetn      ),

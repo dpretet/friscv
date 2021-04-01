@@ -5,11 +5,12 @@
 `ifndef FRISCV_H
 `define FRISCV_H
 
-// Stop simulation if received an undefined/unsupported instruction
-`ifndef HALT_ON_ERROR
-`define HALT_ON_ERROR 1
-`endif
 
+//////////////////////////////////////////////////////////////////
+// Opcodes' define
+//////////////////////////////////////////////////////////////////
+
+// funct3 opcodes for instruction decoding
 `define JALR    3'b000
 
 `define BEQ     3'b000
@@ -61,5 +62,53 @@
 `define CSRRWI  3'b101
 `define CSRRSI  3'b110
 `define CSRRCI  3'b111
+
+
+//////////////////////////////////////////////////////////////////
+// Instruction bus feeding ALU
+//////////////////////////////////////////////////////////////////
+
+// instruction bus fields's width
+`define OPCODE_W    7 
+`define FUNCT3_W    3
+`define FUNCT7_W    7 
+`define RS1_W       5 
+`define RS2_W       5 
+`define RD_W        5 
+`define ZIMM_W      5 
+`define IMM12_W     12
+`define IMM20_W     20
+`define CSR_W       12
+`define SHAMT_W     5 
+
+// instruction bus fields's index
+`define OPCODE      0 
+`define FUNCT3      `OPCODE + `OPCODE_W
+`define FUNCT7      `FUNCT3 + `FUNCT3_W 
+`define RS1         `FUNCT7 + `FUNCT7_W
+`define RS2         `RS1 +    `RS1_W
+`define RD          `RS2 +    `RS2_W
+`define ZIMM        `RD +     `RD_W
+`define IMM12       `ZIMM +   `ZIMM_W
+`define IMM20       `IMM12 +  `IMM12_W
+`define CSR         `IMM20 +  `IMM20_W
+`define SHAMT       `CSR +    `CSR_W 
+
+// total length of ALU instruction bus
+`define ALU_INSTBUS_W `OPCODE_W + `FUNCT3_W + `FUNCT7_W + `RS1_W + `RS2_W + \
+                      `RD_W + `ZIMM_W + `IMM12_W + `IMM20_W + `CSR_W + `SHAMT_W
+
+
+//////////////////////////////////////////////////////////////////
+// Control Unit Configuration
+//////////////////////////////////////////////////////////////////
+
+// ALU FIFO depth storing incoming instruction in control unit
+`define ALU_FIFO_DEPTH 4
+
+// Stop simulation if received an undefined/unsupported instruction
+`ifndef HALT_ON_ERROR
+`define HALT_ON_ERROR 0
+`endif
 
 `endif

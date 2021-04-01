@@ -5,3 +5,5 @@
 ../../rtl/friscv_rv32i_decoder.sv
 ../../rtl/friscv_rv32i_alu.sv
 ../../rtl/friscv_registers.sv
+../../rtl/friscv_scfifo.sv
+../../rtl/friscv_scfifo_ram.sv

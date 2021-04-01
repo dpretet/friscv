@@ -1,3 +1,7 @@
+// copyright damien pretet 2021
+// distributed under the mit license
+// https://opensource.org/licenses/mit-license.php
+
 `timescale 1 ns / 1 ps
 `default_nettype none
 
@@ -168,7 +172,6 @@ module friscv_rv32i_decoder
                 inst_error = 1'b1;
                 imm12 = 12'b0;
                 imm20 = 20'b0;
-                $display("ERROR: Received an unsupported instruction: %0x", instruction);
             end
 
         endcase
