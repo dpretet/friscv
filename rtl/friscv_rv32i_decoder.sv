@@ -22,7 +22,9 @@ module friscv_rv32i_decoder
         output logic [20   -1:0] imm20,
         output logic [12   -1:0] csr,
         output logic [5    -1:0] shamt,
-        output logic             jumping,
+        output logic             auipc,
+        output logic             jal,
+        output logic             jalr,
         output logic             branching,
         output logic             system,
         output logic             processing,
@@ -36,9 +38,24 @@ module friscv_rv32i_decoder
         // First instruction part to filter the type
         case (instruction[6:0])
 
+            // LUI
+            7'b0110111: begin
+                auipc = 1'b0;
+                jal = 1'b0;
+                jalr = 1'b0;
+                branching = 1'b0;
+                system = 1'b0;
+                processing = 1'b1;
+                inst_error = 1'b0;
+                imm12 = 12'b0;
+                imm20 = instruction[31:12];
+            end
+
             // AUIPC
             7'b0010111: begin
-                jumping = 1'b1;
+                auipc = 1'b1;
+                jal = 1'b0;
+                jalr = 1'b0;
                 branching = 1'b0;
                 system = 1'b0;
                 processing = 1'b0;
@@ -49,7 +66,9 @@ module friscv_rv32i_decoder
 
             // JAL
             7'b1101111: begin
-                jumping = 1'b1;
+                auipc = 1'b0;
+                jal = 1'b1;
+                jalr = 1'b0;
                 branching = 1'b0;
                 system = 1'b0;
                 processing = 1'b0;
@@ -63,7 +82,9 @@ module friscv_rv32i_decoder
 
             // JALR
             7'b1100111: begin
-                jumping = 1'b1;
+                auipc = 1'b0;
+                jal = 1'b0;
+                jalr = 1'b1;
                 branching = 1'b0;
                 system = 1'b0;
                 processing = 1'b0;
@@ -74,7 +95,9 @@ module friscv_rv32i_decoder
 
             // Branch
             7'b1100011: begin
-                jumping = 1'b0;
+                auipc = 1'b0;
+                jal = 1'b0;
+                jalr = 1'b0;
                 branching = 1'b1;
                 system = 1'b0;
                 processing = 1'b0;
@@ -88,7 +111,9 @@ module friscv_rv32i_decoder
 
             // System
             7'b0000000: begin
-                jumping = 1'b0;
+                auipc = 1'b0;
+                jal = 1'b0;
+                jalr = 1'b0;
                 branching = 1'b0;
                 system = 1'b1;
                 processing = 1'b0;
@@ -99,7 +124,9 @@ module friscv_rv32i_decoder
 
             // Load
             7'b0000011: begin
-                jumping = 1'b0;
+                auipc = 1'b0;
+                jal = 1'b0;
+                jalr = 1'b0;
                 branching = 1'b0;
                 system = 1'b0;
                 processing = 1'b1;
@@ -108,20 +135,11 @@ module friscv_rv32i_decoder
                 imm20 = 20'b0;
             end
 
-            // LUI
-            7'b0110111: begin
-                jumping = 1'b0;
-                branching = 1'b0;
-                system = 1'b0;
-                processing = 1'b1;
-                inst_error = 1'b0;
-                imm12 = 12'b0;
-                imm20 = instruction[31:12];
-            end
-
             // Store
             7'b0100011: begin
-                jumping = 1'b0;
+                auipc = 1'b0;
+                jal = 1'b0;
+                jalr = 1'b0;
                 branching = 1'b0;
                 system = 1'b0;
                 processing = 1'b1;
@@ -132,7 +150,9 @@ module friscv_rv32i_decoder
 
             // Arithmetic
             7'b0010011: begin
-                jumping = 1'b0;
+                auipc = 1'b0;
+                jal = 1'b0;
+                jalr = 1'b0;
                 branching = 1'b0;
                 system = 1'b0;
                 processing = 1'b1;
@@ -143,7 +163,9 @@ module friscv_rv32i_decoder
 
             // Arithmetic
             7'b0110011: begin
-                jumping = 1'b0;
+                auipc = 1'b0;
+                jal = 1'b0;
+                jalr = 1'b0;
                 branching = 1'b0;
                 system = 1'b0;
                 processing = 1'b1;
@@ -154,7 +176,9 @@ module friscv_rv32i_decoder
 
             // CSR
             7'b1110011: begin
-                jumping = 1'b0;
+                auipc = 1'b0;
+                jal = 1'b0;
+                jalr = 1'b0;
                 branching = 1'b0;
                 system = 1'b0;
                 processing = 1'b1;
@@ -165,7 +189,9 @@ module friscv_rv32i_decoder
 
             // All others, unsupported/undefined
             default: begin
-                jumping = 1'b0;
+                auipc = 1'b0;
+                jal = 1'b0;
+                jalr = 1'b0;
                 branching = 1'b0;
                 system = 1'b0;
                 processing = 1'b0;

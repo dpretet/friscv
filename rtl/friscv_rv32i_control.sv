@@ -10,9 +10,9 @@
 module friscv_rv32i_control
 
     #(
-        parameter             ADDRW     = 16,
-        parameter [ADDRW-1:0] BOOT_ADDR = {ADDRW{1'b0}},
-        parameter             XLEN      = 32
+        parameter ADDRW     = 16,
+        parameter BOOT_ADDR = 0,
+        parameter XLEN      = 32
     )(
         // clock & reset
         input  wire                       aclk,
@@ -28,11 +28,15 @@ module friscv_rv32i_control
         input  wire                       alu_ready,
         output logic [`ALU_INSTBUS_W-1:0] alu_instbus,
         // register source 1 query interface
-        output logic [5             -1:0] regs_rs1_addr,
-        input  wire  [XLEN          -1:0] regs_rs1_val,
+        output logic [5             -1:0] ctrl_rs1_addr,
+        input  wire  [XLEN          -1:0] ctrl_rs1_val,
         // register source 2 for query interface
-        output logic [5             -1:0] regs_rs2_addr,
-        input  wire  [XLEN          -1:0] regs_rs2_val
+        output logic [5             -1:0] ctrl_rs2_addr,
+        input  wire  [XLEN          -1:0] ctrl_rs2_val,
+        // register destination for write
+        output logic                      ctrl_rd_wr,
+        output logic [5             -1:0] ctrl_rd_addr,
+        output logic [XLEN          -1:0] ctrl_rd_val
     );
 
 
@@ -42,7 +46,7 @@ module friscv_rv32i_control
     //
     ///////////////////////////////////////////////////////////////////////////
 
-    // decoded instructions signals
+    // decoded instructions
     logic [7    -1:0] opcode;
     logic [3    -1:0] funct3;
     logic [7    -1:0] funct7;
@@ -66,17 +70,19 @@ module friscv_rv32i_control
     logic                      alu_inst_empty;
 
     // flags of the instruction decoder to drive the control unit
-    logic               jumping;
-    logic               branching;
-    logic               system;
-    logic               processing;
+    logic auipc;
+    logic jal;
+    logic jalr;
+    logic branching;
+    logic system;
+    logic processing;
     // flag raised when receiving an unsupported/undefined instruction
-    logic               inst_error;
+    logic inst_error;
 
     // control fsm
     typedef enum logic[3:0] {
         BOOT = 0,
-        ALU = 1,
+        RUN = 1,
         BR_JP = 2,
         SYS = 3,
         TRAP = 4
@@ -84,8 +90,14 @@ module friscv_rv32i_control
 
     pc_fsm cfsm;
 
+    localparam PC_W = 32;
+
     // program counter, expressed in bytes
-    logic [ADDRW+2-1:0] pc;
+    logic        [PC_W-1:0] pc_plus4;
+    logic signed [PC_W-1:0] pc_auipc;
+    logic signed [PC_W-1:0] pc_jal;
+    logic signed [PC_W-1:0] pc_jalr;
+    logic        [PC_W-1:0] pc;
 
     ///////////////////////////////////////////////////////////////////////////
 
@@ -128,7 +140,9 @@ module friscv_rv32i_control
         .imm20       (imm20     ),
         .csr         (csr       ),
         .shamt       (shamt     ),
-        .jumping     (jumping   ),
+        .auipc       (auipc     ),
+        .jal         (jal       ),
+        .jalr        (jalr      ),
         .branching   (branching ),
         .system      (system    ),
         .processing  (processing),
@@ -191,41 +205,91 @@ module friscv_rv32i_control
     //
     ///////////////////////////////////////////////////////////////////////////
 
-    assign inst_en = (cfsm == ALU && ((processing && ~alu_inst_full) ||
+    assign inst_en = (cfsm == RUN && ((processing && ~alu_inst_full) ||
                                       (~processing && ~inst_error))) ? 1'b1:
                                                                        1'b0;
+    // increment counter by 4 because we index bytes
+    assign pc_plus4 = pc + {{(PC_W-3){1'b0}},3'b100};
+
+    // AUIPC: Add Upper Immediate into Program Counter
+    assign pc_auipc = $signed(pc) + $signed({imm20,12'b0});
+
+    // JAL: current program counter + offset
+    assign pc_jal = $signed(pc) + $signed({{11{imm20[19]}}, imm20, 1'b0});
+
+    // JALR: program counter to rs1 + offset
+    assign pc_jalr = $signed(ctrl_rs1_val) + $signed({{20{imm12[11]}}, imm12});
 
     always @ (posedge aclk or negedge aresetn) begin
+
         if (aresetn == 1'b0) begin
             cfsm <= BOOT;
-            pc <= {(ADDRW+2){1'b0}};
+            ctrl_rd_wr <= 1'b0;
+            ctrl_rd_addr <= {`RD_W{1'b0}};
+            ctrl_rd_val <= {XLEN{1'b0}};
+            pc <= {(PC_W){1'b0}};
         end else if (srst == 1'b1) begin
             cfsm <= BOOT;
-            pc <= {(ADDRW+2){1'b0}};
+            ctrl_rd_wr <= 1'b0;
+            ctrl_rd_addr <= {`RD_W{1'b0}};
+            ctrl_rd_val <= {XLEN{1'b0}};
+            pc <= {(PC_W){1'b0}};
         end else begin
 
             case (cfsm)
 
                 // start to boot the RAM after reset
                 default: begin
-                    pc <= {BOOT_ADDR,2'b0};
-                    cfsm <= ALU;
+                    pc <= BOOT_ADDR << 2;
+                    cfsm <= RUN;
                 end
 
                 // Run the core
-                ALU: begin
+                RUN: begin
+
                     if (inst_error) begin
                         cfsm <= TRAP;
-                    end else if (inst_en && inst_ready) begin
-                        if (processing && ~alu_inst_full) begin
-                            // increment counter by 4 because we index bytes
-                            pc <= pc + {{(ADDRW+2-3){1'b0}},3'b100};
-                        end
                     end
+
+                    if (inst_ready) begin
+
+                        // AUIPC
+                        if (auipc) begin
+                            ctrl_rd_wr <= 1'b1;
+                            ctrl_rd_addr <= rd;
+                            ctrl_rd_val <= pc_auipc;
+                            pc <= pc_auipc;
+
+                        // JAL
+                        end else if (jal) begin
+                            ctrl_rd_wr <= 1'b1;
+                            ctrl_rd_addr <= rd;
+                            ctrl_rd_val <= pc_plus4;
+                            pc <= pc_jal;
+
+                        // JALR
+                        end else if (jalr) begin
+                            ctrl_rd_wr <= 1'b1;
+                            ctrl_rd_addr <= rd;
+                            ctrl_rd_val <= pc_plus4;
+                            pc <= {pc_jalr[31:1],1'b0};
+
+                        // Any ALU processing
+                        end else if (processing && ~alu_inst_full) begin
+                            ctrl_rd_wr <= 1'b0;
+                            pc <= pc_plus4;
+                        end
+
+                    // Wait for instruction to process
+                    end else begin
+                        ctrl_rd_wr <= 1'b0;
+                    end
+
                 end
 
                 // TRAP reached when:
                 // - received an undefined/unsupported instruction
+                // - TODO: reach if address are not 4 bytes aligned
                 TRAP: begin
                     // $error("ERROR: Received an unsupported/unspecified instruction");
                     if (`HALT_ON_ERROR) begin
@@ -243,8 +307,8 @@ module friscv_rv32i_control
     assign inst_addr = pc[2+:ADDRW];
 
     // register source 1 & 2 read
-    assign regs_rs1_addr = rs1;
-    assign regs_rs2_addr = rs2;
+    assign ctrl_rs1_addr = rs1;
+    assign ctrl_rs2_addr = rs2;
 
 endmodule
 

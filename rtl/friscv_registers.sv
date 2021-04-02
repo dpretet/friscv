@@ -20,13 +20,17 @@ module friscv_registers
         // register source 2 for control unit
         input  wire  [5   -1:0] ctrl_rs2_addr,
         output logic [XLEN-1:0] ctrl_rs2_val,
+        // register destination write from Control Unit
+        input  wire             ctrl_rd_wr,
+        input  wire  [5   -1:0] ctrl_rd_addr,
+        input  wire  [XLEN-1:0] ctrl_rd_val,
         // register source 1 for ALU
         input  wire  [5   -1:0] alu_rs1_addr,
         output logic [XLEN-1:0] alu_rs1_val,
         // register source 2 for ALU
         input  wire  [5   -1:0] alu_rs2_addr,
         output logic [XLEN-1:0] alu_rs2_val,
-        // register destination
+        // register destination write from ALU
         input  wire             alu_rd_wr,
         input  wire  [5   -1:0] alu_rd_addr,
         input  wire  [XLEN-1:0] alu_rd_val,
@@ -81,9 +85,12 @@ module friscv_registers
         // write access to registers
         end else begin
             // register 0 is alwyas 0, can't be overwritten
-            if (alu_rd_wr && alu_rd_addr == 5'h0) begin
+            if (alu_rd_wr && alu_rd_addr == 5'h0 ||
+                ctrl_rd_wr && ctrl_rd_addr == 5'h0) begin
                 regs[alu_rd_addr] <= {XLEN{1'b0}};
             // registers 1-31
+            end else if (ctrl_rd_wr && ctrl_rd_addr != 5'h0) begin
+                regs[ctrl_rd_addr] <= ctrl_rd_val;
             end else if (alu_rd_wr && alu_rd_addr != 5'h0) begin
                 regs[alu_rd_addr] <= alu_rd_val;
             end

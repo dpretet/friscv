@@ -1,22 +1,22 @@
 [*]
 [*] GTKWave Analyzer v3.3.107 (w)1999-2020 BSI
-[*] Thu Apr  1 11:32:59 2021
+[*] Thu Apr  1 19:53:44 2021
 [*]
 [dumpfile] "/Users/damien/workspace/hdl/friscv/test/rtl_unit_tests/friscv_rv32i_control_testbench.vcd"
-[dumpfile_mtime] "Thu Apr  1 11:30:59 2021"
-[dumpfile_size] 8170
+[dumpfile_mtime] "Thu Apr  1 19:51:36 2021"
+[dumpfile_size] 9442
 [savefile] "/Users/damien/workspace/hdl/friscv/test/rtl_unit_tests/friscv_rv32i_control_testbench.gtkw"
-[timestart] 0
-[size] 1440 900
+[timestart] 5000
+[size] 1942 1219
 [pos] -1 -1
-*-16.050495 200000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-15.050495 218000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] friscv_rv32i_control_testbench.
 [treeopen] friscv_rv32i_control_testbench.dut.
 [treeopen] friscv_rv32i_control_testbench.dut.processing_scfifo.
 [sst_width] 193
 [signals_width] 277
 [sst_expanded] 1
-[sst_vpaned_height] 263
+[sst_vpaned_height] 375
 @28
 friscv_rv32i_control_testbench.dut.aclk
 [color] 3
@@ -24,8 +24,8 @@ friscv_rv32i_control_testbench.dut.aresetn
 friscv_rv32i_control_testbench.dut.srst
 @200
 -
-@23
-[color] 5
+@22
+[color] 2
 friscv_rv32i_control_testbench.dut.cfsm[3:0]
 @200
 -
@@ -38,11 +38,28 @@ friscv_rv32i_control_testbench.dut.inst_rdata[31:0]
 @200
 -
 @28
+friscv_rv32i_control_testbench.dut.alu_inst_empty
+friscv_rv32i_control_testbench.dut.alu_inst_full
+friscv_rv32i_control_testbench.dut.alu_inst_rd
+friscv_rv32i_control_testbench.dut.alu_inst_wr
+@200
+-
+@28
 friscv_rv32i_control_testbench.dut.inst_error
 friscv_rv32i_control_testbench.dut.branching
-friscv_rv32i_control_testbench.dut.jumping
 friscv_rv32i_control_testbench.dut.processing
 friscv_rv32i_control_testbench.dut.system
+friscv_rv32i_control_testbench.dut.auipc
+friscv_rv32i_control_testbench.dut.jal
+friscv_rv32i_control_testbench.dut.jalr
+@200
+-
+@22
+friscv_rv32i_control_testbench.dut.pc[31:0]
+@23
+friscv_rv32i_control_testbench.dut.pc_auipc[31:0]
+@22
+friscv_rv32i_control_testbench.dut.pc_processing[31:0]
 @200
 -
 @28
@@ -61,7 +78,6 @@ friscv_rv32i_control_testbench.dut.funct7[6:0]
 friscv_rv32i_control_testbench.dut.imm12[11:0]
 friscv_rv32i_control_testbench.dut.imm20[19:0]
 friscv_rv32i_control_testbench.dut.opcode[6:0]
-friscv_rv32i_control_testbench.dut.pc[17:0]
 friscv_rv32i_control_testbench.dut.pred[3:0]
 friscv_rv32i_control_testbench.dut.rd[4:0]
 friscv_rv32i_control_testbench.dut.rs1[4:0]
@@ -71,12 +87,7 @@ friscv_rv32i_control_testbench.dut.succ[3:0]
 friscv_rv32i_control_testbench.dut.zimm[4:0]
 @200
 -
-@22
-friscv_rv32i_control_testbench.dut.regs_rs1_addr[4:0]
-friscv_rv32i_control_testbench.dut.regs_rs1_val[31:0]
-friscv_rv32i_control_testbench.dut.regs_rs2_addr[4:0]
-friscv_rv32i_control_testbench.dut.regs_rs2_val[31:0]
-@800200
+@c00200
 -ALU FIFO
 @28
 friscv_rv32i_control_testbench.dut.processing_scfifo.aclk
@@ -101,7 +112,7 @@ friscv_rv32i_control_testbench.dut.processing_scfifo.data_out[85:0]
 @28
 friscv_rv32i_control_testbench.dut.processing_scfifo.empty
 friscv_rv32i_control_testbench.dut.processing_scfifo.rdptr[2:0]
-@1000200
+@1401200
 -ALU FIFO
 [pattern_trace] 1
 [pattern_trace] 0

@@ -41,6 +41,10 @@ module friscv_rv32i
     logic [XLEN-1:0] ctrl_rs1_val;
     logic [5   -1:0] ctrl_rs2_addr;
     logic [XLEN-1:0] ctrl_rs2_val;
+    logic            ctrl_rd_wr;
+    logic [5   -1:0] ctrl_rd_addr;
+    logic [XLEN-1:0] ctrl_rd_val;
+
     logic [5   -1:0] alu_rs1_addr;
     logic [XLEN-1:0] alu_rs1_val;
     logic [5   -1:0] alu_rs2_addr;
@@ -105,10 +109,13 @@ module friscv_rv32i
     .alu_en        (alu_en       ),
     .alu_ready     (alu_ready    ),
     .alu_instbus   (alu_instbus  ),
-    .regs_rs1_addr (ctrl_rs1_addr),
-    .regs_rs1_val  (ctrl_rs1_val ),
-    .regs_rs2_addr (ctrl_rs2_addr),
-    .regs_rs2_val  (ctrl_rs2_val )
+    .ctrl_rs1_addr (ctrl_rs1_addr),
+    .ctrl_rs1_val  (ctrl_rs1_val ),
+    .ctrl_rs2_addr (ctrl_rs2_addr),
+    .ctrl_rs2_val  (ctrl_rs2_val ),
+    .ctrl_rd_wr    (ctrl_rd_wr   ),
+    .ctrl_rd_addr  (ctrl_rd_addr ),
+    .ctrl_rd_val   (ctrl_rd_val  )
     );
 
 
@@ -124,7 +131,7 @@ module friscv_rv32i
     .srst          (srst        ),
     .alu_en        (alu_en      ),
     .alu_ready     (alu_ready   ),
-    .alu_instbus   (alu_instbus  ),
+    .alu_instbus   (alu_instbus ),
     .regs_rs1_addr (alu_rs1_addr),
     .regs_rs1_val  (alu_rs1_val ),
     .regs_rs2_addr (alu_rs2_addr),
@@ -154,6 +161,9 @@ module friscv_rv32i
     .ctrl_rs1_val  (ctrl_rs1_val ),
     .ctrl_rs2_addr (ctrl_rs2_addr),
     .ctrl_rs2_val  (ctrl_rs2_val ),
+    .ctrl_rd_wr    (ctrl_rd_wr   ),
+    .ctrl_rd_addr  (ctrl_rd_addr ),
+    .ctrl_rd_val   (ctrl_rd_val  ),
     .alu_rs1_addr  (alu_rs1_addr ),
     .alu_rs1_val   (alu_rs1_val  ),
     .alu_rs2_addr  (alu_rs2_addr ),
