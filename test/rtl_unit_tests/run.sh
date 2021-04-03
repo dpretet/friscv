@@ -5,7 +5,7 @@ GREEN='\033[0;32m'
 NC='\033[0m' # No Color
 
 echo "Start RTL Unit Tests flow"
-ts="./friscv_rv32i_control_testbench.sv"
+ts="./friscv_rv32i_control_jump_branch_testbench.sv"
 
 # Check if a specific testsuite is passed
 if [[ -n $1 ]]; then

@@ -344,7 +344,7 @@ module friscv_rv32i_control
                 // - received an undefined/unsupported instruction
                 // - TODO: reach if address are not 4 bytes aligned
                 TRAP: begin
-                    // $error("ERROR: Received an unsupported/unspecified instruction");
+                    $error("ERROR: Received an unsupported/unspecified instruction");
                     if (`HALT_ON_ERROR) begin
                          $stop();
                     end

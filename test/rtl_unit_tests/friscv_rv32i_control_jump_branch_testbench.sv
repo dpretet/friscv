@@ -9,7 +9,7 @@
 `include "svut_h.sv"
 `include "friscv_h.sv"
 
-module friscv_rv32i_control_testbench();
+module friscv_rv32i_control_jump_branch_testbench();
 
     `SVUT_SETUP
 
@@ -72,8 +72,8 @@ module friscv_rv32i_control_testbench();
 
     /// An example to dump data for visualization
     initial begin
-        $dumpfile("friscv_rv32i_control_testbench.vcd");
-        $dumpvars(0, friscv_rv32i_control_testbench);
+        $dumpfile("friscv_rv32i_control_jump_branch_testbench.vcd");
+        $dumpvars(0, friscv_rv32i_control_jump_branch_testbench);
     end
 
     task setup(msg="");
@@ -244,7 +244,7 @@ module friscv_rv32i_control_testbench();
         alu_ready = 1'b0;
 
     `UNIT_TEST_END
-    
+
     `UNIT_TEST("Check AUIPC opcode")
 
         while (inst_en == 1'b0) @(posedge aclk);
