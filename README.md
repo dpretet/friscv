@@ -1,4 +1,4 @@
-# FRISCV:wa
+# FRISCV
 
 
 ## Overview

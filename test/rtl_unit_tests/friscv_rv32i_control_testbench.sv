@@ -35,6 +35,10 @@ module friscv_rv32i_control_testbench();
     logic [5             -1:0] ctrl_rd_addr;
     logic [XLEN          -1:0] ctrl_rd_val;
 
+    logic [32            -1:0] prev_pc;
+    logic [32            -1:0] next_pc;
+    logic [12            -1:0] offset;
+
     friscv_rv32i_control
     #(
     ADDRW,
@@ -92,27 +96,7 @@ module friscv_rv32i_control_testbench();
     end
     endtask
 
-    `TEST_SUITE("FIRST_ONE")
-
-    ///    Available macros:"
-    ///
-    ///    - `MSG("message"):       Print a raw white message
-    ///    - `INFO("message"):      Print a blue message with INFO: prefix
-    ///    - `SUCCESS("message"):   Print a green message if SUCCESS: prefix
-    ///    - `WARNING("message"):   Print an orange message with WARNING: prefix and increment warning counter
-    ///    - `CRITICAL("message"):  Print a purple message with CRITICAL: prefix and increment critical counter
-    ///    - `ERROR("message"):     Print a red message with ERROR: prefix and increment error counter
-    ///
-    ///    - `FAIL_IF(aSignal):                 Increment error counter if evaluaton is true
-    ///    - `FAIL_IF_NOT(aSignal):             Increment error coutner if evaluation is false
-    ///    - `FAIL_IF_EQUAL(aSignal, 23):       Increment error counter if evaluation is equal
-    ///    - `FAIL_IF_NOT_EQUAL(aSignal, 45):   Increment error counter if evaluation is not equal
-    ///    - `ASSERT(aSignal):                  Increment error counter if evaluation is not true
-    ///    - `ASSERT((aSignal == 0)):           Increment error counter if evaluation is not true
-    ///
-    ///    Available flag:
-    ///
-    ///    - `LAST_STATUS: tied to 1 is last macro did experience a failure, else tied to 0
+    `TEST_SUITE("Control Testsuite")
 
     `UNIT_TEST("Verify the ISA's opcodes")
 
@@ -312,28 +296,34 @@ module friscv_rv32i_control_testbench();
         @(negedge aclk);
 
         `MSG("Jump +0, rd=x0");
+        prev_pc = dut.pc + 4;
         inst_ready = 1'b1;
         inst_rdata = {25'b0, 7'b1101111};
         @(negedge aclk);
         `ASSERT((dut.pc == 32'h0), "program counter must keep 0 value");
         `ASSERT((dut.ctrl_rd_wr == 1'b1), "rd is not under write");
         `ASSERT((dut.ctrl_rd_addr == 32'h0), "rd must target x0");
+        `ASSERT((dut.ctrl_rd_val == prev_pc), "rd must store pc(-1)+4");
 
         `MSG("Jump +0, rd=x3");
+        prev_pc = dut.pc + 4;
         inst_ready = 1'b1;
         inst_rdata = {25'h3, 7'b1101111};
         @(negedge aclk);
         `ASSERT((dut.pc == 32'h0), "program counter must keep 0 value");
         `ASSERT((dut.ctrl_rd_wr == 1'b1), "rd is not under write");
         `ASSERT((dut.ctrl_rd_addr == 32'h3), "rd must target x3");
+        `ASSERT((dut.ctrl_rd_val == prev_pc), "rd must store pc(-1)+4");
 
         `MSG("Jump +2048, rd=x5");
+        prev_pc = dut.pc + 4;
         inst_ready = 1'b1;
         inst_rdata = {{1'b0, 10'b0, 1'b1, 8'b0}, 5'h5, 7'b1101111};
         @(negedge aclk);
         `ASSERT((dut.pc == 32'h800), "program counter must be 2KB");
         `ASSERT((dut.ctrl_rd_wr == 1'b1), "rd is not under write");
         `ASSERT((dut.ctrl_rd_addr == 32'h5));
+        `ASSERT((dut.ctrl_rd_val == prev_pc), "rd must store pc(-1)+4");
 
     `UNIT_TEST_END
 
@@ -343,36 +333,169 @@ module friscv_rv32i_control_testbench();
         @(negedge aclk);
 
         `MSG("Jump +0, rd=x0");
+        prev_pc = dut.pc + 4;
         inst_ready = 1'b1;
         inst_rdata = {25'b0, 7'b1100111};
         @(negedge aclk);
         `ASSERT((dut.pc == 32'h0), "program counter must keep 0 value");
         `ASSERT((dut.ctrl_rd_wr == 1'b1), "rd is not under write");
         `ASSERT((dut.ctrl_rd_addr == 32'h0));
+        `ASSERT((dut.ctrl_rd_val == prev_pc), "rd must store pc(-1)+4");
 
         `MSG("Jump +0, rd=x1");
+        prev_pc = dut.pc + 4;
         inst_ready = 1'b1;
         inst_rdata = {12'h0, 5'h0, 3'h0, 5'h1, 7'b1100111};
         @(negedge aclk);
         `ASSERT((dut.pc == 32'h0), "program counter must be 4KB");
         `ASSERT((dut.ctrl_rd_wr == 1'b1), "rd is not under write");
         `ASSERT((dut.ctrl_rd_addr == 32'h1), "rd must target x1");
+        `ASSERT((dut.ctrl_rd_val == prev_pc), "rd must store pc(-1)+4");
 
         `MSG("Jump +0, rd=x2");
+        prev_pc = dut.pc + 4;
         inst_ready = 1'b1;
         inst_rdata = {12'h1, 5'h0, 3'h0, 5'h2, 7'b1100111};
         @(negedge aclk);
         `ASSERT((dut.pc == 32'h0), "program counter must be 4KB");
         `ASSERT((dut.ctrl_rd_wr == 1'b1), "rd is not under write");
         `ASSERT((dut.ctrl_rd_addr == 32'h2), "rd must target x2");
+        `ASSERT((dut.ctrl_rd_val == prev_pc), "rd must store pc(-1)+4");
 
         `MSG("Jump +0, rd=x2");
+        prev_pc = dut.pc + 4;
         inst_ready = 1'b1;
         inst_rdata = {12'h2, 5'h0, 3'h0, 5'h2, 7'b1100111};
         @(negedge aclk);
         `ASSERT((dut.pc == 32'h2), "program counter must be 4KB");
         `ASSERT((dut.ctrl_rd_wr == 1'b1), "rd is not under write");
         `ASSERT((dut.ctrl_rd_addr == 32'h2), "rd must target x2");
+        `ASSERT((dut.ctrl_rd_val == prev_pc), "rd must store pc(-1)+4");
+
+    `UNIT_TEST_END
+
+    `UNIT_TEST("Check all branching")
+
+        while (inst_en == 1'b0) @(posedge aclk);
+        @(negedge aclk);
+        inst_ready = 1'b1;
+
+        `MSG("BEQ is true");
+        prev_pc = dut.pc + 4;
+        next_pc = dut.pc + offset;
+        ctrl_rs1_val = 32'hFFFFFFFF;
+        ctrl_rs2_val = 32'hFFFFFFFF;
+        inst_rdata = {17'h0, `BEQ, 5'h10, 7'b1100011};
+        @(negedge aclk);
+        `ASSERT((dut.pc == 32'h10), "program counter must move forward by 16 bytes");
+
+        `MSG("BEQ is false");
+        prev_pc = dut.pc + 4;
+        next_pc = dut.pc + offset;
+        ctrl_rs1_val = 32'hFFFFFFFF;
+        ctrl_rs2_val = 32'h00000000;
+        inst_rdata = {17'h0, `BEQ, 5'h2, 7'b1100011};
+        @(negedge aclk);
+        `ASSERT((dut.pc == 32'h14), "program counter must move forward by 4 bytes");
+
+        `MSG("BNE is true");
+        prev_pc = dut.pc + 4;
+        next_pc = dut.pc + offset;
+        ctrl_rs1_val = 32'hFFFFFFFF;
+        ctrl_rs2_val = 32'h00FFFFFF;
+        inst_rdata = {17'h0, `BNE, 5'h10, 7'b1100011};
+        @(negedge aclk);
+        `ASSERT((dut.pc == 32'h24), "program counter must move forward by 16 bytes");
+
+        `MSG("BNE is false");
+        prev_pc = dut.pc + 4;
+        next_pc = dut.pc + offset;
+        ctrl_rs1_val = 32'hFFFFFFFF;
+        ctrl_rs2_val = 32'hFFFFFFFF;
+        inst_rdata = {17'h0, `BNE, 5'h10, 7'b1100011};
+        @(negedge aclk);
+        `ASSERT((dut.pc == 32'h28), "program counter must move forward by 4 bytes");
+
+        `MSG("BLT is true");
+        prev_pc = dut.pc + 4;
+        next_pc = dut.pc + offset;
+        ctrl_rs1_val = 32'hFFFFFFFF;
+        ctrl_rs2_val = 32'h00FFFFFF;
+        inst_rdata = {17'h0, `BLT, 5'h10, 7'b1100011};
+        @(negedge aclk);
+        `ASSERT((dut.pc == 32'h38), "program counter must move forward by 16 bytes");
+
+        `MSG("BLT is false");
+        prev_pc = dut.pc + 4;
+        next_pc = dut.pc + offset;
+        ctrl_rs1_val = 32'hFFFFFFFF;
+        ctrl_rs2_val = 32'hFFFFFFFF;
+        inst_rdata = {17'h0, `BLT, 5'h10, 7'b1100011};
+        @(negedge aclk);
+        `ASSERT((dut.pc == 32'h3C), "program counter must move forward by 4 bytes");
+
+        `MSG("BGE is true");
+        prev_pc = dut.pc + 4;
+        next_pc = dut.pc + offset;
+        ctrl_rs1_val = 32'h00FFFFFF;
+        ctrl_rs2_val = 32'h00FFFFFF;
+        inst_rdata = {17'h0, `BGE, 5'h10, 7'b1100011};
+        @(negedge aclk);
+        `ASSERT((dut.pc == 32'h4C), "program counter must move forward by 16 bytes");
+
+        `MSG("BGE is true");
+        prev_pc = dut.pc + 4;
+        next_pc = dut.pc + offset;
+        ctrl_rs1_val = 32'h0FFFFFFF;
+        ctrl_rs2_val = 32'h00FFFFFF;
+        inst_rdata = {17'h0, `BGE, 5'h10, 7'b1100011};
+        @(negedge aclk);
+        `ASSERT((dut.pc == 32'h5C), "program counter must move forward by 16 bytes");
+
+        `MSG("BGE is false");
+        prev_pc = dut.pc + 4;
+        next_pc = dut.pc + offset;
+        ctrl_rs1_val = 32'h0F0FFFFF;
+        ctrl_rs2_val = 32'h0FFFFFFF;
+        inst_rdata = {17'h0, `BGE, 5'h10, 7'b1100011};
+        @(negedge aclk);
+        `ASSERT((dut.pc == 32'h60), "program counter must move forward by 4 bytes");
+
+        `MSG("BLTU is true");
+        prev_pc = dut.pc + 4;
+        next_pc = dut.pc + offset;
+        ctrl_rs1_val = 32'h0000FFFF;
+        ctrl_rs2_val = 32'h00FFFFFF;
+        inst_rdata = {17'h0, `BLTU, 5'h10, 7'b1100011};
+        @(negedge aclk);
+        `ASSERT((dut.pc == 32'h70), "program counter must move forward by 16 bytes");
+
+        `MSG("BLTU is false");
+        prev_pc = dut.pc + 4;
+        next_pc = dut.pc + offset;
+        ctrl_rs1_val = 32'hFFFFFFFF;
+        ctrl_rs2_val = 32'hFFFFFFFF;
+        inst_rdata = {17'h0, `BLTU, 5'h10, 7'b1100011};
+        @(negedge aclk);
+        `ASSERT((dut.pc == 32'h74), "program counter must move forward by 4 bytes");
+
+        `MSG("BGEU is true");
+        prev_pc = dut.pc + 4;
+        next_pc = dut.pc + offset;
+        ctrl_rs1_val = 32'h0FFFFFFF;
+        ctrl_rs2_val = 32'h00FFFFFF;
+        inst_rdata = {17'h0, `BGEU, 5'h10, 7'b1100011};
+        @(negedge aclk);
+        `ASSERT((dut.pc == 32'h84), "program counter must move forward by 16 bytes");
+
+        `MSG("BGEU is true");
+        prev_pc = dut.pc + 4;
+        next_pc = dut.pc + offset;
+        ctrl_rs1_val = 32'h00FFFFF0;
+        ctrl_rs2_val = 32'h00FFFFFF;
+        inst_rdata = {17'h0, `BGEU, 5'h10, 7'b1100011};
+        @(negedge aclk);
+        `ASSERT((dut.pc == 32'h88), "program counter must move forward by 16 bytes");
 
     `UNIT_TEST_END
 

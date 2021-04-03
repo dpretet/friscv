@@ -42,7 +42,7 @@ module friscv_rv32i_control
 
     ///////////////////////////////////////////////////////////////////////////
     //
-    // Parameter and variables declarations
+    // Parameters and variables declarations
     //
     ///////////////////////////////////////////////////////////////////////////
 
@@ -97,7 +97,16 @@ module friscv_rv32i_control
     logic signed [PC_W-1:0] pc_auipc;
     logic signed [PC_W-1:0] pc_jal;
     logic signed [PC_W-1:0] pc_jalr;
+    logic signed [PC_W-1:0] pc_branching;
     logic        [PC_W-1:0] pc;
+
+    logic                   beq;
+    logic                   bne;
+    logic                   blt;
+    logic                   bge;
+    logic                   bltu;
+    logic                   bgeu;
+    logic                   goto_branch;
 
     ///////////////////////////////////////////////////////////////////////////
 
@@ -208,6 +217,9 @@ module friscv_rv32i_control
     assign inst_en = (cfsm == RUN && ((processing && ~alu_inst_full) ||
                                       (~processing && ~inst_error))) ? 1'b1:
                                                                        1'b0;
+    // program counter computation based on instructions
+    ///////////////////////////////////////////////////////////////////////////
+
     // increment counter by 4 because we index bytes
     assign pc_plus4 = pc + {{(PC_W-3){1'b0}},3'b100};
 
@@ -219,6 +231,42 @@ module friscv_rv32i_control
 
     // JALR: program counter to rs1 + offset
     assign pc_jalr = $signed(ctrl_rs1_val) + $signed({{20{imm12[11]}}, imm12});
+
+    // For all branching instruction
+    assign pc_branching =  $signed(pc) + $signed({19'b0, imm12, 1'b0});
+
+
+    // branching flags and its checks
+    ///////////////////////////////////////////////////////////////////////////
+
+    // BEQ: branch if equal
+    assign beq = ($signed(ctrl_rs1_val) == $signed(ctrl_rs2_val)) ? 1'b1 : 1'b0;
+
+    // BNE: branch if not equal
+    assign bne = ($signed(ctrl_rs1_val) != $signed(ctrl_rs2_val)) ? 1'b1 : 1'b0;
+
+    // BLT: branch if less
+    assign blt = ($signed(ctrl_rs1_val) < $signed(ctrl_rs2_val)) ? 1'b1 : 1'b0;
+
+    // BGE: branch if greater
+    assign bge = ($signed(ctrl_rs1_val) >= $signed(ctrl_rs2_val)) ? 1'b1 : 1'b0;
+
+    // BLTU: branch if less (unsigned)
+    assign bltu = (ctrl_rs1_val < ctrl_rs2_val) ? 1'b1 : 1'b0;
+
+    // BGE: branch if greater (unsigned)
+    assign bgeu = (ctrl_rs1_val >= ctrl_rs2_val) ? 1'b1 : 1'b0;
+
+    // activate branching in FSM
+    assign goto_branch = ((funct3 == `BEQ  && beq)  ||
+                          (funct3 == `BNE  && bne)  ||
+                          (funct3 == `BLT  && blt)  ||
+                          (funct3 == `BGE  && bge)  ||
+                          (funct3 == `BLTU && bltu) ||
+                          (funct3 == `BGEU && bgeu)) ? 1'b1 : 1'b0;
+
+    // The FSM switching the program counter
+    ///////////////////////////////////////////////////////////////////////////
 
     always @ (posedge aclk or negedge aresetn) begin
 
@@ -274,6 +322,11 @@ module friscv_rv32i_control
                             ctrl_rd_val <= pc_plus4;
                             pc <= {pc_jalr[31:1],1'b0};
 
+                        // Branching
+                        end else if (branching) begin
+                            if (goto_branch) pc <= pc_branching;
+                            else pc <= pc_plus4;
+
                         // Any ALU processing
                         end else if (processing && ~alu_inst_full) begin
                             ctrl_rd_wr <= 1'b0;
@@ -303,7 +356,7 @@ module friscv_rv32i_control
     end
 
     // select only MSB because RAM is addressed by word while program counter
-    // is byte oriented
+    // is byte-oriented
     assign inst_addr = pc[2+:ADDRW];
 
     // register source 1 & 2 read
