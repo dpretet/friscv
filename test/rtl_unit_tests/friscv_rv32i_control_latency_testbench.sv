@@ -93,19 +93,26 @@ module friscv_rv32i_control_latency_testbench();
 
     task teardown(msg="");
     begin
-        /// teardown() runs when a test ends
+        alu_ready = 1'b1;
+        while (alu_en == 1'b1) begin
+            @(posedge aclk);
+        end
+        alu_ready = 1'b0;
         #10;
     end
     endtask
 
     `TEST_SUITE("Control Testsuite")
 
-    `UNIT_TEST("Fill FIFO fully then check instructions are well passed");
+    `UNIT_TEST("Fills FIFO fully then check instructions are well passed to ALU");
 
+        `MSG("RAM will only serves the number of instruction FIFO can store, then stop");
+        `MSG("The FIFO buffers the data, then ALU consumes the instructions");
         alu_ready = 0;
 
         while (inst_en == 1'b0) @(posedge aclk);
 
+        `INFO("Sart to fill ALU's FIFO");
         inst_ready = 1'b1;
         for (integer i=0; i<`ALU_FIFO_DEPTH/4; i=i+1) begin
             inst_rdata = {17'b0, i[2:0], 5'b0, 7'b0000011};
@@ -128,8 +135,8 @@ module friscv_rv32i_control_latency_testbench();
         @(posedge aclk);
         `ASSERT((inst_en==1'b0), "Control unit shouldn't assert anymore inst_en");
 
-            // msg = {"expect funct3=", i[2:0], " opcode=", 7'b0000011};
         @(negedge aclk);
+        `INFO("Consumes ALU instructions");
         alu_ready = 1;
         for (integer i=0; i<`ALU_FIFO_DEPTH/4; i=i+1) begin
             @(negedge aclk);
@@ -154,8 +161,10 @@ module friscv_rv32i_control_latency_testbench();
 
     `UNIT_TEST_END
 
-    `UNIT_TEST("Fill FIFO fully then check instructions are well buffered");
+    `UNIT_TEST("Fill FIFO fully then check extra instruction buffering is OK");
 
+        `MSG("Same test than previous, but transmit the extra instruction");
+        `MSG("Last instruction is buffered, then transmitted once FIFO is read");
         alu_ready = 0;
 
         while (inst_en == 1'b0) @(posedge aclk);
@@ -169,7 +178,6 @@ module friscv_rv32i_control_latency_testbench();
         inst_rdata = {17'b0, 3'h6, 5'b0, 7'b0000011};
         @(posedge aclk);
         `ASSERT((inst_en==1'b0), "Control unit shouldn't assert anymore inst_en");
-
         inst_ready = 1'b0;
         @(posedge aclk);
         `ASSERT((dut.load_stored==1'b1), "control has to store the last instruction");
@@ -189,7 +197,152 @@ module friscv_rv32i_control_latency_testbench();
 
     `UNIT_TEST_END
 
-    `UNIT_TEST("Check control switching between ALU and system/branch/jump ops")
+    `UNIT_TEST("Fill FIFO fully then branch - LATENCY=3");
+
+        `MSG("Same test than previous, but the last extra instruction is a branching");
+        `MSG("Last instruction is buffered, then used to branch");
+        alu_ready = 0;
+
+        while (inst_en == 1'b0) @(posedge aclk);
+
+        inst_ready = 1'b1;
+        for (integer i=0; i<`ALU_FIFO_DEPTH; i=i+1) begin
+            inst_rdata = {17'b0, i[2:0], 5'b0, 7'b0000011};
+            @(posedge aclk);
+        end
+
+        inst_rdata = {17'h0, `BEQ, 5'h10, 7'b1100011};
+        @(posedge aclk);
+
+        `ASSERT((inst_en==1'b0), "Control unit shouldn't assert anymore inst_en");
+        inst_ready = 1'b0;
+        @(posedge aclk);
+        `ASSERT((dut.load_stored==1'b1), "control has to store the last instruction");
+        `ASSERT(dut.stored_inst== inst_rdata, "control didn't store correctly the last instruction");
+        @(posedge aclk);
+
+        @(negedge aclk);
+        alu_ready = 1;
+        for (integer i=0; i<`ALU_FIFO_DEPTH; i=i+1) begin
+            @(negedge aclk);
+            `ASSERT((alu_instbus[`OPCODE+:`OPCODE_W] == 7'b0000011), "OPCODE received is wrong");
+            `ASSERT((alu_instbus[`FUNCT3+:`FUNCT3_W] == i[2:0]), "FUNCT3 received is wrong");
+        end
+
+        @(negedge aclk);
+        `ASSERT((dut.pc == 32'h30), "program counter must move forward by 16 bytes");
+
+    `UNIT_TEST_END
+
+    `UNIT_TEST("Fill FIFO fully then branch - LATENCY=2");
+
+        `MSG("Same test than previous, but the last extra instruction is a branching");
+        `MSG("Last instruction is buffered, then used to branch");
+        alu_ready = 0;
+
+        while (inst_en == 1'b0) @(posedge aclk);
+
+        inst_ready = 1'b1;
+        for (integer i=0; i<`ALU_FIFO_DEPTH; i=i+1) begin
+            inst_rdata = {17'b0, i[2:0], 5'b0, 7'b0000011};
+            @(posedge aclk);
+        end
+
+        inst_rdata = {17'h0, `BEQ, 5'h10, 7'b1100011};
+        @(posedge aclk);
+
+        `ASSERT((inst_en==1'b0), "Control unit shouldn't assert anymore inst_en");
+        inst_ready = 1'b0;
+        @(posedge aclk);
+        `ASSERT((dut.load_stored==1'b1), "control has to store the last instruction");
+        `ASSERT(dut.stored_inst== inst_rdata, "control didn't store correctly the last instruction");
+
+        @(negedge aclk);
+        alu_ready = 1;
+        for (integer i=0; i<`ALU_FIFO_DEPTH; i=i+1) begin
+            @(negedge aclk);
+            `ASSERT((alu_instbus[`OPCODE+:`OPCODE_W] == 7'b0000011), "OPCODE received is wrong");
+            `ASSERT((alu_instbus[`FUNCT3+:`FUNCT3_W] == i[2:0]), "FUNCT3 received is wrong");
+        end
+
+        @(negedge aclk);
+        `ASSERT((dut.pc == 32'h30), "program counter must move forward by 16 bytes");
+
+    `UNIT_TEST_END
+
+    `UNIT_TEST("Fill FIFO fully then branch - LATENCY=1");
+
+        `MSG("Same test than previous, but the last extra instruction is a branching");
+        `MSG("Last instruction is buffered, then used to branch");
+        alu_ready = 0;
+
+        while (inst_en == 1'b0) @(posedge aclk);
+
+        inst_ready = 1'b1;
+        for (integer i=0; i<`ALU_FIFO_DEPTH; i=i+1) begin
+            inst_rdata = {17'b0, i[2:0], 5'b0, 7'b0000011};
+            @(posedge aclk);
+        end
+
+        inst_rdata = {17'h0, `BEQ, 5'h10, 7'b1100011};
+        @(posedge aclk);
+
+        `ASSERT((inst_en==1'b0), "Control unit shouldn't assert anymore inst_en");
+        inst_ready = 1'b0;
+        @(negedge aclk);
+        alu_ready = 1;
+        @(posedge aclk);
+        `ASSERT((dut.load_stored==1'b1), "control has to store the last instruction");
+        `ASSERT(dut.stored_inst== inst_rdata, "control didn't store correctly the last instruction");
+
+        for (integer i=0; i<`ALU_FIFO_DEPTH; i=i+1) begin
+            @(negedge aclk);
+            `ASSERT((alu_instbus[`OPCODE+:`OPCODE_W] == 7'b0000011), "OPCODE received is wrong");
+            `ASSERT((alu_instbus[`FUNCT3+:`FUNCT3_W] == i[2:0]), "FUNCT3 received is wrong");
+        end
+
+        @(negedge aclk);
+        `ASSERT((dut.pc == 32'h30), "program counter must move forward by 16 bytes");
+
+    `UNIT_TEST_END
+
+    `UNIT_TEST("Fill FIFO fully then branch - LATENCY=0");
+
+        `MSG("Same test than previous, but the last extra instruction is a branching");
+        `MSG("Last instruction is buffered, then used to branch");
+        alu_ready = 0;
+
+        while (inst_en == 1'b0) @(posedge aclk);
+
+        inst_ready = 1'b1;
+        for (integer i=0; i<`ALU_FIFO_DEPTH; i=i+1) begin
+            inst_rdata = {17'b0, i[2:0], 5'b0, 7'b0000011};
+            @(posedge aclk);
+        end
+
+        @(negedge aclk);
+        alu_ready = 1;
+        inst_rdata = {17'h0, `BEQ, 5'h10, 7'b1100011};
+        @(posedge aclk);
+
+        `ASSERT((inst_en==1'b0), "Control unit shouldn't assert anymore inst_en");
+        inst_ready = 1'b0;
+        // @(posedge aclk);
+        // `ASSERT((dut.load_stored==1'b1), "control has to store the last instruction");
+        // `ASSERT(dut.stored_inst== inst_rdata, "control didn't store correctly the last instruction");
+
+        for (integer i=0; i<`ALU_FIFO_DEPTH; i=i+1) begin
+            @(negedge aclk);
+            `ASSERT((alu_instbus[`OPCODE+:`OPCODE_W] == 7'b0000011), "OPCODE received is wrong");
+            `ASSERT((alu_instbus[`FUNCT3+:`FUNCT3_W] == i[2:0]), "FUNCT3 received is wrong");
+        end
+
+        @(negedge aclk);
+        `ASSERT((dut.pc == 32'h30), "program counter must move forward by 16 bytes");
+
+    `UNIT_TEST_END
+
+    `UNIT_TEST("=> TODO")
 
         `MSG("TODO 1: test with ALU and RAM ready");
         `MSG("TODO 2: test with ALU ready and RAM throttling");

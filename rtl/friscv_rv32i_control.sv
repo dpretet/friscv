@@ -226,9 +226,6 @@ module friscv_rv32i_control
     //
     ///////////////////////////////////////////////////////////////////////////
 
-    assign inst_en = (cfsm == RUN && ((processing && ~alu_inst_full) ||
-                                      (~processing && ~inst_error))) ? 1'b1:
-                                                                       1'b0;
     // program counter computation based on instructions
     ///////////////////////////////////////////////////////////////////////////
 
@@ -360,6 +357,9 @@ module friscv_rv32i_control
         end
     end
 
+    assign inst_en = (cfsm == RUN && 
+                      (~cant_branch_now && ~cant_process_now)) ? 1'b1:
+                                                                 1'b0;
     // select only MSB because RAM is addressed by word while program counter
     // is byte-oriented
     assign inst_addr = pc[2+:ADDRW];

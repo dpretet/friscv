@@ -1,10 +1,10 @@
 [*]
 [*] GTKWave Analyzer v3.3.107 (w)1999-2020 BSI
-[*] Tue Apr  6 17:31:56 2021
+[*] Tue Apr  6 19:23:03 2021
 [*]
 [dumpfile] "/Users/damien/workspace/hdl/friscv/test/rtl_unit_tests/friscv_rv32i_control_jump_branch_testbench.vcd"
-[dumpfile_mtime] "Tue Apr  6 12:13:25 2021"
-[dumpfile_size] 22857
+[dumpfile_mtime] "Tue Apr  6 18:32:20 2021"
+[dumpfile_size] 22851
 [savefile] "/Users/damien/workspace/hdl/friscv/test/rtl_unit_tests/friscv_rv32i_control_jump_branch_testbench.gtkw"
 [timestart] 238220
 [size] 2560 1440
