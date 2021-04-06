@@ -92,7 +92,7 @@ module friscv_rv32i_control_jump_branch_testbench();
 
     task teardown(msg="");
     begin
-        /// teardown() runs when a test ends
+        #10;
     end
     endtask
 
@@ -168,14 +168,17 @@ module friscv_rv32i_control_jump_branch_testbench();
 
     `UNIT_TEST("Verify invalid opcodes lead to failure")
 
+        @(negedge aclk);
         inst_rdata = 7'b0000001;
         @(posedge aclk);
         `ASSERT((dut.inst_error==1'b1), "should detect an issue");
 
+        @(negedge aclk);
         inst_rdata = 7'b0101001;
         @(posedge aclk);
         `ASSERT((dut.inst_error==1'b1), "should detect an issue");
 
+        @(negedge aclk);
         inst_rdata = 7'b1111111;
         @(posedge aclk);
         `ASSERT((dut.inst_error==1'b1), "should detect an issue");
@@ -235,20 +238,9 @@ module friscv_rv32i_control_jump_branch_testbench();
 
     `UNIT_TEST_END
 
-    `UNIT_TEST("Check control switching between ALU and system/branch/jump ops")
-
-        `MSG("TODO 1: test with ALU and RAM ready");
-        `MSG("TODO 2: test with ALU ready and RAM throttling");
-        `MSG("TODO 3: test with ALU throttling and RAM ready");
-        `MSG("TODO 3: test with ALU and RAM throttling");
-        alu_ready = 1'b0;
-
-    `UNIT_TEST_END
-
     `UNIT_TEST("Check AUIPC opcode")
 
         while (inst_en == 1'b0) @(posedge aclk);
-        @(negedge aclk);
 
         `MSG("Zero move");
         inst_ready = 1'b1;
@@ -256,44 +248,44 @@ module friscv_rv32i_control_jump_branch_testbench();
         @(negedge aclk);
         `ASSERT((dut.pc == 32'h0), "program counter must keep 0 value");
         `ASSERT((dut.ctrl_rd_wr == 1'b1), "rd is not under write");
-        `ASSERT((dut.ctrl_rd_addr == 32'h0));
-        `ASSERT((dut.ctrl_rd_val == dut.pc));
+        `ASSERT((dut.ctrl_rd_addr == 32'h0), "wrong rd target");
+        `ASSERT((dut.ctrl_rd_val == dut.pc), "rd must store pc");
+        @(posedge aclk);
 
-        `MSG("move forward by 4 KB");
+        `MSG("Move forward by 4 KB");
         inst_ready = 1'b1;
         inst_rdata = {20'h00001, 5'h0, 7'b0010111};
         @(negedge aclk);
         `ASSERT((dut.pc == 32'h1000), "program counter must be 4KB");
         `ASSERT((dut.ctrl_rd_wr == 1'b1), "rd is not under write");
-        `ASSERT((dut.ctrl_rd_addr == 32'h0));
-        `ASSERT((dut.ctrl_rd_val == dut.pc));
+        `ASSERT((dut.ctrl_rd_addr == 32'h0), "wrong rd target");
+        `ASSERT((dut.ctrl_rd_val == dut.pc), "rd must store pc");
+        @(posedge aclk);
 
-        `MSG("move forward by 4 KB");
+        `MSG("Move forward by 4 KB");
         inst_ready = 1'b1;
         inst_rdata = {20'h00001, 5'h3, 7'b0010111};
         @(negedge aclk);
         `ASSERT((dut.pc == 32'h2000), "program counter must be 8KB");
         `ASSERT((dut.ctrl_rd_wr == 1'b1), "rd is not under write");
-        `ASSERT((dut.ctrl_rd_addr == 32'h3));
-        `ASSERT((dut.ctrl_rd_val == dut.pc));
+        `ASSERT((dut.ctrl_rd_addr == 32'h3), "wrong rd target");
+        `ASSERT((dut.ctrl_rd_val == dut.pc), "rd must store pc");
+        @(posedge aclk);
 
-        `MSG("move backward by 4 KB");
+        `MSG("Move backward by 4 KB");
         inst_ready = 1'b1;
         inst_rdata = {20'hFFFFF, 5'h18, 7'b0010111};
         @(negedge aclk);
         `ASSERT((dut.pc == 32'h1000), "program counter must be 4KB");
         `ASSERT((dut.ctrl_rd_wr == 1'b1), "rd is not under write");
-        `ASSERT((dut.ctrl_rd_addr == 32'h18));
-        `ASSERT((dut.ctrl_rd_val == dut.pc));
-
-        #10;
+        `ASSERT((dut.ctrl_rd_addr == 32'h18), "wrong rd target");
+        `ASSERT((dut.ctrl_rd_val == dut.pc), "rd must store pc");
 
     `UNIT_TEST_END
 
     `UNIT_TEST("Check JAL opcode")
 
         while (inst_en == 1'b0) @(posedge aclk);
-        @(negedge aclk);
 
         `MSG("Jump +0, rd=x0");
         prev_pc = dut.pc + 4;
@@ -304,6 +296,7 @@ module friscv_rv32i_control_jump_branch_testbench();
         `ASSERT((dut.ctrl_rd_wr == 1'b1), "rd is not under write");
         `ASSERT((dut.ctrl_rd_addr == 32'h0), "rd must target x0");
         `ASSERT((dut.ctrl_rd_val == prev_pc), "rd must store pc(-1)+4");
+        @(posedge aclk);
 
         `MSG("Jump +0, rd=x3");
         prev_pc = dut.pc + 4;
@@ -314,6 +307,7 @@ module friscv_rv32i_control_jump_branch_testbench();
         `ASSERT((dut.ctrl_rd_wr == 1'b1), "rd is not under write");
         `ASSERT((dut.ctrl_rd_addr == 32'h3), "rd must target x3");
         `ASSERT((dut.ctrl_rd_val == prev_pc), "rd must store pc(-1)+4");
+        @(posedge aclk);
 
         `MSG("Jump +2048, rd=x5");
         prev_pc = dut.pc + 4;
@@ -322,7 +316,7 @@ module friscv_rv32i_control_jump_branch_testbench();
         @(negedge aclk);
         `ASSERT((dut.pc == 32'h800), "program counter must be 2KB");
         `ASSERT((dut.ctrl_rd_wr == 1'b1), "rd is not under write");
-        `ASSERT((dut.ctrl_rd_addr == 32'h5));
+        `ASSERT((dut.ctrl_rd_addr == 32'h5), "rd must target x3");
         `ASSERT((dut.ctrl_rd_val == prev_pc), "rd must store pc(-1)+4");
 
     `UNIT_TEST_END
@@ -330,7 +324,6 @@ module friscv_rv32i_control_jump_branch_testbench();
     `UNIT_TEST("Check JALR opcode")
 
         while (inst_en == 1'b0) @(posedge aclk);
-        @(negedge aclk);
 
         `MSG("Jump +0, rd=x0");
         prev_pc = dut.pc + 4;
@@ -341,6 +334,7 @@ module friscv_rv32i_control_jump_branch_testbench();
         `ASSERT((dut.ctrl_rd_wr == 1'b1), "rd is not under write");
         `ASSERT((dut.ctrl_rd_addr == 32'h0));
         `ASSERT((dut.ctrl_rd_val == prev_pc), "rd must store pc(-1)+4");
+        @(posedge aclk);
 
         `MSG("Jump +0, rd=x1");
         prev_pc = dut.pc + 4;
@@ -351,6 +345,7 @@ module friscv_rv32i_control_jump_branch_testbench();
         `ASSERT((dut.ctrl_rd_wr == 1'b1), "rd is not under write");
         `ASSERT((dut.ctrl_rd_addr == 32'h1), "rd must target x1");
         `ASSERT((dut.ctrl_rd_val == prev_pc), "rd must store pc(-1)+4");
+        @(posedge aclk);
 
         `MSG("Jump +0, rd=x2");
         prev_pc = dut.pc + 4;
@@ -361,6 +356,7 @@ module friscv_rv32i_control_jump_branch_testbench();
         `ASSERT((dut.ctrl_rd_wr == 1'b1), "rd is not under write");
         `ASSERT((dut.ctrl_rd_addr == 32'h2), "rd must target x2");
         `ASSERT((dut.ctrl_rd_val == prev_pc), "rd must store pc(-1)+4");
+        @(posedge aclk);
 
         `MSG("Jump +0, rd=x2");
         prev_pc = dut.pc + 4;
@@ -377,7 +373,6 @@ module friscv_rv32i_control_jump_branch_testbench();
     `UNIT_TEST("Check all branching")
 
         while (inst_en == 1'b0) @(posedge aclk);
-        @(negedge aclk);
         inst_ready = 1'b1;
 
         `MSG("BEQ is true");
@@ -388,6 +383,7 @@ module friscv_rv32i_control_jump_branch_testbench();
         inst_rdata = {17'h0, `BEQ, 5'h10, 7'b1100011};
         @(negedge aclk);
         `ASSERT((dut.pc == 32'h10), "program counter must move forward by 16 bytes");
+        @(posedge aclk);
 
         `MSG("BEQ is false");
         prev_pc = dut.pc + 4;
@@ -397,6 +393,7 @@ module friscv_rv32i_control_jump_branch_testbench();
         inst_rdata = {17'h0, `BEQ, 5'h2, 7'b1100011};
         @(negedge aclk);
         `ASSERT((dut.pc == 32'h14), "program counter must move forward by 4 bytes");
+        @(posedge aclk);
 
         `MSG("BNE is true");
         prev_pc = dut.pc + 4;
@@ -406,6 +403,7 @@ module friscv_rv32i_control_jump_branch_testbench();
         inst_rdata = {17'h0, `BNE, 5'h10, 7'b1100011};
         @(negedge aclk);
         `ASSERT((dut.pc == 32'h24), "program counter must move forward by 16 bytes");
+        @(posedge aclk);
 
         `MSG("BNE is false");
         prev_pc = dut.pc + 4;
@@ -415,6 +413,7 @@ module friscv_rv32i_control_jump_branch_testbench();
         inst_rdata = {17'h0, `BNE, 5'h10, 7'b1100011};
         @(negedge aclk);
         `ASSERT((dut.pc == 32'h28), "program counter must move forward by 4 bytes");
+        @(posedge aclk);
 
         `MSG("BLT is true");
         prev_pc = dut.pc + 4;
@@ -424,6 +423,7 @@ module friscv_rv32i_control_jump_branch_testbench();
         inst_rdata = {17'h0, `BLT, 5'h10, 7'b1100011};
         @(negedge aclk);
         `ASSERT((dut.pc == 32'h38), "program counter must move forward by 16 bytes");
+        @(posedge aclk);
 
         `MSG("BLT is false");
         prev_pc = dut.pc + 4;
@@ -433,6 +433,7 @@ module friscv_rv32i_control_jump_branch_testbench();
         inst_rdata = {17'h0, `BLT, 5'h10, 7'b1100011};
         @(negedge aclk);
         `ASSERT((dut.pc == 32'h3C), "program counter must move forward by 4 bytes");
+        @(posedge aclk);
 
         `MSG("BGE is true");
         prev_pc = dut.pc + 4;
@@ -442,6 +443,7 @@ module friscv_rv32i_control_jump_branch_testbench();
         inst_rdata = {17'h0, `BGE, 5'h10, 7'b1100011};
         @(negedge aclk);
         `ASSERT((dut.pc == 32'h4C), "program counter must move forward by 16 bytes");
+        @(posedge aclk);
 
         `MSG("BGE is true");
         prev_pc = dut.pc + 4;
@@ -451,6 +453,7 @@ module friscv_rv32i_control_jump_branch_testbench();
         inst_rdata = {17'h0, `BGE, 5'h10, 7'b1100011};
         @(negedge aclk);
         `ASSERT((dut.pc == 32'h5C), "program counter must move forward by 16 bytes");
+        @(posedge aclk);
 
         `MSG("BGE is false");
         prev_pc = dut.pc + 4;
@@ -460,6 +463,7 @@ module friscv_rv32i_control_jump_branch_testbench();
         inst_rdata = {17'h0, `BGE, 5'h10, 7'b1100011};
         @(negedge aclk);
         `ASSERT((dut.pc == 32'h60), "program counter must move forward by 4 bytes");
+        @(posedge aclk);
 
         `MSG("BLTU is true");
         prev_pc = dut.pc + 4;
@@ -469,6 +473,7 @@ module friscv_rv32i_control_jump_branch_testbench();
         inst_rdata = {17'h0, `BLTU, 5'h10, 7'b1100011};
         @(negedge aclk);
         `ASSERT((dut.pc == 32'h70), "program counter must move forward by 16 bytes");
+        @(posedge aclk);
 
         `MSG("BLTU is false");
         prev_pc = dut.pc + 4;
@@ -478,6 +483,7 @@ module friscv_rv32i_control_jump_branch_testbench();
         inst_rdata = {17'h0, `BLTU, 5'h10, 7'b1100011};
         @(negedge aclk);
         `ASSERT((dut.pc == 32'h74), "program counter must move forward by 4 bytes");
+        @(posedge aclk);
 
         `MSG("BGEU is true");
         prev_pc = dut.pc + 4;
@@ -487,6 +493,7 @@ module friscv_rv32i_control_jump_branch_testbench();
         inst_rdata = {17'h0, `BGEU, 5'h10, 7'b1100011};
         @(negedge aclk);
         `ASSERT((dut.pc == 32'h84), "program counter must move forward by 16 bytes");
+        @(posedge aclk);
 
         `MSG("BGEU is true");
         prev_pc = dut.pc + 4;

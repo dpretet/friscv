@@ -9,7 +9,7 @@
 `include "svut_h.sv"
 `include "friscv_h.sv"
 
-module friscv_rv32i_control_jump_branch_testbench();
+module friscv_rv32i_control_latency_testbench();
 
     `SVUT_SETUP
 
@@ -38,6 +38,7 @@ module friscv_rv32i_control_jump_branch_testbench();
     logic [32            -1:0] prev_pc;
     logic [32            -1:0] next_pc;
     logic [12            -1:0] offset;
+    string                     msg;
 
     friscv_rv32i_control
     #(
@@ -72,8 +73,8 @@ module friscv_rv32i_control_jump_branch_testbench();
 
     /// An example to dump data for visualization
     initial begin
-        $dumpfile("friscv_rv32i_control_jump_branch_testbench.vcd");
-        $dumpvars(0, friscv_rv32i_control_jump_branch_testbench);
+        $dumpfile("friscv_rv32i_control_latency_testbench.vcd");
+        $dumpvars(0, friscv_rv32i_control_latency_testbench);
     end
 
     task setup(msg="");
@@ -93,145 +94,98 @@ module friscv_rv32i_control_jump_branch_testbench();
     task teardown(msg="");
     begin
         /// teardown() runs when a test ends
+        #10;
     end
     endtask
 
     `TEST_SUITE("Control Testsuite")
 
-    `UNIT_TEST("Verify the ISA's opcodes")
-
-        inst_rdata = 7'b0010111;
-        @(posedge aclk);
-        `ASSERT((dut.inst_error==1'b0));
-
-        @(posedge aclk);
-
-        inst_rdata = 7'b1101111;
-        @(posedge aclk);
-        `ASSERT((dut.inst_error==1'b0));
-
-        @(posedge aclk);
-
-        inst_rdata = 7'b1100111;
-        @(posedge aclk);
-        `ASSERT((dut.inst_error==1'b0));
-
-        @(posedge aclk);
-
-        inst_rdata = 7'b1100011;
-        @(posedge aclk);
-        `ASSERT((dut.inst_error==1'b0));
-
-        @(posedge aclk);
-
-        inst_rdata = 7'b0000000;
-        @(posedge aclk);
-        `ASSERT((dut.inst_error==1'b0));
-
-        @(posedge aclk);
-
-        inst_rdata = 7'b0000011;
-        @(posedge aclk);
-        `ASSERT((dut.inst_error==1'b0));
-
-        @(posedge aclk);
-
-        inst_rdata = 7'b0110111;
-        @(posedge aclk);
-        `ASSERT((dut.inst_error==1'b0));
-
-        @(posedge aclk);
-
-        inst_rdata = 7'b0100011;
-        @(posedge aclk);
-        `ASSERT((dut.inst_error==1'b0));
-
-        @(posedge aclk);
-
-        inst_rdata = 7'b0010011;
-        @(posedge aclk);
-        `ASSERT((dut.inst_error==1'b0));
-
-        @(posedge aclk);
-
-        inst_rdata = 7'b0110011;
-        @(posedge aclk);
-        `ASSERT((dut.inst_error==1'b0));
-
-        @(posedge aclk);
-
-        inst_rdata = 7'b1110011;
-        @(posedge aclk);
-        `ASSERT((dut.inst_error==1'b0));
-
-    `UNIT_TEST_END
-
-    `UNIT_TEST("Verify invalid opcodes lead to failure")
-
-        inst_rdata = 7'b0000001;
-        @(posedge aclk);
-        `ASSERT((dut.inst_error==1'b1), "should detect an issue");
-
-        inst_rdata = 7'b0101001;
-        @(posedge aclk);
-        `ASSERT((dut.inst_error==1'b1), "should detect an issue");
-
-        inst_rdata = 7'b1111111;
-        @(posedge aclk);
-        `ASSERT((dut.inst_error==1'b1), "should detect an issue");
-
-    `UNIT_TEST_END
-
-    `UNIT_TEST("Check ALU FIFO is activated with valid opcodes")
-
-        while (inst_en == 1'b0) @(posedge aclk);
-        inst_ready = 1'b1;
-        alu_ready = 1'b1;
-
-        inst_rdata = 7'b0000011;
-        @(posedge aclk);
-        `ASSERT((dut.alu_inst_wr==1'b1));
-
-        inst_rdata = 7'b0110111;
-        @(posedge aclk);
-        `ASSERT((dut.alu_inst_wr==1'b1));
-
-        inst_rdata = 7'b0100011;
-        @(posedge aclk);
-        `ASSERT((dut.alu_inst_wr==1'b1));
-
-        inst_rdata = 7'b0010011;
-        @(posedge aclk);
-        `ASSERT((dut.alu_inst_wr==1'b1));
-
-        inst_rdata = 7'b0110011;
-        @(posedge aclk);
-        `ASSERT((dut.alu_inst_wr==1'b1));
-
-        inst_rdata = 7'b0010011;
-        @(posedge aclk);
-        `ASSERT((dut.alu_inst_wr==1'b1));
-
-        inst_rdata = 7'b1110011;
-        @(posedge aclk);
-        `ASSERT((dut.alu_inst_wr==1'b1));
-
-    `UNIT_TEST_END
-
-    `UNIT_TEST("Check ALU FIFO contains the expected maximum instruction number")
+    `UNIT_TEST("Fill FIFO fully then check instructions are well passed");
 
         alu_ready = 0;
 
         while (inst_en == 1'b0) @(posedge aclk);
 
-        inst_rdata = 7'b1110011;
         inst_ready = 1'b1;
-        for (integer i=0; i<`ALU_FIFO_DEPTH; i=i+1) begin
+        for (integer i=0; i<`ALU_FIFO_DEPTH/4; i=i+1) begin
+            inst_rdata = {17'b0, i[2:0], 5'b0, 7'b0000011};
             @(posedge aclk);
         end
+        for (integer i=0; i<`ALU_FIFO_DEPTH/4; i=i+1) begin
+            inst_rdata = {17'b0, i[2:0], 5'b0, 7'b0100011};
+            @(posedge aclk);
+        end
+        for (integer i=0; i<`ALU_FIFO_DEPTH/4; i=i+1) begin
+            inst_rdata = {17'b0, i[2:0], 5'b0, 7'b0010011};
+            @(posedge aclk);
+        end
+        for (integer i=0; i<`ALU_FIFO_DEPTH/4; i=i+1) begin
+            inst_rdata = {17'b0, i[2:0], 5'b0, 7'b0110011};
+            @(posedge aclk);
+        end
+
         inst_ready = 1'b0;
         @(posedge aclk);
         `ASSERT((inst_en==1'b0), "Control unit shouldn't assert anymore inst_en");
+
+            // msg = {"expect funct3=", i[2:0], " opcode=", 7'b0000011};
+        @(negedge aclk);
+        alu_ready = 1;
+        for (integer i=0; i<`ALU_FIFO_DEPTH/4; i=i+1) begin
+            @(negedge aclk);
+            `ASSERT((alu_instbus[`OPCODE+:`OPCODE_W] == 7'b0000011));
+            `ASSERT((alu_instbus[`FUNCT3+:`FUNCT3_W] == i[2:0]));
+        end
+        for (integer i=0; i<`ALU_FIFO_DEPTH/4; i=i+1) begin
+            @(negedge aclk);
+            `ASSERT((alu_instbus[`OPCODE+:`OPCODE_W] == 7'b0100011));
+            `ASSERT((alu_instbus[`FUNCT3+:`FUNCT3_W] == i[2:0]));
+        end
+        for (integer i=0; i<`ALU_FIFO_DEPTH/4; i=i+1) begin
+            @(negedge aclk);
+            `ASSERT((alu_instbus[`OPCODE+:`OPCODE_W] == 7'b0010011));
+            `ASSERT((alu_instbus[`FUNCT3+:`FUNCT3_W] == i[2:0]));
+        end
+        for (integer i=0; i<`ALU_FIFO_DEPTH/4; i=i+1) begin
+            @(negedge aclk);
+            `ASSERT((alu_instbus[`OPCODE+:`OPCODE_W] == 7'b0110011));
+            `ASSERT((alu_instbus[`FUNCT3+:`FUNCT3_W] == i[2:0]));
+        end
+
+    `UNIT_TEST_END
+
+    `UNIT_TEST("Fill FIFO fully then check instructions are well buffered");
+
+        alu_ready = 0;
+
+        while (inst_en == 1'b0) @(posedge aclk);
+
+        inst_ready = 1'b1;
+        for (integer i=0; i<`ALU_FIFO_DEPTH; i=i+1) begin
+            inst_rdata = {17'b0, i[2:0], 5'b0, 7'b0000011};
+            @(posedge aclk);
+        end
+
+        inst_rdata = {17'b0, 3'h6, 5'b0, 7'b0000011};
+        @(posedge aclk);
+        `ASSERT((inst_en==1'b0), "Control unit shouldn't assert anymore inst_en");
+
+        inst_ready = 1'b0;
+        @(posedge aclk);
+        `ASSERT((dut.load_stored==1'b1), "control has to store the last instruction");
+        `ASSERT(dut.stored_inst== inst_rdata, "control didn't store correctly the last instruction");
+
+        @(negedge aclk);
+        alu_ready = 1;
+        for (integer i=0; i<`ALU_FIFO_DEPTH; i=i+1) begin
+            @(negedge aclk);
+            `ASSERT((alu_instbus[`OPCODE+:`OPCODE_W] == 7'b0000011), "OPCODE received is wrong");
+            `ASSERT((alu_instbus[`FUNCT3+:`FUNCT3_W] == i[2:0]), "FUNCT3 received is wrong");
+        end
+
+        @(negedge aclk);
+        `ASSERT((alu_instbus[`OPCODE+:`OPCODE_W] == 7'b0000011), "Last OPCODE sent during en=0 is wrong");
+        `ASSERT((alu_instbus[`FUNCT3+:`FUNCT3_W] == 3'h6), "Last FUNCT3 sent during en=0 is wrong");
 
     `UNIT_TEST_END
 
@@ -242,260 +196,6 @@ module friscv_rv32i_control_jump_branch_testbench();
         `MSG("TODO 3: test with ALU throttling and RAM ready");
         `MSG("TODO 3: test with ALU and RAM throttling");
         alu_ready = 1'b0;
-
-    `UNIT_TEST_END
-
-    `UNIT_TEST("Check AUIPC opcode")
-
-        while (inst_en == 1'b0) @(posedge aclk);
-        @(negedge aclk);
-
-        `MSG("Zero move");
-        inst_ready = 1'b1;
-        inst_rdata = {25'b0, 7'b0010111};
-        @(negedge aclk);
-        `ASSERT((dut.pc == 32'h0), "program counter must keep 0 value");
-        `ASSERT((dut.ctrl_rd_wr == 1'b1), "rd is not under write");
-        `ASSERT((dut.ctrl_rd_addr == 32'h0));
-        `ASSERT((dut.ctrl_rd_val == dut.pc));
-
-        `MSG("move forward by 4 KB");
-        inst_ready = 1'b1;
-        inst_rdata = {20'h00001, 5'h0, 7'b0010111};
-        @(negedge aclk);
-        `ASSERT((dut.pc == 32'h1000), "program counter must be 4KB");
-        `ASSERT((dut.ctrl_rd_wr == 1'b1), "rd is not under write");
-        `ASSERT((dut.ctrl_rd_addr == 32'h0));
-        `ASSERT((dut.ctrl_rd_val == dut.pc));
-
-        `MSG("move forward by 4 KB");
-        inst_ready = 1'b1;
-        inst_rdata = {20'h00001, 5'h3, 7'b0010111};
-        @(negedge aclk);
-        `ASSERT((dut.pc == 32'h2000), "program counter must be 8KB");
-        `ASSERT((dut.ctrl_rd_wr == 1'b1), "rd is not under write");
-        `ASSERT((dut.ctrl_rd_addr == 32'h3));
-        `ASSERT((dut.ctrl_rd_val == dut.pc));
-
-        `MSG("move backward by 4 KB");
-        inst_ready = 1'b1;
-        inst_rdata = {20'hFFFFF, 5'h18, 7'b0010111};
-        @(negedge aclk);
-        `ASSERT((dut.pc == 32'h1000), "program counter must be 4KB");
-        `ASSERT((dut.ctrl_rd_wr == 1'b1), "rd is not under write");
-        `ASSERT((dut.ctrl_rd_addr == 32'h18));
-        `ASSERT((dut.ctrl_rd_val == dut.pc));
-
-        #10;
-
-    `UNIT_TEST_END
-
-    `UNIT_TEST("Check JAL opcode")
-
-        while (inst_en == 1'b0) @(posedge aclk);
-        @(negedge aclk);
-
-        `MSG("Jump +0, rd=x0");
-        prev_pc = dut.pc + 4;
-        inst_ready = 1'b1;
-        inst_rdata = {25'b0, 7'b1101111};
-        @(negedge aclk);
-        `ASSERT((dut.pc == 32'h0), "program counter must keep 0 value");
-        `ASSERT((dut.ctrl_rd_wr == 1'b1), "rd is not under write");
-        `ASSERT((dut.ctrl_rd_addr == 32'h0), "rd must target x0");
-        `ASSERT((dut.ctrl_rd_val == prev_pc), "rd must store pc(-1)+4");
-
-        `MSG("Jump +0, rd=x3");
-        prev_pc = dut.pc + 4;
-        inst_ready = 1'b1;
-        inst_rdata = {25'h3, 7'b1101111};
-        @(negedge aclk);
-        `ASSERT((dut.pc == 32'h0), "program counter must keep 0 value");
-        `ASSERT((dut.ctrl_rd_wr == 1'b1), "rd is not under write");
-        `ASSERT((dut.ctrl_rd_addr == 32'h3), "rd must target x3");
-        `ASSERT((dut.ctrl_rd_val == prev_pc), "rd must store pc(-1)+4");
-
-        `MSG("Jump +2048, rd=x5");
-        prev_pc = dut.pc + 4;
-        inst_ready = 1'b1;
-        inst_rdata = {{1'b0, 10'b0, 1'b1, 8'b0}, 5'h5, 7'b1101111};
-        @(negedge aclk);
-        `ASSERT((dut.pc == 32'h800), "program counter must be 2KB");
-        `ASSERT((dut.ctrl_rd_wr == 1'b1), "rd is not under write");
-        `ASSERT((dut.ctrl_rd_addr == 32'h5));
-        `ASSERT((dut.ctrl_rd_val == prev_pc), "rd must store pc(-1)+4");
-
-    `UNIT_TEST_END
-
-    `UNIT_TEST("Check JALR opcode")
-
-        while (inst_en == 1'b0) @(posedge aclk);
-        @(negedge aclk);
-
-        `MSG("Jump +0, rd=x0");
-        prev_pc = dut.pc + 4;
-        inst_ready = 1'b1;
-        inst_rdata = {25'b0, 7'b1100111};
-        @(negedge aclk);
-        `ASSERT((dut.pc == 32'h0), "program counter must keep 0 value");
-        `ASSERT((dut.ctrl_rd_wr == 1'b1), "rd is not under write");
-        `ASSERT((dut.ctrl_rd_addr == 32'h0));
-        `ASSERT((dut.ctrl_rd_val == prev_pc), "rd must store pc(-1)+4");
-
-        `MSG("Jump +0, rd=x1");
-        prev_pc = dut.pc + 4;
-        inst_ready = 1'b1;
-        inst_rdata = {12'h0, 5'h0, 3'h0, 5'h1, 7'b1100111};
-        @(negedge aclk);
-        `ASSERT((dut.pc == 32'h0), "program counter must be 4KB");
-        `ASSERT((dut.ctrl_rd_wr == 1'b1), "rd is not under write");
-        `ASSERT((dut.ctrl_rd_addr == 32'h1), "rd must target x1");
-        `ASSERT((dut.ctrl_rd_val == prev_pc), "rd must store pc(-1)+4");
-
-        `MSG("Jump +0, rd=x2");
-        prev_pc = dut.pc + 4;
-        inst_ready = 1'b1;
-        inst_rdata = {12'h1, 5'h0, 3'h0, 5'h2, 7'b1100111};
-        @(negedge aclk);
-        `ASSERT((dut.pc == 32'h0), "program counter must be 4KB");
-        `ASSERT((dut.ctrl_rd_wr == 1'b1), "rd is not under write");
-        `ASSERT((dut.ctrl_rd_addr == 32'h2), "rd must target x2");
-        `ASSERT((dut.ctrl_rd_val == prev_pc), "rd must store pc(-1)+4");
-
-        `MSG("Jump +0, rd=x2");
-        prev_pc = dut.pc + 4;
-        inst_ready = 1'b1;
-        inst_rdata = {12'h2, 5'h0, 3'h0, 5'h2, 7'b1100111};
-        @(negedge aclk);
-        `ASSERT((dut.pc == 32'h2), "program counter must be 4KB");
-        `ASSERT((dut.ctrl_rd_wr == 1'b1), "rd is not under write");
-        `ASSERT((dut.ctrl_rd_addr == 32'h2), "rd must target x2");
-        `ASSERT((dut.ctrl_rd_val == prev_pc), "rd must store pc(-1)+4");
-
-    `UNIT_TEST_END
-
-    `UNIT_TEST("Check all branching")
-
-        while (inst_en == 1'b0) @(posedge aclk);
-        @(negedge aclk);
-        inst_ready = 1'b1;
-
-        `MSG("BEQ is true");
-        prev_pc = dut.pc + 4;
-        next_pc = dut.pc + offset;
-        ctrl_rs1_val = 32'hFFFFFFFF;
-        ctrl_rs2_val = 32'hFFFFFFFF;
-        inst_rdata = {17'h0, `BEQ, 5'h10, 7'b1100011};
-        @(negedge aclk);
-        `ASSERT((dut.pc == 32'h10), "program counter must move forward by 16 bytes");
-
-        `MSG("BEQ is false");
-        prev_pc = dut.pc + 4;
-        next_pc = dut.pc + offset;
-        ctrl_rs1_val = 32'hFFFFFFFF;
-        ctrl_rs2_val = 32'h00000000;
-        inst_rdata = {17'h0, `BEQ, 5'h2, 7'b1100011};
-        @(negedge aclk);
-        `ASSERT((dut.pc == 32'h14), "program counter must move forward by 4 bytes");
-
-        `MSG("BNE is true");
-        prev_pc = dut.pc + 4;
-        next_pc = dut.pc + offset;
-        ctrl_rs1_val = 32'hFFFFFFFF;
-        ctrl_rs2_val = 32'h00FFFFFF;
-        inst_rdata = {17'h0, `BNE, 5'h10, 7'b1100011};
-        @(negedge aclk);
-        `ASSERT((dut.pc == 32'h24), "program counter must move forward by 16 bytes");
-
-        `MSG("BNE is false");
-        prev_pc = dut.pc + 4;
-        next_pc = dut.pc + offset;
-        ctrl_rs1_val = 32'hFFFFFFFF;
-        ctrl_rs2_val = 32'hFFFFFFFF;
-        inst_rdata = {17'h0, `BNE, 5'h10, 7'b1100011};
-        @(negedge aclk);
-        `ASSERT((dut.pc == 32'h28), "program counter must move forward by 4 bytes");
-
-        `MSG("BLT is true");
-        prev_pc = dut.pc + 4;
-        next_pc = dut.pc + offset;
-        ctrl_rs1_val = 32'hFFFFFFFF;
-        ctrl_rs2_val = 32'h00FFFFFF;
-        inst_rdata = {17'h0, `BLT, 5'h10, 7'b1100011};
-        @(negedge aclk);
-        `ASSERT((dut.pc == 32'h38), "program counter must move forward by 16 bytes");
-
-        `MSG("BLT is false");
-        prev_pc = dut.pc + 4;
-        next_pc = dut.pc + offset;
-        ctrl_rs1_val = 32'hFFFFFFFF;
-        ctrl_rs2_val = 32'hFFFFFFFF;
-        inst_rdata = {17'h0, `BLT, 5'h10, 7'b1100011};
-        @(negedge aclk);
-        `ASSERT((dut.pc == 32'h3C), "program counter must move forward by 4 bytes");
-
-        `MSG("BGE is true");
-        prev_pc = dut.pc + 4;
-        next_pc = dut.pc + offset;
-        ctrl_rs1_val = 32'h00FFFFFF;
-        ctrl_rs2_val = 32'h00FFFFFF;
-        inst_rdata = {17'h0, `BGE, 5'h10, 7'b1100011};
-        @(negedge aclk);
-        `ASSERT((dut.pc == 32'h4C), "program counter must move forward by 16 bytes");
-
-        `MSG("BGE is true");
-        prev_pc = dut.pc + 4;
-        next_pc = dut.pc + offset;
-        ctrl_rs1_val = 32'h0FFFFFFF;
-        ctrl_rs2_val = 32'h00FFFFFF;
-        inst_rdata = {17'h0, `BGE, 5'h10, 7'b1100011};
-        @(negedge aclk);
-        `ASSERT((dut.pc == 32'h5C), "program counter must move forward by 16 bytes");
-
-        `MSG("BGE is false");
-        prev_pc = dut.pc + 4;
-        next_pc = dut.pc + offset;
-        ctrl_rs1_val = 32'h0F0FFFFF;
-        ctrl_rs2_val = 32'h0FFFFFFF;
-        inst_rdata = {17'h0, `BGE, 5'h10, 7'b1100011};
-        @(negedge aclk);
-        `ASSERT((dut.pc == 32'h60), "program counter must move forward by 4 bytes");
-
-        `MSG("BLTU is true");
-        prev_pc = dut.pc + 4;
-        next_pc = dut.pc + offset;
-        ctrl_rs1_val = 32'h0000FFFF;
-        ctrl_rs2_val = 32'h00FFFFFF;
-        inst_rdata = {17'h0, `BLTU, 5'h10, 7'b1100011};
-        @(negedge aclk);
-        `ASSERT((dut.pc == 32'h70), "program counter must move forward by 16 bytes");
-
-        `MSG("BLTU is false");
-        prev_pc = dut.pc + 4;
-        next_pc = dut.pc + offset;
-        ctrl_rs1_val = 32'hFFFFFFFF;
-        ctrl_rs2_val = 32'hFFFFFFFF;
-        inst_rdata = {17'h0, `BLTU, 5'h10, 7'b1100011};
-        @(negedge aclk);
-        `ASSERT((dut.pc == 32'h74), "program counter must move forward by 4 bytes");
-
-        `MSG("BGEU is true");
-        prev_pc = dut.pc + 4;
-        next_pc = dut.pc + offset;
-        ctrl_rs1_val = 32'h0FFFFFFF;
-        ctrl_rs2_val = 32'h00FFFFFF;
-        inst_rdata = {17'h0, `BGEU, 5'h10, 7'b1100011};
-        @(negedge aclk);
-        `ASSERT((dut.pc == 32'h84), "program counter must move forward by 16 bytes");
-
-        `MSG("BGEU is true");
-        prev_pc = dut.pc + 4;
-        next_pc = dut.pc + offset;
-        ctrl_rs1_val = 32'h00FFFFF0;
-        ctrl_rs2_val = 32'h00FFFFFF;
-        inst_rdata = {17'h0, `BGEU, 5'h10, 7'b1100011};
-        @(negedge aclk);
-        `ASSERT((dut.pc == 32'h88), "program counter must move forward by 16 bytes");
 
     `UNIT_TEST_END
 

@@ -1,0 +1,149 @@
+[*]
+[*] GTKWave Analyzer v3.3.107 (w)1999-2020 BSI
+[*] Tue Apr  6 17:34:48 2021
+[*]
+[dumpfile] "/Users/damien/workspace/hdl/friscv/test/rtl_unit_tests/friscv_rv32i_control_latency_testbench.vcd"
+[dumpfile_mtime] "Tue Apr  6 16:06:04 2021"
+[dumpfile_size] 13131
+[savefile] "/Users/damien/workspace/hdl/friscv/test/rtl_unit_tests/friscv_rv32i_control_latency_testbench.gtkw"
+[timestart] 0
+[size] 2560 1440
+[pos] -1 -1
+*-14.159720 24610 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] friscv_rv32i_control_latency_testbench.
+[treeopen] friscv_rv32i_control_latency_testbench.dut.
+[treeopen] friscv_rv32i_control_latency_testbench.dut.processing_scfifo.
+[sst_width] 193
+[signals_width] 344
+[sst_expanded] 1
+[sst_vpaned_height] 508
+@28
+friscv_rv32i_control_latency_testbench.dut.aclk
+[color] 3
+friscv_rv32i_control_latency_testbench.dut.aresetn
+friscv_rv32i_control_latency_testbench.dut.srst
+@200
+-
+@22
+[color] 2
+friscv_rv32i_control_latency_testbench.dut.cfsm[3:0]
+@200
+-
+@28
+friscv_rv32i_control_latency_testbench.dut.inst_en
+friscv_rv32i_control_latency_testbench.dut.inst_ready
+@22
+friscv_rv32i_control_latency_testbench.dut.inst_addr[15:0]
+friscv_rv32i_control_latency_testbench.dut.inst_rdata[31:0]
+@28
+friscv_rv32i_control_latency_testbench.dut.load_stored
+@22
+friscv_rv32i_control_latency_testbench.dut.stored_inst[31:0]
+@200
+-
+@28
+friscv_rv32i_control_latency_testbench.dut.load_stored
+@22
+friscv_rv32i_control_latency_testbench.dut.stored_inst[31:0]
+@200
+-
+@28
+friscv_rv32i_control_latency_testbench.dut.alu_inst_empty
+friscv_rv32i_control_latency_testbench.dut.alu_inst_full
+friscv_rv32i_control_latency_testbench.dut.alu_inst_rd
+friscv_rv32i_control_latency_testbench.dut.alu_inst_wr
+@200
+-
+@28
+friscv_rv32i_control_latency_testbench.dut.inst_error
+friscv_rv32i_control_latency_testbench.dut.branching
+friscv_rv32i_control_latency_testbench.dut.processing
+friscv_rv32i_control_latency_testbench.dut.system
+friscv_rv32i_control_latency_testbench.dut.auipc
+friscv_rv32i_control_latency_testbench.dut.jal
+friscv_rv32i_control_latency_testbench.dut.jalr
+friscv_rv32i_control_latency_testbench.dut.goto_branch
+@29
+friscv_rv32i_control_latency_testbench.dut.beq
+friscv_rv32i_control_latency_testbench.dut.bge
+friscv_rv32i_control_latency_testbench.dut.bgeu
+friscv_rv32i_control_latency_testbench.dut.blt
+friscv_rv32i_control_latency_testbench.dut.bltu
+friscv_rv32i_control_latency_testbench.dut.bne
+@200
+-
+@22
+friscv_rv32i_control_latency_testbench.dut.pc[31:0]
+friscv_rv32i_control_latency_testbench.dut.pc_reg[31:0]
+friscv_rv32i_control_latency_testbench.dut.pc[31:0]
+friscv_rv32i_control_latency_testbench.dut.pc_auipc[31:0]
+friscv_rv32i_control_latency_testbench.dut.pc_reg[31:0]
+@200
+-
+@28
+friscv_rv32i_control_latency_testbench.dut.alu_en
+friscv_rv32i_control_latency_testbench.dut.alu_ready
+@22
+friscv_rv32i_control_latency_testbench.dut.alu_instbus[85:0]
+@200
+-
+@22
+friscv_rv32i_control_latency_testbench.dut.csr[11:0]
+@28
+friscv_rv32i_control_latency_testbench.dut.funct3[2:0]
+@22
+friscv_rv32i_control_latency_testbench.dut.funct7[6:0]
+friscv_rv32i_control_latency_testbench.dut.imm12[11:0]
+friscv_rv32i_control_latency_testbench.dut.imm20[19:0]
+friscv_rv32i_control_latency_testbench.dut.opcode[6:0]
+friscv_rv32i_control_latency_testbench.dut.pred[3:0]
+friscv_rv32i_control_latency_testbench.dut.rd[4:0]
+friscv_rv32i_control_latency_testbench.dut.rs1[4:0]
+friscv_rv32i_control_latency_testbench.dut.rs2[4:0]
+friscv_rv32i_control_latency_testbench.dut.shamt[4:0]
+friscv_rv32i_control_latency_testbench.dut.succ[3:0]
+friscv_rv32i_control_latency_testbench.dut.zimm[4:0]
+@200
+-
+@22
+friscv_rv32i_control_latency_testbench.dut.ctrl_rs1_addr[4:0]
+friscv_rv32i_control_latency_testbench.dut.ctrl_rs1_val[31:0]
+friscv_rv32i_control_latency_testbench.dut.ctrl_rs2_addr[4:0]
+friscv_rv32i_control_latency_testbench.dut.ctrl_rs2_val[31:0]
+@28
+friscv_rv32i_control_latency_testbench.dut.ctrl_rd_wr
+@22
+friscv_rv32i_control_latency_testbench.dut.ctrl_rd_addr[4:0]
+friscv_rv32i_control_latency_testbench.dut.ctrl_rd_val[31:0]
+@200
+-
+@c00200
+-ALU FIFO
+@28
+friscv_rv32i_control_latency_testbench.dut.processing_scfifo.aclk
+friscv_rv32i_control_latency_testbench.dut.processing_scfifo.aresetn
+friscv_rv32i_control_latency_testbench.dut.processing_scfifo.srst
+@200
+-
+@28
+friscv_rv32i_control_latency_testbench.dut.processing_scfifo.push
+friscv_rv32i_control_latency_testbench.dut.processing_scfifo.full
+@22
+friscv_rv32i_control_latency_testbench.dut.processing_scfifo.data_in[85:0]
+@28
+friscv_rv32i_control_latency_testbench.dut.processing_scfifo.wr_en
+@22
+friscv_rv32i_control_latency_testbench.dut.processing_scfifo.wrptr[3:0]
+@200
+-
+@28
+friscv_rv32i_control_latency_testbench.dut.processing_scfifo.pull
+@22
+friscv_rv32i_control_latency_testbench.dut.processing_scfifo.rdptr[3:0]
+friscv_rv32i_control_latency_testbench.dut.processing_scfifo.data_out[85:0]
+@28
+friscv_rv32i_control_latency_testbench.dut.processing_scfifo.empty
+@1401200
+-ALU FIFO
+[pattern_trace] 1
+[pattern_trace] 0

@@ -104,7 +104,7 @@
 //////////////////////////////////////////////////////////////////
 
 // ALU FIFO depth storing incoming instruction in control unit
-`define ALU_FIFO_DEPTH 4
+`define ALU_FIFO_DEPTH 8
 
 // Stop simulation if received an undefined/unsupported instruction
 `ifndef HALT_ON_ERROR

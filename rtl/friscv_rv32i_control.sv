@@ -15,24 +15,24 @@ module friscv_rv32i_control
         parameter XLEN      = 32
     )(
         // clock & reset
-        input  wire                       aclk,
-        input  wire                       aresetn,
-        input  wire                       srst,
+        input  logic                      aclk,
+        input  logic                      aresetn,
+        input  logic                      srst,
         // instruction memory interface
         output logic                      inst_en,
         output logic [ADDRW         -1:0] inst_addr,
-        input  wire  [XLEN          -1:0] inst_rdata,
-        input  wire                       inst_ready,
+        input  logic [XLEN          -1:0] inst_rdata,
+        input  logic                      inst_ready,
         // interface to activate~the ALU processing
         output logic                      alu_en,
-        input  wire                       alu_ready,
+        input  logic                      alu_ready,
         output logic [`ALU_INSTBUS_W-1:0] alu_instbus,
         // register source 1 query interface
         output logic [5             -1:0] ctrl_rs1_addr,
-        input  wire  [XLEN          -1:0] ctrl_rs1_val,
+        input  logic [XLEN          -1:0] ctrl_rs1_val,
         // register source 2 for query interface
         output logic [5             -1:0] ctrl_rs2_addr,
-        input  wire  [XLEN          -1:0] ctrl_rs2_val,
+        input  logic [XLEN          -1:0] ctrl_rs2_val,
         // register destination for write
         output logic                      ctrl_rd_wr,
         output logic [5             -1:0] ctrl_rd_addr,
@@ -90,16 +90,16 @@ module friscv_rv32i_control
 
     pc_fsm cfsm;
 
-    localparam PC_W = 32;
-
     // program counter, expressed in bytes
+    localparam              PC_W = 32;
     logic        [PC_W-1:0] pc_plus4;
     logic signed [PC_W-1:0] pc_auipc;
     logic signed [PC_W-1:0] pc_jal;
     logic signed [PC_W-1:0] pc_jalr;
     logic signed [PC_W-1:0] pc_branching;
     logic        [PC_W-1:0] pc;
-
+    logic        [PC_W-1:0] pc_reg;
+    // extra decoding used during branching
     logic                   beq;
     logic                   bne;
     logic                   blt;
@@ -107,6 +107,14 @@ module friscv_rv32i_control
     logic                   bltu;
     logic                   bgeu;
     logic                   goto_branch;
+    // circuit stoing an instruction which can't be process now
+    logic                   load_stored;
+    logic [XLEN       -1:0] stored_inst;
+    logic [XLEN       -1:0] instruction;
+    // Two flags used intot the FSM to stall the process and control
+    // the instruction storage
+    logic                   cant_branch_now;
+    logic                   cant_process_now;
 
     ///////////////////////////////////////////////////////////////////////////
 
@@ -131,33 +139,37 @@ module friscv_rv32i_control
     //
     ///////////////////////////////////////////////////////////////////////////
 
+    // In case control unit has been stalled, use the last instruction
+    // received.
+    assign instruction = (load_stored) ? stored_inst : inst_rdata;
+
     friscv_rv32i_decoder
     #(
         .XLEN   (XLEN)
     )
     decoder
     (
-        .instruction (inst_rdata),
-        .opcode      (opcode    ),
-        .funct3      (funct3    ),
-        .funct7      (funct7    ),
-        .rs1         (rs1       ),
-        .rs2         (rs2       ),
-        .rd          (rd        ),
-        .zimm        (zimm      ),
-        .imm12       (imm12     ),
-        .imm20       (imm20     ),
-        .csr         (csr       ),
-        .shamt       (shamt     ),
-        .auipc       (auipc     ),
-        .jal         (jal       ),
-        .jalr        (jalr      ),
-        .branching   (branching ),
-        .system      (system    ),
-        .processing  (processing),
-        .inst_error  (inst_error),
-        .pred        (pred      ),
-        .succ        (succ      )
+        .instruction (instruction),
+        .opcode      (opcode     ),
+        .funct3      (funct3     ),
+        .funct7      (funct7     ),
+        .rs1         (rs1        ),
+        .rs2         (rs2        ),
+        .rd          (rd         ),
+        .zimm        (zimm       ),
+        .imm12       (imm12      ),
+        .imm20       (imm20      ),
+        .csr         (csr        ),
+        .shamt       (shamt      ),
+        .auipc       (auipc      ),
+        .jal         (jal        ),
+        .jalr        (jalr       ),
+        .branching   (branching  ),
+        .system      (system     ),
+        .processing  (processing ),
+        .inst_error  (inst_error ),
+        .pred        (pred       ),
+        .succ        (succ       )
     );
 
     ///////////////////////////////////////////////////////////////////////////
@@ -169,7 +181,7 @@ module friscv_rv32i_control
     //
     ///////////////////////////////////////////////////////////////////////////
 
-    assign alu_inst_wr = inst_ready & processing & ~alu_inst_full;
+    assign alu_inst_wr = (inst_ready | load_stored) & processing & ~alu_inst_full;
 
     assign alu_instbus_in[`OPCODE +: `OPCODE_W] = opcode;
     assign alu_instbus_in[`FUNCT3 +: `FUNCT3_W] = funct3;
@@ -221,20 +233,28 @@ module friscv_rv32i_control
     ///////////////////////////////////////////////////////////////////////////
 
     // increment counter by 4 because we index bytes
-    assign pc_plus4 = pc + {{(PC_W-3){1'b0}},3'b100};
+    assign pc_plus4 = pc_reg + {{(PC_W-3){1'b0}},3'b100};
 
     // AUIPC: Add Upper Immediate into Program Counter
-    assign pc_auipc = $signed(pc) + $signed({imm20,12'b0});
+    assign pc_auipc = $signed(pc_reg) + $signed({imm20,12'b0});
 
     // JAL: current program counter + offset
-    assign pc_jal = $signed(pc) + $signed({{11{imm20[19]}}, imm20, 1'b0});
+    assign pc_jal = $signed(pc_reg) + $signed({{11{imm20[19]}}, imm20, 1'b0});
 
-    // JALR: program counter to rs1 + offset
+    // JALR: program counter equals  rs1 + offset
     assign pc_jalr = $signed(ctrl_rs1_val) + $signed({{20{imm12[11]}}, imm12});
 
     // For all branching instruction
-    assign pc_branching =  $signed(pc) + $signed({19'b0, imm12, 1'b0});
+    assign pc_branching =  $signed(pc_reg) + $signed({18'b0, imm12, 1'b0});
 
+    // program counter switching logic
+    assign pc = (auipc)                     ? pc_auipc :
+                (jal)                       ? pc_jal : 
+                (jalr)                      ? {pc_jalr[31:1],1'b0} :
+                (branching && goto_branch)  ? pc_branching :
+                (branching && ~goto_branch) ? pc_plus4 :
+                (processing)                ? pc_plus4 :
+                                              pc_reg;
 
     // branching flags and its checks
     ///////////////////////////////////////////////////////////////////////////
@@ -257,13 +277,21 @@ module friscv_rv32i_control
     // BGE: branch if greater (unsigned)
     assign bgeu = (ctrl_rs1_val >= ctrl_rs2_val) ? 1'b1 : 1'b0;
 
-    // activate branching in FSM
+    // activate branching only if valid FUNCT3 received
     assign goto_branch = ((funct3 == `BEQ  && beq)  ||
                           (funct3 == `BNE  && bne)  ||
                           (funct3 == `BLT  && blt)  ||
                           (funct3 == `BGE  && bge)  ||
                           (funct3 == `BLTU && bltu) ||
-                          (funct3 == `BGEU && bgeu)) ? 1'b1 : 1'b0;
+                          (funct3 == `BGEU && bgeu)) ? 1'b1 : 
+                                                       1'b0;
+
+    // two flags to stop the process if ALU is struggling to process
+    assign cant_branch_now = ((auipc || jal ||  jalr ||  branching) &&
+                               ~alu_inst_empty) ? 1'b1 : 
+                                                  1'b0;
+
+    assign cant_process_now = (alu_inst_full) ? 1'b1 : 1'b0;
 
     // The FSM switching the program counter
     ///////////////////////////////////////////////////////////////////////////
@@ -272,72 +300,51 @@ module friscv_rv32i_control
 
         if (aresetn == 1'b0) begin
             cfsm <= BOOT;
-            ctrl_rd_wr <= 1'b0;
-            ctrl_rd_addr <= {`RD_W{1'b0}};
-            ctrl_rd_val <= {XLEN{1'b0}};
-            pc <= {(PC_W){1'b0}};
+            pc_reg <= {(PC_W){1'b0}};
+            load_stored <= 1'b0;
+            stored_inst <= {XLEN{1'b0}};
         end else if (srst == 1'b1) begin
             cfsm <= BOOT;
-            ctrl_rd_wr <= 1'b0;
-            ctrl_rd_addr <= {`RD_W{1'b0}};
-            ctrl_rd_val <= {XLEN{1'b0}};
-            pc <= {(PC_W){1'b0}};
+            pc_reg <= {(PC_W){1'b0}};
+            load_stored <= 1'b0;
+            stored_inst <= {XLEN{1'b0}};
         end else begin
 
             case (cfsm)
 
                 // start to boot the RAM after reset
                 default: begin
-                    pc <= BOOT_ADDR << 2;
+                    pc_reg <= BOOT_ADDR << 2;
                     cfsm <= RUN;
                 end
 
                 // Run the core
                 RUN: begin
 
-                    if (inst_error) begin
+                    // Completly stop the execution and $stop the simulation
+                    if (`HALT_ON_ERROR && inst_error) begin
                         cfsm <= TRAP;
                     end
 
-                    if (inst_ready) begin
+                    if (inst_ready || load_stored) begin
 
-                        // AUIPC
-                        if (auipc) begin
-                            ctrl_rd_wr <= 1'b1;
-                            ctrl_rd_addr <= rd;
-                            ctrl_rd_val <= pc_auipc;
-                            pc <= pc_auipc;
-
-                        // JAL
-                        end else if (jal) begin
-                            ctrl_rd_wr <= 1'b1;
-                            ctrl_rd_addr <= rd;
-                            ctrl_rd_val <= pc_plus4;
-                            pc <= pc_jal;
-
-                        // JALR
-                        end else if (jalr) begin
-                            ctrl_rd_wr <= 1'b1;
-                            ctrl_rd_addr <= rd;
-                            ctrl_rd_val <= pc_plus4;
-                            pc <= {pc_jalr[31:1],1'b0};
-
-                        // Branching
-                        end else if (branching) begin
-                            if (goto_branch) pc <= pc_branching;
-                            else pc <= pc_plus4;
-
-                        // Any ALU processing
-                        end else if (processing && ~alu_inst_full) begin
-                            ctrl_rd_wr <= 1'b0;
-                            pc <= pc_plus4;
+                        // was waiting for ALU to be ready to branch, now
+                        // FIFO's empty and process can restart
+                        if (load_stored && ~alu_inst_full) begin
+                            load_stored <= 1'b0;
+                        // Need to branch but ALU didn't finish yet or need
+                        // to process but ALU's FIFO is full
+                        end else if (inst_ready && (cant_branch_now ||
+                                                    cant_process_now)) begin
+                            load_stored <= 1'b1;
+                            stored_inst <= inst_rdata;
                         end
 
-                    // Wait for instruction to process
-                    end else begin
-                        ctrl_rd_wr <= 1'b0;
+                        if (~cant_branch_now && ~cant_process_now) begin
+                            pc_reg <= pc;
+                        end 
+                        
                     end
-
                 end
 
                 // TRAP reached when:
@@ -345,9 +352,7 @@ module friscv_rv32i_control
                 // - TODO: reach if address are not 4 bytes aligned
                 TRAP: begin
                     $error("ERROR: Received an unsupported/unspecified instruction");
-                    if (`HALT_ON_ERROR) begin
-                         $stop();
-                    end
+                    $stop();
                 end
 
             endcase
@@ -362,6 +367,13 @@ module friscv_rv32i_control
     // register source 1 & 2 read
     assign ctrl_rs1_addr = rs1;
     assign ctrl_rs2_addr = rs2;
+
+    // register destination 
+    assign ctrl_rd_wr =  ((~cant_branch_now && ~cant_process_now) &&
+                          (auipc || jal || jalr)) ? 1'b1 :
+                                                    1'b0;
+    assign ctrl_rd_addr = rd;
+    assign ctrl_rd_val = (jal || jalr) ? pc_plus4 : pc;
 
 endmodule
 

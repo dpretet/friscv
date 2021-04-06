@@ -1,5 +1,5 @@
 [verilog]
-include_paths = ["src", "rtl"]
+include_paths = ["./src", "./rtl", "./", "../../rtl"]
 
 [option]
 linter = true

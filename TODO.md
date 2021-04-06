@@ -8,9 +8,11 @@
 # Design Backlog
 
 - [ ] Implement ALU
-- [ ] Implement caches for instruction and data
+- [ ] Implement instruction cache with branch prediction and outstanding request
+- [ ] Implement data cache
 - [ ] Support privilieged instructions (virtualization)
 - [ ] Study MMU topic for RISCV (think about linux driver)
+- [ ] Implement in-house profiler to check branching, stall time, ...
 
 # Verification Backlog
 
@@ -30,6 +32,7 @@
 - [ ] Use qemu to learn instruction
 - [ ] Try GOTO for branching instruction
 - [ ] Test pointers with int, char et function
+- [ ] implement a neural network with the processor and TF lite
 
 # DONE
 

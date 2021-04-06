@@ -23,7 +23,7 @@ fi
 ec=$(grep -c "ERROR:" run.log)
 
 if [[ $ec != 0 ]]; then
-    echo -e "${RED}ERROR: Execution failed"
+    echo -e "${RED}ERROR: !! Execution failed !!"
     exit 1
 fi
 

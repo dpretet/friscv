@@ -11,20 +11,22 @@ module friscv_scfifo
         parameter ADDR_WIDTH = 8,
         parameter DATA_WIDTH = 8
     )(
-        input  wire                  aclk,
-        input  wire                  aresetn,
-        input  wire                  srst,
-        input  wire [DATA_WIDTH-1:0] data_in,
-        input  wire                  push,
-        output wire                  full,
-        output wire [DATA_WIDTH-1:0] data_out,
-        input  wire                  pull,
-        output wire                  empty
+        input  logic                  aclk,
+        input  logic                  aresetn,
+        input  logic                  srst,
+        input  logic [DATA_WIDTH-1:0] data_in,
+        input  logic                  push,
+        output logic                  full,
+        output logic [DATA_WIDTH-1:0] data_out,
+        input  logic                  pull,
+        output logic                  empty
     );
 
-    wire           wr_en;
-    reg  [ADDR_WIDTH:0] wrptr;
-    reg  [ADDR_WIDTH:0] rdptr;
+    logic                wr_en;
+    logic [ADDR_WIDTH:0] wrptr;
+    logic [ADDR_WIDTH:0] rdptr;
+    logic                empty_w;
+    logic                empty_r;
 
     // Write Pointer Management
     always @ (posedge aclk or negedge aresetn) begin
@@ -50,16 +52,34 @@ module friscv_scfifo
             rdptr <= {(ADDR_WIDTH+1){1'b0}};
         end 
         else begin
-            if (pull == 1'b1 && empty == 1'b0) begin
+            if (pull == 1'b1 && empty_w == 1'b0) begin
                 rdptr <= rdptr + 1'b1;
             end
         end
     end
-
+    
     assign wr_en = push & !full;
 
-    assign empty = (wrptr == rdptr) ? 1'b1 : 1'b0;
+    assign empty_w = (wrptr == rdptr) ? 1'b1 : 1'b0;
     assign full = ((wrptr - rdptr) == {1'b1,{ADDR_WIDTH{1'b0}}}) ? 1'b1 : 1'b0;
+
+    // manages the empty flag, asserted once read reached last word and 
+    // empty has been asserted. Else the last word doesn't output
+    always @ (posedge aclk or negedge aresetn) begin
+        if (aresetn == 1'b0) begin
+            empty_r <= 1'b1;
+        end else if (srst == 1'b1) begin
+            empty_r <= 1'b1;
+        end else begin
+            if (~empty_w) begin
+                empty_r <= 1'b0;
+            end if (empty_w && pull) begin
+                empty_r <= 1'b1;
+            end
+        end
+    end
+
+    assign empty = empty_r & empty_w;
 
     friscv_scfifo_ram 
     #( 
