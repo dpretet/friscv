@@ -11,29 +11,29 @@ module friscv_registers
         parameter XLEN = 32
     )(
         // clock and resets
-        input  wire             aclk,
-        input  wire             aresetn,
-        input  wire             srst,
+        input  logic            aclk,
+        input  logic            aresetn,
+        input  logic            srst,
         // register source 1 for control unit
-        input  wire  [5   -1:0] ctrl_rs1_addr,
+        input  logic [5   -1:0] ctrl_rs1_addr,
         output logic [XLEN-1:0] ctrl_rs1_val,
         // register source 2 for control unit
-        input  wire  [5   -1:0] ctrl_rs2_addr,
+        input  logic [5   -1:0] ctrl_rs2_addr,
         output logic [XLEN-1:0] ctrl_rs2_val,
         // register destination write from Control Unit
-        input  wire             ctrl_rd_wr,
-        input  wire  [5   -1:0] ctrl_rd_addr,
-        input  wire  [XLEN-1:0] ctrl_rd_val,
+        input  logic            ctrl_rd_wr,
+        input  logic [5   -1:0] ctrl_rd_addr,
+        input  logic [XLEN-1:0] ctrl_rd_val,
         // register source 1 for ALU
-        input  wire  [5   -1:0] alu_rs1_addr,
+        input  logic [5   -1:0] alu_rs1_addr,
         output logic [XLEN-1:0] alu_rs1_val,
         // register source 2 for ALU
-        input  wire  [5   -1:0] alu_rs2_addr,
+        input  logic [5   -1:0] alu_rs2_addr,
         output logic [XLEN-1:0] alu_rs2_val,
         // register destination write from ALU
-        input  wire             alu_rd_wr,
-        input  wire  [5   -1:0] alu_rd_addr,
-        input  wire  [XLEN-1:0] alu_rd_val,
+        input  logic            alu_rd_wr,
+        input  logic [5   -1:0] alu_rd_addr,
+        input  logic [XLEN-1:0] alu_rd_val,
         // registers output
         output logic [XLEN-1:0] x0,
         output logic [XLEN-1:0] x1,
@@ -76,12 +76,14 @@ module friscv_registers
     always @ (posedge aclk or negedge aresetn) begin
         // asynchronous reset 
         if (aresetn == 1'b0) begin
-            for (integer i=0;i<32;i=i+1) 
+            for (integer i=0;i<32;i=i+1) begin
                 regs[i] <= {XLEN{1'b0}};
+            end
         // synchronous reset
         end else if (srst) begin
-            for (integer i=0;i<32;i=i+1) 
+            for (integer i=0;i<32;i=i+1) begin
                 regs[i] <= {XLEN{1'b0}};
+            end
         // write access to registers
         end else begin
             // register 0 is alwyas 0, can't be overwritten

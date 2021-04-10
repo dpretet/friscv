@@ -1,9 +1,15 @@
 # DOING
 
-- [ ] Implement control unit and its testbench
-    - be able to handle ALU halts for long instruction execution
-    - support branching / system instructions
-    - support pc correctly
+- [-] Implement control unit and its testbench
+    - [X] be able to handle ALU halts for long instruction execution
+    - [X] support branching / system instructions
+    - [X] support pc correctly
+
+- finish sequence testbench
+- synthesis project
+- write architecture and timing diagrams
+
+- design a pipeline stage
 
 # Design Backlog
 
@@ -16,7 +22,7 @@
 
 # Verification Backlog
 
-- [ ] Populate modules' unit tests
+- [-] Populate modules' unit tests
 - [~] Define the architecture of the first testbench. Goal: use C/asm to produce
       a RAM init file to drive the testcases
     - [ ] how to stop a tescase? on certain amount of data? by spying gpio

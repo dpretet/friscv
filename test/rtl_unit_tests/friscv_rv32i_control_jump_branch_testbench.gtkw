@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.107 (w)1999-2020 BSI
-[*] Tue Apr  6 19:23:03 2021
+[*] Thu Apr  8 18:19:27 2021
 [*]
 [dumpfile] "/Users/damien/workspace/hdl/friscv/test/rtl_unit_tests/friscv_rv32i_control_jump_branch_testbench.vcd"
-[dumpfile_mtime] "Tue Apr  6 18:32:20 2021"
-[dumpfile_size] 22851
+[dumpfile_mtime] "Thu Apr  8 18:13:09 2021"
+[dumpfile_size] 22852
 [savefile] "/Users/damien/workspace/hdl/friscv/test/rtl_unit_tests/friscv_rv32i_control_jump_branch_testbench.gtkw"
 [timestart] 238220
 [size] 2560 1440
 [pos] -1 -1
-*-14.278081 408000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-14.278081 295830 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] friscv_rv32i_control_jump_branch_testbench.
 [treeopen] friscv_rv32i_control_jump_branch_testbench.dut.
 [treeopen] friscv_rv32i_control_jump_branch_testbench.dut.processing_scfifo.
@@ -62,9 +62,7 @@ friscv_rv32i_control_jump_branch_testbench.dut.ctrl_rs2_val[31:0]
 -
 @28
 friscv_rv32i_control_jump_branch_testbench.dut.auipc
-@29
 friscv_rv32i_control_jump_branch_testbench.dut.jal
-@28
 friscv_rv32i_control_jump_branch_testbench.dut.jalr
 friscv_rv32i_control_jump_branch_testbench.dut.branching
 friscv_rv32i_control_jump_branch_testbench.dut.goto_branch
@@ -78,7 +76,9 @@ friscv_rv32i_control_jump_branch_testbench.dut.beq
 friscv_rv32i_control_jump_branch_testbench.dut.bge
 friscv_rv32i_control_jump_branch_testbench.dut.bgeu
 friscv_rv32i_control_jump_branch_testbench.dut.blt
+@29
 friscv_rv32i_control_jump_branch_testbench.dut.bltu
+@28
 friscv_rv32i_control_jump_branch_testbench.dut.bne
 @200
 -

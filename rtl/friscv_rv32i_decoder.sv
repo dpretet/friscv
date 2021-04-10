@@ -10,7 +10,7 @@ module friscv_rv32i_decoder
     #(
         parameter XLEN = 32
     )(
-        input  wire  [XLEN -1:0] instruction,
+        input  logic [XLEN -1:0] instruction,
         output logic [7    -1:0] opcode,
         output logic [3    -1:0] funct3,
         output logic [7    -1:0] funct7,

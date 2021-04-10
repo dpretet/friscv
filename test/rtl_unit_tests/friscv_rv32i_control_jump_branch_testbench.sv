@@ -336,7 +336,7 @@ module friscv_rv32i_control_jump_branch_testbench();
         `ASSERT((dut.ctrl_rd_val == prev_pc), "rd must store pc(-1)+4");
         @(posedge aclk);
 
-        `MSG("Jump +0, rd=x1");
+        `MSG("Jump +4KB, rd=x1");
         prev_pc = dut.pc + 4;
         inst_ready = 1'b1;
         inst_rdata = {12'h0, 5'h0, 3'h0, 5'h1, 7'b1100111};
@@ -347,7 +347,7 @@ module friscv_rv32i_control_jump_branch_testbench();
         `ASSERT((dut.ctrl_rd_val == prev_pc), "rd must store pc(-1)+4");
         @(posedge aclk);
 
-        `MSG("Jump +0, rd=x2");
+        `MSG("Jump +4KB, rd=x2");
         prev_pc = dut.pc + 4;
         inst_ready = 1'b1;
         inst_rdata = {12'h1, 5'h0, 3'h0, 5'h2, 7'b1100111};
@@ -358,7 +358,7 @@ module friscv_rv32i_control_jump_branch_testbench();
         `ASSERT((dut.ctrl_rd_val == prev_pc), "rd must store pc(-1)+4");
         @(posedge aclk);
 
-        `MSG("Jump +0, rd=x2");
+        `MSG("Jump +4KB, rd=x2");
         prev_pc = dut.pc + 4;
         inst_ready = 1'b1;
         inst_rdata = {12'h2, 5'h0, 3'h0, 5'h2, 7'b1100111};

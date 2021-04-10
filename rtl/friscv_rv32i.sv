@@ -17,24 +17,24 @@ module friscv_rv32i
         parameter                  XLEN       = 32
     )(
         // clock/reset interface
-        input  wire                   aclk,
-        input  wire                   aresetn,
-        input  wire                   srst,
+        input  logic                  aclk,
+        input  logic                  aresetn,
+        input  logic                  srst,
         // enable signal to activate the core
-        input  wire                   enable,
+        input  logic                  enable,
         // instruction memory interface
         output logic                  inst_en,
         output logic [INST_ADDRW-1:0] inst_addr,
-        input  wire  [XLEN      -1:0] inst_rdata,
-        input  wire                   inst_ready,
+        input  logic [XLEN      -1:0] inst_rdata,
+        input  logic                  inst_ready,
         // data memory interface
         output logic                  mem_en,
         output logic                  mem_wr,
         output logic [DATA_ADDRW-1:0] mem_addr,
         output logic [XLEN      -1:0] mem_wdata,
         output logic [XLEN/8    -1:0] mem_strb,
-        input  wire  [XLEN      -1:0] mem_rdata,
-        input  wire                   mem_ready
+        input  logic [XLEN      -1:0] mem_rdata,
+        input  logic                  mem_ready
     );
 
     logic [5   -1:0] ctrl_rs1_addr;
@@ -132,12 +132,13 @@ module friscv_rv32i
     .alu_en        (alu_en      ),
     .alu_ready     (alu_ready   ),
     .alu_instbus   (alu_instbus ),
-    .regs_rs1_addr (alu_rs1_addr),
-    .regs_rs1_val  (alu_rs1_val ),
-    .regs_rs2_addr (alu_rs2_addr),
-    .regs_rs2_val  (alu_rs2_val ),
-    .regs_rd_addr  (alu_rd_addr ),
-    .regs_rd_val   (alu_rd_val  ),
+    .alu_rs1_addr  (alu_rs1_addr),
+    .alu_rs1_val   (alu_rs1_val ),
+    .alu_rs2_addr  (alu_rs2_addr),
+    .alu_rs2_val   (alu_rs2_val ),
+    .alu_rd_wr     (alu_rd_wr   ),
+    .alu_rd_addr   (alu_rd_addr ),
+    .alu_rd_val    (alu_rd_val  ),
     .mem_en        (mem_en      ),
     .mem_wr        (mem_wr      ),
     .mem_addr      (mem_addr    ),

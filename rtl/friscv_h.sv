@@ -10,9 +10,17 @@
 // Opcodes' define
 //////////////////////////////////////////////////////////////////
 
-// funct3 opcodes for instruction decoding
-`define JALR    3'b000
+`define LUI     7'b0110111
+`define AUIPC   7'b0010111
+`define JAL     7'b1101111
+`define JALR    7'b1100111
+`define BRANCH  7'b1100011
+`define LOAD    7'b0000011
+`define STORE   7'b0100011
+`define ARITH   7'b0010011
+`define LOGIC   7'b0110011
 
+// funct3 opcodes for instruction decoding
 `define BEQ     3'b000
 `define BNE     3'b001
 `define BLT     3'b100
@@ -69,22 +77,22 @@
 //////////////////////////////////////////////////////////////////
 
 // instruction bus fields's width
-`define OPCODE_W    7 
+`define OPCODE_W    7
 `define FUNCT3_W    3
-`define FUNCT7_W    7 
-`define RS1_W       5 
-`define RS2_W       5 
-`define RD_W        5 
-`define ZIMM_W      5 
+`define FUNCT7_W    7
+`define RS1_W       5
+`define RS2_W       5
+`define RD_W        5
+`define ZIMM_W      5
 `define IMM12_W     12
 `define IMM20_W     20
 `define CSR_W       12
-`define SHAMT_W     5 
+`define SHAMT_W     5
 
 // instruction bus fields's index
-`define OPCODE      0 
+`define OPCODE      0
 `define FUNCT3      `OPCODE + `OPCODE_W
-`define FUNCT7      `FUNCT3 + `FUNCT3_W 
+`define FUNCT7      `FUNCT3 + `FUNCT3_W
 `define RS1         `FUNCT7 + `FUNCT7_W
 `define RS2         `RS1 +    `RS1_W
 `define RD          `RS2 +    `RS2_W
@@ -92,7 +100,7 @@
 `define IMM12       `ZIMM +   `ZIMM_W
 `define IMM20       `IMM12 +  `IMM12_W
 `define CSR         `IMM20 +  `IMM20_W
-`define SHAMT       `CSR +    `CSR_W 
+`define SHAMT       `CSR +    `CSR_W
 
 // total length of ALU instruction bus
 `define ALU_INSTBUS_W `OPCODE_W + `FUNCT3_W + `FUNCT7_W + `RS1_W + `RS2_W + \

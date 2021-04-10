@@ -73,13 +73,14 @@ module friscv_scfifo
         end else begin
             if (~empty_w) begin
                 empty_r <= 1'b0;
-            end if (empty_w && pull) begin
+            end else if (empty_w && pull) begin
                 empty_r <= 1'b1;
             end
         end
     end
 
-    assign empty = empty_r & empty_w;
+    assign empty = empty_w;
+    // assign empty = empty_r & empty_w;
 
     friscv_scfifo_ram 
     #( 

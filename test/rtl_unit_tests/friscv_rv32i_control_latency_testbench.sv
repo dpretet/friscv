@@ -135,7 +135,8 @@ module friscv_rv32i_control_latency_testbench();
         @(posedge aclk);
         `ASSERT((inst_en==1'b0), "Control unit shouldn't assert anymore inst_en");
 
-        @(negedge aclk);
+        @(posedge aclk);
+
         `INFO("Consumes ALU instructions");
         alu_ready = 1;
         for (integer i=0; i<`ALU_FIFO_DEPTH/4; i=i+1) begin
@@ -183,10 +184,10 @@ module friscv_rv32i_control_latency_testbench();
         `ASSERT((dut.load_stored==1'b1), "control has to store the last instruction");
         `ASSERT(dut.stored_inst== inst_rdata, "control didn't store correctly the last instruction");
 
-        @(negedge aclk);
+        @(posedge aclk);
         alu_ready = 1;
         for (integer i=0; i<`ALU_FIFO_DEPTH; i=i+1) begin
-            @(negedge aclk);
+            @(posedge aclk);
             `ASSERT((alu_instbus[`OPCODE+:`OPCODE_W] == 7'b0000011), "OPCODE received is wrong");
             `ASSERT((alu_instbus[`FUNCT3+:`FUNCT3_W] == i[2:0]), "FUNCT3 received is wrong");
         end
@@ -221,10 +222,10 @@ module friscv_rv32i_control_latency_testbench();
         `ASSERT(dut.stored_inst== inst_rdata, "control didn't store correctly the last instruction");
         @(posedge aclk);
 
-        @(negedge aclk);
+        @(posedge aclk);
         alu_ready = 1;
         for (integer i=0; i<`ALU_FIFO_DEPTH; i=i+1) begin
-            @(negedge aclk);
+            @(posedge aclk);
             `ASSERT((alu_instbus[`OPCODE+:`OPCODE_W] == 7'b0000011), "OPCODE received is wrong");
             `ASSERT((alu_instbus[`FUNCT3+:`FUNCT3_W] == i[2:0]), "FUNCT3 received is wrong");
         end
@@ -257,10 +258,10 @@ module friscv_rv32i_control_latency_testbench();
         `ASSERT((dut.load_stored==1'b1), "control has to store the last instruction");
         `ASSERT(dut.stored_inst== inst_rdata, "control didn't store correctly the last instruction");
 
-        @(negedge aclk);
+        @(posedge aclk);
         alu_ready = 1;
         for (integer i=0; i<`ALU_FIFO_DEPTH; i=i+1) begin
-            @(negedge aclk);
+            @(posedge aclk);
             `ASSERT((alu_instbus[`OPCODE+:`OPCODE_W] == 7'b0000011), "OPCODE received is wrong");
             `ASSERT((alu_instbus[`FUNCT3+:`FUNCT3_W] == i[2:0]), "FUNCT3 received is wrong");
         end
@@ -291,12 +292,11 @@ module friscv_rv32i_control_latency_testbench();
         inst_ready = 1'b0;
         @(negedge aclk);
         alu_ready = 1;
-        @(posedge aclk);
         `ASSERT((dut.load_stored==1'b1), "control has to store the last instruction");
         `ASSERT(dut.stored_inst== inst_rdata, "control didn't store correctly the last instruction");
 
         for (integer i=0; i<`ALU_FIFO_DEPTH; i=i+1) begin
-            @(negedge aclk);
+            @(posedge aclk);
             `ASSERT((alu_instbus[`OPCODE+:`OPCODE_W] == 7'b0000011), "OPCODE received is wrong");
             `ASSERT((alu_instbus[`FUNCT3+:`FUNCT3_W] == i[2:0]), "FUNCT3 received is wrong");
         end
@@ -327,28 +327,24 @@ module friscv_rv32i_control_latency_testbench();
 
         `ASSERT((inst_en==1'b0), "Control unit shouldn't assert anymore inst_en");
         inst_ready = 1'b0;
-        // @(posedge aclk);
-        // `ASSERT((dut.load_stored==1'b1), "control has to store the last instruction");
-        // `ASSERT(dut.stored_inst== inst_rdata, "control didn't store correctly the last instruction");
 
-        for (integer i=0; i<`ALU_FIFO_DEPTH; i=i+1) begin
-            @(negedge aclk);
-            `ASSERT((alu_instbus[`OPCODE+:`OPCODE_W] == 7'b0000011), "OPCODE received is wrong");
-            `ASSERT((alu_instbus[`FUNCT3+:`FUNCT3_W] == i[2:0]), "FUNCT3 received is wrong");
+        fork
+        begin
+        @(negedge aclk);
+            `ASSERT((dut.load_stored==1'b1), "control has to store the last instruction");
+            `ASSERT(dut.stored_inst== inst_rdata, "control didn't store correctly the last instruction");
         end
+        begin
+            for (integer i=0; i<`ALU_FIFO_DEPTH; i=i+1) begin
+                `ASSERT((alu_instbus[`OPCODE+:`OPCODE_W] == 7'b0000011), "OPCODE received is wrong");
+                `ASSERT((alu_instbus[`FUNCT3+:`FUNCT3_W] == i[2:0]), "FUNCT3 received is wrong");
+                @(posedge aclk);
+            end
+        end
+        join
 
         @(negedge aclk);
         `ASSERT((dut.pc == 32'h30), "program counter must move forward by 16 bytes");
-
-    `UNIT_TEST_END
-
-    `UNIT_TEST("=> TODO")
-
-        `MSG("TODO 1: test with ALU and RAM ready");
-        `MSG("TODO 2: test with ALU ready and RAM throttling");
-        `MSG("TODO 3: test with ALU throttling and RAM ready");
-        `MSG("TODO 3: test with ALU and RAM throttling");
-        alu_ready = 1'b0;
 
     `UNIT_TEST_END
 

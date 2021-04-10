@@ -1,3 +1,17 @@
+# Week 15
+
+Developed the ALU circuit and developed a testbench to check all the
+instructions.
+
+# Week 13 & 14
+
+Drafted the FRISCV RV32i top level and ALU skeletons. Developed the ISA 
+registers and control unit. No testbench developed for registers while the
+componenent is simple. The control unit was more complex and three testbenchs
+are alive: one to check jump and branching, one to test ALU instruction bus and
+the third testing random instruction injection to test the branching/jumping
+while processing instructions are also injected.
+
 # Week 12
 
 Wrote an empty program, just a C file, compiled it with Vexrisv makefile
@@ -31,7 +45,7 @@ loading the memory content into a IP core shell.
 
 Thursday:
 
-Starting point of the activities. The goal before diving into the archoitecture
+Starting point of the activities. The goal before diving into the architecture
 is to understand the ISA, how to compile and produce an ELF, then how to create
 a file to feed the processor memory and use it for simulation.
 
