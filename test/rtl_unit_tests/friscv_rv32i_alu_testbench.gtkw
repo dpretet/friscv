@@ -1,0 +1,70 @@
+[*]
+[*] GTKWave Analyzer v3.3.107 (w)1999-2020 BSI
+[*] Mon Apr 12 17:35:50 2021
+[*]
+[dumpfile] "/Users/damien/workspace/hdl/friscv/test/rtl_unit_tests/friscv_rv32i_alu_testbench.vcd"
+[dumpfile_mtime] "Mon Apr 12 17:32:28 2021"
+[dumpfile_size] 2633
+[savefile] "/Users/damien/workspace/hdl/friscv/test/rtl_unit_tests/friscv_rv32i_alu_testbench.gtkw"
+[timestart] 0
+[size] 1963 1265
+[pos] -1 -1
+*0.000000 0 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] friscv_rv32i_alu_testbench.
+[sst_width] 193
+[signals_width] 439
+[sst_expanded] 1
+[sst_vpaned_height] 401
+@28
+friscv_rv32i_alu_testbench.dut.aclk
+friscv_rv32i_alu_testbench.dut.aresetn
+friscv_rv32i_alu_testbench.dut.srst
+@200
+-
+@28
+friscv_rv32i_alu_testbench.dut.alu_en
+friscv_rv32i_alu_testbench.dut.alu_ready
+@22
+friscv_rv32i_alu_testbench.dut.alu_instbus[85:0]
+@200
+-
+@22
+friscv_rv32i_alu_testbench.dut.alu_rs1_addr[4:0]
+friscv_rv32i_alu_testbench.dut.alu_rs1_val[31:0]
+friscv_rv32i_alu_testbench.dut.alu_rs2_addr[4:0]
+friscv_rv32i_alu_testbench.dut.alu_rs2_val[31:0]
+@28
+friscv_rv32i_alu_testbench.dut.alu_rd_wr
+@22
+friscv_rv32i_alu_testbench.dut.alu_rd_addr[4:0]
+friscv_rv32i_alu_testbench.dut.alu_rd_val[31:0]
+@200
+-
+@22
+friscv_rv32i_alu_testbench.dut.csr[11:0]
+@28
+friscv_rv32i_alu_testbench.dut.funct3[2:0]
+@22
+friscv_rv32i_alu_testbench.dut.funct7[6:0]
+friscv_rv32i_alu_testbench.dut.imm12[11:0]
+friscv_rv32i_alu_testbench.dut.imm20[19:0]
+friscv_rv32i_alu_testbench.dut.opcode[6:0]
+friscv_rv32i_alu_testbench.dut.rd[4:0]
+friscv_rv32i_alu_testbench.dut.rs1[4:0]
+friscv_rv32i_alu_testbench.dut.rs2[4:0]
+friscv_rv32i_alu_testbench.dut.shamt[4:0]
+friscv_rv32i_alu_testbench.dut.zimm[4:0]
+@200
+-
+@28
+friscv_rv32i_alu_testbench.dut.mem_en
+friscv_rv32i_alu_testbench.dut.mem_wr
+@22
+friscv_rv32i_alu_testbench.dut.mem_addr[15:0]
+friscv_rv32i_alu_testbench.dut.mem_wdata[31:0]
+friscv_rv32i_alu_testbench.dut.mem_strb[3:0]
+friscv_rv32i_alu_testbench.dut.mem_rdata[31:0]
+@28
+friscv_rv32i_alu_testbench.dut.mem_ready
+[pattern_trace] 1
+[pattern_trace] 0

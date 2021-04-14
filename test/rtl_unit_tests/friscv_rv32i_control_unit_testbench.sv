@@ -7,9 +7,9 @@
 
 /// Mandatory file to be able to launch SVUT flow
 `include "svut_h.sv"
-`include "friscv_h.sv"
+`include "../../rtl/friscv_h.sv"
 
-module friscv_rv32i_control_jump_branch_testbench();
+module friscv_rv32i_control_unit_testbench();
 
     `SVUT_SETUP
 
@@ -26,6 +26,7 @@ module friscv_rv32i_control_jump_branch_testbench();
     logic                      inst_ready;
     logic                      alu_en;
     logic                      alu_ready;
+    logic                      alu_empty;
     logic [`ALU_INSTBUS_W-1:0] alu_instbus;
     logic [5             -1:0] ctrl_rs1_addr;
     logic [XLEN          -1:0] ctrl_rs1_val;
@@ -56,6 +57,7 @@ module friscv_rv32i_control_jump_branch_testbench();
     inst_ready,
     alu_en,
     alu_ready,
+    alu_empty,
     alu_instbus,
     ctrl_rs1_addr,
     ctrl_rs1_val,
@@ -72,15 +74,16 @@ module friscv_rv32i_control_jump_branch_testbench();
 
     /// An example to dump data for visualization
     initial begin
-        $dumpfile("friscv_rv32i_control_jump_branch_testbench.vcd");
-        $dumpvars(0, friscv_rv32i_control_jump_branch_testbench);
+        $dumpfile("friscv_rv32i_control_unit_testbench.vcd");
+        $dumpvars(0, friscv_rv32i_control_unit_testbench);
     end
 
     task setup(msg="");
     begin
         aresetn = 1'b0;
         srst = 1'b0;
-        alu_ready = 1'b0;
+        alu_ready = 1'b1;
+        alu_empty = 1'b1;
         inst_rdata = {XLEN{1'b0}};
         inst_ready = 1'b0;
         ctrl_rs1_val <= {XLEN{1'b0}};
@@ -185,7 +188,7 @@ module friscv_rv32i_control_jump_branch_testbench();
 
     `UNIT_TEST_END
 
-    `UNIT_TEST("Check ALU FIFO is activated with valid opcodes")
+    `UNIT_TEST("Check ALU is activated with valid opcodes")
 
         while (inst_en == 1'b0) @(posedge aclk);
         inst_ready = 1'b1;
@@ -193,48 +196,31 @@ module friscv_rv32i_control_jump_branch_testbench();
 
         inst_rdata = 7'b0000011;
         @(posedge aclk);
-        `ASSERT((dut.alu_inst_wr==1'b1));
+        `ASSERT((dut.alu_en==1'b1));
 
         inst_rdata = 7'b0110111;
         @(posedge aclk);
-        `ASSERT((dut.alu_inst_wr==1'b1));
+        `ASSERT((dut.alu_en==1'b1));
 
         inst_rdata = 7'b0100011;
         @(posedge aclk);
-        `ASSERT((dut.alu_inst_wr==1'b1));
+        `ASSERT((dut.alu_en==1'b1));
 
         inst_rdata = 7'b0010011;
         @(posedge aclk);
-        `ASSERT((dut.alu_inst_wr==1'b1));
+        `ASSERT((dut.alu_en==1'b1));
 
         inst_rdata = 7'b0110011;
         @(posedge aclk);
-        `ASSERT((dut.alu_inst_wr==1'b1));
+        `ASSERT((dut.alu_en==1'b1));
 
         inst_rdata = 7'b0010011;
         @(posedge aclk);
-        `ASSERT((dut.alu_inst_wr==1'b1));
+        `ASSERT((dut.alu_en==1'b1));
 
         inst_rdata = 7'b1110011;
         @(posedge aclk);
-        `ASSERT((dut.alu_inst_wr==1'b1));
-
-    `UNIT_TEST_END
-
-    `UNIT_TEST("Check ALU FIFO contains the expected maximum instruction number")
-
-        alu_ready = 0;
-
-        while (inst_en == 1'b0) @(posedge aclk);
-
-        inst_rdata = 7'b1110011;
-        inst_ready = 1'b1;
-        for (integer i=0; i<`ALU_FIFO_DEPTH; i=i+1) begin
-            @(posedge aclk);
-        end
-        inst_ready = 1'b0;
-        @(posedge aclk);
-        `ASSERT((inst_en==1'b0), "Control unit shouldn't assert anymore inst_en");
+        `ASSERT((dut.alu_en==1'b1));
 
     `UNIT_TEST_END
 

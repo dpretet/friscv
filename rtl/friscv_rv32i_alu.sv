@@ -20,6 +20,7 @@ module friscv_rv32i_alu
         // ALU instruction bus
         input  logic                      alu_en,
         output logic                      alu_ready,
+        output logic                      alu_empty,
         input  logic [`ALU_INSTBUS_W-1:0] alu_instbus,
         // register source 1 query interface
         output logic [5             -1:0] alu_rs1_addr,
@@ -54,6 +55,8 @@ module friscv_rv32i_alu
     logic [12   -1:0] csr;
     logic [5    -1:0] shamt;
 
+    logic                      mem_access;
+    logic                      memorying;
     logic [XLEN          -1:0] rd_lui;
 
     assign opcode = alu_instbus[`OPCODE +: `OPCODE_W];
@@ -68,34 +71,64 @@ module friscv_rv32i_alu
     assign csr    = alu_instbus[`CSR    +: `CSR_W   ];
     assign shamt  = alu_instbus[`SHAMT  +: `SHAMT_W ];
 
-    assign alu_ready = 1'b1;
 
-    assign alu_rs1_addr = rs1;
-    assign alu_rs2_addr = rs2;
-
-    assign mem_en = 1'b0;
-    assign mem_wr = 1'b0;
-    assign mem_addr = {ADDRW{1'b0}};
-    assign mem_wdata = {XLEN{1'b0}};
-    assign mem_strb = {XLEN/8{1'b0}};
+    assign mem_access = (opcode == `LUI  ||
+                         opcode == `LOAD ||
+                         opcode == `STORE) ? 1'b1 : 1'b0;
 
     always @ (posedge aclk or negedge aresetn) begin
 
         if (aresetn == 1'b0) begin
+            memorying <= 1'b0;
+            alu_ready <= 1'b0;
             alu_rd_wr <= 1'b0;
             alu_rd_addr <= 5'b0;
-            alu_rd_val <= {XLEN{1'b0}};
         end else if (srst == 1'b1) begin
+            memorying <= 1'b0;
+            alu_ready <= 1'b0;
             alu_rd_wr <= 1'b0;
             alu_rd_addr <= 5'b0;
-            alu_rd_val <= {XLEN{1'b0}};
         end else begin
-            if (alu_en == 1'b1) begin
-                
+
+            // memorying flags the ongoing memory accesses, preventing to
+            // accept a new instruction before the current one is processed.
+            // Memory accesses may span over multiple cycles, thus obliges to
+            // pause the pipeline
+            if (memorying) begin
+                if (mem_en && mem_ready) memorying <= 1'b0;
+            end else if (alu_en == 1'b1) begin
+                if (mem_access) memorying <= 1'b1;
+                else memorying <= 1'b0;
+            end
+
+            // Manages the ALU instruction bus acknowledgment
+            if (memorying) begin
+                // Accept a new instruction once memory complete the request
+                if (mem_en && mem_ready) begin 
+                    alu_ready <= 1'b1;
+                end else begin
+                    alu_ready <= 1'b0;
+                end
+            // When instruction does not access the memory, ALU is always ready
+            end else begin
+                alu_ready <= 1'b1;
             end
         end
 
     end
+
+    // assign alu_ready = (memorying && mem_en && ~mem_ready) ? 1'b0 : 1'b1;
+
+    assign mem_en = (memorying) ? 1'b1 :
+                    (alu_en && alu_ready && mem_access) ? 1'b1 :
+                                                          1'b0;
+    assign mem_wr = (opcode == `STORE) ? 1'b1 : 1'b0;
+    assign mem_addr = {{(ADDRW-12){imm12[11]}}, imm12};
+    assign mem_wdata = {XLEN{1'b0}};
+    assign mem_strb = {XLEN/8{1'b0}};
+
+    assign alu_rs1_addr = rs1;
+    assign alu_rs2_addr = rs2;
 
 endmodule
 

@@ -88,6 +88,7 @@ module friscv_rv32i
 
     logic                      alu_en;
     logic                      alu_ready;
+    logic                      alu_empty;
     logic [`ALU_INSTBUS_W-1:0] alu_instbus;
 
 
@@ -108,6 +109,7 @@ module friscv_rv32i
     .inst_ready    (inst_ready   ),
     .alu_en        (alu_en       ),
     .alu_ready     (alu_ready    ),
+    .alu_empty     (alu_empty    ),
     .alu_instbus   (alu_instbus  ),
     .ctrl_rs1_addr (ctrl_rs1_addr),
     .ctrl_rs1_val  (ctrl_rs1_val ),
@@ -131,6 +133,7 @@ module friscv_rv32i
     .srst          (srst        ),
     .alu_en        (alu_en      ),
     .alu_ready     (alu_ready   ),
+    .alu_empty     (alu_empty   ),
     .alu_instbus   (alu_instbus ),
     .alu_rs1_addr  (alu_rs1_addr),
     .alu_rs1_val   (alu_rs1_val ),
