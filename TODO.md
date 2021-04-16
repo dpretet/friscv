@@ -1,19 +1,17 @@
 # DOING
 
-- [-] Implement control unit and its testbench
-    - [X] be able to handle ALU halts for long instruction execution
-    - [X] support branching / system instructions
-    - [X] support pc correctly
-
-- finish sequence testbench
-- synthesis project
-- write architecture and timing diagrams
+- [-] Implement ALU
+- [ ] synthesis project
 
 - design a pipeline stage
 
 # Design Backlog
 
-- [ ] Implement ALU
+- [ ] Support oustanding requests
+    - Control: always
+    - ALU: in-order, read rquests initiated by the scheduler, data arrives with
+      instruction write requests initiated by the ALU
+- [ ] write architecture and timing diagrams
 - [ ] Implement instruction cache with branch prediction and outstanding request
 - [ ] Implement data cache
 - [ ] Support privilieged instructions (virtualization)
@@ -48,3 +46,8 @@
 - [X] Understand the toolchain
     - [~] Understand the linker description to be able to initialize the processor instruction memory
 - [X] Read RISCV unpriviligied specification
+- [X] Implement control unit and its testbench
+    - [X] be able to handle ALU halts for long instruction execution
+    - [X] support branching / system instructions
+    - [X] support pc correctly
+

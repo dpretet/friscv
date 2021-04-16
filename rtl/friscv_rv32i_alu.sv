@@ -10,8 +10,8 @@
 module friscv_rv32i_alu
 
     #(
-        parameter             ADDRW     = 16,
-        parameter             XLEN      = 32
+        parameter ADDRW = 16,
+        parameter XLEN  = 32
     )(
         // clock & reset
         input  logic                      aclk,
@@ -32,6 +32,7 @@ module friscv_rv32i_alu
         output logic                      alu_rd_wr,
         output logic [5             -1:0] alu_rd_addr,
         output logic [XLEN          -1:0] alu_rd_val,
+        output logic [XLEN/8        -1:0] alu_rd_strb,
         // data memory interface
         output logic                      mem_en,
         output logic                      mem_wr,
@@ -55,9 +56,10 @@ module friscv_rv32i_alu
     logic [12   -1:0] csr;
     logic [5    -1:0] shamt;
 
-    logic                      mem_access;
-    logic                      memorying;
-    logic [XLEN          -1:0] rd_lui;
+    logic                             mem_access;
+    logic                             memorying;
+    logic        [XLEN          -1:0] rd_lui;
+    logic signed [XLEN          -1:0] addr;
 
     assign opcode = alu_instbus[`OPCODE +: `OPCODE_W];
     assign funct3 = alu_instbus[`FUNCT3 +: `FUNCT3_W];
@@ -72,63 +74,89 @@ module friscv_rv32i_alu
     assign shamt  = alu_instbus[`SHAMT  +: `SHAMT_W ];
 
 
-    assign mem_access = (opcode == `LUI  ||
-                         opcode == `LOAD ||
-                         opcode == `STORE) ? 1'b1 : 1'b0;
-
     always @ (posedge aclk or negedge aresetn) begin
 
         if (aresetn == 1'b0) begin
             memorying <= 1'b0;
             alu_ready <= 1'b0;
             alu_rd_wr <= 1'b0;
-            alu_rd_addr <= 5'b0;
         end else if (srst == 1'b1) begin
             memorying <= 1'b0;
             alu_ready <= 1'b0;
             alu_rd_wr <= 1'b0;
-            alu_rd_addr <= 5'b0;
         end else begin
 
             // memorying flags the ongoing memory accesses, preventing to
             // accept a new instruction before the current one is processed.
-            // Memory accesses may span over multiple cycles, thus obliges to
+            // Memory read accesses span over multiple cycles, thus obliges to
             // pause the pipeline
             if (memorying) begin
-                if (mem_en && mem_ready) memorying <= 1'b0;
-            end else if (alu_en == 1'b1) begin
-                if (mem_access) memorying <= 1'b1;
-                else memorying <= 1'b0;
-            end
-
-            // Manages the ALU instruction bus acknowledgment
-            if (memorying) begin
-                // Accept a new instruction once memory complete the request
-                if (mem_en && mem_ready) begin 
+                // Accepts a new instruction once memory completes the request
+                if (mem_en && mem_ready) begin
+                    alu_rd_wr <= 1'b0;
                     alu_ready <= 1'b1;
-                end else begin
-                    alu_ready <= 1'b0;
+                    memorying <= 1'b0;
                 end
+            // Manages the ALU instruction bus acknowledgment
+            end else if (alu_en && mem_access) begin
+                if (opcode==`LOAD) begin
+                    alu_rd_wr <= 1'b1;
+                    memorying <= 1'b1;
+                    alu_ready <= 1'b0;
+                end else begin
+                    alu_rd_wr <= 1'b0;
+                    memorying <= 1'b0;
+                    alu_ready <= 1'b1;
+                end
+            end else if (alu_en && opcode==`LUI) begin
+                alu_rd_wr <= 1'b1;
             // When instruction does not access the memory, ALU is always ready
             end else begin
+                alu_rd_wr <= 1'b0;
+                memorying <= 1'b0;
                 alu_ready <= 1'b1;
             end
         end
 
     end
 
-    // assign alu_ready = (memorying && mem_en && ~mem_ready) ? 1'b0 : 1'b1;
+    assign mem_access = (opcode == `LOAD) ? 1'b1 :
+                        (opcode == `STORE) ? 1'b1 : 1'b0;
 
     assign mem_en = (memorying) ? 1'b1 :
                     (alu_en && alu_ready && mem_access) ? 1'b1 :
                                                           1'b0;
     assign mem_wr = (opcode == `STORE) ? 1'b1 : 1'b0;
-    assign mem_addr = {{(ADDRW-12){imm12[11]}}, imm12};
-    assign mem_wdata = {XLEN{1'b0}};
-    assign mem_strb = {XLEN/8{1'b0}};
+
+    assign addr = $signed({{(XLEN-12){imm12[11]}}, imm12}) + $signed(alu_rs1_val);
+    assign mem_addr = addr[ADDRW-1:0];
+
+    assign mem_wdata = alu_rs2_val;
+    assign mem_strb = (opcode == `STORE && funct3==`SB) ? {{(XLEN/8-1){1'b0}},1'b1} :
+                      (opcode == `STORE && funct3==`SH) ? {{(XLEN/8-2){1'b0}},2'b11} :
+                      (opcode == `STORE && funct3==`SW) ? {(XLEN/8){1'b1}} :
+                                                          {XLEN/8{1'b0}};
 
     assign alu_rs1_addr = rs1;
     assign alu_rs2_addr = rs2;
+    assign alu_rd_addr = rd;
+    assign alu_rd_val = (opcode==`LOAD && funct3==`LB) ? {{24{mem_rdata[7]}}, mem_rdata[7:0]} :
+                        (opcode==`LOAD && funct3==`LBU) ? {{24{1'b0}}, mem_rdata[7:0]} :
+                        (opcode==`LOAD && funct3==`LH) ? {{16{mem_rdata[15]}}, mem_rdata[15:0]} :
+                        (opcode==`LOAD && funct3==`LHU) ? {{16{1'b0}}, mem_rdata[15:0]} :
+                        (opcode==`LOAD && funct3==`LW) ?  mem_rdata :
+                        (opcode==`LUI)  ? {imm20, 12'b0} :
+                                          {XLEN{1'b0}};
+
+    assign alu_rd_strb = (opcode == `LOAD && funct3==`LB) ? {{(XLEN/8-1){1'b0}},1'b1} :
+                         (opcode == `LOAD && funct3==`LBU) ? {{(XLEN/8-1){1'b0}},1'b1} :
+                         (opcode == `LOAD && funct3==`LH) ? {{(XLEN/8-2){1'b0}},2'b11} :
+                         (opcode == `LOAD && funct3==`LHU) ? {{(XLEN/8-2){1'b0}},2'b11} :
+                         (opcode == `LOAD && funct3==`LW) ? {(XLEN/8){1'b1}} :
+                         (opcode == `LUI)                 ? {(XLEN/8){1'b1}} :
+                                                            {XLEN/8{1'b0}};
+
+    assign alu_empty = 1'b0;
 
 endmodule
 

@@ -11,29 +11,30 @@ module friscv_registers
         parameter XLEN = 32
     )(
         // clock and resets
-        input  logic            aclk,
-        input  logic            aresetn,
-        input  logic            srst,
+        input  logic              aclk,
+        input  logic              aresetn,
+        input  logic              srst,
         // register source 1 for control unit
-        input  logic [5   -1:0] ctrl_rs1_addr,
-        output logic [XLEN-1:0] ctrl_rs1_val,
+        input  logic [5     -1:0] ctrl_rs1_addr,
+        output logic [XLEN  -1:0] ctrl_rs1_val,
         // register source 2 for control unit
-        input  logic [5   -1:0] ctrl_rs2_addr,
-        output logic [XLEN-1:0] ctrl_rs2_val,
+        input  logic [5     -1:0] ctrl_rs2_addr,
+        output logic [XLEN  -1:0] ctrl_rs2_val,
         // register destination write from Control Unit
-        input  logic            ctrl_rd_wr,
-        input  logic [5   -1:0] ctrl_rd_addr,
-        input  logic [XLEN-1:0] ctrl_rd_val,
-        // register source 1 for ALU
-        input  logic [5   -1:0] alu_rs1_addr,
-        output logic [XLEN-1:0] alu_rs1_val,
+        input  logic              ctrl_rd_wr,
+        input  logic [5     -1:0] ctrl_rd_addr,
+        input  logic [XLEN  -1:0] ctrl_rd_val,
+        // register source   1 for ALU
+        input  logic [5     -1:0] alu_rs1_addr,
+        output logic [XLEN  -1:0] alu_rs1_val,
         // register source 2 for ALU
-        input  logic [5   -1:0] alu_rs2_addr,
-        output logic [XLEN-1:0] alu_rs2_val,
+        input  logic [5     -1:0] alu_rs2_addr,
+        output logic [XLEN  -1:0] alu_rs2_val,
         // register destination write from ALU
-        input  logic            alu_rd_wr,
-        input  logic [5   -1:0] alu_rd_addr,
-        input  logic [XLEN-1:0] alu_rd_val,
+        input  logic              alu_rd_wr,
+        input  logic [5     -1:0] alu_rd_addr,
+        input  logic [XLEN  -1:0] alu_rd_val,
+        input  logic [XLEN/8-1:0] alu_rd_strb,
         // registers output
         output logic [XLEN-1:0] x0,
         output logic [XLEN-1:0] x1,
@@ -94,7 +95,11 @@ module friscv_registers
             end else if (ctrl_rd_wr && ctrl_rd_addr != 5'h0) begin
                 regs[ctrl_rd_addr] <= ctrl_rd_val;
             end else if (alu_rd_wr && alu_rd_addr != 5'h0) begin
-                regs[alu_rd_addr] <= alu_rd_val;
+                for (integer i=0;i<(XLEN/8);i=i+1) begin
+                    if (alu_rd_strb[i]) begin
+                        regs[alu_rd_addr][i*8+:8] <= alu_rd_val[i*8+:8];
+                    end
+                end
             end
         end
     end

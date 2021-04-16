@@ -2,9 +2,9 @@
 
 Here the user can find the directed testcases written to
 test:
-- Control Unit (./friscv_rv32i_control_jump_branch_testbench.sv)
-- ALU (./friscv_rv32i_alu_testbench.sv)
-- FRISCV RV32i (./friscv_rv32i_testbench.sv)
+- [Control Unit](./friscv_rv32i_control_unit_testbench.sv)
+- [ALU](./friscv_rv32i_alu_testbench.sv)
+- [FRISCV RV32i](./friscv_rv32i_testbench.sv)
 
 Control unit and ALU testsuites are directed, written in
 pure SystemVerilog to drive and check the expected behaviors

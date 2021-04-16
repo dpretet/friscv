@@ -11,26 +11,29 @@ module scram
         parameter ADDRW = 4,
         parameter DATAW = 16
     )(
-        input  wire                aclk,
+        input  logic               aclk,
         // Port 1
-        input  wire                p1_en,
-        input  wire                p1_wr,
-        input  wire  [ADDRW  -1:0] p1_addr,
-        input  wire  [DATAW  -1:0] p1_wdata,
-        input  wire  [DATAW/8-1:0] p1_strb,
+        input  logic               p1_en,
+        input  logic               p1_wr,
+        input  logic [ADDRW  -1:0] p1_addr,
+        input  logic [DATAW  -1:0] p1_wdata,
+        input  logic [DATAW/8-1:0] p1_strb,
         output logic [DATAW  -1:0] p1_rdata,
         output logic               p1_ready,
         // Port 2
-        input  wire                p2_en,
-        input  wire                p2_wr,
-        input  wire  [ADDRW  -1:0] p2_addr,
-        input  wire  [DATAW  -1:0] p2_wdata,
-        input  wire  [DATAW/8-1:0] p2_strb,
+        input  logic               p2_en,
+        input  logic               p2_wr,
+        input  logic [ADDRW  -1:0] p2_addr,
+        input  logic [DATAW  -1:0] p2_wdata,
+        input  logic [DATAW/8-1:0] p2_strb,
         output logic [DATAW  -1:0] p2_rdata,
         output logic               p2_ready
     );
 
     logic [DATAW-1:0] ram [2**ADDRW-1:0];
+
+    logic               p1_ready_r;
+    logic               p2_ready_r;
 
     // Port 1
     always @ (posedge aclk) begin
@@ -47,8 +50,16 @@ module scram
             // Read output
             p1_rdata <= ram[p1_addr];
         end
-        p1_ready <= p1_en;
+        if (p1_en && ~p1_ready_r) begin
+            p1_ready_r <= 1'b1;
+        end else begin
+            p1_ready_r <= 1'b0;
+        end
     end
+
+    assign p1_ready = (p1_en && p1_wr)  ? 1'b1 :
+                      (p1_en && ~p1_wr) ? p1_ready_r :
+                                          1'b0;
 
     // Port 2
     always @ (posedge aclk) begin
@@ -65,9 +76,16 @@ module scram
             // Read output
             p2_rdata <= ram[p2_addr];
         end
-        p2_ready <= p2_en;
+        if (p2_en && ~p2_ready_r) begin
+            p2_ready_r <= 1'b1;
+        end else begin
+            p2_ready_r <= 1'b0;
+        end
     end
 
+    assign p2_ready = (p2_en && p2_wr)  ? 1'b1 :
+                      (p2_en && ~p2_wr) ? p2_ready_r :
+                                          1'b0;
 endmodule
 
 `resetall
