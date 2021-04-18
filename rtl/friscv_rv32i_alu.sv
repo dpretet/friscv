@@ -69,6 +69,7 @@ module friscv_rv32i_alu
     logic signed [XLEN -1:0] addr;
 
     logic        [XLEN -1:0] _add;
+    logic        [XLEN -1:0] _sub;
     logic        [XLEN -1:0] _slt;
     logic        [XLEN -1:0] _sltu;
     logic        [XLEN -1:0] _xor;
@@ -234,10 +235,14 @@ module friscv_rv32i_alu
                          (opcode == `I_ARITH)              ? {(XLEN/8){1'b1}} :
                                                              {XLEN/8{1'b0}};
 
+
     ///////////////////////////////////////////////////////////////////////////
     //
     // ALU computations
     //
+    ///////////////////////////////////////////////////////////////////////////
+
+    // I-type instructions
     ///////////////////////////////////////////////////////////////////////////
 
     assign _addi = $signed({{(XLEN-12){imm12[11]}}, imm12}) + $signed(alu_rs1_val);
@@ -352,6 +357,124 @@ module friscv_rv32i_alu
                    (shamt == 6'h30) ? {{30{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:30]} :
                    (shamt == 6'h31) ? {{31{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:31]} :
                                       {alu_rs1_val[XLEN-1:0]} ;
+
+    // R-type instructions
+    ///////////////////////////////////////////////////////////////////////////
+
+    assign _add = $signed(alu_rs1_val) + $signed(alu_rs2_val);
+
+    assign _sub = $signed(alu_rs1_val) - $signed(alu_rs2_val);
+
+    assign _slt = ($signed(alu_rs1_val) < $signed(alu_rs2_val)) ? {{XLEN-1{1'b0}}, 1'b1} :
+                                                                  {XLEN{1'b0}};
+
+    assign _sltu = (alu_rs1_val < alu_rs2_val) ? {{XLEN-1{1'b0}}, 1'b1} :
+                                                 {XLEN{1'b0}};
+
+    assign _xor = alu_rs1_val ^ alu_rs2_val;
+
+    assign _or = alu_rs1_val | alu_rs2_val;
+
+    assign _and = alu_rs1_val & alu_rs2_val;
+
+    assign _sll = (alu_rs2_val[5:0] == 6'h01) ? {alu_rs1_val[XLEN-1-01:0], 01'b0} :
+                  (alu_rs2_val[5:0] == 6'h02) ? {alu_rs1_val[XLEN-1-02:0], 02'b0} :
+                  (alu_rs2_val[5:0] == 6'h03) ? {alu_rs1_val[XLEN-1-03:0], 03'b0} :
+                  (alu_rs2_val[5:0] == 6'h04) ? {alu_rs1_val[XLEN-1-04:0], 04'b0} :
+                  (alu_rs2_val[5:0] == 6'h05) ? {alu_rs1_val[XLEN-1-05:0], 05'b0} :
+                  (alu_rs2_val[5:0] == 6'h06) ? {alu_rs1_val[XLEN-1-06:0], 06'b0} :
+                  (alu_rs2_val[5:0] == 6'h07) ? {alu_rs1_val[XLEN-1-07:0], 07'b0} :
+                  (alu_rs2_val[5:0] == 6'h08) ? {alu_rs1_val[XLEN-1-08:0], 08'b0} :
+                  (alu_rs2_val[5:0] == 6'h09) ? {alu_rs1_val[XLEN-1-09:0], 09'b0} :
+                  (alu_rs2_val[5:0] == 6'h10) ? {alu_rs1_val[XLEN-1-10:0], 10'b0} :
+                  (alu_rs2_val[5:0] == 6'h11) ? {alu_rs1_val[XLEN-1-11:0], 11'b0} :
+                  (alu_rs2_val[5:0] == 6'h12) ? {alu_rs1_val[XLEN-1-12:0], 12'b0} :
+                  (alu_rs2_val[5:0] == 6'h13) ? {alu_rs1_val[XLEN-1-13:0], 13'b0} :
+                  (alu_rs2_val[5:0] == 6'h14) ? {alu_rs1_val[XLEN-1-14:0], 14'b0} :
+                  (alu_rs2_val[5:0] == 6'h15) ? {alu_rs1_val[XLEN-1-15:0], 15'b0} :
+                  (alu_rs2_val[5:0] == 6'h16) ? {alu_rs1_val[XLEN-1-16:0], 16'b0} :
+                  (alu_rs2_val[5:0] == 6'h17) ? {alu_rs1_val[XLEN-1-17:0], 17'b0} :
+                  (alu_rs2_val[5:0] == 6'h18) ? {alu_rs1_val[XLEN-1-18:0], 18'b0} :
+                  (alu_rs2_val[5:0] == 6'h19) ? {alu_rs1_val[XLEN-1-19:0], 19'b0} :
+                  (alu_rs2_val[5:0] == 6'h20) ? {alu_rs1_val[XLEN-1-20:0], 20'b0} :
+                  (alu_rs2_val[5:0] == 6'h21) ? {alu_rs1_val[XLEN-1-21:0], 21'b0} :
+                  (alu_rs2_val[5:0] == 6'h22) ? {alu_rs1_val[XLEN-1-22:0], 22'b0} :
+                  (alu_rs2_val[5:0] == 6'h23) ? {alu_rs1_val[XLEN-1-23:0], 23'b0} :
+                  (alu_rs2_val[5:0] == 6'h24) ? {alu_rs1_val[XLEN-1-24:0], 24'b0} :
+                  (alu_rs2_val[5:0] == 6'h25) ? {alu_rs1_val[XLEN-1-25:0], 25'b0} :
+                  (alu_rs2_val[5:0] == 6'h26) ? {alu_rs1_val[XLEN-1-26:0], 26'b0} :
+                  (alu_rs2_val[5:0] == 6'h27) ? {alu_rs1_val[XLEN-1-27:0], 27'b0} :
+                  (alu_rs2_val[5:0] == 6'h28) ? {alu_rs1_val[XLEN-1-28:0], 28'b0} :
+                  (alu_rs2_val[5:0] == 6'h29) ? {alu_rs1_val[XLEN-1-29:0], 29'b0} :
+                  (alu_rs2_val[5:0] == 6'h30) ? {alu_rs1_val[XLEN-1-30:0], 30'b0} :
+                  (alu_rs2_val[5:0] == 6'h31) ? {alu_rs1_val[XLEN-1-31:0], 31'b0} :
+                                                {alu_rs1_val[XLEN-1:0]} ;
+
+    assign _srl = (alu_rs2_val[5:0] == 6'h01) ? {01'b0, alu_rs1_val[XLEN-1:01]} :
+                  (alu_rs2_val[5:0] == 6'h02) ? {02'b0, alu_rs1_val[XLEN-1:02]} :
+                  (alu_rs2_val[5:0] == 6'h03) ? {03'b0, alu_rs1_val[XLEN-1:03]} :
+                  (alu_rs2_val[5:0] == 6'h04) ? {04'b0, alu_rs1_val[XLEN-1:04]} :
+                  (alu_rs2_val[5:0] == 6'h05) ? {05'b0, alu_rs1_val[XLEN-1:05]} :
+                  (alu_rs2_val[5:0] == 6'h06) ? {06'b0, alu_rs1_val[XLEN-1:06]} :
+                  (alu_rs2_val[5:0] == 6'h07) ? {07'b0, alu_rs1_val[XLEN-1:07]} :
+                  (alu_rs2_val[5:0] == 6'h08) ? {08'b0, alu_rs1_val[XLEN-1:08]} :
+                  (alu_rs2_val[5:0] == 6'h09) ? {09'b0, alu_rs1_val[XLEN-1:09]} :
+                  (alu_rs2_val[5:0] == 6'h10) ? {10'b0, alu_rs1_val[XLEN-1:10]} :
+                  (alu_rs2_val[5:0] == 6'h11) ? {11'b0, alu_rs1_val[XLEN-1:11]} :
+                  (alu_rs2_val[5:0] == 6'h12) ? {12'b0, alu_rs1_val[XLEN-1:12]} :
+                  (alu_rs2_val[5:0] == 6'h13) ? {13'b0, alu_rs1_val[XLEN-1:13]} :
+                  (alu_rs2_val[5:0] == 6'h14) ? {14'b0, alu_rs1_val[XLEN-1:14]} :
+                  (alu_rs2_val[5:0] == 6'h15) ? {15'b0, alu_rs1_val[XLEN-1:15]} :
+                  (alu_rs2_val[5:0] == 6'h16) ? {16'b0, alu_rs1_val[XLEN-1:16]} :
+                  (alu_rs2_val[5:0] == 6'h17) ? {17'b0, alu_rs1_val[XLEN-1:17]} :
+                  (alu_rs2_val[5:0] == 6'h18) ? {18'b0, alu_rs1_val[XLEN-1:18]} :
+                  (alu_rs2_val[5:0] == 6'h19) ? {19'b0, alu_rs1_val[XLEN-1:19]} :
+                  (alu_rs2_val[5:0] == 6'h20) ? {20'b0, alu_rs1_val[XLEN-1:20]} :
+                  (alu_rs2_val[5:0] == 6'h21) ? {21'b0, alu_rs1_val[XLEN-1:21]} :
+                  (alu_rs2_val[5:0] == 6'h22) ? {22'b0, alu_rs1_val[XLEN-1:22]} :
+                  (alu_rs2_val[5:0] == 6'h23) ? {23'b0, alu_rs1_val[XLEN-1:23]} :
+                  (alu_rs2_val[5:0] == 6'h24) ? {24'b0, alu_rs1_val[XLEN-1:24]} :
+                  (alu_rs2_val[5:0] == 6'h25) ? {25'b0, alu_rs1_val[XLEN-1:25]} :
+                  (alu_rs2_val[5:0] == 6'h26) ? {26'b0, alu_rs1_val[XLEN-1:26]} :
+                  (alu_rs2_val[5:0] == 6'h27) ? {27'b0, alu_rs1_val[XLEN-1:27]} :
+                  (alu_rs2_val[5:0] == 6'h28) ? {28'b0, alu_rs1_val[XLEN-1:28]} :
+                  (alu_rs2_val[5:0] == 6'h29) ? {29'b0, alu_rs1_val[XLEN-1:29]} :
+                  (alu_rs2_val[5:0] == 6'h30) ? {30'b0, alu_rs1_val[XLEN-1:30]} :
+                  (alu_rs2_val[5:0] == 6'h31) ? {31'b0, alu_rs1_val[XLEN-1:31]} :
+                                                {alu_rs1_val[XLEN-1:0]} ;
+
+    assign _sra = (alu_rs2_val[5:0] == 6'h01) ? {{01{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:01]} :
+                  (alu_rs2_val[5:0] == 6'h02) ? {{02{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:02]} :
+                  (alu_rs2_val[5:0] == 6'h03) ? {{03{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:03]} :
+                  (alu_rs2_val[5:0] == 6'h04) ? {{04{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:04]} :
+                  (alu_rs2_val[5:0] == 6'h05) ? {{05{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:05]} :
+                  (alu_rs2_val[5:0] == 6'h06) ? {{06{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:06]} :
+                  (alu_rs2_val[5:0] == 6'h07) ? {{07{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:07]} :
+                  (alu_rs2_val[5:0] == 6'h08) ? {{08{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:08]} :
+                  (alu_rs2_val[5:0] == 6'h09) ? {{09{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:09]} :
+                  (alu_rs2_val[5:0] == 6'h10) ? {{10{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:10]} :
+                  (alu_rs2_val[5:0] == 6'h11) ? {{11{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:11]} :
+                  (alu_rs2_val[5:0] == 6'h12) ? {{12{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:12]} :
+                  (alu_rs2_val[5:0] == 6'h13) ? {{13{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:13]} :
+                  (alu_rs2_val[5:0] == 6'h14) ? {{14{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:14]} :
+                  (alu_rs2_val[5:0] == 6'h15) ? {{15{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:15]} :
+                  (alu_rs2_val[5:0] == 6'h16) ? {{16{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:16]} :
+                  (alu_rs2_val[5:0] == 6'h17) ? {{17{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:17]} :
+                  (alu_rs2_val[5:0] == 6'h18) ? {{18{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:18]} :
+                  (alu_rs2_val[5:0] == 6'h19) ? {{19{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:19]} :
+                  (alu_rs2_val[5:0] == 6'h20) ? {{20{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:20]} :
+                  (alu_rs2_val[5:0] == 6'h21) ? {{21{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:21]} :
+                  (alu_rs2_val[5:0] == 6'h22) ? {{22{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:22]} :
+                  (alu_rs2_val[5:0] == 6'h23) ? {{23{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:23]} :
+                  (alu_rs2_val[5:0] == 6'h24) ? {{24{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:24]} :
+                  (alu_rs2_val[5:0] == 6'h25) ? {{25{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:25]} :
+                  (alu_rs2_val[5:0] == 6'h26) ? {{26{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:26]} :
+                  (alu_rs2_val[5:0] == 6'h27) ? {{27{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:27]} :
+                  (alu_rs2_val[5:0] == 6'h28) ? {{28{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:28]} :
+                  (alu_rs2_val[5:0] == 6'h29) ? {{29{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:29]} :
+                  (alu_rs2_val[5:0] == 6'h30) ? {{30{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:30]} :
+                  (alu_rs2_val[5:0] == 6'h31) ? {{31{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:31]} :
+                                                {alu_rs1_val[XLEN-1:0]} ;
 
 
     ///////////////////////////////////////////////////////////////////////////
