@@ -136,3 +136,6 @@ build
 *.vcd
 *.hex
 *.vcd
+
+syn/*.lib
+syn/*.v

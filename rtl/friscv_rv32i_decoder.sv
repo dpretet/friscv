@@ -21,7 +21,7 @@ module friscv_rv32i_decoder
         output logic [12   -1:0] imm12,
         output logic [20   -1:0] imm20,
         output logic [12   -1:0] csr,
-        output logic [5    -1:0] shamt,
+        output logic [6    -1:0] shamt,
         output logic             auipc,
         output logic             jal,
         output logic             jalr,
@@ -210,7 +210,7 @@ module friscv_rv32i_decoder
         rd = instruction[11:7];
         zimm = instruction[19:15];
         csr = instruction[31:20];
-        shamt = instruction[24:20];
+        shamt = instruction[25:20];
         pred = instruction[23:20];
         succ = instruction[27:24];
 

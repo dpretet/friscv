@@ -17,8 +17,8 @@
 `define BRANCH  7'b1100011
 `define LOAD    7'b0000011
 `define STORE   7'b0100011
-`define ARITH   7'b0010011
-`define LOGIC   7'b0110011
+`define I_ARITH 7'b0010011
+`define R_ARITH 7'b0110011
 
 // funct3 opcodes for instruction decoding
 `define BEQ     3'b000
@@ -87,7 +87,9 @@
 `define IMM12_W     12
 `define IMM20_W     20
 `define CSR_W       12
-`define SHAMT_W     5
+`define SHAMT_W     6
+`define PRED_W      4
+`define SUCC_W      4
 
 // instruction bus fields's index
 `define OPCODE      0

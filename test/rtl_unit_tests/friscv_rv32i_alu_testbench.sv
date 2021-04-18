@@ -53,6 +53,7 @@ module friscv_rv32i_alu_testbench();
     logic [`ALU_INSTBUS_W-1:0] insts_lui[16-1:0];
     logic [`ALU_INSTBUS_W-1:0] instruction;
     logic [XLEN          -1:0] datas[16-1:0];
+    logic [XLEN          -1:0] results[16-1:0];
 
     friscv_rv32i_alu
     #(
@@ -151,9 +152,41 @@ module friscv_rv32i_alu_testbench();
     end
     endtask
 
+    task drive_i_arith;
+        input [`ALU_INSTBUS_W-1:0] instructions;
+        input [XLEN          -1:0] datas;
+        input [XLEN          -1:0] results;
+        input [XLEN          -1:0] _rd;
+    begin
+        fork
+        begin
+            while(alu_ready==1'b0) @ (posedge aclk);
+            `MSG("Source an instruction:");
+            $display("%x", instructions);
+            alu_en = 1'b1;
+            alu_instbus = instructions;
+            alu_rs1_val = datas;
+            @(posedge aclk);
+            alu_en = 1'b0;
+            @(posedge aclk);
+        end
+        begin
+            while(alu_rd_wr==1'b0) @ (posedge aclk);
+            @(negedge aclk);
+            `MSG("Inspect ISA registers access");
+            $display("i=%d", _rd);
+            `ASSERT((alu_rd_addr==_rd), "ALU doesn't access the correct rd register")
+            `ASSERT((alu_rd_val==results), "computation went wrong");
+            `ASSERT((alu_rd_strb==4'b1111), "ALU should write a complete word (STRB=4'1111)");
+            @(posedge aclk);
+        end
+        join
+    end
+    endtask
+
     `TEST_SUITE("ALU Testsuite")
 
-    `UNIT_TEST("STORE Instructions")
+    `UNIT_TEST("Verify STORE instructions")
 
         @(posedge aclk);
 
@@ -214,7 +247,7 @@ module friscv_rv32i_alu_testbench();
 
     `UNIT_TEST_END
 
-    `UNIT_TEST("LOAD Instructions")
+    `UNIT_TEST("Verify LOAD instructions")
 
         @(posedge aclk);
 
@@ -308,7 +341,7 @@ module friscv_rv32i_alu_testbench();
 
     `UNIT_TEST_END
 
-    `UNIT_TEST("LUI Instructions")
+    `UNIT_TEST("Verify LUI instruction")
 
         @(posedge aclk);
 
@@ -355,7 +388,7 @@ module friscv_rv32i_alu_testbench();
 
     `UNIT_TEST_END
 
-    `UNIT_TEST("LUI -> STORE -> LOAD")
+    `UNIT_TEST("Verify LUI -> STORE -> LOAD round-trip")
 
         `MSG("Load in register a value, then store it in memory and load it back to registers");
 
@@ -488,13 +521,345 @@ module friscv_rv32i_alu_testbench();
                     `ASSERT((alu_rd_val==datas[i]), "ALU doesn't store correct data in RD");
                     `ASSERT((alu_rd_strb==4'b1111), "STRB should be 4'b1111");
                 end
+                $display("");
             end
             join
         end
 
     `UNIT_TEST_END
 
-    // TODO: Test back to back d'instructions
+    `UNIT_TEST("Verify ADDI instruction")
+
+        @(posedge aclk);
+
+        rs1 = 10;
+        rs2 = 20;
+        alu_rs1_val = 0;
+        alu_rs2_val = 0;
+        rd = 5;
+        instructions[0] = {37'b0, 12'h0, 5'b0, 5'h0, rs2, rs1, 7'b0, `ADDI, `R_ARITH};
+        instructions[1] = {37'b0, 12'hFFF, 5'b0, 5'h1, rs2, rs1, 7'b0, `ADDI, `R_ARITH};
+        instructions[2] = {37'b0, 12'h1, 5'b0, 5'h2, rs2, rs1, 7'b0, `ADDI, `R_ARITH};
+        instructions[3] = {37'b0, 12'hFFF, 5'b0, 5'h3, rs2, rs1, 7'b0, `ADDI, `R_ARITH};
+        instructions[4] = {37'b0, 12'h1, 5'b0, 5'h4, rs2, rs1, 7'b0, `ADDI, `R_ARITH};
+        datas[0] = 'h0;
+        datas[1] = 'h1;
+        datas[2] = 'h080F4321;
+        datas[3] = 'h80543210;
+        datas[4] = 'h7FFFFFFF;
+        results[0] = 'h0;
+        results[1] = 'h0;
+        results[2] = 'h080F4322;
+        results[3] = 'h8054320F;
+        results[4] = 'h80000000;
+
+        @(posedge aclk);
+
+        `MSG("Start to test ADDI instruction");
+        for (int i=0;i<5;i=i+1) begin
+            drive_i_arith(instructions[i], datas[i], results[i], i);
+        end
+        $display("");
+
+    `UNIT_TEST_END
+
+    `UNIT_TEST("Verify SLTI instruction")
+
+        @(posedge aclk);
+
+        rs1 = 10;
+        rs2 = 20;
+        alu_rs1_val = 0;
+        alu_rs2_val = 0;
+        rd = 5;
+
+        // RS1 <, <=, > when positive
+        instructions[0] = {37'b0, 12'h2, 5'b0, 5'h0, rs2, rs1, 7'b0, `SLTI, `R_ARITH};
+        instructions[1] = {37'b0, 12'h2, 5'b0, 5'h1, rs2, rs1, 7'b0, `SLTI, `R_ARITH};
+        instructions[2] = {37'b0, 12'h2, 5'b0, 5'h2, rs2, rs1, 7'b0, `SLTI, `R_ARITH};
+        datas[0] = 'h1;
+        datas[1] = 'h2;
+        datas[2] = 'h3;
+        results[0] = 'h1;
+        results[1] = 'h0;
+        results[2] = 'h0;
+        // RS1 <, <=, > when negative
+        instructions[3] = {37'b0, 12'hFFD, 5'b0, 5'h3, rs2, rs1, 7'b0, `SLTI, `R_ARITH};
+        instructions[4] = {37'b0, 12'hFFD, 5'b0, 5'h4, rs2, rs1, 7'b0, `SLTI, `R_ARITH};
+        instructions[5] = {37'b0, 12'hFFD, 5'b0, 5'h5, rs2, rs1, 7'b0, `SLTI, `R_ARITH};
+        datas[3] = 'hFFFFFFFC;
+        datas[4] = 'hFFFFFFFD;
+        datas[5] = 'hFFFFFFFE;
+        results[3] = 'h1;
+        results[4] = 'h0;
+        results[5] = 'h0;
+        // RS1 <, <=, > when around zero
+        instructions[6] = {37'b0, 12'h0, 5'b0, 5'h6, rs2, rs1, 7'b0, `SLTI, `R_ARITH};
+        instructions[7] = {37'b0, 12'h0, 5'b0, 5'h7, rs2, rs1, 7'b0, `SLTI, `R_ARITH};
+        instructions[8] = {37'b0, 12'h0, 5'b0, 5'h8, rs2, rs1, 7'b0, `SLTI, `R_ARITH};
+        datas[6] = 'hFFFFFFFF;
+        datas[7] = 'h0;
+        datas[8] = 'h10;
+        results[6] = 'h1;
+        results[7] = 'h0;
+        results[8] = 'h0;
+
+        `MSG("Start to test SLTI instruction");
+        @(posedge aclk);
+
+        for (int i=0;i<9;i=i+1) begin
+            drive_i_arith(instructions[i], datas[i], results[i], i);
+        end
+        $display("");
+    `UNIT_TEST_END
+
+    `UNIT_TEST("Verify SLTIU instruction")
+
+        @(posedge aclk);
+
+        rs1 = 10;
+        rs2 = 20;
+        alu_rs1_val = 0;
+        alu_rs2_val = 0;
+        rd = 5;
+
+        // RS1 <, <=, > when positive
+        instructions[0] = {37'b0, 12'h2, 5'b0, 5'h0, rs2, rs1, 7'b0, `SLTI, `R_ARITH};
+        instructions[1] = {37'b0, 12'h2, 5'b0, 5'h1, rs2, rs1, 7'b0, `SLTI, `R_ARITH};
+        instructions[2] = {37'b0, 12'h2, 5'b0, 5'h2, rs2, rs1, 7'b0, `SLTI, `R_ARITH};
+        datas[0] = 'h1;
+        datas[1] = 'h2;
+        datas[2] = 'h3;
+        results[0] = 'h1;
+        results[1] = 'h0;
+        results[2] = 'h0;
+
+        `MSG("Start to test SLTIU instruction");
+        @(posedge aclk);
+
+        for (int i=0;i<3;i=i+1) begin
+            drive_i_arith(instructions[i], datas[i], results[i], i);
+        end
+        $display("");
+
+    `UNIT_TEST_END
+
+    `UNIT_TEST("Verify XORI instruction")
+
+        @(posedge aclk);
+
+        rs1 = 10;
+        rs2 = 20;
+        alu_rs1_val = 0;
+        alu_rs2_val = 0;
+        rd = 5;
+
+        // RS1 <, <=, > when positive
+        instructions[0] = {37'b0, 12'hFFF, 5'b0, 5'h0, rs2, rs1, 7'b0, `XORI, `R_ARITH};
+        instructions[1] = {37'b0, 12'hA5A, 5'b0, 5'h1, rs2, rs1, 7'b0, `XORI, `R_ARITH};
+        instructions[2] = {37'b0, 12'hFFF, 5'b0, 5'h2, rs2, rs1, 7'b0, `XORI, `R_ARITH};
+        datas[0] = 'h00000000;
+        datas[1] = 'h000005A5;
+        datas[2] = 'hFFFFFFFF;
+        results[0] = 'hFFFFFFFF;
+        results[1] = 'hFFFFFFFF;
+        results[2] = 'h00000000;
+
+        `MSG("Start to test XORI instruction");
+        @(posedge aclk);
+
+        for (int i=0;i<3;i=i+1) begin
+            drive_i_arith(instructions[i], datas[i], results[i], i);
+        end
+        $display("");
+
+    `UNIT_TEST_END
+
+    `UNIT_TEST("Verify ORI instruction")
+
+        @(posedge aclk);
+
+        rs1 = 10;
+        rs2 = 20;
+        alu_rs1_val = 0;
+        alu_rs2_val = 0;
+        rd = 5;
+
+        // RS1 <, <=, > when positive
+        instructions[0] = {37'b0, 12'hFFF, 5'b0, 5'h0, rs2, rs1, 7'b0, `ORI, `R_ARITH};
+        instructions[1] = {37'b0, 12'hA5A, 5'b0, 5'h1, rs2, rs1, 7'b0, `ORI, `R_ARITH};
+        instructions[2] = {37'b0, 12'hFFF, 5'b0, 5'h2, rs2, rs1, 7'b0, `ORI, `R_ARITH};
+        instructions[3] = {37'b0, 12'h000, 5'b0, 5'h3, rs2, rs1, 7'b0, `ORI, `R_ARITH};
+        datas[0] = 'h00000000;
+        datas[1] = 'h000005A5;
+        datas[2] = 'hFFFFFFFF;
+        datas[3] = 'h00000000;
+        results[0] = 'hFFFFFFFF;
+        results[1] = 'hFFFFFFFF;
+        results[2] = 'hFFFFFFFF;
+        results[3] = 'h00000000;
+
+        `MSG("Start to test ORI instruction");
+        @(posedge aclk);
+
+        for (int i=0;i<4;i=i+1) begin
+            drive_i_arith(instructions[i], datas[i], results[i], i);
+        end
+        $display("");
+
+    `UNIT_TEST_END
+
+    `UNIT_TEST("Verify ANDI instruction")
+
+        @(posedge aclk);
+
+        rs1 = 10;
+        rs2 = 20;
+        alu_rs1_val = 0;
+        alu_rs2_val = 0;
+        rd = 5;
+
+        // RS1 <, <=, > when positive
+        instructions[0] = {37'b0, 12'hFFF, 5'b0, 5'h0, rs2, rs1, 7'b0, `ANDI, `R_ARITH};
+        instructions[1] = {37'b0, 12'hA5A, 5'b0, 5'h1, rs2, rs1, 7'b0, `ANDI, `R_ARITH};
+        instructions[2] = {37'b0, 12'hFFF, 5'b0, 5'h2, rs2, rs1, 7'b0, `ANDI, `R_ARITH};
+        instructions[3] = {37'b0, 12'h000, 5'b0, 5'h3, rs2, rs1, 7'b0, `ANDI, `R_ARITH};
+        datas[0] = 'h00000000;
+        datas[1] = 'h000005A5;
+        datas[2] = 'hFFFFFFFF;
+        datas[3] = 'h00000000;
+        results[0] = 'h0;
+        results[1] = 'h0;
+        results[2] = 'hFFFFFFFF;
+        results[3] = 'h00000000;
+
+        `MSG("Start to test ANDI instruction");
+        @(posedge aclk);
+
+        for (int i=0;i<4;i=i+1) begin
+            drive_i_arith(instructions[i], datas[i], results[i], i);
+        end
+        $display("");
+
+    `UNIT_TEST_END
+
+    `UNIT_TEST("Verify SLLI instruction")
+
+        @(posedge aclk);
+
+        rs1 = 10;
+        rs2 = 20;
+        alu_rs1_val = 0;
+        alu_rs2_val = 0;
+        rd = 5;
+
+        // RS1 <, <=, > when positive
+        instructions[0] = {6'h0, 12'b0, 20'b0, 12'hFFF, 5'b0, 5'h0, rs2, rs1, 7'b0, `SLLI, `R_ARITH};
+        instructions[1] = {6'h1, 12'b0, 20'b0, 12'hA5A, 5'b0, 5'h1, rs2, rs1, 7'b0, `SLLI, `R_ARITH};
+        instructions[2] = {6'h24, 12'b0, 20'b0, 12'hFFF, 5'b0, 5'h2, rs2, rs1, 7'b0, `SLLI, `R_ARITH};
+        instructions[3] = {6'h31, 12'b0, 20'b0, 12'h000, 5'b0, 5'h3, rs2, rs1, 7'b0, `SLLI, `R_ARITH};
+        instructions[4] = {6'h32, 12'b0, 20'b0, 12'h000, 5'b0, 5'h4, rs2, rs1, 7'b0, `SLLI, `R_ARITH};
+        datas[0] = 'hFFFFFFFF;
+        datas[1] = 'hFFFFFFFF;
+        datas[2] = 'hFFFFFFFF;
+        datas[3] = 'hFFFFFFFF;
+        datas[3] = 'hFFFFFFFF;
+        datas[4] = 'hFFFFFFFF;
+        results[0] = 'hFFFFFFFF;
+        results[1] = 'hFFFFFFFE;
+        results[2] = 'hFF000000;
+        results[3] = 'h80000000;
+        results[4] = 'hFFFFFFFF;
+
+        `MSG("Start to test SLLI instruction");
+        @(posedge aclk);
+
+        for (int i=0;i<5;i=i+1) begin
+            drive_i_arith(instructions[i], datas[i], results[i], i);
+        end
+        $display("");
+
+    `UNIT_TEST_END
+
+    `UNIT_TEST("Verify SRLI instruction")
+
+        @(posedge aclk);
+
+        rs1 = 10;
+        rs2 = 20;
+        alu_rs1_val = 0;
+        alu_rs2_val = 0;
+        rd = 5;
+
+        // RS1 <, <=, > when positive
+        instructions[0] = {6'h0, 12'b0, 20'b0, 12'hFFF, 5'b0, 5'h0, rs2, rs1, 7'b0, `SRLI, `R_ARITH};
+        instructions[1] = {6'h1, 12'b0, 20'b0, 12'hA5A, 5'b0, 5'h1, rs2, rs1, 7'b0, `SRLI, `R_ARITH};
+        instructions[2] = {6'h24, 12'b0, 20'b0, 12'hFFF, 5'b0, 5'h2, rs2, rs1, 7'b0, `SRLI, `R_ARITH};
+        instructions[3] = {6'h31, 12'b0, 20'b0, 12'h000, 5'b0, 5'h3, rs2, rs1, 7'b0, `SRLI, `R_ARITH};
+        instructions[4] = {6'h32, 12'b0, 20'b0, 12'h000, 5'b0, 5'h4, rs2, rs1, 7'b0, `SRLI, `R_ARITH};
+        datas[0] = 'hFFFFFFFF;
+        datas[1] = 'hFFFFFFFF;
+        datas[2] = 'hFFFFFFFF;
+        datas[3] = 'hFFFFFFFF;
+        datas[3] = 'hFFFFFFFF;
+        datas[4] = 'hFFFFFFFF;
+        results[0] = 'hFFFFFFFF;
+        results[1] = 'h7FFFFFFF;
+        results[2] = 'h000000FF;
+        results[3] = 'h00000001;
+        results[4] = 'hFFFFFFFF;
+
+        `MSG("Start to test SRLI instruction");
+        @(posedge aclk);
+
+        for (int i=0;i<5;i=i+1) begin
+            drive_i_arith(instructions[i], datas[i], results[i], i);
+        end
+        $display("");
+
+    `UNIT_TEST_END
+
+    `UNIT_TEST("Verify SRAI instruction")
+
+        @(posedge aclk);
+
+        rs1 = 10;
+        rs2 = 20;
+        alu_rs1_val = 0;
+        alu_rs2_val = 0;
+        rd = 5;
+
+        // RS1 <, <=, > when positive
+        instructions[0] = {6'h0, 12'b0, 20'b0, 12'hFFF, 5'b0, 5'h0, rs2, rs1, 7'b0100000, `SRAI, `R_ARITH};
+        instructions[1] = {6'h1, 12'b0, 20'b0, 12'hA5A, 5'b0, 5'h1, rs2, rs1, 7'b0100000, `SRAI, `R_ARITH};
+        instructions[2] = {6'h24, 12'b0, 20'b0, 12'hFFF, 5'b0, 5'h2, rs2, rs1, 7'b0100000, `SRAI, `R_ARITH};
+        instructions[3] = {6'h31, 12'b0, 20'b0, 12'h000, 5'b0, 5'h3, rs2, rs1, 7'b0100000, `SRAI, `R_ARITH};
+        instructions[4] = {6'h32, 12'b0, 20'b0, 12'h000, 5'b0, 5'h4, rs2, rs1, 7'b0100000, `SRAI, `R_ARITH};
+        datas[0] = 'hFFFFFFFF;
+        datas[1] = 'h7FFFFFFF;
+        datas[2] = 'hF0FF00FF;
+        datas[3] = 'h09A42345;
+        datas[4] = 'hAA005500;
+        results[0] = 'hFFFFFFFF;
+        results[1] = 'h3FFFFFFF;
+        results[2] = 'hFFFFFFF0;
+        results[3] = 'h00000000;
+        results[4] = 'hAA005500;
+
+        `MSG("Start to test SRAI instruction");
+        @(posedge aclk);
+
+        for (int i=0;i<5;i=i+1) begin
+            drive_i_arith(instructions[i], datas[i], results[i], i);
+        end
+        $display("");
+
+    `UNIT_TEST_END
+
+    `UNIT_TEST("Verify back-to-back instructions execution")
+        // TODO: Test back to back d'instructions
+    `UNIT_TEST_END
+
 
     `TEST_SUITE_END
 

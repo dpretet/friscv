@@ -48,19 +48,19 @@ module friscv_rv32i_control
     ///////////////////////////////////////////////////////////////////////////
 
     // decoded instructions
-    logic [7    -1:0] opcode;
-    logic [3    -1:0] funct3;
-    logic [7    -1:0] funct7;
-    logic [5    -1:0] rs1;
-    logic [5    -1:0] rs2;
-    logic [5    -1:0] rd;
-    logic [5    -1:0] zimm;
-    logic [12   -1:0] imm12;
-    logic [20   -1:0] imm20;
-    logic [12   -1:0] csr;
-    logic [5    -1:0] shamt;
-    logic [4    -1:0] pred;
-    logic [4    -1:0] succ;
+    logic [`OPCODE_W   -1:0] opcode;
+    logic [`FUNCT3_W   -1:0] funct3;
+    logic [`FUNCT7_W   -1:0] funct7;
+    logic [`RS1_W      -1:0] rs1;
+    logic [`RS2_W      -1:0] rs2;
+    logic [`RD_W       -1:0] rd;
+    logic [`ZIMM_W     -1:0] zimm;
+    logic [`IMM12_W    -1:0] imm12;
+    logic [`IMM20_W    -1:0] imm20;
+    logic [`CSR_W      -1:0] csr;
+    logic [`SHAMT_W    -1:0] shamt;
+    logic [`PRED_W     -1:0] pred;
+    logic [`SUCC_W     -1:0] succ;
 
     // flags of the instruction decoder to drive the control unit
     logic auipc;
@@ -86,6 +86,7 @@ module friscv_rv32i_control
 
     // program counter, expressed in bytes
     localparam              PC_W = 32;
+
     logic        [PC_W-1:0] pc_plus4;
     logic signed [PC_W-1:0] pc_auipc;
     logic signed [PC_W-1:0] pc_jal;
