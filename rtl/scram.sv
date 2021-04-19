@@ -37,7 +37,7 @@ module scram
 
     // Port 1
     always @ (posedge aclk) begin
-        
+
         if (p1_en) begin
             // Write input
             if (p1_wr) begin
@@ -50,7 +50,7 @@ module scram
             // Read output
             p1_rdata <= ram[p1_addr];
         end
-        if (p1_en && ~p1_ready_r) begin
+        if (p1_en && ~p1_wr && ~p1_ready_r) begin
             p1_ready_r <= 1'b1;
         end else begin
             p1_ready_r <= 1'b0;
@@ -76,7 +76,7 @@ module scram
             // Read output
             p2_rdata <= ram[p2_addr];
         end
-        if (p2_en && ~p2_ready_r) begin
+        if (p2_en && ~p2_wr && ~p2_ready_r) begin
             p2_ready_r <= 1'b1;
         end else begin
             p2_ready_r <= 1'b0;

@@ -1,48 +1,51 @@
 [*]
 [*] GTKWave Analyzer v3.3.107 (w)1999-2020 BSI
-[*] Wed Apr 14 20:04:49 2021
+[*] Mon Apr 19 19:05:02 2021
 [*]
 [dumpfile] "/Users/damien/workspace/hdl/friscv/test/rtl_unit_tests/friscv_rv32i_alu_testbench.vcd"
-[dumpfile_mtime] "Wed Apr 14 20:04:19 2021"
-[dumpfile_size] 4871
+[dumpfile_mtime] "Mon Apr 19 18:33:41 2021"
+[dumpfile_size] 105466
 [savefile] "/Users/damien/workspace/hdl/friscv/test/rtl_unit_tests/friscv_rv32i_alu_testbench.gtkw"
 [timestart] 0
-[size] 1963 1265
+[size] 1779 1157
 [pos] -1 -1
-*-12.843459 15000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-13.621365 15000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] friscv_rv32i_alu_testbench.
 [sst_width] 193
-[signals_width] 439
+[signals_width] 246
 [sst_expanded] 1
-[sst_vpaned_height] 410
+[sst_vpaned_height] 363
 @28
 dut.aclk
 dut.aresetn
 dut.srst
+@420
+friscv_rv32i_alu_testbench.svut_test_number
 @200
 -
 @28
 dut.alu_en
 dut.alu_empty
 dut.alu_ready
-@c00200
+@800200
 -instruction bus
 @22
-dut.alu_instbus[85:0]
 dut.opcode[6:0]
-dut.rd[4:0]
-dut.rs1[4:0]
-dut.rs2[4:0]
-dut.shamt[4:0]
-dut.zimm[4:0]
-dut.csr[11:0]
 @28
 dut.funct3[2:0]
 @22
 dut.funct7[6:0]
+@25
+dut.rs1[4:0]
+@24
+dut.rs2[4:0]
+@22
+dut.rd[4:0]
+dut.zimm[4:0]
+dut.csr[11:0]
 dut.imm12[11:0]
 dut.imm20[19:0]
-@1401200
+@1000200
 -instruction bus
 @200
 -
@@ -51,28 +54,68 @@ dut.memorying
 dut.mem_access
 @200
 -
-@29
-dut.mem_en
 @28
+dut.mem_en
 dut.mem_wr
 @22
 dut.mem_addr[15:0]
+dut.addr[31:0]
 dut.mem_wdata[31:0]
-dut.mem_strb[3:0]
 @28
+dut.mem_strb[3:0]
 dut.mem_ready
 @22
 dut.mem_rdata[31:0]
 @200
 -
+@24
+dut.alu_rs1_addr[4:0]
+@22
+dut.alu_rs1_val[31:0]
+@24
+dut.alu_rs2_addr[4:0]
+@22
+dut.alu_rs2_val[31:0]
 @28
 dut.alu_rd_wr
 @22
 dut.alu_rd_addr[4:0]
 dut.alu_rd_val[31:0]
-dut.alu_rs1_addr[4:0]
-dut.alu_rs1_val[31:0]
-dut.alu_rs2_addr[4:0]
-dut.alu_rs2_val[31:0]
+dut.alu_rd_strb[3:0]
+@200
+-
+@22
+dut._add[31:0]
+dut._addi[31:0]
+dut._and[31:0]
+dut._andi[31:0]
+dut._or[31:0]
+dut._ori[31:0]
+dut._sll[31:0]
+dut._slli[31:0]
+dut._slt[31:0]
+dut._slti[31:0]
+dut._sltiu[31:0]
+dut._sra[31:0]
+dut._srai[31:0]
+dut._srl[31:0]
+dut._srli[31:0]
+dut._xor[31:0]
+dut._xori[31:0]
+@800200
+-data ram
+@28
+friscv_rv32i_alu_testbench.data_ram.aclk
+friscv_rv32i_alu_testbench.data_ram.p1_en
+friscv_rv32i_alu_testbench.data_ram.p1_wr
+friscv_rv32i_alu_testbench.data_ram.p1_ready
+friscv_rv32i_alu_testbench.data_ram.p1_ready_r
+@22
+friscv_rv32i_alu_testbench.data_ram.p1_addr[15:0]
+friscv_rv32i_alu_testbench.data_ram.p1_strb[3:0]
+friscv_rv32i_alu_testbench.data_ram.p1_wdata[31:0]
+friscv_rv32i_alu_testbench.data_ram.p1_rdata[31:0]
+@1000200
+-data ram
 [pattern_trace] 1
 [pattern_trace] 0
