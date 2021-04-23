@@ -139,3 +139,4 @@ build
 
 syn/*.lib
 syn/*.v
+obj_dir

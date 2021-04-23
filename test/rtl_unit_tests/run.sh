@@ -14,7 +14,7 @@ if [[ -n $1 ]]; then
     ts="$1"
 fi
 
-svutRun -test "$ts" | tee icarus.log
+timeout 2s svutRun -test "$ts" | tee icarus.log
 ret=$?
 
 if [[ $ret != 0 ]]; then

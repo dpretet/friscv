@@ -1,18 +1,18 @@
 [*]
 [*] GTKWave Analyzer v3.3.107 (w)1999-2020 BSI
-[*] Mon Apr 19 19:05:02 2021
+[*] Mon Apr 26 17:49:39 2021
 [*]
 [dumpfile] "/Users/damien/workspace/hdl/friscv/test/rtl_unit_tests/friscv_rv32i_alu_testbench.vcd"
-[dumpfile_mtime] "Mon Apr 19 18:33:41 2021"
-[dumpfile_size] 105466
+[dumpfile_mtime] "Mon Apr 26 17:49:00 2021"
+[dumpfile_size] 100460
 [savefile] "/Users/damien/workspace/hdl/friscv/test/rtl_unit_tests/friscv_rv32i_alu_testbench.gtkw"
-[timestart] 0
-[size] 1779 1157
+[timestart] 139380
+[size] 1939 1182
 [pos] -1 -1
-*-13.621365 15000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-13.621365 181000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] friscv_rv32i_alu_testbench.
 [sst_width] 193
-[signals_width] 246
+[signals_width] 314
 [sst_expanded] 1
 [sst_vpaned_height] 363
 @28
@@ -25,6 +25,9 @@ friscv_rv32i_alu_testbench.svut_test_number
 -
 @28
 dut.alu_en
+@22
+dut.alu_instbus[86:0]
+@28
 dut.alu_empty
 dut.alu_ready
 @800200
@@ -35,12 +38,12 @@ dut.opcode[6:0]
 dut.funct3[2:0]
 @22
 dut.funct7[6:0]
-@25
-dut.rs1[4:0]
 @24
+dut.rs1[4:0]
 dut.rs2[4:0]
-@22
+@23
 dut.rd[4:0]
+@22
 dut.zimm[4:0]
 dut.csr[11:0]
 dut.imm12[11:0]
@@ -52,6 +55,7 @@ dut.imm20[19:0]
 @28
 dut.memorying
 dut.mem_access
+dut.r_i_opcode
 @200
 -
 @28
@@ -102,20 +106,19 @@ dut._srl[31:0]
 dut._srli[31:0]
 dut._xor[31:0]
 dut._xori[31:0]
-@800200
+@c00200
 -data ram
 @28
 friscv_rv32i_alu_testbench.data_ram.aclk
 friscv_rv32i_alu_testbench.data_ram.p1_en
 friscv_rv32i_alu_testbench.data_ram.p1_wr
 friscv_rv32i_alu_testbench.data_ram.p1_ready
-friscv_rv32i_alu_testbench.data_ram.p1_ready_r
 @22
 friscv_rv32i_alu_testbench.data_ram.p1_addr[15:0]
 friscv_rv32i_alu_testbench.data_ram.p1_strb[3:0]
 friscv_rv32i_alu_testbench.data_ram.p1_wdata[31:0]
 friscv_rv32i_alu_testbench.data_ram.p1_rdata[31:0]
-@1000200
+@1401200
 -data ram
 [pattern_trace] 1
 [pattern_trace] 0

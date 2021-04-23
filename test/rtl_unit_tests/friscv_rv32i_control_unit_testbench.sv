@@ -193,6 +193,7 @@ module friscv_rv32i_control_unit_testbench();
         while (inst_en == 1'b0) @(posedge aclk);
         inst_ready = 1'b1;
         alu_ready = 1'b1;
+        @(posedge aclk);
 
         inst_rdata = 7'b0000011;
         @(posedge aclk);
@@ -272,6 +273,7 @@ module friscv_rv32i_control_unit_testbench();
     `UNIT_TEST("Check JAL opcode")
 
         while (inst_en == 1'b0) @(posedge aclk);
+        @(posedge aclk);
 
         `MSG("Jump +0, rd=x0");
         prev_pc = dut.pc + 4;
@@ -310,6 +312,7 @@ module friscv_rv32i_control_unit_testbench();
     `UNIT_TEST("Check JALR opcode")
 
         while (inst_en == 1'b0) @(posedge aclk);
+        @(posedge aclk);
 
         `MSG("Jump +0, rd=x0");
         prev_pc = dut.pc + 4;
@@ -359,6 +362,7 @@ module friscv_rv32i_control_unit_testbench();
     `UNIT_TEST("Check all branching")
 
         while (inst_en == 1'b0) @(posedge aclk);
+        @(posedge aclk);
         inst_ready = 1'b1;
 
         `MSG("BEQ is true");
@@ -489,6 +493,17 @@ module friscv_rv32i_control_unit_testbench();
         inst_rdata = {17'h0, `BGEU, 5'h10, 7'b1100011};
         @(negedge aclk);
         `ASSERT((dut.pc == 32'h88), "program counter must move forward by 16 bytes");
+
+    `UNIT_TEST_END
+
+    `UNIT_TEST("Failling instruction in C testsuite")
+
+        while (inst_en == 1'b0) @(posedge aclk);
+        @(posedge aclk);
+        inst_ready = 1'b1;
+        inst_rdata = 32'hC12403;
+        @(posedge aclk);
+        @(posedge aclk);
 
     `UNIT_TEST_END
 

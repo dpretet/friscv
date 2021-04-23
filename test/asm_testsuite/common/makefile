@@ -1,4 +1,4 @@
-PROJ_NAME=test1
+PROJ_NAME=$(shell basename $(CURDIR))
 
 
 RISCV_PATH=/opt/riscv/

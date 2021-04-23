@@ -2,15 +2,16 @@
 `include "svut_h.sv"
 
 `timescale 1 ns / 100 ps
+`include "../../rtl/friscv_h.sv"
 
 module friscv_rv32i_testbench();
 
     `SVUT_SETUP
 
-    parameter                  INST_ADDRW = 16;
-    parameter                  DATA_ADDRW = 16;
-    parameter [INST_ADDRW-1:0] BOOT_ADDR  = {INST_ADDRW{1'b0}};
-    parameter                  XLEN       = 32;
+    parameter INST_ADDRW = 16;
+    parameter DATA_ADDRW = 16;
+    parameter BOOT_ADDR  = 0;
+    parameter XLEN       = 32;
 
     logic                   aclk;
     logic                   aresetn;
@@ -27,9 +28,7 @@ module friscv_rv32i_testbench();
     logic [XLEN/8     -1:0] mem_strb;
     logic [XLEN       -1:0] mem_rdata;
     logic                   mem_ready;
-
-    integer i;
-    logic [63:0] prg [127:0];
+    integer                 time_counter;
 
     friscv_rv32i
     #(
@@ -59,15 +58,45 @@ module friscv_rv32i_testbench();
 
     scram
     #(
+    .INIT  ("test.v"),
+    .ADDRW (INST_ADDRW),
+    .DATAW (XLEN)
+    )
+    instruction_ram
+    (
+    .aclk     (aclk),
+    .aresetn  (aresetn),
+    .srst     (srst),
+    .p1_en    (inst_en),
+    .p1_wr    (1'b0),
+    .p1_addr  (inst_addr),
+    .p1_wdata ('h0),
+    .p1_strb  (4'h0),
+    .p1_rdata (inst_rdata),
+    .p1_ready (inst_ready),
+    .p2_en    (1'b0),
+    .p2_wr    (1'b0),
+    .p2_addr  ({DATA_ADDRW{1'b0}}),
+    .p2_wdata ({XLEN{1'b0}}),
+    .p2_strb  ({XLEN/8{1'b0}}),
+    .p2_rdata (/*unused*/),
+    .p2_ready (/*unused*/)
+    );
+
+    scram
+    #(
+    .INIT  ("zero.v"),
     .ADDRW (DATA_ADDRW),
     .DATAW (XLEN)
     )
     data_ram
     (
-    .aclk     (aclk     ),
-    .p1_en    (mem_en   ),
-    .p1_wr    (mem_wr   ),
-    .p1_addr  (mem_addr ),
+    .aclk     (aclk),
+    .aresetn  (aresetn),
+    .srst     (srst),
+    .p1_en    (mem_en),
+    .p1_wr    (mem_wr),
+    .p1_addr  (mem_addr),
     .p1_wdata (mem_wdata),
     .p1_strb  (mem_strb ),
     .p1_rdata (mem_rdata),
@@ -94,11 +123,14 @@ module friscv_rv32i_testbench();
     begin
         /// setup() runs when a test begins
         enable = 0;
+        time_counter = 0;
         aresetn = 1'b0;
         srst = 1'b0;
-        inst_rdata = {XLEN{1'b0}};
-        inst_ready = 1'b0;
-        #20;
+        @(posedge aclk);
+        @(posedge aclk);
+        @(posedge aclk);
+        @(posedge aclk);
+        @(posedge aclk);
         aresetn = 1'b1;
     end
     endtask
@@ -109,14 +141,23 @@ module friscv_rv32i_testbench();
     end
     endtask
 
-    `TEST_SUITE("Testsuite 1")
+    `TEST_SUITE("C ASM Testsuite")
 
-    `UNIT_TEST("Run empty C program")
+    `UNIT_TEST("Run program")
 
-        $readmemh("build/test1.hex", prg);
-        for (i=0;i<64;i=i+1) begin
-            $display("%x\n", prg[i]);
+        // how to stop?
+        // - accessing a memory range
+        // - using a ecall/ebreak instructions
+        // - use asm into C
+
+        `MSG("Start test");
+        @(posedge aclk);
+        $display("Instruction number: %0d", `TEST_INSTRUCTION_NUMBER);
+        while (time_counter<`TEST_INSTRUCTION_NUMBER*2) begin
+            time_counter = time_counter + 1;
+            @(posedge aclk);
         end
+        `MSG("Stop test");
 
     `UNIT_TEST_END
 

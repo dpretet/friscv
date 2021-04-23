@@ -1,0 +1,11 @@
+{signal: [
+  {name: 'clk', wave: 'p...........'},
+  {name: 'data_slv', wave: 'x..3535.35x...', data: ['D1', 'D2', 'D3', 'D4', 'D5', 'D6']},
+  {name: 'valid_slv', wave: '1...........'},
+  {name: 'ready_slv', wave: '1.....01.....'},
+  {},
+  {name: 'data_mst', wave: 'x...353.535x...', data: ['D1', 'D2', 'D3', 'D4', 'D5', 'D6']},
+  {name: 'valid_mst', wave: '1...........'},
+  {name: 'ready_mst', wave: '1.....01.....'}
+],
+}

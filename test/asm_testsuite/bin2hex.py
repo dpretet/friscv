@@ -25,6 +25,11 @@ def main(argv0, in_name, out_name):
             instrs.append("".join(reversed([instr[i:i+2] for i in range(0, len(instr), 2)])))
             instr = ""
             i = 0
+    # Append zero to have enough room to init the whole RAM
+    # i = 0
+    # while i < 100000:
+        # i += 1
+        # instrs.append("00000000")
 
     verimem = open(out_name, 'w')
     for instr in instrs:

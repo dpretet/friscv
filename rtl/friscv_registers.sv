@@ -35,6 +35,17 @@ module friscv_registers
         input  logic [5     -1:0] alu_rd_addr,
         input  logic [XLEN  -1:0] alu_rd_val,
         input  logic [XLEN/8-1:0] alu_rd_strb,
+        // register source   1 for memfy
+        input  logic [5     -1:0] memfy_rs1_addr,
+        output logic [XLEN  -1:0] memfy_rs1_val,
+        // register source 2 for memfy
+        input  logic [5     -1:0] memfy_rs2_addr,
+        output logic [XLEN  -1:0] memfy_rs2_val,
+        // register destination write from memfy
+        input  logic              memfy_rd_wr,
+        input  logic [5     -1:0] memfy_rd_addr,
+        input  logic [XLEN  -1:0] memfy_rd_val,
+        input  logic [XLEN/8-1:0] memfy_rd_strb,
         // registers output
         output logic [XLEN-1:0] x0,
         output logic [XLEN-1:0] x1,
@@ -75,7 +86,7 @@ module friscv_registers
 
     // registers' write circuit
     always @ (posedge aclk or negedge aresetn) begin
-        // asynchronous reset 
+        // asynchronous reset
         if (aresetn == 1'b0) begin
             for (integer i=0;i<32;i=i+1) begin
                 regs[i] <= {XLEN{1'b0}};
@@ -87,13 +98,32 @@ module friscv_registers
             end
         // write access to registers
         end else begin
+
+            ///////////////////////////////////////////////
             // register 0 is alwyas 0, can't be overwritten
+            ///////////////////////////////////////////////
             if (alu_rd_wr && alu_rd_addr == 5'h0 ||
+                memfy_rd_wr && memfy_rd_addr == 5'h0 ||
                 ctrl_rd_wr && ctrl_rd_addr == 5'h0) begin
                 regs[alu_rd_addr] <= {XLEN{1'b0}};
+
+            ///////////////////////////////////////////////
             // registers 1-31
+            ///////////////////////////////////////////////
+
+            // Access from Central controller
             end else if (ctrl_rd_wr && ctrl_rd_addr != 5'h0) begin
                 regs[ctrl_rd_addr] <= ctrl_rd_val;
+
+            // Access from data memory controller
+            end else if (memfy_rd_wr && memfy_rd_addr != 5'h0) begin
+                for (integer i=0;i<(XLEN/8);i=i+1) begin
+                    if (memfy_rd_strb[i]) begin
+                        regs[memfy_rd_addr][i*8+:8] <= memfy_rd_val[i*8+:8];
+                    end
+                end
+
+            // Acess from ALU
             end else if (alu_rd_wr && alu_rd_addr != 5'h0) begin
                 for (integer i=0;i<(XLEN/8);i=i+1) begin
                     if (alu_rd_strb[i]) begin

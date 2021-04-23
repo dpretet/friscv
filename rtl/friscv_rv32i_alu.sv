@@ -32,17 +32,8 @@ module friscv_rv32i_alu
         output logic                      alu_rd_wr,
         output logic [5             -1:0] alu_rd_addr,
         output logic [XLEN          -1:0] alu_rd_val,
-        output logic [XLEN/8        -1:0] alu_rd_strb,
-        // data memory interface
-        output logic                      mem_en,
-        output logic                      mem_wr,
-        output logic [ADDRW         -1:0] mem_addr,
-        output logic [XLEN          -1:0] mem_wdata,
-        output logic [XLEN/8        -1:0] mem_strb,
-        input  logic [XLEN          -1:0] mem_rdata,
-        input  logic                      mem_ready
+        output logic [XLEN/8        -1:0] alu_rd_strb
     );
-
 
     ///////////////////////////////////////////////////////////////////////////
     //
@@ -63,10 +54,7 @@ module friscv_rv32i_alu
     logic [`CSR_W      -1:0] csr;
     logic [`SHAMT_W    -1:0] shamt;
 
-    logic                    mem_access;
     logic                    r_i_opcode;
-    logic                    memorying;
-    logic signed [XLEN -1:0] addr;
 
     logic        [XLEN -1:0] _add;
     logic        [XLEN -1:0] _sub;
@@ -107,88 +95,14 @@ module friscv_rv32i_alu
     assign csr    = alu_instbus[`CSR    +: `CSR_W   ];
     assign shamt  = alu_instbus[`SHAMT  +: `SHAMT_W ];
 
-
-    ///////////////////////////////////////////////////////////////////////////
-    //
-    // Control circuit managing memory and registers accesses
-    //
-    ///////////////////////////////////////////////////////////////////////////
-
-    always @ (posedge aclk or negedge aresetn) begin
-
-        if (aresetn == 1'b0) begin
-            memorying <= 1'b0;
-        end else if (srst == 1'b1) begin
-            memorying <= 1'b0;
-        end else begin
-
-            // memorying flags the ongoing memory accesses, preventing to
-            // accept a new instruction before the current one is processed.
-            // Memory read accesses span over multiple cycles, thus obliges to
-            // pause the pipeline
-            if (memorying) begin
-                // Accepts a new instruction once memory completes the request
-                if (mem_en && mem_ready) begin
-                    memorying <= 1'b0;
-                end
-            end else if (alu_en && mem_access) begin
-                // LOAD is special while it access to memory in raed mode, 
-                // which may span across several cycles to complete. We pause
-                // the execution pipeline
-                if (opcode==`LOAD) begin
-                    memorying <= 1'b1;
-                // Else LUI and STORE are completed in 1 cycle, no need to stop
-                end else begin
-                    memorying <= 1'b0;
-                end
-            // When instruction does not access the memory, ALU is always ready
-            // Concerns all R-type and I-type arithmetic instructions
-            end else begin
-                memorying <= 1'b0;
-            end
-        end
-
-    end
-
-    // Manages the ALU instruction bus acknowledgment
-     assign alu_ready = (memorying && mem_en && mem_ready)       ? 1'b1:
-                        (alu_en && mem_access && opcode==`LOAD)  ? 1'b0: 
-                        (alu_en && mem_access && opcode==`STORE) ? 1'b1: 
-                        (alu_en && r_i_opcode)                   ? 1'b1:
-                        (alu_en && opcode==`LUI)                 ? 1'b1:
-                                                                   1'b1;
-                        
-    assign mem_access = (opcode == `LOAD)  ? 1'b1 :
-                        (opcode == `STORE) ? 1'b1 :
-                                             1'b0;
-
     assign r_i_opcode = (opcode==`R_ARITH || opcode==`I_ARITH) ? 1'b1 : 1'b0;
 
+    assign alu_ready = 1'b1;
+    assign alu_empty = 1'b0;
 
     ///////////////////////////////////////////////////////////////////////////
     //
-    // Memory IOs
-    //
-    ///////////////////////////////////////////////////////////////////////////
-
-    assign mem_en = (memorying) ? 1'b1 :
-                    (alu_en && mem_access) ? 1'b1:
-                                             1'b0;
-    assign mem_wr = (opcode == `STORE) ? 1'b1 : 1'b0;
-
-    assign addr = $signed({{(XLEN-12){imm12[11]}}, imm12}) + $signed(alu_rs1_val);
-    assign mem_addr = addr[ADDRW-1:0];
-
-    assign mem_wdata = alu_rs2_val;
-    assign mem_strb = (opcode == `STORE && funct3==`SB) ? {{(XLEN/8-1){1'b0}},1'b1} :
-                      (opcode == `STORE && funct3==`SH) ? {{(XLEN/8-2){1'b0}},2'b11} :
-                      (opcode == `STORE && funct3==`SW) ? {(XLEN/8){1'b1}} :
-                                                          {XLEN/8{1'b0}};
-
-
-    ///////////////////////////////////////////////////////////////////////////
-    //
-    // Memory IOs
+    // Registers IOS
     //
     ///////////////////////////////////////////////////////////////////////////
 
@@ -196,19 +110,11 @@ module friscv_rv32i_alu
 
     assign alu_rs2_addr = rs2;
 
-    assign alu_rd_wr = (alu_en && (opcode==`LUI || r_i_opcode)) ? 1'b1: 
-                       (memorying && mem_en && mem_ready) ?       1'b1:
-                                                                  1'b0;
+    assign alu_rd_wr = alu_en & r_i_opcode;
 
     assign alu_rd_addr = rd;
 
-    assign alu_rd_val = (opcode==`LOAD && funct3==`LB)                         ? {{24{mem_rdata[7]}}, mem_rdata[7:0]} :
-                        (opcode==`LOAD && funct3==`LBU)                        ? {{24{1'b0}}, mem_rdata[7:0]} :
-                        (opcode==`LOAD && funct3==`LH)                         ? {{16{mem_rdata[15]}}, mem_rdata[15:0]} :
-                        (opcode==`LOAD && funct3==`LHU)                        ? {{16{1'b0}}, mem_rdata[15:0]} :
-                        (opcode==`LOAD && funct3==`LW)                         ?  mem_rdata :
-                        (opcode==`LUI)                                         ? {imm20, 12'b0} :
-                        (opcode==`I_ARITH && funct3==`ADDI)                    ? _addi :
+    assign alu_rd_val = (opcode==`I_ARITH && funct3==`ADDI)                    ? _addi :
                         (opcode==`I_ARITH && funct3==`SLTI)                    ? _slti :
                         (opcode==`I_ARITH && funct3==`SLTIU)                   ? _sltiu :
                         (opcode==`I_ARITH && funct3==`XORI)                    ? _xori :
@@ -229,15 +135,7 @@ module friscv_rv32i_alu
                         (opcode==`R_ARITH && funct3==`SRA && funct7[5]==1'b1)  ? _sra :
                                                                                  {XLEN{1'b0}};
 
-    assign alu_rd_strb = (opcode == `LOAD && funct3==`LB)  ? {{(XLEN/8-1){1'b0}},1'b1} :
-                         (opcode == `LOAD && funct3==`LBU) ? {{(XLEN/8-1){1'b0}},1'b1} :
-                         (opcode == `LOAD && funct3==`LH)  ? {{(XLEN/8-2){1'b0}},2'b11} :
-                         (opcode == `LOAD && funct3==`LHU) ? {{(XLEN/8-2){1'b0}},2'b11} :
-                         (opcode == `LOAD && funct3==`LW)  ? {(XLEN/8){1'b1}} :
-                         (opcode == `LUI)                  ? {(XLEN/8){1'b1}} :
-                         (opcode == `R_ARITH)              ? {(XLEN/8){1'b1}} :
-                         (opcode == `I_ARITH)              ? {(XLEN/8){1'b1}} :
-                                                             {XLEN/8{1'b0}};
+    assign alu_rd_strb = (r_i_opcode) ? {(XLEN/8){1'b1}} : {(XLEN/8){1'b0}};
 
 
     ///////////////////////////////////////////////////////////////////////////
@@ -246,6 +144,7 @@ module friscv_rv32i_alu
     //
     ///////////////////////////////////////////////////////////////////////////
 
+    ///////////////////////////////////////////////////////////////////////////
     // I-type instructions
     ///////////////////////////////////////////////////////////////////////////
 
@@ -263,15 +162,15 @@ module friscv_rv32i_alu
 
     assign _andi = {{(XLEN-12){imm12[11]}}, imm12} & alu_rs1_val;
 
-    assign _slli = (shamt == 6'd01) ? {alu_rs1_val[XLEN-1-01:0], 01'b0} :
-                   (shamt == 6'd02) ? {alu_rs1_val[XLEN-1-02:0], 02'b0} :
-                   (shamt == 6'd03) ? {alu_rs1_val[XLEN-1-03:0], 03'b0} :
-                   (shamt == 6'd04) ? {alu_rs1_val[XLEN-1-04:0], 04'b0} :
-                   (shamt == 6'd05) ? {alu_rs1_val[XLEN-1-05:0], 05'b0} :
-                   (shamt == 6'd06) ? {alu_rs1_val[XLEN-1-06:0], 06'b0} :
-                   (shamt == 6'd07) ? {alu_rs1_val[XLEN-1-07:0], 07'b0} :
-                   (shamt == 6'd08) ? {alu_rs1_val[XLEN-1-08:0], 08'b0} :
-                   (shamt == 6'd09) ? {alu_rs1_val[XLEN-1-09:0], 09'b0} :
+    assign _slli = (shamt == 6'd01) ? {alu_rs1_val[XLEN-1-01:0],  1'b0} :
+                   (shamt == 6'd02) ? {alu_rs1_val[XLEN-1-02:0],  2'b0} :
+                   (shamt == 6'd03) ? {alu_rs1_val[XLEN-1-03:0],  3'b0} :
+                   (shamt == 6'd04) ? {alu_rs1_val[XLEN-1-04:0],  4'b0} :
+                   (shamt == 6'd05) ? {alu_rs1_val[XLEN-1-05:0],  5'b0} :
+                   (shamt == 6'd06) ? {alu_rs1_val[XLEN-1-06:0],  6'b0} :
+                   (shamt == 6'd07) ? {alu_rs1_val[XLEN-1-07:0],  7'b0} :
+                   (shamt == 6'd08) ? {alu_rs1_val[XLEN-1-08:0],  8'b0} :
+                   (shamt == 6'd09) ? {alu_rs1_val[XLEN-1-09:0],  9'b0} :
                    (shamt == 6'd10) ? {alu_rs1_val[XLEN-1-10:0], 10'b0} :
                    (shamt == 6'd11) ? {alu_rs1_val[XLEN-1-11:0], 11'b0} :
                    (shamt == 6'd12) ? {alu_rs1_val[XLEN-1-12:0], 12'b0} :
@@ -362,6 +261,7 @@ module friscv_rv32i_alu
                    (shamt == 6'd31) ? {{31{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:31]} :
                                       {alu_rs1_val[XLEN-1:0]} ;
 
+    ///////////////////////////////////////////////////////////////////////////
     // R-type instructions
     ///////////////////////////////////////////////////////////////////////////
 
@@ -373,7 +273,7 @@ module friscv_rv32i_alu
                                                                   {XLEN{1'b0}};
 
     assign _sltu = (alu_rs1_val < alu_rs2_val) ? {{XLEN-1{1'b0}}, 1'b1} :
-                                                 {XLEN{1'b0}};
+                                                  {XLEN{1'b0}};
 
     assign _xor = alu_rs1_val ^ alu_rs2_val;
 
@@ -480,14 +380,6 @@ module friscv_rv32i_alu
                   (alu_rs2_val[5:0] == 6'd31) ? {{31{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:31]} :
                                                 {alu_rs1_val[XLEN-1:0]} ;
 
-
-    ///////////////////////////////////////////////////////////////////////////
-    //
-    // Others
-    //
-    ///////////////////////////////////////////////////////////////////////////
-
-    assign alu_empty = 1'b0;
 
 endmodule
 

@@ -1,37 +1,49 @@
 # DOING
 
-- [-] Implement ALU
+Memoire index en word et pas en byte sur l’ALU
+Trap des c-c pour kill le process dans run.sh
+Support timeout
 
+- [ ] Develop top testbench to use C/asm programs and rely only on RAM to drive
+      instructions and data into the core
+    - [ ] Try GOTO for branching instruction
+    - [ ] Test pointers with int, char et function
+- [ ] Explore and prepare RISCV compliance testbench
 
 # BACKLOG
 
+- [ ] Design a generic pipeline stage for ALU front-end
+- [ ] Read processor datasheet and grab dev ideas
 - [ ] Implement in-house profiler to check branching, stall time, ...
-- [ ] Explore and prepare RISCV compliance testbench
-- [ ] Try GOTO for branching instruction
-- [ ] Test pointers with int, char et function
 - [ ] synthesis project
 
+- [ ] Document specification,architecture, possible evolution and timing
+      diagrams. Spec: in-order, stage depth, interupt, GPIOs, memory init
+
+- [ ] Trap des c-c pour kill le process dans run.sh
+- [ ] Support timeout
 
 # Design Backlog
 
+- [ ] Support IRQ, timer, GPIOs
 - [ ] Support multiple ALUs in parallel, differents spec (integer/float, mult/div)
-- [ ] Support oustanding requests
+      How to dispatch workloqd and share ISA registers
+- [ ] Support oustanding requests (in-order)
     - Separate read and write memory channels
-    - Control: always
-    - ALU: in-order, read rquests initiated by the scheduler, data arrives with
-      instruction write requests initiated by the ALU
 - [ ] Implement instruction cache with branch prediction and outstanding request
 - [ ] Implement data cache
 - [ ] Support privilieged instructions (virtualization, hypevisor support)
-- [ ] Study MMU topic for RISCV (think about linux driver)
-- [ ] Support SIMD architecture
-
-- [ ] Write architecture and timing diagrams
+- [ ] Study MMU topic for RISCV (think about linux driver dev, use same interface than ARM?)
+- [ ] Study SIMD architecture
+- [ ] Study vector architecture (IBM Cell like?)
+- [ ] Application to GPGPU area
+- [ ] Many-core architecture
+- [ ] Support float16 & float8, more generaly low-precision arithmetic like int8...
+l
 
 
 # Verification/Validation Backlog
 
-- [-] Populate modules' unit tests
 - [~] Define the architecture of the first testbench. Goal: use C/asm to produce
       a RAM init file to drive the testcases
     - [ ] how to stop a testcase? on certain amount of data? by spying gpio
@@ -43,7 +55,7 @@
 
 # Ideas / Applications
 
-- [ ] Possibility to use a program executed upon a testbench
+- [ ] Possibility to use a program executed upon a testbench, with qemu?
 - [ ] Print instruction received and execution steps in a log for debug purpose
 - [ ] Use qemu to learn instruction
 - [ ] Implement a neural network with the processor and TF lite
@@ -62,4 +74,5 @@
     - [X] be able to handle ALU halts for long instruction execution
     - [X] support branching / system instructions
     - [X] support pc correctly
-
+- [X] Implement ALU
+- [X] Populate modules' unit tests (control & alu)

@@ -221,7 +221,8 @@ module friscv_rv32i_control
     assign pc_branching =  $signed(pc_reg) + $signed({18'b0, imm12, 1'b0});
 
     // program counter switching logic
-    assign pc = (auipc)                     ? pc_auipc :
+    assign pc = (cfsm==BOOT)                ? (BOOT_ADDR<< 2) :
+                (auipc)                     ? pc_auipc :
                 (jal)                       ? pc_jal :
                 (jalr)                      ? {pc_jalr[31:1],1'b0} :
                 (branching && goto_branch)  ? pc_branching :
@@ -334,9 +335,10 @@ module friscv_rv32i_control
     end
 
     // Fetch stage of the processor
-    assign inst_en = (cfsm == RUN &&
-                      (~cant_branch_now && ~cant_process_now)) ? 1'b1:
-                                                                 1'b0;
+    assign inst_en = (cfsm==BOOT)                           ? 1'b1:
+                     (cfsm == RUN &&
+                     ~cant_branch_now && ~cant_process_now) ? 1'b1:
+                                                              1'b0;
     // select only MSB because RAM is addressed by word while program counter
     // is byte-oriented
     assign inst_addr = pc[2+:ADDRW];
@@ -348,7 +350,7 @@ module friscv_rv32i_control
     assign ctrl_rs2_addr = rs2;
 
     // register destination
-    assign ctrl_rd_wr =  ((~cant_branch_now && ~cant_process_now) &&
+    assign ctrl_rd_wr =  (~cant_branch_now && ~cant_process_now &&
                           (auipc || jal || jalr)) ? 1'b1 :
                                                     1'b0;
     assign ctrl_rd_addr = rd;
