@@ -24,10 +24,10 @@ module friscv_rv32i_control_unit_testbench();
     logic [ADDRW        -1:0]  inst_addr;
     logic [XLEN         -1:0]  inst_rdata;
     logic                      inst_ready;
-    logic                      alu_en;
-    logic                      alu_ready;
-    logic                      alu_empty;
-    logic [`ALU_INSTBUS_W-1:0] alu_instbus;
+    logic                      proc_en;
+    logic                      proc_ready;
+    logic                      proc_empty;
+    logic [`INST_BUS_W   -1:0] proc_instbus;
     logic [5             -1:0] ctrl_rs1_addr;
     logic [XLEN          -1:0] ctrl_rs1_val;
     logic [5             -1:0] ctrl_rs2_addr;
@@ -55,10 +55,10 @@ module friscv_rv32i_control_unit_testbench();
     inst_addr,
     inst_rdata,
     inst_ready,
-    alu_en,
-    alu_ready,
-    alu_empty,
-    alu_instbus,
+    proc_en,
+    proc_ready,
+    proc_empty,
+    proc_instbus,
     ctrl_rs1_addr,
     ctrl_rs1_val,
     ctrl_rs2_addr,
@@ -82,8 +82,8 @@ module friscv_rv32i_control_unit_testbench();
     begin
         aresetn = 1'b0;
         srst = 1'b0;
-        alu_ready = 1'b1;
-        alu_empty = 1'b1;
+        proc_ready = 1'b1;
+        proc_empty = 1'b1;
         inst_rdata = {XLEN{1'b0}};
         inst_ready = 1'b0;
         ctrl_rs1_val <= {XLEN{1'b0}};
@@ -192,36 +192,36 @@ module friscv_rv32i_control_unit_testbench();
 
         while (inst_en == 1'b0) @(posedge aclk);
         inst_ready = 1'b1;
-        alu_ready = 1'b1;
+        proc_ready = 1'b1;
         @(posedge aclk);
 
         inst_rdata = 7'b0000011;
         @(posedge aclk);
-        `ASSERT((dut.alu_en==1'b1));
+        `ASSERT((dut.proc_en==1'b1));
 
         inst_rdata = 7'b0110111;
         @(posedge aclk);
-        `ASSERT((dut.alu_en==1'b1));
+        `ASSERT((dut.proc_en==1'b1));
 
         inst_rdata = 7'b0100011;
         @(posedge aclk);
-        `ASSERT((dut.alu_en==1'b1));
+        `ASSERT((dut.proc_en==1'b1));
 
         inst_rdata = 7'b0010011;
         @(posedge aclk);
-        `ASSERT((dut.alu_en==1'b1));
+        `ASSERT((dut.proc_en==1'b1));
 
         inst_rdata = 7'b0110011;
         @(posedge aclk);
-        `ASSERT((dut.alu_en==1'b1));
+        `ASSERT((dut.proc_en==1'b1));
 
         inst_rdata = 7'b0010011;
         @(posedge aclk);
-        `ASSERT((dut.alu_en==1'b1));
+        `ASSERT((dut.proc_en==1'b1));
 
         inst_rdata = 7'b1110011;
         @(posedge aclk);
-        `ASSERT((dut.alu_en==1'b1));
+        `ASSERT((dut.proc_en==1'b1));
 
     `UNIT_TEST_END
 

@@ -1,9 +1,5 @@
+*test*_testbench.gtkw
 test*.v
-test*/test*.v
-*.o
-*.out
 *.asm
 *.elf
-*.hex
 *.map
-./test*/*.v

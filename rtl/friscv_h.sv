@@ -105,7 +105,7 @@
 `define SHAMT       `CSR +    `CSR_W
 
 // total length of ALU instruction bus
-`define ALU_INSTBUS_W `OPCODE_W + `FUNCT3_W + `FUNCT7_W + `RS1_W + `RS2_W + \
+`define INST_BUS_W `OPCODE_W + `FUNCT3_W + `FUNCT7_W + `RS1_W + `RS2_W + \
                       `RD_W + `ZIMM_W + `IMM12_W + `IMM20_W + `CSR_W + `SHAMT_W
 
 

@@ -24,10 +24,10 @@ module friscv_rv32i_control
         input  logic [XLEN          -1:0] inst_rdata,
         input  logic                      inst_ready,
         // interface to activate~the ALU processing
-        output logic                      alu_en,
-        input  logic                      alu_ready,
-        input  logic                      alu_empty,
-        output logic [`ALU_INSTBUS_W-1:0] alu_instbus,
+        output logic                      proc_en,
+        input  logic                      proc_ready,
+        input  logic                      proc_empty,
+        output logic [`INST_BUS_W   -1:0] proc_instbus,
         // register source 1 query interface
         output logic [5             -1:0] ctrl_rs1_addr,
         input  logic [XLEN          -1:0] ctrl_rs1_val,
@@ -178,19 +178,19 @@ module friscv_rv32i_control
     //
     ///////////////////////////////////////////////////////////////////////////
 
-    assign alu_en = (inst_ready | load_stored) & processing;
+    assign proc_en = (inst_ready | load_stored) & processing;
 
-    assign alu_instbus[`OPCODE +: `OPCODE_W] = opcode;
-    assign alu_instbus[`FUNCT3 +: `FUNCT3_W] = funct3;
-    assign alu_instbus[`FUNCT7 +: `FUNCT7_W] = funct7;
-    assign alu_instbus[`RS1    +: `RS1_W   ] = rs1   ;
-    assign alu_instbus[`RS2    +: `RS2_W   ] = rs2   ;
-    assign alu_instbus[`RD     +: `RD_W    ] = rd    ;
-    assign alu_instbus[`ZIMM   +: `ZIMM_W  ] = zimm  ;
-    assign alu_instbus[`IMM12  +: `IMM12_W ] = imm12 ;
-    assign alu_instbus[`IMM20  +: `IMM20_W ] = imm20 ;
-    assign alu_instbus[`CSR    +: `CSR_W   ] = csr   ;
-    assign alu_instbus[`SHAMT  +: `SHAMT_W ] = shamt ;
+    assign proc_instbus[`OPCODE +: `OPCODE_W] = opcode;
+    assign proc_instbus[`FUNCT3 +: `FUNCT3_W] = funct3;
+    assign proc_instbus[`FUNCT7 +: `FUNCT7_W] = funct7;
+    assign proc_instbus[`RS1    +: `RS1_W   ] = rs1   ;
+    assign proc_instbus[`RS2    +: `RS2_W   ] = rs2   ;
+    assign proc_instbus[`RD     +: `RD_W    ] = rd    ;
+    assign proc_instbus[`ZIMM   +: `ZIMM_W  ] = zimm  ;
+    assign proc_instbus[`IMM12  +: `IMM12_W ] = imm12 ;
+    assign proc_instbus[`IMM20  +: `IMM20_W ] = imm20 ;
+    assign proc_instbus[`CSR    +: `CSR_W   ] = csr   ;
+    assign proc_instbus[`SHAMT  +: `SHAMT_W ] = shamt ;
 
 
     ///////////////////////////////////////////////////////////////////////////
@@ -262,10 +262,10 @@ module friscv_rv32i_control
 
     // two flags to stop the process if ALU is struggling to process
     assign cant_branch_now = ((auipc || jal || jalr || branching) &&
-                               ~alu_empty) ? 1'b1 :
+                               ~proc_empty) ? 1'b1 :
                                              1'b0;
 
-    assign cant_process_now = (~alu_ready) ? 1'b1 : 1'b0;
+    assign cant_process_now = (~proc_ready) ? 1'b1 : 1'b0;
 
     // The FSM switching the program counter
     ///////////////////////////////////////////////////////////////////////////
@@ -304,7 +304,7 @@ module friscv_rv32i_control
 
                         // was waiting for ALU to be ready to branch, now
                         // ALU's empty and process can restart
-                        if (load_stored && alu_ready) begin
+                        if (load_stored && proc_ready) begin
                             load_stored <= 1'b0;
                         // Need to branch but ALU didn't finish yet or need
                         // to process but ALU's FIFO is full

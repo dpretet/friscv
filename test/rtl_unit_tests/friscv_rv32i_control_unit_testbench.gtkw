@@ -82,11 +82,11 @@ friscv_rv32i_control_unit_testbench.dut.pc_reg[31:0]
 @200
 -
 @28
-friscv_rv32i_control_unit_testbench.dut.alu_en
+friscv_rv32i_control_unit_testbench.dut.proc_en
 @23
-friscv_rv32i_control_unit_testbench.dut.alu_instbus[86:0]
+friscv_rv32i_control_unit_testbench.dut.proc_instbus[86:0]
 @28
-friscv_rv32i_control_unit_testbench.dut.alu_ready
+friscv_rv32i_control_unit_testbench.dut.proc_ready
 @200
 -
 @22

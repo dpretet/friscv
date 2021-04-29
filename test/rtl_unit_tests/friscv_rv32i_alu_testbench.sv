@@ -17,7 +17,7 @@ module friscv_rv32i_alu_testbench();
     logic                      alu_en;
     logic                      alu_ready;
     logic                      alu_empty;
-    logic [`ALU_INSTBUS_W-1:0] alu_instbus;
+    logic [`INST_BUS_W-1:0] alu_instbus;
     logic [5             -1:0] alu_rs1_addr;
     logic [XLEN          -1:0] alu_rs1_val;
     logic [5             -1:0] alu_rs2_addr;
@@ -40,11 +40,11 @@ module friscv_rv32i_alu_testbench();
     logic [5             -1:0] shamt;
 
     logic [12            -1:0] offset;
-    logic [`ALU_INSTBUS_W-1:0] instructions[16-1:0];
-    logic [`ALU_INSTBUS_W-1:0] insts_load[16-1:0];
-    logic [`ALU_INSTBUS_W-1:0] insts_store[16-1:0];
-    logic [`ALU_INSTBUS_W-1:0] insts_lui[16-1:0];
-    logic [`ALU_INSTBUS_W-1:0] instruction;
+    logic [`INST_BUS_W-1:0] instructions[16-1:0];
+    logic [`INST_BUS_W-1:0] insts_load[16-1:0];
+    logic [`INST_BUS_W-1:0] insts_store[16-1:0];
+    logic [`INST_BUS_W-1:0] insts_lui[16-1:0];
+    logic [`INST_BUS_W-1:0] instruction;
     logic [XLEN          -1:0] datas[16-1:0];
     logic [XLEN          -1:0] rs1_data[16-1:0];
     logic [XLEN          -1:0] rs2_data[16-1:0];
@@ -92,7 +92,7 @@ module friscv_rv32i_alu_testbench();
         aresetn =1'b0;
         srst = 1'b0;
         alu_en = 1'b0;
-        alu_instbus = {`ALU_INSTBUS_W{1'b0}};
+        alu_instbus = {`INST_BUS_W{1'b0}};
         alu_rs1_val = {XLEN{1'b0}};
         alu_rs2_val = {XLEN{1'b0}};
         // mem_rdata = {XLEN{1'b0}};
@@ -120,7 +120,7 @@ module friscv_rv32i_alu_testbench();
     endtask
 
     task drive_i_arith;
-        input [`ALU_INSTBUS_W-1:0] instructions;
+        input [`INST_BUS_W-1:0] instructions;
         input [XLEN          -1:0] rs1_data;
         input [XLEN          -1:0] results;
         input [XLEN          -1:0] _rd;
@@ -152,7 +152,7 @@ module friscv_rv32i_alu_testbench();
     endtask
 
     task drive_r_arith;
-        input [`ALU_INSTBUS_W-1:0] instructions;
+        input [`INST_BUS_W-1:0] instructions;
         input [XLEN          -1:0] rs1_data;
         input [XLEN          -1:0] rs2_data;
         input [XLEN          -1:0] results;

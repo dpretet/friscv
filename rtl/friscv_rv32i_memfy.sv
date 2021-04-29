@@ -21,7 +21,7 @@ module friscv_rv32i_memfy
         input  logic                        memfy_en,
         output logic                        memfy_ready,
         output logic                        memfy_empty,
-        input  logic [`ALU_INSTBUS_W  -1:0] memfy_instbus,
+        input  logic [`INST_BUS_W  -1:0] memfy_instbus,
         // register source 1 query interface
         output logic [5               -1:0] memfy_rs1_addr,
         input  logic [XLEN            -1:0] memfy_rs1_val,

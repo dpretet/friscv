@@ -21,7 +21,7 @@ module friscv_rv32i_alu
         input  logic                      alu_en,
         output logic                      alu_ready,
         output logic                      alu_empty,
-        input  logic [`ALU_INSTBUS_W-1:0] alu_instbus,
+        input  logic [`INST_BUS_W   -1:0] alu_instbus,
         // register source 1 query interface
         output logic [5             -1:0] alu_rs1_addr,
         input  logic [XLEN          -1:0] alu_rs1_val,

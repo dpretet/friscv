@@ -96,13 +96,11 @@ module friscv_rv32i
     logic [XLEN  -1:0] x30;
     logic [XLEN  -1:0] x31;
 
-    logic                      alu_en;
-    logic [`ALU_INSTBUS_W-1:0] alu_instbus;
-    logic                      alu_ready;
-    logic                      memfy_ready;
-    logic                      alu_empty;
-    logic                      memfy_empty;
+    logic                      proc_en;
+    logic [`INST_BUS_W-   1:0] proc_instbus;
     logic                      proc_ready;
+    logic                      memfy_ready;
+    logic                      proc_empty;
 
 
     friscv_rv32i_control
@@ -120,10 +118,10 @@ module friscv_rv32i
     .inst_addr     (inst_addr    ),
     .inst_rdata    (inst_rdata   ),
     .inst_ready    (inst_ready   ),
-    .alu_en        (alu_en       ),
-    .alu_ready     (proc_ready   ),
-    .alu_empty     (alu_empty    ),
-    .alu_instbus   (alu_instbus  ),
+    .proc_en       (proc_en      ),
+    .proc_ready    (proc_ready   ),
+    .proc_empty    (proc_empty   ),
+    .proc_instbus  (proc_instbus ),
     .ctrl_rs1_addr (ctrl_rs1_addr),
     .ctrl_rs1_val  (ctrl_rs1_val ),
     .ctrl_rs2_addr (ctrl_rs2_addr),
@@ -133,62 +131,44 @@ module friscv_rv32i
     .ctrl_rd_val   (ctrl_rd_val  )
     );
 
-    assign proc_ready = alu_ready & memfy_ready;
 
-    friscv_rv32i_alu
+    friscv_rv32i_processing 
     #(
-    .ADDRW     (DATA_ADDRW),
-    .XLEN      (XLEN)
+    .ADDRW (DATA_ADDRW),
+    .XLEN  (XLEN)
     )
-    alu
+    dut 
     (
-    .aclk          (aclk        ),
-    .aresetn       (aresetn     ),
-    .srst          (srst        ),
-    .alu_en        (alu_en      ),
-    .alu_ready     (alu_ready   ),
-    .alu_empty     (alu_empty   ),
-    .alu_instbus   (alu_instbus ),
-    .alu_rs1_addr  (alu_rs1_addr),
-    .alu_rs1_val   (alu_rs1_val ),
-    .alu_rs2_addr  (alu_rs2_addr),
-    .alu_rs2_val   (alu_rs2_val ),
-    .alu_rd_wr     (alu_rd_wr   ),
-    .alu_rd_addr   (alu_rd_addr ),
-    .alu_rd_val    (alu_rd_val  ),
-    .alu_rd_strb   (alu_rd_strb )
-    );
-
-
-    friscv_rv32i_memfy
-    #(
-    .ADDRW     (DATA_ADDRW),
-    .XLEN      (XLEN)
-    )
-    memfy
-    (
-    .aclk            (aclk          ),
-    .aresetn         (aresetn       ),
-    .srst            (srst          ),
-    .memfy_en        (alu_en        ),
-    .memfy_ready     (memfy_ready   ),
-    .memfy_empty     (memfy_empty   ),
-    .memfy_instbus   (alu_instbus   ),
-    .memfy_rs1_addr  (memfy_rs1_addr),
-    .memfy_rs1_val   (memfy_rs1_val ),
-    .memfy_rs2_addr  (memfy_rs2_addr),
-    .memfy_rs2_val   (memfy_rs2_val ),
-    .memfy_rd_wr     (memfy_rd_wr   ),
-    .memfy_rd_addr   (memfy_rd_addr ),
-    .memfy_rd_val    (memfy_rd_val  ),
-    .memfy_rd_strb   (memfy_rd_strb ),
-    .mem_en          (mem_en        ),
-    .mem_wr          (mem_wr        ),
-    .mem_addr        (mem_addr      ),
-    .mem_wdata       (mem_wdata     ),
-    .mem_strb        (mem_strb      ),
-    .mem_rdata       (mem_rdata     ),
-    .mem_ready       (mem_ready     )
+    .aclk           (aclk          ),
+    .aresetn        (aresetn       ),
+    .srst           (srst          ),
+    .proc_en        (proc_en       ),
+    .proc_ready     (proc_ready    ),
+    .proc_empty     (proc_empty    ),
+    .proc_instbus   (proc_instbus  ),
+    .alu_rs1_addr   (alu_rs1_addr  ),
+    .alu_rs1_val    (alu_rs1_val   ),
+    .alu_rs2_addr   (alu_rs2_addr  ),
+    .alu_rs2_val    (alu_rs2_val   ),
+    .alu_rd_wr      (alu_rd_wr     ),
+    .alu_rd_addr    (alu_rd_addr   ),
+    .alu_rd_val     (alu_rd_val    ),
+    .alu_rd_strb    (alu_rd_strb   ),
+    .memfy_rs1_addr (memfy_rs1_addr),
+    .memfy_rs1_val  (memfy_rs1_val ),
+    .memfy_rs2_addr (memfy_rs2_addr),
+    .memfy_rs2_val  (memfy_rs2_val ),
+    .memfy_rd_wr    (memfy_rd_wr   ),
+    .memfy_rd_addr  (memfy_rd_addr ),
+    .memfy_rd_val   (memfy_rd_val  ),
+    .memfy_rd_strb  (memfy_rd_strb ),
+    .mem_en         (mem_en        ),
+    .mem_wr         (mem_wr        ),
+    .mem_addr       (mem_addr      ),
+    .mem_wdata      (mem_wdata     ),
+    .mem_strb       (mem_strb      ),
+    .mem_rdata      (mem_rdata     ),
+    .mem_ready      (mem_ready     )
     );
 
 
