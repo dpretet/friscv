@@ -28,7 +28,7 @@ module friscv_rv32i_testbench();
     logic [XLEN/8     -1:0] mem_strb;
     logic [XLEN       -1:0] mem_rdata;
     logic                   mem_ready;
-    integer                 time_counter;
+    integer                 inst_counter;
 
     friscv_rv32i
     #(
@@ -73,19 +73,18 @@ module friscv_rv32i_testbench();
     .p1_wdata ('h0),
     .p1_strb  (4'h0),
     .p1_rdata (inst_rdata),
-    .p1_ready (inst_ready),
     .p2_en    (1'b0),
     .p2_wr    (1'b0),
     .p2_addr  ({DATA_ADDRW{1'b0}}),
     .p2_wdata ({XLEN{1'b0}}),
     .p2_strb  ({XLEN/8{1'b0}}),
-    .p2_rdata (/*unused*/),
-    .p2_ready (/*unused*/)
+    .p2_rdata (/*unused*/)
     );
 
-    scram
+    apb_ram
     #(
     .INIT  ("zero.v"),
+    .LATENCY (1),
     .ADDRW (DATA_ADDRW),
     .DATAW (XLEN)
     )
@@ -123,9 +122,10 @@ module friscv_rv32i_testbench();
     begin
         /// setup() runs when a test begins
         enable = 0;
-        time_counter = 0;
+        inst_counter = 0;
         aresetn = 1'b0;
         srst = 1'b0;
+        inst_ready = 1'b1;
         @(posedge aclk);
         @(posedge aclk);
         @(posedge aclk);
@@ -141,7 +141,7 @@ module friscv_rv32i_testbench();
     end
     endtask
 
-    `TEST_SUITE("C ASM Testsuite")
+    `TEST_SUITE("ASM Testsuite")
 
     `UNIT_TEST("Run program")
 
@@ -150,14 +150,20 @@ module friscv_rv32i_testbench();
         // - using a ecall/ebreak instructions
         // - use asm into C
 
-        `MSG("Start test");
+        `INFO("Start test");
         @(posedge aclk);
         $display("Instruction number: %0d", `TEST_INSTRUCTION_NUMBER);
-        while (time_counter<`TEST_INSTRUCTION_NUMBER*2) begin
-            time_counter = time_counter + 1;
+        while (inst_counter<`TEST_INSTRUCTION_NUMBER) begin
+            if (inst_en && inst_ready)
+                inst_counter = inst_counter + 1;
             @(posedge aclk);
         end
-        `MSG("Stop test");
+        @(posedge aclk);
+        @(posedge aclk);
+        @(posedge aclk);
+        @(posedge aclk);
+        @(posedge aclk);
+        `INFO("Stop test");
 
     `UNIT_TEST_END
 

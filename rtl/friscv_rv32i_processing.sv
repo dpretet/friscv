@@ -117,6 +117,7 @@ module friscv_rv32i_processing
 
 
     assign proc_ready = alu_ready & memfy_ready;
+    assign proc_empty = alu_empty & memfy_empty;
 
 
 endmodule

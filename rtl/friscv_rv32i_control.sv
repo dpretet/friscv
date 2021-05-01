@@ -23,7 +23,7 @@ module friscv_rv32i_control
         output logic [ADDRW         -1:0] inst_addr,
         input  logic [XLEN          -1:0] inst_rdata,
         input  logic                      inst_ready,
-        // interface to activate~the ALU processing
+        // interface to activate the processing
         output logic                      proc_en,
         input  logic                      proc_ready,
         input  logic                      proc_empty,
@@ -63,6 +63,7 @@ module friscv_rv32i_control
     logic [`SUCC_W     -1:0] succ;
 
     // flags of the instruction decoder to drive the control unit
+    logic lui;
     logic auipc;
     logic jal;
     logic jalr;
@@ -157,6 +158,7 @@ module friscv_rv32i_control
         .imm20       (imm20      ),
         .csr         (csr        ),
         .shamt       (shamt      ),
+        .lui         (lui        ),
         .auipc       (auipc      ),
         .jal         (jal        ),
         .jalr        (jalr       ),
@@ -178,7 +180,7 @@ module friscv_rv32i_control
     //
     ///////////////////////////////////////////////////////////////////////////
 
-    assign proc_en = (inst_ready | load_stored) & processing;
+    assign proc_en = (inst_ready | load_stored) & processing & (cfsm==RUN);
 
     assign proc_instbus[`OPCODE +: `OPCODE_W] = opcode;
     assign proc_instbus[`FUNCT3 +: `FUNCT3_W] = funct3;
@@ -221,7 +223,8 @@ module friscv_rv32i_control
     assign pc_branching =  $signed(pc_reg) + $signed({18'b0, imm12, 1'b0});
 
     // program counter switching logic
-    assign pc = (cfsm==BOOT)                ? (BOOT_ADDR<< 2) :
+    assign pc = (cfsm==BOOT)                ? pc_reg :
+                (lui)                       ? pc_plus4 :
                 (auipc)                     ? pc_auipc :
                 (jal)                       ? pc_jal :
                 (jalr)                      ? {pc_jalr[31:1],1'b0} :
@@ -262,8 +265,8 @@ module friscv_rv32i_control
 
     // two flags to stop the process if ALU is struggling to process
     assign cant_branch_now = ((auipc || jal || jalr || branching) &&
-                               ~proc_empty) ? 1'b1 :
-                                             1'b0;
+                               ~proc_ready) ? 1'b1 :
+                                              1'b0;
 
     assign cant_process_now = (~proc_ready) ? 1'b1 : 1'b0;
 
@@ -274,11 +277,13 @@ module friscv_rv32i_control
 
         if (aresetn == 1'b0) begin
             cfsm <= BOOT;
+            inst_en <= 1'b0;
             pc_reg <= {(PC_W){1'b0}};
             load_stored <= 1'b0;
             stored_inst <= {XLEN{1'b0}};
         end else if (srst == 1'b1) begin
             cfsm <= BOOT;
+            inst_en <= 1'b0;
             pc_reg <= {(PC_W){1'b0}};
             load_stored <= 1'b0;
             stored_inst <= {XLEN{1'b0}};
@@ -286,13 +291,19 @@ module friscv_rv32i_control
 
             case (cfsm)
 
-                // start to boot the RAM after reset
+                // Start to boot the RAM after reset. Take time to load the 
+                // RAM and wait for readiness before moving forward to be sure
+                // the RAM drives a valid instruction
                 default: begin
+                    inst_en <= 1'b1;
                     pc_reg <= BOOT_ADDR << 2;
-                    cfsm <= RUN;
+
+                    if (inst_ready && inst_en) begin
+                        cfsm <= RUN;
+                    end
                 end
 
-                // Run the core
+                // Run the core operations
                 RUN: begin
 
                     // Completly stop the execution and $stop the simulation
@@ -304,18 +315,21 @@ module friscv_rv32i_control
 
                         // was waiting for ALU to be ready to branch, now
                         // ALU's empty and process can restart
-                        if (load_stored && proc_ready) begin
-                            load_stored <= 1'b0;
+                        if (load_stored) begin
+                            if (proc_ready) load_stored <= 1'b0;
                         // Need to branch but ALU didn't finish yet or need
                         // to process but ALU's FIFO is full
-                        end else if (inst_ready && (cant_branch_now ||
-                                                    cant_process_now)) begin
+                        end else if (inst_ready && ~lui && 
+                                     (cant_branch_now || cant_process_now)) begin
                             load_stored <= 1'b1;
                             stored_inst <= inst_rdata;
                         end
 
-                        if (~cant_branch_now && ~cant_process_now) begin
+                        if (lui || (~cant_branch_now && ~cant_process_now)) begin
                             pc_reg <= pc;
+                            inst_en <= 1'b1;
+                        end else begin
+                            inst_en <= 1'b0;
                         end
 
                     end
@@ -334,11 +348,6 @@ module friscv_rv32i_control
         end
     end
 
-    // Fetch stage of the processor
-    assign inst_en = (cfsm==BOOT)                           ? 1'b1:
-                     (cfsm == RUN &&
-                     ~cant_branch_now && ~cant_process_now) ? 1'b1:
-                                                              1'b0;
     // select only MSB because RAM is addressed by word while program counter
     // is byte-oriented
     assign inst_addr = pc[2+:ADDRW];
@@ -351,10 +360,13 @@ module friscv_rv32i_control
 
     // register destination
     assign ctrl_rd_wr =  (~cant_branch_now && ~cant_process_now &&
-                          (auipc || jal || jalr)) ? 1'b1 :
-                                                    1'b0;
+                             (auipc || jal || jalr))    ? 1'b1 :
+                          (~cant_process_now && lui)    ? 1'b1 :
+                                                          1'b0 ;
     assign ctrl_rd_addr = rd;
-    assign ctrl_rd_val = (jal || jalr) ? pc_plus4 : pc;
+    assign ctrl_rd_val = (jal || jalr) ? pc_plus4 :
+                         (lui)         ? {imm20, 12'b0} : 
+                                         pc;
 
 endmodule
 

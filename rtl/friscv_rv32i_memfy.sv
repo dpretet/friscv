@@ -21,7 +21,7 @@ module friscv_rv32i_memfy
         input  logic                        memfy_en,
         output logic                        memfy_ready,
         output logic                        memfy_empty,
-        input  logic [`INST_BUS_W  -1:0] memfy_instbus,
+        input  logic [`INST_BUS_W     -1:0] memfy_instbus,
         // register source 1 query interface
         output logic [5               -1:0] memfy_rs1_addr,
         input  logic [XLEN            -1:0] memfy_rs1_val,
@@ -43,6 +43,47 @@ module friscv_rv32i_memfy
         input  logic                        mem_ready
     );
 
+    function automatic logic [XLEN/8-1:0] get_mem_strb(
+
+        input logic [6:0] opcode,
+        input logic [2:0] funct3
+    );
+
+        if      (opcode==`STORE && funct3==`SB) get_mem_strb = {{(XLEN/8-1){1'b0}},1'b1};
+        else if (opcode==`STORE && funct3==`SH) get_mem_strb = {{(XLEN/8-2){1'b0}},2'b11};
+        else if (opcode==`STORE && funct3==`SW) get_mem_strb = {(XLEN/8){1'b1}};
+        else                                    get_mem_strb = {XLEN/8{1'b0}};
+
+    endfunction
+
+    function automatic logic [XLEN-1:0] get_rd_val(
+
+        input logic [7   -1:0] opcode,
+        input logic [3   -1:0] funct3,
+        input logic [XLEN-1:0] rdata
+    );
+             if  (opcode==`LOAD && funct3==`LB)  get_rd_val = {{24{rdata[7]}}, rdata[7:0]};
+        else if  (opcode==`LOAD && funct3==`LBU) get_rd_val = {{24{1'b0}}, rdata[7:0]};
+        else if  (opcode==`LOAD && funct3==`LH)  get_rd_val = {{16{rdata[15]}}, rdata[15:0]};
+        else if  (opcode==`LOAD && funct3==`LHU) get_rd_val = {{16{1'b0}}, rdata[15:0]};
+        else if  (opcode==`LOAD && funct3==`LW)  get_rd_val =  rdata;
+
+    endfunction
+
+    function automatic logic [XLEN/8-1:0] get_rd_strb(
+
+        input logic [7   -1:0] opcode,
+        input logic [3   -1:0] funct3
+    );
+
+             if (opcode == `LOAD && funct3==`LB)  get_rd_strb = {{(XLEN/8-1){1'b0}},1'b1};
+        else if (opcode == `LOAD && funct3==`LBU) get_rd_strb = {{(XLEN/8-1){1'b0}},1'b1};
+        else if (opcode == `LOAD && funct3==`LH)  get_rd_strb = {{(XLEN/8-2){1'b0}},2'b11}; 
+        else if (opcode == `LOAD && funct3==`LHU) get_rd_strb = {{(XLEN/8-2){1'b0}},2'b11}; 
+        else if (opcode == `LOAD && funct3==`LW)  get_rd_strb = {(XLEN/8){1'b1}};
+        else                                      get_rd_strb = {XLEN/8{1'b0}};
+
+    endfunction
 
     ///////////////////////////////////////////////////////////////////////////
     //
@@ -64,8 +105,11 @@ module friscv_rv32i_memfy
     logic [`SHAMT_W    -1:0] shamt;
 
     logic                    mem_access;
-    logic                    memorying;
     logic signed [XLEN -1:0] addr;
+
+    logic [`OPCODE_W   -1:0] opcode_r;
+    logic [`FUNCT3_W   -1:0] funct3_r;
+    logic [XLEN/8      -1:0] mem_strb_w;
 
     ///////////////////////////////////////////////////////////////////////////
     //
@@ -95,34 +139,78 @@ module friscv_rv32i_memfy
     always @ (posedge aclk or negedge aresetn) begin
 
         if (aresetn == 1'b0) begin
-            memorying <= 1'b0;
             memfy_ready <= 1'b0;
+            opcode_r <= 7'b0;
+            funct3_r <= 3'b0;
+            mem_en <= 1'b0;
+            mem_wr <= 1'b0;
+            mem_addr <= {ADDRW{1'b0}};
+            mem_wdata <= {XLEN{1'b0}};
+            mem_strb <= {XLEN/8{1'b0}};
+            memfy_rd_wr <= 1'b0;
+            memfy_rd_addr <= 5'b0;
+            memfy_rd_val <= {XLEN{1'b0}};
+            memfy_rd_strb <= {XLEN/8{1'b0}};
         end else if (srst == 1'b1) begin
-            memorying <= 1'b0;
             memfy_ready <= 1'b0;
+            opcode_r <= 7'b0;
+            funct3_r <= 3'b0;
+            mem_en <= 1'b0;
+            mem_wr <= 1'b0;
+            mem_addr <= {ADDRW{1'b0}};
+            mem_wdata <= {XLEN{1'b0}};
+            mem_strb <= {XLEN/8{1'b0}};
+            memfy_rd_wr <= 1'b0;
+            memfy_rd_addr <= 5'b0;
+            memfy_rd_val <= {XLEN{1'b0}};
+            memfy_rd_strb <= {XLEN/8{1'b0}};
         end else begin
 
-            // memorying flags the ongoing memory accesses, preventing to
-            // accept a new instruction before the current one is processed.
-            // Memory read accesses span over multiple cycles, thus obliges to
-            // pause the pipeline
-            if (memorying) begin
-                // Accepts a new instruction once memory completes the request
-                if (mem_en && mem_ready) begin
-                    memorying <= 1'b0;
+            // LOAD or STORE completion: memory accesses span over multiple
+            // cycles, thus obliges to pause the pipeline
+            // Accepts a new instruction once memory completes the request
+            if (mem_en) begin
+                if (mem_ready) begin
+                    mem_en <= 1'b0;
+                    mem_wr <= 1'b0;
                     memfy_ready <= 1'b1;
+                    if (opcode_r==`LOAD) begin
+                        memfy_rd_wr <= 1'b1;
+                        memfy_rd_val <= get_rd_val(opcode_r, funct3_r, mem_rdata);
+                        memfy_rd_strb <= get_rd_strb(opcode_r, funct3_r);
+                    end else begin
+                        memfy_rd_wr <= 1'b0;
+                    end
                 end
-            // When accessing the memory (read or write), we pause the
-            // processing and wait for memory completion
+
+            // LOAD or STORE instruction acknowledgment
             end else if (memfy_en && mem_access) begin
-                memorying <= 1'b1;
                 memfy_ready <= 1'b0;
-            end else if (memfy_en && opcode==`LUI) begin
-                memorying <= 1'b0;
-                memfy_ready <= 1'b1;
+                opcode_r <= opcode;
+                funct3_r <= funct3;
+                mem_en <= 1'b1;
+                mem_addr <= {addr[ADDRW-1:2], 2'b0};
+                if (opcode==`STORE) begin
+                    mem_wr <= 1'b1;
+                    mem_wdata <= memfy_rs2_val;
+                    mem_strb <= get_mem_strb(opcode, funct3);
+                end else begin
+                    mem_wr <= 1'b0;
+                    mem_wdata <= {XLEN{1'b0}};
+                    mem_strb <= {XLEN/8{1'b0}};
+                end
+                memfy_rd_wr <= 1'b0;
+                memfy_rd_addr <= rd;
+
+            // Wait for an instruction
             end else begin
-                memorying <= 1'b0;
-                memfy_ready <= 1'b0;
+                memfy_ready <= 1'b1;
+                mem_en <= 1'b0;
+                mem_wr <= 1'b0;
+                memfy_rd_wr <= 1'b0;
+                memfy_rd_addr <= 5'b0;
+                memfy_rd_val <= {XLEN{1'b0}};
+                memfy_rd_strb <= {XLEN/8{1'b0}};
             end
         end
 
@@ -130,61 +218,16 @@ module friscv_rv32i_memfy
 
     assign mem_access = (opcode == `LOAD)  ? 1'b1 :
                         (opcode == `STORE) ? 1'b1 :
-                                             1'b0;
-
-
-    ///////////////////////////////////////////////////////////////////////////
-    //
-    // Memory IOs
-    //
-    ///////////////////////////////////////////////////////////////////////////
-
-    assign mem_en = (memfy_en && mem_access) ? 1'b1: 1'b0;
-
-    assign mem_wr = (opcode==`STORE) ? 1'b1 : 1'b0;
-
-    assign addr = $signed({{(XLEN-12){imm12[11]}}, imm12}) + $signed(memfy_rs1_val);
-    assign mem_addr = addr[ADDRW-1:0];
-
-    assign mem_wdata = memfy_rs2_val;
-
-    assign mem_strb = (opcode==`STORE && funct3==`SB) ? {{(XLEN/8-1){1'b0}},1'b1} :
-                      (opcode==`STORE && funct3==`SH) ? {{(XLEN/8-2){1'b0}},2'b11} :
-                      (opcode==`STORE && funct3==`SW) ? {(XLEN/8){1'b1}} :
-                                                        {XLEN/8{1'b0}};
-
-
-    ///////////////////////////////////////////////////////////////////////////
-    //
-    // Registers IOs
-    //
-    ///////////////////////////////////////////////////////////////////////////
+                                             1'b0 ;
 
     assign memfy_rs1_addr = rs1;
 
     assign memfy_rs2_addr = rs2;
 
-    assign memfy_rd_wr = (memfy_en && opcode==`LUI) ? 1'b1: 
-                         (memorying && mem_ready  ) ? 1'b1:
-                                                      1'b0;
+    assign addr = $signed({{(XLEN-12){imm12[11]}}, imm12}) + $signed(memfy_rs1_val);
 
-    assign memfy_rd_addr = rd;
+    assign memfy_empty = 1'b1;
 
-    assign memfy_rd_val = (opcode==`LOAD && funct3==`LB)  ? {{24{mem_rdata[7]}}, mem_rdata[7:0]} :
-                          (opcode==`LOAD && funct3==`LBU) ? {{24{1'b0}}, mem_rdata[7:0]} :
-                          (opcode==`LOAD && funct3==`LH)  ? {{16{mem_rdata[15]}}, mem_rdata[15:0]} :
-                          (opcode==`LOAD && funct3==`LHU) ? {{16{1'b0}}, mem_rdata[15:0]} :
-                          (opcode==`LOAD && funct3==`LW)  ?  mem_rdata :
-                          (opcode==`LUI)                  ? {imm20, 12'b0} :
-                                                            {XLEN{1'b0}};
-
-    assign memfy_rd_strb = (opcode == `LOAD && funct3==`LB)  ? {{(XLEN/8-1){1'b0}},1'b1} :
-                           (opcode == `LOAD && funct3==`LBU) ? {{(XLEN/8-1){1'b0}},1'b1} :
-                           (opcode == `LOAD && funct3==`LH)  ? {{(XLEN/8-2){1'b0}},2'b11} :
-                           (opcode == `LOAD && funct3==`LHU) ? {{(XLEN/8-2){1'b0}},2'b11} :
-                           (opcode == `LOAD && funct3==`LW)  ? {(XLEN/8){1'b1}} :
-                           (opcode == `LUI)                  ? {(XLEN/8){1'b1}} :
-                                                               {XLEN/8{1'b0}};
 
 endmodule
 

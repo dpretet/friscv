@@ -1,18 +1,40 @@
 # DOING
 
 Memoire index en word et pas en byte sur l’ALU
-Trap des c-c pour kill le process dans run.sh
-Support timeout
 
-- [ ] Develop top testbench to use C/asm programs and rely only on RAM to drive
+- [-] Develop top testbench to use asm programs and rely only on RAM to drive
       instructions and data into the core
-    - [ ] Try GOTO for branching instruction
+    - [ ] Develop a unit test framework for ASM
+    - [ ] Test memfy
+    - [ ] Test processing + memory 
+    - [ ] Explore and prepare RISCV compliance testbench
+
+ - [ ] Package alu + memory dans un module
+    - front end de pipeline
+    - scheduler to assert readiness according the instruction
+
+- [ ] Design a generic pipeline stage for ALU front-end
+
+1. Driver is always ready and feed the consumer. Consumer is not always ready
+- one cycle pause
+- one cycle pause several time, not frequently
+- pause every 2 cycles
+
+2. Driver throttle the valid, consumer is always ready
+
+3. Both Driver and consumer throttle the valid/ready handshake
+
+
+- [ ] Develop C testuite
     - [ ] Test pointers with int, char et function
-- [ ] Explore and prepare RISCV compliance testbench
 
 # BACKLOG
 
-- [ ] Design a generic pipeline stage for ALU front-end
+- [ ] Design a generic memory bus
+    - AMBA-like
+    - support ID, OR, PROT and ERROR
+    - Write completion
+
 - [ ] Read processor datasheet and grab dev ideas
 - [ ] Implement in-house profiler to check branching, stall time, ...
 - [ ] synthesis project

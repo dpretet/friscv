@@ -22,6 +22,7 @@ module friscv_rv32i_decoder
         output logic [20   -1:0] imm20,
         output logic [12   -1:0] csr,
         output logic [6    -1:0] shamt,
+        output logic             lui,
         output logic             auipc,
         output logic             jal,
         output logic             jalr,
@@ -40,12 +41,13 @@ module friscv_rv32i_decoder
 
             // LUI
             7'b0110111: begin
+                lui = 1'b1;
                 auipc = 1'b0;
                 jal = 1'b0;
                 jalr = 1'b0;
                 branching = 1'b0;
                 system = 1'b0;
-                processing = 1'b1;
+                processing = 1'b0;
                 inst_error = 1'b0;
                 imm12 = 12'b0;
                 imm20 = instruction[31:12];
@@ -53,6 +55,7 @@ module friscv_rv32i_decoder
 
             // AUIPC
             7'b0010111: begin
+                lui = 1'b0;
                 auipc = 1'b1;
                 jal = 1'b0;
                 jalr = 1'b0;
@@ -66,6 +69,7 @@ module friscv_rv32i_decoder
 
             // JAL
             7'b1101111: begin
+                lui = 1'b0;
                 auipc = 1'b0;
                 jal = 1'b1;
                 jalr = 1'b0;
@@ -82,6 +86,7 @@ module friscv_rv32i_decoder
 
             // JALR
             7'b1100111: begin
+                lui = 1'b0;
                 auipc = 1'b0;
                 jal = 1'b0;
                 jalr = 1'b1;
@@ -95,6 +100,7 @@ module friscv_rv32i_decoder
 
             // Branch
             7'b1100011: begin
+                lui = 1'b0;
                 auipc = 1'b0;
                 jal = 1'b0;
                 jalr = 1'b0;
@@ -111,6 +117,7 @@ module friscv_rv32i_decoder
 
             // System
             7'b0000000: begin
+                lui = 1'b0;
                 auipc = 1'b0;
                 jal = 1'b0;
                 jalr = 1'b0;
@@ -124,6 +131,7 @@ module friscv_rv32i_decoder
 
             // Load
             7'b0000011: begin
+                lui = 1'b0;
                 auipc = 1'b0;
                 jal = 1'b0;
                 jalr = 1'b0;
@@ -137,6 +145,7 @@ module friscv_rv32i_decoder
 
             // Store
             7'b0100011: begin
+                lui = 1'b0;
                 auipc = 1'b0;
                 jal = 1'b0;
                 jalr = 1'b0;
@@ -150,6 +159,7 @@ module friscv_rv32i_decoder
 
             // Arithmetic
             7'b0010011: begin
+                lui = 1'b0;
                 auipc = 1'b0;
                 jal = 1'b0;
                 jalr = 1'b0;
@@ -163,6 +173,7 @@ module friscv_rv32i_decoder
 
             // Arithmetic
             7'b0110011: begin
+                lui = 1'b0;
                 auipc = 1'b0;
                 jal = 1'b0;
                 jalr = 1'b0;
@@ -189,6 +200,7 @@ module friscv_rv32i_decoder
 
             // All others, unsupported/undefined
             default: begin
+                lui = 1'b0;
                 auipc = 1'b0;
                 jal = 1'b0;
                 jalr = 1'b0;

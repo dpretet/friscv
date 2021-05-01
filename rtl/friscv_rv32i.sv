@@ -137,7 +137,7 @@ module friscv_rv32i
     .ADDRW (DATA_ADDRW),
     .XLEN  (XLEN)
     )
-    dut 
+    processing 
     (
     .aclk           (aclk          ),
     .aresetn        (aresetn       ),

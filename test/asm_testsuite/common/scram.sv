@@ -22,15 +22,13 @@ module scram
         input  logic [DATAW  -1:0] p1_wdata,
         input  logic [DATAW/8-1:0] p1_strb,
         output logic [DATAW  -1:0] p1_rdata,
-        output logic               p1_ready,
         // Port 2
         input  logic               p2_en,
         input  logic               p2_wr,
         input  logic [ADDRW  -1:0] p2_addr,
         input  logic [DATAW  -1:0] p2_wdata,
         input  logic [DATAW/8-1:0] p2_strb,
-        output logic [DATAW  -1:0] p2_rdata,
-        output logic               p2_ready
+        output logic [DATAW  -1:0] p2_rdata
     );
 
     logic [DATAW-1:0] ram [0:2**ADDRW-1];
@@ -56,18 +54,6 @@ module scram
         end
     end
 
-    always @ (posedge aclk or negedge aresetn) begin
-        if (aresetn==1'b0) begin
-            p1_ready <= 1'b0;
-        end else if (srst==1'b1) begin
-            p1_ready <= 1'b0;
-        end else if (p1_en && ~p1_ready) begin
-            p1_ready <= 1'b1;
-        end else begin
-            p1_ready <= 1'b0;
-        end
-    end
-
     // Port 2
     always @ (posedge aclk) begin
 
@@ -82,18 +68,6 @@ module scram
             end
             // Read output
             p2_rdata <= ram[p2_addr];
-        end
-    end
-
-    always @ (posedge aclk or negedge aresetn) begin
-        if (aresetn==1'b0) begin
-            p2_ready <= 1'b0;
-        end else if (srst==1'b1) begin
-            p2_ready <= 1'b0;
-        end else if (p2_en && ~p2_ready) begin
-            p2_ready <= 1'b1;
-        end else begin
-            p2_ready <= 1'b0;
         end
     end
 
