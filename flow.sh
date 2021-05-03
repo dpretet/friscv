@@ -4,10 +4,12 @@
 # -u: treat unset variable as an error
 # -f: disable filename expansion upon seeing *, ?, ...
 # -o pipefail: causes a pipeline to fail if any command fails
-set -euf -o pipefail
+set -eu -o pipefail
 
 # Current script path; doesn't support symlink
 FRISCVDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+
+ret=0
 
 # Bash color codes
 Red='\033[0;31m'
@@ -15,22 +17,22 @@ Green='\033[0;32m'
 Yellow='\033[0;33m'
 Blue='\033[0;34m'
 # Reset
-Color_Off='\033[0m'
+NC='\033[0m'
 
 function printerror {
-    echo -e "${Red}ERROR: ${1}${Color_Off}"
+    echo -e "${Red}ERROR: ${1}${NC}"
 }
 
 function printwarning {
-    echo -e "${Yellow}WARNING: ${1}${Color_Off}"
+    echo -e "${Yellow}WARNING: ${1}${NC}"
 }
 
 function printinfo {
-    echo -e "${Blue}INFO: ${1}${Color_Off}"
+    echo -e "${Blue}INFO: ${1}${NC}"
 }
 
 function printsuccess {
-    echo -e "${Green}INFO: ${1}${Color_Off}"
+    echo -e "${Green}INFO: ${1}${NC}"
 }
 
 help() {
@@ -87,9 +89,6 @@ main() {
         exit 0
     fi
 
-    # source scripts/setup.sh
-
-    iverilog -V
 
     if [[ $1 == "lint" ]]; then
         printinfo "Start linting"
@@ -98,6 +97,8 @@ main() {
             ./rtl/friscv_h.sv\
             ./rtl/friscv_registers.sv\
             ./rtl/friscv_rv32i.sv\
+            ./rtl/friscv_rv32i_processing.sv\
+            ./rtl/friscv_rv32i_memfy.sv\
             ./rtl/friscv_rv32i_alu.sv\
             ./rtl/friscv_rv32i_control.sv\
             ./rtl/friscv_rv32i_decoder.sv\
@@ -106,9 +107,19 @@ main() {
             --top-module friscv_rv32i
     fi
     if [[ $1 == "sim" ]]; then
-        printinfo "Start simulation"
+        iverilog -V
+        printinfo "INFO: Start simulation"
         cd "$FRISCVDIR/test/rtl_unit_tests"
-        return $?
+        for test in *_testbench.sv; do
+            ./run.sh "$test"
+            ret=$((ret+$?))
+        done
+        if [ $ret != 0 ] ; then
+            printerror "${Red}Execution failed${NC}"
+        else
+            printsuccess "${Green}Execution passed${NC}"
+        fi
+        exit $ret
     fi
 
     if [[ $1 == "syn" ]]; then

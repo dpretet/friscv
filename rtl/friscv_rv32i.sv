@@ -101,6 +101,7 @@ module friscv_rv32i
     logic                      proc_ready;
     logic                      memfy_ready;
     logic                      proc_empty;
+    logic [4             -1:0] proc_fenceinfo;
 
 
     friscv_rv32i_control
@@ -111,24 +112,25 @@ module friscv_rv32i
     )
     control_unit
     (
-    .aclk          (aclk         ),
-    .aresetn       (aresetn      ),
-    .srst          (srst         ),
-    .inst_en       (inst_en      ),
-    .inst_addr     (inst_addr    ),
-    .inst_rdata    (inst_rdata   ),
-    .inst_ready    (inst_ready   ),
-    .proc_en       (proc_en      ),
-    .proc_ready    (proc_ready   ),
-    .proc_empty    (proc_empty   ),
-    .proc_instbus  (proc_instbus ),
-    .ctrl_rs1_addr (ctrl_rs1_addr),
-    .ctrl_rs1_val  (ctrl_rs1_val ),
-    .ctrl_rs2_addr (ctrl_rs2_addr),
-    .ctrl_rs2_val  (ctrl_rs2_val ),
-    .ctrl_rd_wr    (ctrl_rd_wr   ),
-    .ctrl_rd_addr  (ctrl_rd_addr ),
-    .ctrl_rd_val   (ctrl_rd_val  )
+    .aclk           (aclk          ),
+    .aresetn        (aresetn       ),
+    .srst           (srst          ),
+    .inst_en        (inst_en       ),
+    .inst_addr      (inst_addr     ),
+    .inst_rdata     (inst_rdata    ),
+    .inst_ready     (inst_ready    ),
+    .proc_en        (proc_en       ),
+    .proc_ready     (proc_ready    ),
+    .proc_empty     (proc_empty    ),
+    .proc_fenceinfo (proc_fenceinfo),
+    .proc_instbus   (proc_instbus  ),
+    .ctrl_rs1_addr  (ctrl_rs1_addr ),
+    .ctrl_rs1_val   (ctrl_rs1_val  ),
+    .ctrl_rs2_addr  (ctrl_rs2_addr ),
+    .ctrl_rs2_val   (ctrl_rs2_val  ),
+    .ctrl_rd_wr     (ctrl_rd_wr    ),
+    .ctrl_rd_addr   (ctrl_rd_addr  ),
+    .ctrl_rd_val    (ctrl_rd_val   )
     );
 
 
@@ -145,6 +147,7 @@ module friscv_rv32i
     .proc_en        (proc_en       ),
     .proc_ready     (proc_ready    ),
     .proc_empty     (proc_empty    ),
+    .proc_fenceinfo (proc_fenceinfo),
     .proc_instbus   (proc_instbus  ),
     .alu_rs1_addr   (alu_rs1_addr  ),
     .alu_rs1_val    (alu_rs1_val   ),

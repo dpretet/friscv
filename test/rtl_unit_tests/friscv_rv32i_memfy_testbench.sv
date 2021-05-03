@@ -17,7 +17,8 @@ module friscv_rv32i_memfy_testbench();
     logic                        memfy_en;
     logic                        memfy_ready;
     logic                        memfy_empty;
-    logic [`INST_BUS_W  -1:0] memfy_instbus;
+    logic [4               -1:0] memfy_fenceinfo;
+    logic [`INST_BUS_W     -1:0] memfy_instbus;
     logic [5               -1:0] memfy_rs1_addr;
     logic [XLEN            -1:0] memfy_rs1_val;
     logic [5               -1:0] memfy_rs2_addr;
@@ -47,11 +48,11 @@ module friscv_rv32i_memfy_testbench();
     logic [5               -1:0] shamt;
 
     logic [12              -1:0] offset;
-    logic [`INST_BUS_W  -1:0] instructions[16-1:0];
-    logic [`INST_BUS_W  -1:0] insts_load[16-1:0];
-    logic [`INST_BUS_W  -1:0] insts_store[16-1:0];
-    logic [`INST_BUS_W  -1:0] insts_lui[16-1:0];
-    logic [`INST_BUS_W  -1:0] instruction;
+    logic [`INST_BUS_W     -1:0] instructions[16-1:0];
+    logic [`INST_BUS_W     -1:0] insts_load[16-1:0];
+    logic [`INST_BUS_W     -1:0] insts_store[16-1:0];
+    logic [`INST_BUS_W     -1:0] insts_lui[16-1:0];
+    logic [`INST_BUS_W     -1:0] instruction;
     logic [XLEN            -1:0] datas[16-1:0];
     logic [XLEN            -1:0] rs1_data[16-1:0];
     logic [XLEN            -1:0] rs2_data[16-1:0];
@@ -72,6 +73,7 @@ module friscv_rv32i_memfy_testbench();
     memfy_en,
     memfy_ready,
     memfy_empty,
+    memfy_fenceinfo,
     memfy_instbus,
     memfy_rs1_addr,
     memfy_rs1_val,
@@ -187,7 +189,7 @@ module friscv_rv32i_memfy_testbench();
                 `MSG("Store in memory");
                 memfy_en = 1'b1;
                 memfy_instbus = instructions[i];
-                memfy_rs1_val = i;
+                memfy_rs1_val = i*4;
                 memfy_rs2_val = datas[i];
                 @(posedge aclk);
                 memfy_en = 1'b0;
@@ -199,7 +201,7 @@ module friscv_rv32i_memfy_testbench();
                 while(mem_en==1'b0) @ (posedge aclk);
                 @(negedge aclk);
                 `MSG("Inspect data memory access");
-                `ASSERT((mem_addr==(i+imm12)), "STORE doesn't target right address");
+                `ASSERT((mem_addr==((i+imm12)>>2)), "STORE doesn't target right address");
                 `ASSERT((mem_wdata==datas[i]), "STORE doesn't write correct data");
                 if (instructions[i][`FUNCT3 +: `FUNCT3_W]==`SB) begin
                     `ASSERT((mem_strb==4'b0001), "STRB should be 4'b0001");
@@ -249,7 +251,7 @@ module friscv_rv32i_memfy_testbench();
         for (int i=0;i<5;i=i+1) begin
             memfy_en = 1'b1;
             memfy_instbus = instructions[i];
-            memfy_rs1_val = i;
+            memfy_rs1_val = i*4;
             memfy_rs2_val = datas[i];
             @(posedge aclk);
             memfy_en = 1'b0;
@@ -277,7 +279,7 @@ module friscv_rv32i_memfy_testbench();
                 `MSG("Load memory");
                 memfy_en = 1'b1;
                 memfy_instbus = instructions[i];
-                memfy_rs1_val = i;
+                memfy_rs1_val = i*4;
                 memfy_rs2_val = datas[i];
                 @(posedge aclk);
                 memfy_en = 1'b0;
@@ -317,55 +319,7 @@ module friscv_rv32i_memfy_testbench();
 
     `UNIT_TEST_END
 
-    `UNIT_TEST("Verify LUI instruction")
-
-        @(posedge aclk);
-
-        rs1 = 10;
-        rs2 = 20;
-        memfy_rs1_val = 0;
-        memfy_rs2_val = 0;
-        rd = 5;
-
-        rs1 = 10;
-        rs2 = 20;
-        memfy_rs1_val = 0;
-        memfy_rs2_val = 0;
-        rd = 5;
-        imm12 = 12'b1;
-        imm20 = 20'h98765;
-
-        datas[0] = 'h000000AB;
-        datas[1] = 'h00004321;
-        datas[2] = 'h76543210;
-        datas[3] = 'h0A0BC043;
-        datas[4] = 'hFCB3E211;
-
-
-        instructions[0] = {imm20, 12'b0, 5'b0, rd, 5'b0, 5'b0, 3'b0, 7'b0, `LUI};
-
-        fork
-        begin
-            memfy_en = 1'b1;
-            memfy_instbus = instructions[0];
-            @(posedge aclk);
-            memfy_en = 1'b0;
-            @(posedge aclk);
-            @(posedge aclk);
-            @(posedge aclk);
-        end
-        begin
-            `MSG("Inspect ISA registers access");
-            while(memfy_rd_wr==1'b0) @ (posedge aclk);
-            `ASSERT((memfy_rd_addr==rd), "ALU doesn't target correct RD registers");
-            `ASSERT((memfy_rd_val=={imm20,12'b0}), "ALU doesn't store correct data in RD");
-            `ASSERT((memfy_rd_strb==4'b1111), "STRB should be 4'b1111");
-        end
-        join
-
-    `UNIT_TEST_END
-
-    `UNIT_TEST("Verify LUI -> STORE -> LOAD round-trip")
+    `UNIT_TEST("Verify STORE -> LOAD round-trip")
 
         `MSG("Load in register a value, then store it in memory and load it back to registers");
 
@@ -383,13 +337,6 @@ module friscv_rv32i_memfy_testbench();
         datas[2] = 'h76543210;
         datas[3] = 'h0A0BC043;
         datas[4] = 'hFCB3E211;
-        @(posedge aclk);
-
-        insts_lui[0] = {datas[0][19:0], 12'b0, 5'b0, rd, 5'b0, 5'b0, 3'b0, 7'b0, `LUI};
-        insts_lui[1] = {datas[1][19:0], 12'b0, 5'b0, rd, 5'b0, 5'b0, 3'b0, 7'b0, `LUI};
-        insts_lui[2] = {datas[2][19:0], 12'b0, 5'b0, rd, 5'b0, 5'b0, 3'b0, 7'b0, `LUI};
-        insts_lui[3] = {datas[3][19:0], 12'b0, 5'b0, rd, 5'b0, 5'b0, 3'b0, 7'b0, `LUI};
-        insts_lui[4] = {datas[4][19:0], 12'b0, 5'b0, rd, 5'b0, 5'b0, 3'b0, 7'b0, `LUI};
         @(posedge aclk);
 
         insts_store[0] = {37'b0, imm12, 5'b0, 5'h0, rs2, rs1, 7'b0, `SW, `STORE};
@@ -410,21 +357,12 @@ module friscv_rv32i_memfy_testbench();
 
             fork
             begin
-                `MSG("Load a register");
-                memfy_en = 1'b1;
-                memfy_instbus = insts_lui[i];
-                @(posedge aclk);
-                memfy_en = 1'b0;
-                @(posedge aclk);
-                @(posedge aclk);
-                @(posedge aclk);
-                @(posedge aclk);
 
                 `MSG("Store its content in memory");
                 @(posedge aclk);
                 memfy_en = 1'b1;
                 memfy_instbus = insts_store[i];
-                memfy_rs1_val = i;
+                memfy_rs1_val = i*4;
                 memfy_rs2_val = datas[i];
                 @(posedge aclk);
                 memfy_en = 1'b0;
@@ -444,16 +382,6 @@ module friscv_rv32i_memfy_testbench();
                 @(posedge aclk);
                 @(posedge aclk);
                 @(posedge aclk);
-            end
-            begin
-
-                `MSG("Inspect LUI ISA registers access");
-                while(memfy_rd_wr==1'b0) @ (negedge aclk);
-                `ASSERT((memfy_rd_addr==rd), "LUI doesn't target correct RD registers");
-                `ASSERT((memfy_rd_val=={datas[i][19:0],12'b0}), "LUI doesn't store correct data in RD");
-                `ASSERT((memfy_rd_strb==4'b1111), "LUI STRB should be 4'b1111");
-                @(posedge aclk);
-
             end
             begin
                 `MSG("Wait for STORE memory access");

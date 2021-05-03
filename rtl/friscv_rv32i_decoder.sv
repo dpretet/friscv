@@ -108,7 +108,7 @@ module friscv_rv32i_decoder
                 system = 1'b0;
                 processing = 1'b0;
                 inst_error = 1'b0;
-                imm12 = {instruction[21],
+                imm12 = {instruction[31],
                          instruction[7],
                          instruction[25+:6],
                          instruction[8+:4]};

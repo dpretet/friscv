@@ -27,6 +27,7 @@ module friscv_rv32i_control
         output logic                      proc_en,
         input  logic                      proc_ready,
         input  logic                      proc_empty,
+        input  logic [4             -1:0] proc_fenceinfo,
         output logic [`INST_BUS_W   -1:0] proc_instbus,
         // register source 1 query interface
         output logic [5             -1:0] ctrl_rs1_addr,
@@ -47,7 +48,7 @@ module friscv_rv32i_control
     //
     ///////////////////////////////////////////////////////////////////////////
 
-    // decoded instructions
+    // Decoded instructions
     logic [`OPCODE_W   -1:0] opcode;
     logic [`FUNCT3_W   -1:0] funct3;
     logic [`FUNCT7_W   -1:0] funct7;
@@ -62,7 +63,7 @@ module friscv_rv32i_control
     logic [`PRED_W     -1:0] pred;
     logic [`SUCC_W     -1:0] succ;
 
-    // flags of the instruction decoder to drive the control unit
+    // Flags of the instruction decoder to drive the control unit
     logic lui;
     logic auipc;
     logic jal;
@@ -71,10 +72,10 @@ module friscv_rv32i_control
     logic system;
     logic processing;
 
-    // flag raised when receiving an unsupported/undefined instruction
+    // Flag raised when receiving an unsupported/undefined instruction
     logic inst_error;
 
-    // control fsm
+    // Control fsm
     typedef enum logic[3:0] {
         BOOT = 0,
         RUN = 1,
@@ -85,7 +86,7 @@ module friscv_rv32i_control
 
     pc_fsm cfsm;
 
-    // program counter, expressed in bytes
+    // Program counter, expressed in bytes
     localparam              PC_W = 32;
 
     logic        [PC_W-1:0] pc_plus4;
@@ -95,7 +96,7 @@ module friscv_rv32i_control
     logic signed [PC_W-1:0] pc_branching;
     logic        [PC_W-1:0] pc;
     logic        [PC_W-1:0] pc_reg;
-    // extra decoding used during branching
+    // Extra decoding used during branching
     logic                   beq;
     logic                   bne;
     logic                   blt;
@@ -103,7 +104,7 @@ module friscv_rv32i_control
     logic                   bltu;
     logic                   bgeu;
     logic                   goto_branch;
-    // circuit stoing an instruction which can't be process now
+    // Circuit stoing an instruction which can't be process now
     logic                   load_stored;
     logic [XLEN       -1:0] stored_inst;
     logic [XLEN       -1:0] instruction;
@@ -131,7 +132,7 @@ module friscv_rv32i_control
     // to instruction memory parsing thru the pc (program counter) and software
     // interaction (for instance `ecall` or `break` instructions).
     //
-    // Processing is handled by ALU, responsible of data memory access,
+    // Processing is handled by ALU & Memfy, responsible of data memory access,
     // registers management and arithmetic/logic operations.
     //
     ///////////////////////////////////////////////////////////////////////////
@@ -175,8 +176,7 @@ module friscv_rv32i_control
 
     ///////////////////////////////////////////////////////////////////////////
     //
-    // Instruction sourcing Stage:
-    // FIFO storing incoming instructions to process with ALU
+    // Instruction sourcing Stage
     //
     ///////////////////////////////////////////////////////////////////////////
 
@@ -204,7 +204,7 @@ module friscv_rv32i_control
     //
     ///////////////////////////////////////////////////////////////////////////
 
-    // program counter computation based on instructions
+    // Program counter computation
     ///////////////////////////////////////////////////////////////////////////
 
     // increment counter by 4 because we index bytes
@@ -220,12 +220,12 @@ module friscv_rv32i_control
     assign pc_jalr = $signed(ctrl_rs1_val) + $signed({{20{imm12[11]}}, imm12});
 
     // For all branching instruction
-    assign pc_branching =  $signed(pc_reg) + $signed({18'b0, imm12, 1'b0});
+    assign pc_branching =  $signed(pc_reg) + $signed({{19{imm12[11]}}, imm12, 1'b0});
 
     // program counter switching logic
     assign pc = (cfsm==BOOT)                ? pc_reg :
                 (lui)                       ? pc_plus4 :
-                (auipc)                     ? pc_auipc :
+                (auipc)                     ? pc_plus4 :
                 (jal)                       ? pc_jal :
                 (jalr)                      ? {pc_jalr[31:1],1'b0} :
                 (branching && goto_branch)  ? pc_branching :
@@ -233,7 +233,7 @@ module friscv_rv32i_control
                 (processing)                ? pc_plus4 :
                                               pc_reg;
 
-    // branching flags and its checks
+    // Branching flags
     ///////////////////////////////////////////////////////////////////////////
 
     // BEQ: branch if equal
@@ -263,15 +263,15 @@ module friscv_rv32i_control
                           (funct3 == `BGEU && bgeu)) ? 1'b1 :
                                                        1'b0;
 
-    // two flags to stop the process if ALU is struggling to process
+    // The FSM switching the program counter
+    ///////////////////////////////////////////////////////////////////////////
+
+    // Two flags to stop the process if ALU/memfy are struggling to process
     assign cant_branch_now = ((auipc || jal || jalr || branching) &&
                                ~proc_ready) ? 1'b1 :
                                               1'b0;
 
     assign cant_process_now = (~proc_ready) ? 1'b1 : 1'b0;
-
-    // The FSM switching the program counter
-    ///////////////////////////////////////////////////////////////////////////
 
     always @ (posedge aclk or negedge aresetn) begin
 
@@ -313,12 +313,11 @@ module friscv_rv32i_control
 
                     if (inst_ready || load_stored) begin
 
-                        // was waiting for ALU to be ready to branch, now
-                        // ALU's empty and process can restart
+                        // Wait for ALU/memfy to be ready to branch
                         if (load_stored) begin
                             if (proc_ready) load_stored <= 1'b0;
-                        // Need to branch but ALU didn't finish yet or need
-                        // to process but ALU's FIFO is full
+                        // Need to branch/process but ALU/memfy didn't finish
+                        // to execute last instruction
                         end else if (inst_ready && ~lui && 
                                      (cant_branch_now || cant_process_now)) begin
                             load_stored <= 1'b1;
@@ -353,6 +352,7 @@ module friscv_rv32i_control
     assign inst_addr = pc[2+:ADDRW];
 
     // ISA registers write stage
+    ///////////////////////////////////////////////////////////////////////////
 
     // register source 1 & 2 read
     assign ctrl_rs1_addr = rs1;
@@ -361,11 +361,14 @@ module friscv_rv32i_control
     // register destination
     assign ctrl_rd_wr =  (~cant_branch_now && ~cant_process_now &&
                              (auipc || jal || jalr))    ? 1'b1 :
-                          (~cant_process_now && lui)    ? 1'b1 :
+                         (~cant_process_now && lui)     ? 1'b1 :
+                         (auipc)                        ? 1'b1 :
                                                           1'b0 ;
     assign ctrl_rd_addr = rd;
+
     assign ctrl_rd_val = (jal || jalr) ? pc_plus4 :
                          (lui)         ? {imm20, 12'b0} : 
+                         (auipc)       ? pc_auipc :
                                          pc;
 
 endmodule

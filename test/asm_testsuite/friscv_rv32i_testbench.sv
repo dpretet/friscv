@@ -158,11 +158,7 @@ module friscv_rv32i_testbench();
                 inst_counter = inst_counter + 1;
             @(posedge aclk);
         end
-        @(posedge aclk);
-        @(posedge aclk);
-        @(posedge aclk);
-        @(posedge aclk);
-        @(posedge aclk);
+        repeat(20) @(posedge aclk);
         `INFO("Stop test");
 
     `UNIT_TEST_END

@@ -21,6 +21,7 @@ module friscv_rv32i_processing
         input  logic                        proc_en,
         output logic                        proc_ready,
         output logic                        proc_empty,
+        output logic [4               -1:0] proc_fenceinfo,
         input  logic [`INST_BUS_W     -1:0] proc_instbus,
         // register source 1 query interface
         output logic [5               -1:0] alu_rs1_addr,
@@ -97,6 +98,7 @@ module friscv_rv32i_processing
     .memfy_en        (proc_en       ),
     .memfy_ready     (memfy_ready   ),
     .memfy_empty     (memfy_empty   ),
+    .mem_fenceinfo   (proc_fenceinfo),
     .memfy_instbus   (proc_instbus  ),
     .memfy_rs1_addr  (memfy_rs1_addr),
     .memfy_rs1_val   (memfy_rs1_val ),

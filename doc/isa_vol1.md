@@ -258,3 +258,31 @@ particular, the sign bit for all immediates is always in bit 31 of the
 instruction to speed sign-extension circuitry.
 
 ## 2.3 Immediate Encoding Variants
+
+
+# Chapter 14 Memory Consistency Model
+
+A memory consistency model is a set of rules specifying the values that can be
+returned by loads of memory. RISC-V uses a memory model called “RVWMO” (RISC-V
+Weak Memory Ordering) which is designed to provide flexibility for architects
+to build high-performance scalable designs while simultaneously supporting a
+tractable programming model.
+
+Under RVWMO, code running on a single hart appears to execute in order from the
+perspective of other memory instructions in the same hart, but memory
+instructions from another hart may observe the memory instructions from the
+first hart being executed in a different order. There- fore, multithreaded code
+may require explicit synchronization to guarantee ordering between mem- ory
+instructions from different harts. The base RISC-V ISA provides a FENCE
+instruction for this purpose, described in Section 2.7, while the atomics
+extension “A” additionally defines load- reserved/store-conditional and atomic
+read-modify-write instructions.
+
+## 14.1 Definition of the RVWMO Memory Model
+
+The RVWMO memory model is defined in terms of the global memory order, a total
+ordering of the memory operations produced by all harts. In general, a
+multithreaded program has many different possible executions, with each
+execution having its own corresponding global memory order.
+
+

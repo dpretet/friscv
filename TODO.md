@@ -1,53 +1,45 @@
 # DOING
 
-Memoire index en word et pas en byte sur l’ALU
+- [ ] Fix memfy to correctly address unaligned request
+
+- [ ] Implement FENCE and FENCE.i
+
+- [ ] Add CSR instructions
 
 - [-] Develop top testbench to use asm programs and rely only on RAM to drive
       instructions and data into the core
     - [ ] Develop a unit test framework for ASM
     - [ ] Test memfy
-    - [ ] Test processing + memory 
-    - [ ] Explore and prepare RISCV compliance testbench
-
- - [ ] Package alu + memory dans un module
-    - front end de pipeline
-    - scheduler to assert readiness according the instruction
-
-- [ ] Design a generic pipeline stage for ALU front-end
-
-1. Driver is always ready and feed the consumer. Consumer is not always ready
-- one cycle pause
-- one cycle pause several time, not frequently
-- pause every 2 cycles
-
-2. Driver throttle the valid, consumer is always ready
-
-3. Both Driver and consumer throttle the valid/ready handshake
-
+    - [ ] Test processing + memory
 
 - [ ] Develop C testuite
     - [ ] Test pointers with int, char et function
+    - [ ] Write a bridge to print from processor to a shell thru Verilator
 
 # BACKLOG
 
+- [ ] Design a generic pipeline stage for processing front-end
+    1. Driver is always ready and feed the consumer. Consumer is not always ready
+        - one cycle pause
+        - one cycle pause several time, not frequently
+        - pause every 2 cycles
+    2. Driver throttle the valid, consumer is always ready
+    3. Both Driver and consumer throttle the valid/ready handshake
+- [ ] Processing scheduler to assert readiness according the instruction
+
+- [ ] Support IRQ, timer, GPIOs
 - [ ] Design a generic memory bus
     - AMBA-like
-    - support ID, OR, PROT and ERROR
+    - Support outstanding requests
+    - Support ID, OR, PROT and ERROR
     - Write completion
-
+    - Detect IO request
+    - forward to control FENCE information
 - [ ] Read processor datasheet and grab dev ideas
 - [ ] Implement in-house profiler to check branching, stall time, ...
 - [ ] synthesis project
-
 - [ ] Document specification,architecture, possible evolution and timing
       diagrams. Spec: in-order, stage depth, interupt, GPIOs, memory init
-
-- [ ] Trap des c-c pour kill le process dans run.sh
-- [ ] Support timeout
-
-# Design Backlog
-
-- [ ] Support IRQ, timer, GPIOs
 - [ ] Support multiple ALUs in parallel, differents spec (integer/float, mult/div)
       How to dispatch workloqd and share ISA registers
 - [ ] Support oustanding requests (in-order)
@@ -61,7 +53,6 @@ Memoire index en word et pas en byte sur l’ALU
 - [ ] Application to GPGPU area
 - [ ] Many-core architecture
 - [ ] Support float16 & float8, more generaly low-precision arithmetic like int8...
-l
 
 
 # Verification/Validation Backlog

@@ -21,6 +21,7 @@ module friscv_rv32i_memfy
         input  logic                        memfy_en,
         output logic                        memfy_ready,
         output logic                        memfy_empty,
+        output logic [4               -1:0] memfy_fenceinfo,
         input  logic [`INST_BUS_W     -1:0] memfy_instbus,
         // register source 1 query interface
         output logic [5               -1:0] memfy_rs1_addr,
@@ -227,6 +228,8 @@ module friscv_rv32i_memfy
     assign addr = $signed({{(XLEN-12){imm12[11]}}, imm12}) + $signed(memfy_rs1_val);
 
     assign memfy_empty = 1'b1;
+
+    assign memfy_fenceinfo = 4'b0;
 
 
 endmodule
