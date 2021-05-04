@@ -1,23 +1,24 @@
 [*]
 [*] GTKWave Analyzer v3.3.107 (w)1999-2020 BSI
-[*] Tue Apr 27 19:11:59 2021
+[*] Wed May  5 06:03:59 2021
 [*]
 [dumpfile] "/Users/damien/workspace/hdl/friscv/test/rtl_unit_tests/friscv_rv32i_memfy_testbench.vcd"
-[dumpfile_mtime] "Tue Apr 27 19:11:21 2021"
-[dumpfile_size] 19979
+[dumpfile_mtime] "Wed May  5 06:02:10 2021"
+[dumpfile_size] 42873
 [savefile] "/Users/damien/workspace/hdl/friscv/test/rtl_unit_tests/friscv_rv32i_memfy_testbench.gtkw"
-[timestart] 46570
-[size] 1979 1024
+[timestart] 629170
+[size] 2529 1123
 [pos] -1 -1
-*-14.000000 59750 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-13.584673 716570 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] friscv_rv32i_memfy_testbench.
-[sst_width] 193
-[signals_width] 272
+[sst_width] 331
+[signals_width] 362
 [sst_expanded] 1
-[sst_vpaned_height] 316
+[sst_vpaned_height] 323
 @28
 dut.aclk
 dut.aresetn
+dut.srst
 @200
 -
 @28
@@ -27,8 +28,10 @@ dut.memfy_instbus[86:0]
 @28
 dut.memfy_ready
 dut.memfy_empty
-dut.memorying
 dut.mem_access
+dut.two_phases
+dut.is_unaligned
+dut.offset[1:0]
 @200
 -
 @28
@@ -36,7 +39,44 @@ dut.mem_en
 dut.mem_wr
 @22
 dut.mem_addr[15:0]
+@c00022
 dut.addr[31:0]
+@28
+(0)dut.addr[31:0]
+(1)dut.addr[31:0]
+(2)dut.addr[31:0]
+(3)dut.addr[31:0]
+(4)dut.addr[31:0]
+(5)dut.addr[31:0]
+(6)dut.addr[31:0]
+(7)dut.addr[31:0]
+(8)dut.addr[31:0]
+(9)dut.addr[31:0]
+(10)dut.addr[31:0]
+(11)dut.addr[31:0]
+(12)dut.addr[31:0]
+(13)dut.addr[31:0]
+(14)dut.addr[31:0]
+(15)dut.addr[31:0]
+(16)dut.addr[31:0]
+(17)dut.addr[31:0]
+(18)dut.addr[31:0]
+(19)dut.addr[31:0]
+(20)dut.addr[31:0]
+(21)dut.addr[31:0]
+(22)dut.addr[31:0]
+(23)dut.addr[31:0]
+(24)dut.addr[31:0]
+(25)dut.addr[31:0]
+(26)dut.addr[31:0]
+(27)dut.addr[31:0]
+(28)dut.addr[31:0]
+(29)dut.addr[31:0]
+(30)dut.addr[31:0]
+(31)dut.addr[31:0]
+@1401200
+-group_end
+@22
 dut.mem_strb[3:0]
 dut.mem_wdata[31:0]
 dut.mem_rdata[31:0]
@@ -44,11 +84,13 @@ dut.mem_rdata[31:0]
 dut.mem_ready
 @200
 -
-@29
+@28
 dut.memfy_rd_wr
 @22
 dut.memfy_rd_addr[4:0]
+@23
 dut.memfy_rd_strb[3:0]
+@22
 dut.memfy_rd_val[31:0]
 dut.memfy_rs1_addr[4:0]
 dut.memfy_rs1_val[31:0]
@@ -58,12 +100,6 @@ dut.memfy_rs2_val[31:0]
 -
 @22
 dut.opcode[6:0]
-dut.shamt[5:0]
-@28
-dut.srst
-@22
-dut.zimm[4:0]
-dut.csr[11:0]
 @28
 dut.funct3[2:0]
 @22
@@ -73,5 +109,8 @@ dut.imm20[19:0]
 dut.rd[4:0]
 dut.rs1[4:0]
 dut.rs2[4:0]
+dut.shamt[5:0]
+dut.zimm[4:0]
+dut.csr[11:0]
 [pattern_trace] 1
 [pattern_trace] 0

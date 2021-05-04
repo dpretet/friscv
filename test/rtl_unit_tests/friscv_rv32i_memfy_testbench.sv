@@ -48,7 +48,7 @@ module friscv_rv32i_memfy_testbench();
     logic [5               -1:0] shamt;
 
     logic [12              -1:0] offset;
-    logic [`INST_BUS_W     -1:0] instructions[16-1:0];
+    logic [`INST_BUS_W     -1:0] instructions[32-1:0];
     logic [`INST_BUS_W     -1:0] insts_load[16-1:0];
     logic [`INST_BUS_W     -1:0] insts_store[16-1:0];
     logic [`INST_BUS_W     -1:0] insts_lui[16-1:0];
@@ -161,7 +161,7 @@ module friscv_rv32i_memfy_testbench();
 
     `TEST_SUITE("Memfy Testsuite")
 
-    `UNIT_TEST("Verify STORE instructions")
+    `UNIT_TEST("Verify STORE instructions - Aligned Transaction")
 
         @(posedge aclk);
 
@@ -170,9 +170,11 @@ module friscv_rv32i_memfy_testbench();
         memfy_rs1_val = 0;
         memfy_rs2_val = 0;
         rd = 5;
-        imm12 = 12'b1;
+        imm12 = 12'h0;
         instructions[0] = {37'b0, imm12, 5'b0, 5'h0, rs2, rs1, 7'b0, `SB, `STORE};
+        imm12 = 12'h4;
         instructions[1] = {37'b0, imm12, 5'b0, 5'h0, rs2, rs1, 7'b0, `SH, `STORE};
+        imm12 = 12'h8;
         instructions[2] = {37'b0, imm12, 5'b0, 5'h0, rs2, rs1, 7'b0, `SW, `STORE};
         datas[0] = 'h000000AB;
         datas[1] = 'h00004321;
@@ -201,7 +203,7 @@ module friscv_rv32i_memfy_testbench();
                 while(mem_en==1'b0) @ (posedge aclk);
                 @(negedge aclk);
                 `MSG("Inspect data memory access");
-                `ASSERT((mem_addr==((i+imm12)>>2)), "STORE doesn't target right address");
+                `ASSERT((mem_addr==((i*4+i*4)>>2)), "STORE doesn't target right address");
                 `ASSERT((mem_wdata==datas[i]), "STORE doesn't write correct data");
                 if (instructions[i][`FUNCT3 +: `FUNCT3_W]==`SB) begin
                     `ASSERT((mem_strb==4'b0001), "STRB should be 4'b0001");
@@ -212,8 +214,8 @@ module friscv_rv32i_memfy_testbench();
                 end
 
                 `MSG("Inspect ISA registers access");
-                `ASSERT((memfy_rs1_addr==rs1), "ALU doesn't access the correct rs1 register")
-                `ASSERT((memfy_rs2_addr==rs2), "ALU doesn't access the correct rs2 register")
+                `ASSERT((memfy_rs1_addr==rs1), "memfy doesn't access the correct rs1 register")
+                `ASSERT((memfy_rs2_addr==rs2), "memfy doesn't access the correct rs2 register")
                 @(posedge aclk);
             end
             join
@@ -223,7 +225,7 @@ module friscv_rv32i_memfy_testbench();
 
     `UNIT_TEST_END
 
-    `UNIT_TEST("Verify LOAD instructions")
+    `UNIT_TEST("Verify LOAD instructions - Aligned Transaction")
 
         @(posedge aclk);
 
@@ -232,7 +234,7 @@ module friscv_rv32i_memfy_testbench();
         memfy_rs1_val = 0;
         memfy_rs2_val = 0;
         rd = 5;
-        imm12 = 12'b1;
+        imm12 = 12'b0;
         datas[0] = 'h000000AB;
         datas[1] = 'hF000F321;
         datas[2] = 'h76543210;
@@ -290,26 +292,26 @@ module friscv_rv32i_memfy_testbench();
             begin
                 `MSG("Inspect ISA registers access");
                 while(memfy_rd_wr==1'b0) @ (posedge aclk);
-                `ASSERT((memfy_rd_addr==rd), "ALU doesn't target correct RD registers");
+                `ASSERT((memfy_rd_addr==rd), "memfy doesn't target correct RD registers");
 
                 if (instructions[i][`FUNCT3 +: `FUNCT3_W]==`LBU) begin
-                    `ASSERT((memfy_rd_val=={24'b0, datas[i][7:0]}), "ALU doesn't store correct data in RD");
+                    `ASSERT((memfy_rd_val=={24'b0, datas[i][7:0]}), "memfy doesn't store correct data in RD");
                     `ASSERT((memfy_rd_strb==4'b0001), "STRB should be 4'b0001");
 
                 end else if (instructions[i][`FUNCT3 +: `FUNCT3_W]==`LHU) begin
-                    `ASSERT((memfy_rd_val=={24'b0, datas[i][15:0]}), "ALU doesn't store correct data in RD");
+                    `ASSERT((memfy_rd_val=={24'b0, datas[i][15:0]}), "memfy doesn't store correct data in RD");
                     `ASSERT((memfy_rd_strb==4'b0011), "STRB should be 4'b0011");
 
                 end else if (instructions[i][`FUNCT3 +: `FUNCT3_W]==`LB) begin
-                    `ASSERT((memfy_rd_val=={{24{datas[i][7]}}, datas[i][7:0]}), "ALU doesn't store correct data in RD");
+                    `ASSERT((memfy_rd_val=={{24{datas[i][7]}}, datas[i][7:0]}), "memfy doesn't store correct data in RD");
                     `ASSERT((memfy_rd_strb==4'b0001), "STRB should be 4'b0001");
 
                 end else if (instructions[i][`FUNCT3 +: `FUNCT3_W]==`LH) begin
-                    `ASSERT((memfy_rd_val=={{16{datas[i][15]}}, datas[i][15:0]}), "ALU doesn't store correct data in RD");
+                    `ASSERT((memfy_rd_val=={{16{datas[i][15]}}, datas[i][15:0]}), "memfy doesn't store correct data in RD");
                     `ASSERT((memfy_rd_strb==4'b0011), "STRB should be 4'b0011");
 
                 end else if (instructions[i][`FUNCT3 +: `FUNCT3_W]==`LW) begin
-                    `ASSERT((memfy_rd_val==datas[i]), "ALU doesn't store correct data in RD");
+                    `ASSERT((memfy_rd_val==datas[i]), "memfy doesn't store correct data in RD");
                     `ASSERT((memfy_rd_strb==4'b1111), "STRB should be 4'b1111");
                 end
             end
@@ -319,7 +321,7 @@ module friscv_rv32i_memfy_testbench();
 
     `UNIT_TEST_END
 
-    `UNIT_TEST("Verify STORE -> LOAD round-trip")
+    `UNIT_TEST("Verify STORE -> LOAD round-trip - Aligned Transaction")
 
         `MSG("Load in register a value, then store it in memory and load it back to registers");
 
@@ -328,8 +330,7 @@ module friscv_rv32i_memfy_testbench();
         rd = 5;
         memfy_rs1_val = 0;
         memfy_rs2_val = 0;
-        imm12 = 12'b1;
-        imm20 = 20'h98765;
+        imm12 = 12'b0;
         @(posedge aclk);
 
         datas[0] = 'h000000AB;
@@ -387,7 +388,7 @@ module friscv_rv32i_memfy_testbench();
                 `MSG("Wait for STORE memory access");
                 while(mem_en==1'b0 && mem_wr==1'b0) @ (negedge aclk);
 
-                `ASSERT((mem_addr==(i+imm12)), "STORE doesn't target right address");
+                `ASSERT((mem_addr==(i*4+imm12)>>2), "STORE doesn't target right address");
                 `ASSERT((mem_wdata==datas[i]), "STORE doesn't write correct data");
 
                 if (insts_store[i][`FUNCT3 +: `FUNCT3_W]==`SB) begin
@@ -434,6 +435,382 @@ module friscv_rv32i_memfy_testbench();
                 $display("");
             end
             join
+        end
+
+    `UNIT_TEST_END
+
+    `UNIT_TEST("Verify STORE instructions - Unaligned Transaction")
+
+        @(posedge aclk);
+
+        rs1 = 10;
+        rs2 = 20;
+        rd = 5;
+        memfy_rs1_val = 0;
+        memfy_rs2_val = 0;
+        // SB instructions
+        imm12 = 12'h1;
+        instructions[0] = {37'b0, imm12, 5'b0, 5'h0, rs2, rs1, 7'b0, `SB, `STORE};
+        imm12 = 12'h2;
+        instructions[1] = {37'b0, imm12, 5'b0, 5'h0, rs2, rs1, 7'b0, `SB, `STORE};
+        imm12 = 12'h3;
+        instructions[2] = {37'b0, imm12, 5'b0, 5'h0, rs2, rs1, 7'b0, `SB, `STORE};
+        datas[0] = 'h000000AB;
+        datas[1] = 'h00004321;
+        datas[2] = 'h76543210;
+        results[0] = 'h0000AB00;
+        results[1] = 'h43210000;
+        results[2] = 'h10765432;
+
+        // SH instructions
+        imm12 = 12'h1;
+        instructions[3] = {37'b0, imm12, 5'b0, 5'h0, rs2, rs1, 7'b0, `SH, `STORE};
+        imm12 = 12'h2;
+        instructions[4] = {37'b0, imm12, 5'b0, 5'h0, rs2, rs1, 7'b0, `SH, `STORE};
+        imm12 = 12'h3;
+        instructions[5] = {37'b0, imm12, 5'b0, 5'h0, rs2, rs1, 7'b0, `SH, `STORE};
+        datas[3] = 'h000000AB;
+        datas[4] = 'h00004321;
+        datas[5] = 'h76543210;
+        results[3] = 'h0000AB00;
+        results[4] = 'h43210000;
+        results[5] = 'h10765432;
+
+        // SW instructions
+        imm12 = 12'h1;
+        instructions[6] = {37'b0, imm12, 5'b0, 5'h0, rs2, rs1, 7'b0, `SW, `STORE};
+        imm12 = 12'h2;
+        instructions[7] = {37'b0, imm12, 5'b0, 5'h0, rs2, rs1, 7'b0, `SW, `STORE};
+        imm12 = 12'h3;
+        instructions[8] = {37'b0, imm12, 5'b0, 5'h0, rs2, rs1, 7'b0, `SW, `STORE};
+        datas[6] = 'h000000AB;
+        datas[7] = 'h00004321;
+        datas[8] = 'h76543210;
+        results[6] = 'h0000AB00;
+        results[7] = 'h43210000;
+        results[8] = 'h10765432;
+
+        @(posedge aclk);
+
+        for (int i=0;i<9;i=i+1) begin
+            $display("");
+            `MSG("Source an instruction:");
+            $display("%x", instructions[i]);
+            fork
+            begin
+                `MSG("Store in memory");
+                memfy_en = 1'b1;
+                memfy_instbus = instructions[i];
+                memfy_rs1_val = i*4;
+                memfy_rs2_val = datas[i];
+                @(posedge aclk);
+                memfy_en = 1'b0;
+                @(posedge aclk);
+                @(posedge aclk);
+                @(posedge aclk);
+            end
+            begin
+                `MSG("Inspect data memory access");
+
+                if (instructions[i][`FUNCT3 +: `FUNCT3_W]==`SB) begin
+
+                    @(posedge aclk);
+                    while(mem_en==1'b0) @ (posedge aclk);
+                    @(negedge aclk);
+                    `ASSERT((mem_addr==((i*4)>>2)), "STORE doesn't target right address");
+                    `ASSERT((mem_wdata==results[i]), "STORE doesn't write correct data");
+
+                    if (i==0) begin 
+                        `ASSERT((mem_strb==(4'b0010)), "STRB should be 4'b0010");
+                    end else if (i==1) begin
+                        `ASSERT((mem_strb==(4'b0100)), "STRB should be 4'b0100");
+                    end else if (i==2) begin
+                        `ASSERT((mem_strb==(4'b1000)), "STRB should be 4'b1000");
+                    end
+
+                end else if (instructions[i][`FUNCT3 +: `FUNCT3_W]==`SH) begin
+
+                    @(posedge aclk);
+                    while(mem_en==1'b0) @ (posedge aclk);
+                    @(negedge aclk);
+                    `ASSERT((mem_addr==((i*4)>>2)), "STORE doesn't target right address");
+                    `ASSERT((mem_wdata==results[i]), "STORE doesn't write correct data");
+
+                    if (i==3) begin
+                        `ASSERT((mem_strb==4'b0110), "STRB should be 4'b0110");
+                    end else if (i==4) begin
+                        `ASSERT((mem_strb==4'b1100), "STRB should be 4'b1100");
+                    end else if (i==5) begin
+                        `ASSERT((mem_strb==4'b1000), "STRB should be 4'b1000");
+                    end
+                    if (i==5) begin
+                        @(posedge aclk);
+                        @(negedge aclk);
+                        `ASSERT((mem_wdata==results[i]), "STORE doesn't write correct data");
+                        `ASSERT((mem_strb==4'b0001), "STRB should be 4'b1000");
+                    end
+
+                end else if (instructions[i][`FUNCT3 +: `FUNCT3_W]==`SW) begin
+
+                    @(posedge aclk);
+                    while(mem_en==1'b0) @ (posedge aclk);
+                    @(negedge aclk);
+                    `ASSERT((mem_addr==((i*4)>>2)), "STORE doesn't target right address");
+                    `ASSERT((mem_wdata==results[i]), "STORE doesn't write correct data");
+
+                    if (i==6) begin
+                        `ASSERT((mem_strb==4'b1110), "STRB should be 4'b1110");
+                    end else if (i==7) begin
+                        `ASSERT((mem_strb==4'b1100), "STRB should be 4'b1100");
+                    end else if (i==8) begin
+                        `ASSERT((mem_strb==4'b1000), "STRB should be 4'b1000");
+                    end
+                    @(posedge aclk);
+                    @(negedge aclk);
+                    if (i==6) begin
+                        `ASSERT((mem_wdata==results[i]), "STORE doesn't write correct data");
+                        `ASSERT((mem_strb==4'b0001), "STRB should be 4'b0001");
+                    end
+                    if (i==7) begin
+                        `ASSERT((mem_wdata==results[i]), "STORE doesn't write correct data");
+                        `ASSERT((mem_strb==4'b0011), "STRB should be 4'b0011");
+                    end
+                    if (i==8) begin
+                        `ASSERT((mem_wdata==results[i]), "STORE doesn't write correct data");
+                        `ASSERT((mem_strb==4'b0111), "STRB should be 4'b0111");
+                    end
+
+                end
+
+                `MSG("Inspect ISA registers access");
+                `ASSERT((memfy_rs1_addr==rs1), "memfy doesn't access the correct rs1 register")
+                `ASSERT((memfy_rs2_addr==rs2), "memfy doesn't access the correct rs2 register")
+                @(posedge aclk);
+            end
+            join
+            @(posedge aclk);
+        end
+        $display("");
+
+    `UNIT_TEST_END
+
+    `UNIT_TEST("Verify LOAD instructions - Unaligned Transaction")
+
+        @(posedge aclk);
+
+        rs1 = 10;
+        rs2 = 20;
+        memfy_rs1_val = 0;
+        memfy_rs2_val = 0;
+        rd = 5;
+        imm12 = 12'b0;
+        datas[0] = 'h12349678;
+        datas[1] = 'h9ABCDEF0;
+        datas[2] = 'hC2345678;
+        datas[3] = 'h9ABCDEF0;
+        datas[4] = 'h12345678;
+        datas[5] = 'h9ABCDEF0;
+        datas[6] = 'h12345678;
+        datas[7] = 'h9ABCDEF0;
+        datas[8] = 'h12345678;
+        datas[9] = 'h9ABCDEF0;
+        datas[10] = 'h12345678;
+        datas[11] = 'h9ABCDEF0;
+        datas[12] = 'h12345678;
+        datas[13] = 'h9ABCDEF0;
+        datas[14] = 'h12345678;
+        datas[15] = 'h9ABCDEF0;
+
+        instructions[0] = {37'b0, imm12, 5'b0, 5'h0, rs2, rs1, 7'b0, `SW, `STORE};
+
+        `MSG("Start by storing data in memory to initialize the RAM");
+
+        @(posedge aclk);
+        for (int i=0;i<16;i=i+1) begin
+            memfy_en = 1'b1;
+            memfy_instbus = instructions[0];
+            memfy_rs1_val = i*4;
+            memfy_rs2_val = datas[i];
+            @(posedge aclk);
+            memfy_en = 1'b0;
+            @(posedge aclk);
+            @(posedge aclk);
+            @(posedge aclk);
+        end
+
+        `MSG("Now load data from memory");
+
+        @(posedge aclk);
+        // LB
+        imm12 = 1;
+        instructions[0] = {37'b0, imm12, 5'b0, rd, 5'h0, rs1, 7'b0, `LB, `LOAD};
+        imm12 = 2;
+        instructions[1] = {37'b0, imm12, 5'b0, rd, 5'h0, rs1, 7'b0, `LB, `LOAD};
+        imm12 = 3;
+        instructions[2] = {37'b0, imm12, 5'b0, rd, 5'h0, rs1, 7'b0, `LB, `LOAD};
+        // LBU
+        imm12 = 1;
+        instructions[3] = {37'b0, imm12, 5'b0, rd, 5'h0, rs1, 7'b0, `LBU, `LOAD};
+        imm12 = 2;
+        instructions[4] = {37'b0, imm12, 5'b0, rd, 5'h0, rs1, 7'b0, `LBU, `LOAD};
+        imm12 = 3;
+        instructions[5] = {37'b0, imm12, 5'b0, rd, 5'h0, rs1, 7'b0, `LBU, `LOAD};
+        // LH
+        imm12 = 1;
+        instructions[6] = {37'b0, imm12, 5'b0, rd, 5'h0, rs1, 7'b0, `LH, `LOAD};
+        imm12 = 2;
+        instructions[7] = {37'b0, imm12, 5'b0, rd, 5'h0, rs1, 7'b0, `LH, `LOAD};
+        imm12 = 3;
+        instructions[8] = {37'b0, imm12, 5'b0, rd, 5'h0, rs1, 7'b0, `LH, `LOAD};
+        // LHU
+        imm12 = 1;
+        instructions[9] = {37'b0, imm12, 5'b0, rd, 5'h0, rs1, 7'b0, `LHU, `LOAD};
+        imm12 = 2;
+        instructions[10] = {37'b0, imm12, 5'b0, rd, 5'h0, rs1, 7'b0, `LHU, `LOAD};
+        imm12 = 3;
+        instructions[11] = {37'b0, imm12, 5'b0, rd, 5'h0, rs1, 7'b0, `LHU, `LOAD};
+        // LW
+        imm12 = 1;
+        instructions[12] = {37'b0, imm12, 5'b0, rd, 5'h0, rs1, 7'b0, `LW, `LOAD};
+        imm12 = 2;
+        instructions[13] = {37'b0, imm12, 5'b0, rd, 5'h0, rs1, 7'b0, `LW, `LOAD};
+        imm12 = 3;
+        instructions[14] = {37'b0, imm12, 5'b0, rd, 5'h0, rs1, 7'b0, `LW, `LOAD};
+
+        @(posedge aclk);
+
+        for (int i=0;i<15;i=i+1) begin
+            $display("");
+            `MSG("Source an instruction:");
+            $display("%x", instructions[i]);
+            $display("%x", i);
+            fork
+            begin
+                `MSG("Load memory");
+                memfy_en = 1'b1;
+                memfy_instbus = instructions[i];
+                memfy_rs1_val = i*4;
+                memfy_rs2_val = datas[i];
+                @(posedge aclk);
+                memfy_en = 1'b0;
+                @(posedge aclk);
+                @(posedge aclk);
+                @(posedge aclk);
+            end
+            begin
+                if (instructions[i][`FUNCT3 +: `FUNCT3_W]==`LB) begin
+
+                    `MSG("Inspect ISA registers access");
+                    while(memfy_rd_wr==1'b0) @ (posedge aclk);
+                    `ASSERT((memfy_rd_addr==rd), "memfy doesn't target correct RD registers");
+
+                    if (i==0) begin
+                        `ASSERT((memfy_rd_val=={{24{datas[i][15]}}, datas[i][15:8]}), "memfy doesn't store correct data in RD");
+                        `ASSERT((memfy_rd_strb==4'b0001), "STRB should be 4'b0001");
+                    end else if (i==1) begin
+                        `ASSERT((memfy_rd_val=={{24{datas[i][23]}}, datas[i][23:16]}), "memfy doesn't store correct data in RD");
+                        `ASSERT((memfy_rd_strb==4'b0001), "STRB should be 4'b0001");
+                    end else if (i==2) begin
+                        `ASSERT((memfy_rd_val=={{24{datas[i][31]}}, datas[i][31:24]}), "memfy doesn't store correct data in RD");
+                        `ASSERT((memfy_rd_strb==4'b0001), "STRB should be 4'b0001");
+                    end
+
+                end else if (instructions[i][`FUNCT3 +: `FUNCT3_W]==`LBU) begin
+
+                    `MSG("Inspect ISA registers access");
+                    while(memfy_rd_wr==1'b0) @ (posedge aclk);
+                    `ASSERT((memfy_rd_addr==rd), "memfy doesn't target correct RD registers");
+
+                    if (i==3) begin
+                        `ASSERT((memfy_rd_val=={24'b0, datas[i][15:8]}), "memfy doesn't store correct data in RD");
+                        `ASSERT((memfy_rd_strb==4'b0001), "STRB should be 4'b0001");
+                    end else if (i==4) begin
+                        `ASSERT((memfy_rd_val=={24'b0, datas[i][23:16]}), "memfy doesn't store correct data in RD");
+                        `ASSERT((memfy_rd_strb==4'b0001), "STRB should be 4'b0001");
+                    end else if (i==5) begin
+                        `ASSERT((memfy_rd_val=={24'b0, datas[i][31:24]}), "memfy doesn't store correct data in RD");
+                        `ASSERT((memfy_rd_strb==4'b0001), "STRB should be 4'b0001");
+                    end
+
+                end else if (instructions[i][`FUNCT3 +: `FUNCT3_W]==`LH) begin
+
+                    `MSG("Inspect ISA registers access");
+                    while(memfy_rd_wr==1'b0) @ (posedge aclk);
+                    `ASSERT((memfy_rd_addr==rd), "memfy doesn't target correct RD registers");
+
+                    if (i==6) begin
+                        `ASSERT((memfy_rd_val=={{16{datas[i][23]}}, datas[i][23:8]}), "memfy doesn't store correct data in RD");
+                        `ASSERT((memfy_rd_strb==4'b0011), "STRB should be 4'b0011");
+                    end else if (i==7) begin
+                        `ASSERT((memfy_rd_val=={{16{datas[i][31]}}, datas[i][31:16]}), "memfy doesn't store correct data in RD");
+                        `ASSERT((memfy_rd_strb==4'b0011), "STRB should be 4'b0011");
+                    end else if (i==8) begin
+                        `ASSERT((memfy_rd_val[7:0]==datas[i][31:24]), "memfy doesn't store correct data in RD");
+                        `ASSERT((memfy_rd_strb==4'b0001), "STRB should be 4'b0001");
+                        @(posedge aclk);
+                        @(negedge aclk);
+                        `ASSERT((memfy_rd_val[31:8]=={{16{datas[i+1][7]}},datas[i+1][7:0]}), "memfy doesn't store correct data in RD");
+                        `ASSERT((memfy_rd_strb==4'b0010), "STRB should be 4'b0010");
+                        @(negedge aclk);
+                    end
+
+                end else if (instructions[i][`FUNCT3 +: `FUNCT3_W]==`LHU) begin
+
+                    `MSG("Inspect ISA registers access");
+                    while(memfy_rd_wr==1'b0) @ (posedge aclk);
+                    `ASSERT((memfy_rd_addr==rd), "memfy doesn't target correct RD registers");
+
+                    if (i==9) begin
+                        `ASSERT((memfy_rd_val=={16'b0, datas[i][23:8]}), "memfy doesn't store correct data in RD");
+                        `ASSERT((memfy_rd_strb==4'b0011), "STRB should be 4'b0011");
+                    end else if (i==10) begin
+                        `ASSERT((memfy_rd_val=={16'b0, datas[i][31:16]}), "memfy doesn't store correct data in RD");
+                        `ASSERT((memfy_rd_strb==4'b0011), "STRB should be 4'b0011");
+                    end else if (i==11) begin
+                        `ASSERT((memfy_rd_val[7:0]==datas[i][31:24]), "memfy doesn't store correct data in RD");
+                        `ASSERT((memfy_rd_strb==4'b0001), "STRB should be 4'b0001");
+                        @(posedge aclk);
+                        @(negedge aclk);
+                        `ASSERT((memfy_rd_val[31:8]=={{16{1'b0}},datas[i+1][7:0]}), "memfy doesn't store correct data in RD");
+                        `ASSERT((memfy_rd_strb==4'b0010), "STRB should be 4'b0010");
+                        @(negedge aclk);
+                    end
+
+                end else if (instructions[i][`FUNCT3 +: `FUNCT3_W]==`LW) begin
+
+                    `MSG("Inspect ISA registers access");
+                    while(memfy_rd_wr==1'b0) @ (posedge aclk);
+                    `ASSERT((memfy_rd_addr==rd), "memfy doesn't target correct RD registers");
+
+                    if (i==12) begin
+                        `ASSERT((memfy_rd_val[23:0]==datas[i][31:8]), "phase 0 memfy doesn't store correct data in RD");
+                        `ASSERT((memfy_rd_strb==4'b0111), "STRB should be 4'b0111");
+                        @(posedge aclk);
+                        @(negedge aclk);
+                        `ASSERT((memfy_rd_val[31:24]==datas[i+1][7:0]), "phase 1 memfy doesn't store correct data in RD");
+                        `ASSERT((memfy_rd_strb==4'b1000), "STRB should be 4'b1000");
+                        @(negedge aclk);
+                    end
+                    end else if (i==13) begin
+                        `ASSERT((memfy_rd_val[15:0]==datas[i][31:16]), "memfy doesn't store correct data in RD");
+                        `ASSERT((memfy_rd_strb==4'b0011), "STRB should be 4'b0011");
+                        @(posedge aclk);
+                        @(negedge aclk);
+                        `ASSERT((memfy_rd_val[31:16]=={{16{1'b0}},datas[i+1][15:0]}), "memfy doesn't store correct data in RD");
+                        `ASSERT((memfy_rd_strb==4'b1100), "STRB should be 4'b1100");
+                        @(negedge aclk);
+                    end else if (i==14) begin
+                        `ASSERT((memfy_rd_val[7:0]==datas[i][31:24]), "memfy doesn't store correct data in RD");
+                        `ASSERT((memfy_rd_strb==4'b0001), "STRB should be 4'b0001");
+                        @(posedge aclk);
+                        @(negedge aclk);
+                        `ASSERT((memfy_rd_val[31:24]=={{8{1'b0}},datas[i+1][23:0]}), "memfy doesn't store correct data in RD");
+                        `ASSERT((memfy_rd_strb==4'b1110), "STRB should be 4'b1110");
+                        @(negedge aclk);
+                    end
+                end
+            join
+            @(posedge aclk);
         end
 
     `UNIT_TEST_END

@@ -98,7 +98,7 @@ module friscv_rv32i_processing
     .memfy_en        (proc_en       ),
     .memfy_ready     (memfy_ready   ),
     .memfy_empty     (memfy_empty   ),
-    .mem_fenceinfo   (proc_fenceinfo),
+    .memfy_fenceinfo (proc_fenceinfo),
     .memfy_instbus   (proc_instbus  ),
     .memfy_rs1_addr  (memfy_rs1_addr),
     .memfy_rs1_val   (memfy_rs1_val ),
