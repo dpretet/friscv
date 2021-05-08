@@ -10,6 +10,7 @@
 module friscv_rv32i_control
 
     #(
+        parameter CSR_DEPTH = 12,
         parameter ADDRW     = 16,
         parameter BOOT_ADDR = 0,
         parameter XLEN      = 32
@@ -64,13 +65,14 @@ module friscv_rv32i_control
     logic [`SUCC_W     -1:0] succ;
 
     // Flags of the instruction decoder to drive the control unit
-    logic lui;
-    logic auipc;
-    logic jal;
-    logic jalr;
-    logic branching;
-    logic system;
-    logic processing;
+    logic             lui;
+    logic             auipc;
+    logic             jal;
+    logic             jalr;
+    logic             branching;
+    logic             processing;
+    logic [2    -1:0] fence;
+    logic [3    -1:0] env;
 
     // Flag raised when receiving an unsupported/undefined instruction
     logic inst_error;
@@ -112,6 +114,9 @@ module friscv_rv32i_control
     // the instruction storage
     logic                   cant_branch_now;
     logic                   cant_process_now;
+    // ready flag of CSR dedicated module
+    logic                   csr_ready;
+    logic [XLEN       -1:0] csr_rd_val;
 
     ///////////////////////////////////////////////////////////////////////////
 
@@ -121,7 +126,7 @@ module friscv_rv32i_control
     // Decode instruction stage:
     //
     // Will trigger the control and data flows. The instruction set is divided
-    // in 4 parts:
+    // in several parts:
     //
     //   - jumping
     //   - branching
@@ -159,12 +164,13 @@ module friscv_rv32i_control
         .imm20       (imm20      ),
         .csr         (csr        ),
         .shamt       (shamt      ),
+        .fence       (fence      ),
         .lui         (lui        ),
         .auipc       (auipc      ),
         .jal         (jal        ),
         .jalr        (jalr       ),
         .branching   (branching  ),
-        .system      (system     ),
+        .env         (env        ),
         .processing  (processing ),
         .inst_error  (inst_error ),
         .pred        (pred       ),
@@ -224,12 +230,22 @@ module friscv_rv32i_control
 
     // program counter switching logic
     assign pc = (cfsm==BOOT)                ? pc_reg :
+                // FENCE or FENCE.I
+                (|fence)                    ? pc_plus4 :
+                // ECALL/EBREAK/CSR
+                (|env)                      ? pc_plus4 :
+                // Load immediate
                 (lui)                       ? pc_plus4 :
+                // Add upper immediate in PC
                 (auipc)                     ? pc_plus4 :
+                // Jumps
                 (jal)                       ? pc_jal :
                 (jalr)                      ? {pc_jalr[31:1],1'b0} :
+                // branching and comparaison is true
                 (branching && goto_branch)  ? pc_branching :
+                // branching and comparaison is true
                 (branching && ~goto_branch) ? pc_plus4 :
+                // arithmetic processing
                 (processing)                ? pc_plus4 :
                                               pc_reg;
 
@@ -267,11 +283,11 @@ module friscv_rv32i_control
     ///////////////////////////////////////////////////////////////////////////
 
     // Two flags to stop the process if ALU/memfy are struggling to process
-    assign cant_branch_now = ((auipc || jal || jalr || branching) &&
+    assign cant_branch_now = ((jal || jalr || branching) &&
                                ~proc_ready) ? 1'b1 :
                                               1'b0;
 
-    assign cant_process_now = (~proc_ready) ? 1'b1 : 1'b0;
+    assign cant_process_now = (processing && ~proc_ready) ? 1'b1 : 1'b0;
 
     always @ (posedge aclk or negedge aresetn) begin
 
@@ -315,20 +331,32 @@ module friscv_rv32i_control
 
                         // Wait for ALU/memfy to be ready to branch
                         if (load_stored) begin
-                            if (proc_ready) load_stored <= 1'b0;
+                            if (proc_ready && csr_ready)  begin
+                                inst_en <= 1'b1;
+                                pc_reg <= pc;
+                                load_stored <= 1'b0;
+                            end
                         // Need to branch/process but ALU/memfy didn't finish
-                        // to execute last instruction
+                        // to execute last instruction, so store the
+                        // instruction. Only reached if the instruction is
+                        // a processing
                         end else if (inst_ready && ~lui && 
-                                     (cant_branch_now || cant_process_now)) begin
+                                     ((env[2]) ||
+                                      (|fence && ~proc_ready) ||
+                                      (cant_branch_now || cant_process_now))
+                                    ) begin
                             load_stored <= 1'b1;
-                            stored_inst <= inst_rdata;
-                        end
-
-                        if (lui || (~cant_branch_now && ~cant_process_now)) begin
+                            inst_en <= 1'b0;
                             pc_reg <= pc;
+                            stored_inst <= inst_rdata;
+                        end else if (lui || 
+                                (~cant_branch_now && ~cant_process_now)) begin
+                            load_stored <= 1'b0;
                             inst_en <= 1'b1;
+                            pc_reg <= pc;
                         end else begin
                             inst_en <= 1'b0;
+                            load_stored <= 1'b0;
                         end
 
                     end
@@ -360,16 +388,40 @@ module friscv_rv32i_control
 
     // register destination
     assign ctrl_rd_wr =  (~cant_branch_now && ~cant_process_now &&
-                             (auipc || jal || jalr))    ? 1'b1 :
-                         (~cant_process_now && lui)     ? 1'b1 :
-                         (auipc)                        ? 1'b1 :
-                                                          1'b0 ;
+                             (auipc || jal || jalr))               ? 1'b1 :
+                         (~cant_process_now && lui)                ? 1'b1 :
+                         (auipc)                                   ? 1'b1 :
+                         (env[2])                                  ? 1'b1 :
+                                                                     1'b0 ;
     assign ctrl_rd_addr = rd;
 
     assign ctrl_rd_val = (jal || jalr) ? pc_plus4 :
                          (lui)         ? {imm20, 12'b0} : 
                          (auipc)       ? pc_auipc :
+                         (env[2])      ? csr_rd_val :
                                          pc;
+
+    friscv_csr 
+    #(
+        .CSR_DEPTH (CSR_DEPTH),
+        .XLEN      (XLEN)
+    )
+    csrs 
+    (
+        .aclk     (aclk        ),
+        .aresetn  (aresetn     ),
+        .srst     (srst        ),
+        .valid    (env[2]      ),
+        .ready    (csr_ready   ),
+        .funct3   (funct3      ),
+        .csr      (csr         ),
+        .zimm     (zimm        ),
+        .rs1_addr (rs1         ),
+        .rs1_val  (ctrl_rs1_val),
+        .rd_addr  (rd          ),
+        .rd_val   (csr_rd_val  )
+    );
+
 
 endmodule
 

@@ -22,6 +22,7 @@ module friscv_rv32i_decoder_testbench();
     logic [12   -1:0] csr;
     logic [6    -1:0] shamt;
     logic             auipc;
+    logic [2    -1:0] fence;
     logic             lui;
     logic             jal;
     logic             jalr;
@@ -51,6 +52,7 @@ module friscv_rv32i_decoder_testbench();
     imm20,
     csr,
     shamt,
+    fence,
     lui,
     auipc,
     jal,

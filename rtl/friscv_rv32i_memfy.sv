@@ -184,7 +184,7 @@ module friscv_rv32i_memfy
         if (funct3==`LH || funct3==`LHU)  begin
             if (offset==2'h3) begin
                 if (~phase) begin
-                    return {{(XLEN/8-1){1'b0}},1'b01};
+                    return {{(XLEN/8-1){1'b0}},1'b1};
                 end else begin
                     return {{(XLEN/8-2){1'b0}},2'b10};
                 end

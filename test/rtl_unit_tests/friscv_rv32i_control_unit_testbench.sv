@@ -13,6 +13,7 @@ module friscv_rv32i_control_unit_testbench();
 
     `SVUT_SETUP
 
+    parameter CSR_DEPTH = 12;
     parameter ADDRW     = 16;
     parameter BOOT_ADDR =  0;
     parameter XLEN      = 32;
@@ -46,6 +47,7 @@ module friscv_rv32i_control_unit_testbench();
 
     friscv_rv32i_control
     #(
+    CSR_DEPTH,
     ADDRW,
     BOOT_ADDR,
     XLEN
@@ -109,7 +111,16 @@ module friscv_rv32i_control_unit_testbench();
 
     `UNIT_TEST("Verify the ISA's opcodes")
 
+        @(posedge aclk);
+        @(posedge aclk);
+
         inst_rdata = 7'b0010111;
+        @(posedge aclk);
+        `ASSERT((dut.inst_error==1'b0));
+
+        @(posedge aclk);
+
+        inst_rdata = 7'b0001111;
         @(posedge aclk);
         `ASSERT((dut.inst_error==1'b0));
 
@@ -128,12 +139,6 @@ module friscv_rv32i_control_unit_testbench();
         @(posedge aclk);
 
         inst_rdata = 7'b1100011;
-        @(posedge aclk);
-        `ASSERT((dut.inst_error==1'b0));
-
-        @(posedge aclk);
-
-        inst_rdata = 7'b0000000;
         @(posedge aclk);
         `ASSERT((dut.inst_error==1'b0));
 
@@ -212,10 +217,6 @@ module friscv_rv32i_control_unit_testbench();
         `ASSERT((dut.proc_en==1'b1));
 
         inst_rdata = 7'b0010011;
-        @(posedge aclk);
-        `ASSERT((dut.proc_en==1'b1));
-
-        inst_rdata = 7'b1110011;
         @(posedge aclk);
         `ASSERT((dut.proc_en==1'b1));
 
@@ -521,12 +522,84 @@ module friscv_rv32i_control_unit_testbench();
 
     `UNIT_TEST_END
 
-    `UNIT_TEST("Failling instruction in C testsuite")
+    `UNIT_TEST("FENCE instructions")
+
+        @(posedge aclk);
+        @(posedge aclk);
+        while (inst_en == 1'b0) @(posedge aclk);
+
+        `MSG("FENCE move");
+        inst_ready = 1'b1;
+        inst_rdata = {20'b0, 5'b0, 7'b0001111};
+        @(negedge aclk);
+        `ASSERT((dut.pc == 32'h4), "FENCE - program counter must be 0x4");
+        @(posedge aclk);
+
+        `MSG("FENCE move but stalled by ALU/Memfy not ready");
+        proc_ready = 1'b0;
+        inst_ready = 1'b1;
+        inst_rdata = {20'b0, 5'b0, 7'b0001111};
+        @(negedge aclk);
+        `ASSERT((dut.pc == 32'h8), "FENCE - program counter must be 0x8");
+        @(posedge aclk);
+
+        `MSG("FENCE.I move");
+        proc_ready = 1'b1;
+        inst_ready = 1'b1;
+        inst_rdata = {20'b1, 5'b0, 7'b0001111};
+        @(posedge aclk);
+        `ASSERT((dut.pc == 32'hC), "FENCE.I - program counter must be 0xC");
+        @(posedge aclk);
+
+    `UNIT_TEST_END
+
+    `UNIT_TEST("ENV instructions - ECALL/EBREAK")
 
         while (inst_en == 1'b0) @(posedge aclk);
-        @(posedge aclk);
+
+        `MSG("ECALL move");
         inst_ready = 1'b1;
-        inst_rdata = 32'hC12403;
+        inst_rdata = {12'b0, 5'b0, 3'b0, 5'b0, 7'b1110011};
+        @(negedge aclk);
+        `ASSERT((dut.pc == 32'h4), "program counter must be 0x4");
+        @(posedge aclk);
+
+        `MSG("EBREAK move");
+        inst_ready = 1'b1;
+        inst_rdata = {12'b1, 5'b0, 3'b0, 5'b0, 7'b1110011};
+        @(negedge aclk);
+        `ASSERT((dut.pc == 32'h8), "program counter must be 0x8");
+        @(posedge aclk);
+
+    `UNIT_TEST_END
+
+    `UNIT_TEST("ENV instructions - CSR")
+
+        while (inst_en == 1'b0) @(posedge aclk);
+        `MSG("CRSRW");
+        @(posedge aclk);
+        inst_rdata = {12'b0, 5'h2, `CSRRW, 5'h3, 7'b1110011};
+        ctrl_rs1_val = 'h98765432;
+        inst_ready = 1'b1;
+        @(negedge aclk);
+        `ASSERT((dut.pc == 32'h4), "program counter must be 0x4");
+        @(posedge aclk);
+        @(posedge aclk);
+
+        ctrl_rs1_val = 'h00000000;
+        inst_ready = 1'b1;
+        inst_rdata = {12'b0, 5'h2, `CSRRW, 5'h3, 7'b1110011};
+        @(negedge aclk);
+        `ASSERT((dut.pc == 32'h8), "program counter must be 0x8");
+        `ASSERT((ctrl_rd_val!='h98765432));
+        @(posedge aclk);
+        @(posedge aclk);
+
+        ctrl_rs1_val = 'h98765432;
+        inst_ready = 1'b1;
+        inst_rdata = {12'b0, 5'h1, `CSRRW, 5'h2, 7'b1110011};
+        @(negedge aclk);
+        `ASSERT((dut.pc == 32'hC), "program counter must be 0xC");
         @(posedge aclk);
         @(posedge aclk);
 

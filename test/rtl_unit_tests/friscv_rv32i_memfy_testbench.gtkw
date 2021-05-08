@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.107 (w)1999-2020 BSI
-[*] Wed May  5 06:03:59 2021
+[*] Wed May  5 06:24:40 2021
 [*]
 [dumpfile] "/Users/damien/workspace/hdl/friscv/test/rtl_unit_tests/friscv_rv32i_memfy_testbench.vcd"
-[dumpfile_mtime] "Wed May  5 06:02:10 2021"
-[dumpfile_size] 42873
+[dumpfile_mtime] "Wed May  5 06:24:05 2021"
+[dumpfile_size] 42931
 [savefile] "/Users/damien/workspace/hdl/friscv/test/rtl_unit_tests/friscv_rv32i_memfy_testbench.gtkw"
 [timestart] 629170
 [size] 2529 1123
 [pos] -1 -1
-*-13.584673 716570 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-13.584673 692800 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] friscv_rv32i_memfy_testbench.
 [sst_width] 331
 [signals_width] 362

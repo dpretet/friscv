@@ -22,12 +22,13 @@ module friscv_rv32i_decoder
         output logic [20   -1:0] imm20,
         output logic [12   -1:0] csr,
         output logic [6    -1:0] shamt,
+        output logic [2    -1:0] fence,
         output logic             lui,
         output logic             auipc,
         output logic             jal,
         output logic             jalr,
         output logic             branching,
-        output logic             system,
+        output logic [3    -1:0] env,
         output logic             processing,
         output logic             inst_error,
         output logic [4    -1:0] pred,
@@ -46,7 +47,8 @@ module friscv_rv32i_decoder
                 jal = 1'b0;
                 jalr = 1'b0;
                 branching = 1'b0;
-                system = 1'b0;
+                env = 3'b0;
+                fence = 2'b0;
                 processing = 1'b0;
                 inst_error = 1'b0;
                 imm12 = 12'b0;
@@ -60,7 +62,8 @@ module friscv_rv32i_decoder
                 jal = 1'b0;
                 jalr = 1'b0;
                 branching = 1'b0;
-                system = 1'b0;
+                env = 3'b0;
+                fence = 2'b0;
                 processing = 1'b0;
                 inst_error = 1'b0;
                 imm12 = 12'b0;
@@ -74,13 +77,14 @@ module friscv_rv32i_decoder
                 jal = 1'b1;
                 jalr = 1'b0;
                 branching = 1'b0;
-                system = 1'b0;
+                env = 3'b0;
+                fence = 2'b0;
                 processing = 1'b0;
                 inst_error = 1'b0;
                 imm12 = 12'b0;
-                imm20 = {instruction[31], 
-                         instruction[19:12], 
-                         instruction[20], 
+                imm20 = {instruction[31],
+                         instruction[19:12],
+                         instruction[20],
                          instruction[21+:10]};
             end
 
@@ -91,7 +95,8 @@ module friscv_rv32i_decoder
                 jal = 1'b0;
                 jalr = 1'b1;
                 branching = 1'b0;
-                system = 1'b0;
+                env = 3'b0;
+                fence = 2'b0;
                 processing = 1'b0;
                 inst_error = 1'b0;
                 imm12 = instruction[20+:12];
@@ -105,7 +110,8 @@ module friscv_rv32i_decoder
                 jal = 1'b0;
                 jalr = 1'b0;
                 branching = 1'b1;
-                system = 1'b0;
+                env = 3'b0;
+                fence = 2'b0;
                 processing = 1'b0;
                 inst_error = 1'b0;
                 imm12 = {instruction[31],
@@ -115,14 +121,49 @@ module friscv_rv32i_decoder
                 imm20 = 20'b0;
             end
 
-            // System
-            7'b0000000: begin
+            // Emvironment
+            // - call / break
+            // - CSR
+            7'b1110011: begin
                 lui = 1'b0;
                 auipc = 1'b0;
                 jal = 1'b0;
                 jalr = 1'b0;
                 branching = 1'b0;
-                system = 1'b1;
+                if (instruction[14:12]==3'b000) begin
+                    // ebreak
+                    if (instruction[20]==1'b1) begin
+                        env = 3'b010;
+                    // ecall
+                    end else begin
+                        env = 3'b001;
+                    end
+                // CSR
+                end else begin
+                    env = 3'b100;
+                end
+                fence = 2'b0;
+                processing = 1'b0;
+                inst_error = 1'b0;
+                imm12 = 12'b0;
+                imm20 = 20'b0;
+            end
+
+            // Fence
+            7'b0001111: begin
+                lui = 1'b0;
+                auipc = 1'b0;
+                jal = 1'b0;
+                jalr = 1'b0;
+                branching = 1'b0;
+                env = 3'b0;
+                // fence.i
+                if (instruction[12]) begin
+                    fence = 2'b10;
+                // fence
+                end else begin
+                    fence = 2'b01;
+                end
                 processing = 1'b0;
                 inst_error = 1'b0;
                 imm12 = 12'b0;
@@ -136,7 +177,8 @@ module friscv_rv32i_decoder
                 jal = 1'b0;
                 jalr = 1'b0;
                 branching = 1'b0;
-                system = 1'b0;
+                env = 3'b0;
+                fence = 2'b0;
                 processing = 1'b1;
                 inst_error = 1'b0;
                 imm12 = instruction[20+:12];
@@ -150,7 +192,8 @@ module friscv_rv32i_decoder
                 jal = 1'b0;
                 jalr = 1'b0;
                 branching = 1'b0;
-                system = 1'b0;
+                env = 3'b0;
+                fence = 2'b0;
                 processing = 1'b1;
                 inst_error = 1'b0;
                 imm12 = {instruction[25+:7], instruction[7+:5]};
@@ -164,7 +207,8 @@ module friscv_rv32i_decoder
                 jal = 1'b0;
                 jalr = 1'b0;
                 branching = 1'b0;
-                system = 1'b0;
+                env = 3'b0;
+                fence = 2'b0;
                 processing = 1'b1;
                 inst_error = 1'b0;
                 imm12 = instruction[20+:12];
@@ -178,20 +222,8 @@ module friscv_rv32i_decoder
                 jal = 1'b0;
                 jalr = 1'b0;
                 branching = 1'b0;
-                system = 1'b0;
-                processing = 1'b1;
-                inst_error = 1'b0;
-                imm12 = 12'b0;
-                imm20 = 20'b0;
-            end
-
-            // CSR
-            7'b1110011: begin
-                auipc = 1'b0;
-                jal = 1'b0;
-                jalr = 1'b0;
-                branching = 1'b0;
-                system = 1'b0;
+                env = 3'b0;
+                fence = 2'b0;
                 processing = 1'b1;
                 inst_error = 1'b0;
                 imm12 = 12'b0;
@@ -205,7 +237,8 @@ module friscv_rv32i_decoder
                 jal = 1'b0;
                 jalr = 1'b0;
                 branching = 1'b0;
-                system = 1'b0;
+                env = 3'b0;
+                fence = 2'b0;
                 processing = 1'b0;
                 inst_error = 1'b1;
                 imm12 = 12'b0;
@@ -213,7 +246,7 @@ module friscv_rv32i_decoder
             end
 
         endcase
-        
+
         opcode = instruction[6:0];
         funct3 = instruction[14:12];
         funct7 = instruction[31:25];

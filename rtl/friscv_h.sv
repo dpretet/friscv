@@ -19,6 +19,7 @@
 `define STORE   7'b0100011
 `define I_ARITH 7'b0010011
 `define R_ARITH 7'b0110011
+`define ENV     7'b1110011
 
 // funct3 opcodes for instruction decoding
 `define BEQ     3'b000
@@ -62,8 +63,11 @@
 
 `define FENCE   3'b000
 `define FENCEI  3'b001
-`define ECALL   3'b000
-`define EBREAK  3'b000
+
+`define ECALL   3'b001
+`define EBREAK  3'b010
+`define CSRX    3'b100
+
 `define CSRRW   3'b001
 `define CSRRS   3'b010
 `define CSRRC   3'b011
