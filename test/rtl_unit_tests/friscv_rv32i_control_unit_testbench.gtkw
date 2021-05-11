@@ -1,26 +1,35 @@
 [*]
 [*] GTKWave Analyzer v3.3.107 (w)1999-2020 BSI
-[*] Sat May  8 07:02:30 2021
+[*] Sun May  9 14:06:55 2021
 [*]
 [dumpfile] "/Users/damien/workspace/hdl/friscv/test/rtl_unit_tests/friscv_rv32i_control_unit_testbench.vcd"
-[dumpfile_mtime] "Fri May  7 19:00:41 2021"
-[dumpfile_size] 24132
+[dumpfile_mtime] "Sun May  9 14:03:07 2021"
+[dumpfile_size] 28017
 [savefile] "/Users/damien/workspace/hdl/friscv/test/rtl_unit_tests/friscv_rv32i_control_unit_testbench.gtkw"
-[timestart] 0
-[size] 1803 1123
+[timestart] 379100
+[size] 2560 1341
 [pos] -1 -1
-*-16.392052 205900 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-14.392052 538000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] friscv_rv32i_control_unit_testbench.
 [treeopen] friscv_rv32i_control_unit_testbench.dut.
 [sst_width] 193
 [signals_width] 358
 [sst_expanded] 1
-[sst_vpaned_height] 555
+[sst_vpaned_height] 676
 @28
 friscv_rv32i_control_unit_testbench.dut.aclk
 [color] 3
 friscv_rv32i_control_unit_testbench.dut.aresetn
 friscv_rv32i_control_unit_testbench.dut.srst
+@200
+-
+@28
+friscv_rv32i_control_unit_testbench.dut.inst_en
+friscv_rv32i_control_unit_testbench.dut.inst_ready
+@22
+friscv_rv32i_control_unit_testbench.dut.inst_addr[15:0]
+friscv_rv32i_control_unit_testbench.inst_addr_r[15:0]
+friscv_rv32i_control_unit_testbench.dut.inst_rdata[31:0]
 @200
 -
 @22
@@ -29,16 +38,10 @@ friscv_rv32i_control_unit_testbench.dut.cfsm[3:0]
 @28
 friscv_rv32i_control_unit_testbench.dut.cant_branch_now
 friscv_rv32i_control_unit_testbench.dut.cant_process_now
-@200
--
-@28
-friscv_rv32i_control_unit_testbench.dut.inst_en
-friscv_rv32i_control_unit_testbench.dut.inst_ready
+friscv_rv32i_control_unit_testbench.dut.load_stored
 @22
-friscv_rv32i_control_unit_testbench.dut.inst_addr[15:0]
-friscv_rv32i_control_unit_testbench.dut.inst_rdata[31:0]
+friscv_rv32i_control_unit_testbench.dut.instruction[31:0]
 @200
--
 -
 @28
 friscv_rv32i_control_unit_testbench.dut.ctrl_rd_wr
@@ -51,9 +54,18 @@ friscv_rv32i_control_unit_testbench.dut.ctrl_rs2_addr[4:0]
 friscv_rv32i_control_unit_testbench.dut.ctrl_rs2_val[31:0]
 @200
 -
+@29
+friscv_rv32i_control_unit_testbench.dut.csr_rd_wr
+@22
+friscv_rv32i_control_unit_testbench.dut.csr_rd_val[31:0]
+@28
+friscv_rv32i_control_unit_testbench.dut.csr_ready
+@200
+-
 @28
 friscv_rv32i_control_unit_testbench.dut.env[2:0]
 friscv_rv32i_control_unit_testbench.dut.fence[1:0]
+friscv_rv32i_control_unit_testbench.dut.lui
 friscv_rv32i_control_unit_testbench.dut.auipc
 friscv_rv32i_control_unit_testbench.dut.jal
 friscv_rv32i_control_unit_testbench.dut.jalr
@@ -107,6 +119,8 @@ friscv_rv32i_control_unit_testbench.dut.succ[3:0]
 friscv_rv32i_control_unit_testbench.dut.zimm[4:0]
 @200
 -
+@800200
+-CSR
 @28
 friscv_rv32i_control_unit_testbench.dut.csrs.aclk
 friscv_rv32i_control_unit_testbench.dut.csrs.aresetn
@@ -126,7 +140,7 @@ friscv_rv32i_control_unit_testbench.dut.csrs.rs1_val[31:0]
 friscv_rv32i_control_unit_testbench.dut.csrs.zimm[4:0]
 @200
 -
-@29
+@28
 friscv_rv32i_control_unit_testbench.dut.csrs.wren
 @22
 friscv_rv32i_control_unit_testbench.dut.csrs.newval[31:0]
@@ -134,5 +148,7 @@ friscv_rv32i_control_unit_testbench.dut.csrs.newval[31:0]
 friscv_rv32i_control_unit_testbench.dut.csrs.rden
 @22
 friscv_rv32i_control_unit_testbench.dut.csrs.oldval[31:0]
+@1000200
+-CSR
 [pattern_trace] 1
 [pattern_trace] 0

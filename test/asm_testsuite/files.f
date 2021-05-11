@@ -8,3 +8,4 @@
 ../../rtl/friscv_rv32i_processing.sv
 ../../rtl/friscv_rv32i_memfy.sv
 ../../rtl/friscv_registers.sv
+../../rtl/friscv_csr.sv

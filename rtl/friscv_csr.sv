@@ -24,6 +24,7 @@ module friscv_csr
         input  logic [5         -1:0] rs1_addr,
         input  logic [XLEN      -1:0] rs1_val,
         input  logic [5         -1:0] rd_addr,
+        output logic                  rd_wr,
         output logic [XLEN      -1:0] rd_val
     );
 
@@ -61,12 +62,14 @@ module friscv_csr
 
     always @ (posedge aclk or negedge aresetn) begin
         if (aresetn==1'b0) begin
+            rd_wr <= 1'b0;
             rd_val <= {XLEN{1'b0}};
             ready <= 1'b0;
             wren <= 1'b0;
             newval <= {XLEN{1'b0}};
             cfsm <= IDLE;
         end else if (srst) begin
+            rd_wr <= 1'b0;
             rd_val <= {XLEN{1'b0}};
             ready <= 1'b0;
             wren <= 1'b0;
@@ -77,11 +80,10 @@ module friscv_csr
 
                 // Wait for a new instruction
                 default: begin
+                    rd_wr <= 1'b0;
                     if (valid) begin
                         ready <= 1'b0;
                         cfsm <= COMPUTE;
-                    end else begin
-                        ready <= 1'b1;
                     end
                 end
 
@@ -89,17 +91,20 @@ module friscv_csr
                 // the ISA register
                 COMPUTE: begin
 
-                    cfsm <= STORE;
+                    cfsm <= IDLE;
+                    ready <= 1'b1;
 
                     // Swap RS1 and CSR
                     if (funct3==`CSRRW) begin
                         if (rd_addr!=5'b0) begin 
                             wren <= 1'b1;
+                            rd_wr <= 1'b1;
                             rd_val <= oldval;
                         end
                         newval <= rs1_val;
                     // Save CSR and apply a set mask
                     end else if (funct3==`CSRRS) begin
+                        rd_wr <= 1'b1;
                         rd_val <= oldval;
                         if (rs1_addr!=5'b0) begin 
                             wren <= 1'b1;
@@ -108,6 +113,7 @@ module friscv_csr
                     
                     // Save CSR then apply a set mask
                     end else if (funct3==`CSRRC) begin
+                        rd_wr <= 1'b1;
                         rd_val <= oldval;
                         if (rs1_addr!=5'b0) begin 
                             wren <= 1'b1;
@@ -118,11 +124,13 @@ module friscv_csr
                     end else if (funct3==`CSRRWI) begin
                         if (rd_addr!=5'b0) begin 
                             wren <= 1'b1;
+                            rd_wr <= 1'b1;
                             rd_val <= oldval;
                         end
                         newval <= {{XLEN-5{1'b0}}, zimm};
 
                     end else if (funct3==`CSRRSI) begin
+                        rd_wr <= 1'b1;
                         rd_val <= oldval;
                         if (zimm!=5'b0) begin 
                             wren <= 1'b1;
@@ -130,6 +138,7 @@ module friscv_csr
                         end
 
                     end else if (funct3==`CSRRCI) begin
+                        rd_wr <= 1'b1;
                         rd_val <= oldval;
                         if (zimm!=5'b0) begin 
                             wren <= 1'b1;
@@ -145,6 +154,7 @@ module friscv_csr
                 // CSR instructions to fail
                 STORE: begin
                     wren <= 1'b0;
+                    rd_wr <= 1'b0;
                     ready <= 1'b1;
                     cfsm <= IDLE;
                 end

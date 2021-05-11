@@ -15,6 +15,8 @@ rm -f ./*.out
 # Then clean temp files into testcase folders
  if [ "$#" -eq 1 ] && [ "$1" == 'clean' ]; then
     find . -type d -exec make -C {} clean \;
+    rm -f ./test*.*v
+    rm -f *.vcd
     exit 0
 fi
 
@@ -22,27 +24,34 @@ fi
 # Once created, the program are converted along this script to init the RAMs
 find . -type d ! -name common -exec make -C {} clean all \; -exec ./bin2hex.py {}/{}.v {}.v \;
 
+echo "INFO: Start ASM Testsuite"
+echo "PID: $$"
 ret=0
 # Parse all available tests one by one and copy them into test.v
 # This test.v file name is expected in the testbench to init the data RAM
 for test in test*.v; do
 
+    # Get test name by removing the extension
+    test_name=${test%%.*}
+
     # Copy the testcase to run
     rm -f test.v
-    cp "$test" test.v
-    echo -e "${GREEN}INFO: Execute $test${NC}"
+    cp "${test_name}.v" test.v
 
-    # Count the number of instructions. This define will help to stop the
-    # simulation once it reached the number of instructions in the testcase
-    inst_num=$(wc -l test.v | awk '{ print $1 }')
+    # Print testcase description
+    echo ""
+    echo -e "${GREEN}INFO: Execute ${test}${NC}"
+    echo ""
+    echo "-------------------------------------------------------------------------------------"
+    cat "${test_name}/${test_name}.md"
+    echo "-------------------------------------------------------------------------------------"
+    echo ""
 
-    # Execute the testcase with SVUT
-    svutRun -t ./friscv_rv32i_testbench.sv  \
-            -define "TEST_INSTRUCTION_NUMBER=$inst_num" | tee -a simulation.log
+    # Execute the testcase with SVUT. Will stop once it reaches a EBREAK instruction
+    svutRun -t ./friscv_rv32i_testbench.sv | tee -a simulation.log
 
     # Copy the VCD generated, create a GTKWave file from the template then
     # add into the path to the good VCD file.
-    test_name=${test%%.*}
     cp ./friscv_rv32i_testbench.vcd "$test_name.vcd"
     cp ./friscv_rv32i_testbench.gtkw.tmpl "./friscv_rv32i_${test_name}_testbench.gtkw"
     vcd_path=$(realpath "$test_name.vcd")

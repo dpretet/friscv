@@ -22,6 +22,8 @@ module friscv_rv32i
         input  logic                  srst,
         // enable signal to activate the core
         input  logic                  enable,
+        // Flag asserted when reaching a EBREAK
+        output logic                  ebreak,
         // instruction memory interface
         output logic                  inst_en,
         output logic [INST_ADDRW-1:0] inst_addr,
@@ -115,6 +117,7 @@ module friscv_rv32i
     .aclk           (aclk          ),
     .aresetn        (aresetn       ),
     .srst           (srst          ),
+    .ebreak         (ebreak        ),
     .inst_en        (inst_en       ),
     .inst_addr      (inst_addr     ),
     .inst_rdata     (inst_rdata    ),

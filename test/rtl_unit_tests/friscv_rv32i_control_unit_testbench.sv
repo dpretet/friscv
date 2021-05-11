@@ -45,6 +45,11 @@ module friscv_rv32i_control_unit_testbench();
     logic [20            -1:0] imm20;
     logic [4             -1:0] fenceinfo;
 
+    logic [XLEN          -1:0] instructions[16-1:0];
+    logic [XLEN          -1:0] data[16-1:0];
+    logic [XLEN          -1:0] result[16-1:0];
+    logic [ADDRW        -1:0]  inst_addr_r;
+
     friscv_rv32i_control
     #(
     CSR_DEPTH,
@@ -103,9 +108,16 @@ module friscv_rv32i_control_unit_testbench();
 
     task teardown(msg="");
     begin
-        #10;
+        repeat (3) @(posedge aclk);
     end
     endtask
+
+    always @ (posedge aclk or negedge aresetn) begin
+
+        if (~aresetn) inst_addr_r <= 'h0;
+        else if (srst) inst_addr_r <= 'h0;
+        else inst_addr_r <= inst_addr;
+    end
 
     `TEST_SUITE("Control Testsuite")
 
@@ -114,60 +126,70 @@ module friscv_rv32i_control_unit_testbench();
         @(posedge aclk);
         @(posedge aclk);
 
+        `MSG("AUIPC");
         inst_rdata = 7'b0010111;
         @(posedge aclk);
         `ASSERT((dut.inst_error==1'b0));
 
         @(posedge aclk);
 
+        `MSG("FENCE");
         inst_rdata = 7'b0001111;
         @(posedge aclk);
         `ASSERT((dut.inst_error==1'b0));
 
         @(posedge aclk);
 
+        `MSG("JAL");
         inst_rdata = 7'b1101111;
         @(posedge aclk);
         `ASSERT((dut.inst_error==1'b0));
 
         @(posedge aclk);
 
+        `MSG("JALR");
         inst_rdata = 7'b1100111;
         @(posedge aclk);
         `ASSERT((dut.inst_error==1'b0));
 
         @(posedge aclk);
-
+ 
+        `MSG("BRANCHING");
         inst_rdata = 7'b1100011;
         @(posedge aclk);
         `ASSERT((dut.inst_error==1'b0));
 
         @(posedge aclk);
 
+        `MSG("LOAD");
         inst_rdata = 7'b0000011;
         @(posedge aclk);
         `ASSERT((dut.inst_error==1'b0));
 
         @(posedge aclk);
 
+        `MSG("ARITHMETIC REGISTER-to-REGISTER");
         inst_rdata = 7'b0100011;
         @(posedge aclk);
         `ASSERT((dut.inst_error==1'b0));
 
         @(posedge aclk);
 
+        `MSG("ARITHMETIC IMMEDIATE");
         inst_rdata = 7'b0010011;
         @(posedge aclk);
         `ASSERT((dut.inst_error==1'b0));
 
         @(posedge aclk);
 
+        `MSG("LUI");
         inst_rdata = 7'b0110011;
         @(posedge aclk);
         `ASSERT((dut.inst_error==1'b0));
 
         @(posedge aclk);
 
+        `MSG("CSR");
         inst_rdata = 7'b1110011;
         @(posedge aclk);
         `ASSERT((dut.inst_error==1'b0));
@@ -176,49 +198,59 @@ module friscv_rv32i_control_unit_testbench();
 
     `UNIT_TEST("Verify invalid opcodes lead to failure")
 
+        `MSG("INVALID");
         @(negedge aclk);
         inst_rdata = 7'b0000001;
         @(posedge aclk);
         `ASSERT((dut.inst_error==1'b1), "should detect an issue");
 
+        `MSG("INVALID");
         @(negedge aclk);
         inst_rdata = 7'b0101001;
         @(posedge aclk);
         `ASSERT((dut.inst_error==1'b1), "should detect an issue");
 
+        `MSG("INVALID");
         @(negedge aclk);
         inst_rdata = 7'b1111111;
         @(posedge aclk);
         `ASSERT((dut.inst_error==1'b1), "should detect an issue");
 
+        `MSG("INVALID");
+        @(negedge aclk);
+        inst_rdata = 7'b0000000;
+        @(posedge aclk);
+        `ASSERT((dut.inst_error==1'b1), "should detect an issue");
+
     `UNIT_TEST_END
 
-    `UNIT_TEST("Check ALU is activated with valid opcodes")
+    `UNIT_TEST("Check ALU/MEMFY is activated with valid opcodes")
 
         while (inst_en == 1'b0) @(posedge aclk);
         inst_ready = 1'b1;
         proc_ready = 1'b1;
         @(posedge aclk);
 
+        `MSG("LOAD");
         inst_rdata = 7'b0000011;
         @(posedge aclk);
         `ASSERT((dut.proc_en==1'b1));
 
+        `MSG("STORE");
         inst_rdata = 7'b0100011;
         @(posedge aclk);
         `ASSERT((dut.proc_en==1'b1));
 
+        `MSG("AITHMETIC IMMEDIATE");
         inst_rdata = 7'b0010011;
         @(posedge aclk);
         `ASSERT((dut.proc_en==1'b1));
 
+        `MSG("AITHMETIC REGISTER-to-REGISTER");
         inst_rdata = 7'b0110011;
         @(posedge aclk);
         `ASSERT((dut.proc_en==1'b1));
 
-        inst_rdata = 7'b0010011;
-        @(posedge aclk);
-        `ASSERT((dut.proc_en==1'b1));
 
     `UNIT_TEST_END
 
@@ -550,6 +582,7 @@ module friscv_rv32i_control_unit_testbench();
         @(posedge aclk);
         `ASSERT((dut.pc == 32'hC), "FENCE.I - program counter must be 0xC");
         @(posedge aclk);
+        `CRITICAL("TODO: Check interleaving with processing instruction (or anyone else)");
 
     `UNIT_TEST_END
 
@@ -575,33 +608,77 @@ module friscv_rv32i_control_unit_testbench();
 
     `UNIT_TEST("ENV instructions - CSR")
 
-        while (inst_en == 1'b0) @(posedge aclk);
-        `MSG("CRSRW");
-        @(posedge aclk);
-        inst_rdata = {12'b0, 5'h2, `CSRRW, 5'h3, 7'b1110011};
-        ctrl_rs1_val = 'h98765432;
-        inst_ready = 1'b1;
-        @(negedge aclk);
-        `ASSERT((dut.pc == 32'h4), "program counter must be 0x4");
-        @(posedge aclk);
-        @(posedge aclk);
+        instructions[0] = {12'b0, 5'h2, `CSRRW, 5'h3, 7'b1110011};
+        data[0] = 'h98765432;
+        result[0] = 'h00000000;
 
-        ctrl_rs1_val = 'h00000000;
-        inst_ready = 1'b1;
-        inst_rdata = {12'b0, 5'h2, `CSRRW, 5'h3, 7'b1110011};
-        @(negedge aclk);
-        `ASSERT((dut.pc == 32'h8), "program counter must be 0x8");
-        `ASSERT((ctrl_rd_val!='h98765432));
-        @(posedge aclk);
-        @(posedge aclk);
+        instructions[1] = {12'b0, 5'h3, `CSRRW, 5'h4, 7'b1110011};
+        data[1] = 'h55555555;
+        result[1] = 'h98765432;
 
-        ctrl_rs1_val = 'h98765432;
-        inst_ready = 1'b1;
-        inst_rdata = {12'b0, 5'h1, `CSRRW, 5'h2, 7'b1110011};
-        @(negedge aclk);
-        `ASSERT((dut.pc == 32'hC), "program counter must be 0xC");
-        @(posedge aclk);
-        @(posedge aclk);
+        instructions[2] = {12'b0, 5'h5, `CSRRS, 5'h6, 7'b1110011};
+        data[2] = 'hAAAAAAAA;
+        result[2] = 'hFFFFFFFF;
+
+        instructions[3] = {12'b0, 5'h8, `CSRRC, 5'h9, 7'b1110011};
+        data[3] = 'hAAAAAAAA;
+        result[3] = 'hAAAAAAAA;
+
+        // while (inst_en==1'b0) @(posedge aclk);
+        // inst_rdata = instructions[0];
+        // inst_ready = 1'b1;
+                // @(posedge aclk);
+
+        for (int i=0; i<4; i=i+1) begin
+            fork
+            begin
+                while (inst_en==1'b0) @(posedge aclk);
+                // while (inst_addr==inst_addr_r) @(posedge aclk);
+                `MSG("CSR Fetch");
+                inst_rdata = instructions[i];
+                ctrl_rs1_val = data[i];
+                inst_ready = 1'b1;
+                @(posedge aclk);
+                inst_rdata = instructions[i+1];
+                inst_ready = 1'b0;
+                @(posedge aclk);
+                @(posedge aclk);
+            end
+            begin
+                while (ctrl_rd_wr == 1'b0) @(posedge aclk);
+                $display("i: %0d", i);
+                `ASSERT((ctrl_rd_val==result[i]));
+                @(posedge aclk);
+                @(posedge aclk);
+                @(posedge aclk);
+                @(posedge aclk);
+            end
+            join_any
+        end
+
+        // while (inst_en == 1'b0) @(posedge aclk);
+        // `MSG("CRSRW");
+        // @(posedge aclk);
+        // inst_rdata = {12'b0, 5'h2, `CSRRW, 5'h3, 7'b1110011};
+        // ctrl_rs1_val = 'h98765432;
+        // inst_ready = 1'b1;
+        // @(negedge aclk);
+        // `ASSERT((dut.pc == 32'h4), "program counter must be 0x4");
+        // @(posedge aclk);
+        // @(posedge aclk);
+// 
+        // ctrl_rs1_val = 'h00000000;
+        // inst_ready = 1'b1;
+        // inst_rdata = {12'b0, 5'h2, `CSRRW, 5'h3, 7'b1110011};
+        // @(negedge aclk);
+        // `ASSERT((dut.pc == 32'h8), "program counter must be 0x8");
+        // `ASSERT((ctrl_rd_val!='h98765432));
+        // @(posedge aclk);
+        // @(posedge aclk);
+// 
+        `CRITICAL("TODO: Complete all CSR instructions check");
+        `CRITICAL("Check X0 as rs/rd");
+        `CRITICAL("TODO: Check interleaving with processing instruction (or anyone else)");
 
     `UNIT_TEST_END
 

@@ -19,6 +19,7 @@ module friscv_rv32i_control
         input  logic                      aclk,
         input  logic                      aresetn,
         input  logic                      srst,
+        output logic                      ebreak,
         // instruction memory interface
         output logic                      inst_en,
         output logic [ADDRW         -1:0] inst_addr,
@@ -83,7 +84,8 @@ module friscv_rv32i_control
         RUN = 1,
         BR_JP = 2,
         SYS = 3,
-        TRAP = 4
+        TRAP = 4,
+        EBREAK = 5
     } pc_fsm;
 
     pc_fsm cfsm;
@@ -116,6 +118,7 @@ module friscv_rv32i_control
     logic                   cant_process_now;
     // ready flag of CSR dedicated module
     logic                   csr_ready;
+    logic                   csr_rd_wr;
     logic [XLEN       -1:0] csr_rd_val;
 
     ///////////////////////////////////////////////////////////////////////////
@@ -282,7 +285,7 @@ module friscv_rv32i_control
     // The FSM switching the program counter
     ///////////////////////////////////////////////////////////////////////////
 
-    // Two flags to stop the process if ALU/memfy are struggling to process
+    // Two flags to stop the processor if ALU/memfy are computing
     assign cant_branch_now = ((jal || jalr || branching) &&
                                ~proc_ready) ? 1'b1 :
                                               1'b0;
@@ -296,18 +299,20 @@ module friscv_rv32i_control
             inst_en <= 1'b0;
             pc_reg <= {(PC_W){1'b0}};
             load_stored <= 1'b0;
-            stored_inst <= {XLEN{1'b0}};
+            stored_inst <= {XLEN{1'b0}}       ;
+            ebreak <= 1'b0;
         end else if (srst == 1'b1) begin
             cfsm <= BOOT;
             inst_en <= 1'b0;
             pc_reg <= {(PC_W){1'b0}};
             load_stored <= 1'b0;
             stored_inst <= {XLEN{1'b0}};
+            ebreak <= 1'b0;
         end else begin
 
             case (cfsm)
 
-                // Start to boot the RAM after reset. Take time to load the 
+                // Start to boot the RAM after reset. Take time to load the
                 // RAM and wait for readiness before moving forward to be sure
                 // the RAM drives a valid instruction
                 default: begin
@@ -340,16 +345,25 @@ module friscv_rv32i_control
                         // to execute last instruction, so store the
                         // instruction. Only reached if the instruction is
                         // a processing
-                        end else if (inst_ready && ~lui && 
+                        end else if (inst_ready && ~lui &&
                                      ((env[2]) ||
-                                      (|fence && ~proc_ready) ||
+                                      (|fence && cant_process_now) ||
                                       (cant_branch_now || cant_process_now))
                                     ) begin
                             load_stored <= 1'b1;
                             inst_en <= 1'b0;
                             pc_reg <= pc;
                             stored_inst <= inst_rdata;
-                        end else if (lui || 
+
+                        // Reach a EBREAK instruction, need to stall the core
+                        end else if (env[1]) begin
+                            inst_en <= 1'b0;
+                            ebreak <= 1'b1;
+                            cfsm <= EBREAK;
+
+                        // Continue processing if LUI or processing
+                        // or branching
+                        end else if (lui ||
                                 (~cant_branch_now && ~cant_process_now)) begin
                             load_stored <= 1'b0;
                             inst_en <= 1'b1;
@@ -360,6 +374,10 @@ module friscv_rv32i_control
                         end
 
                     end
+                end
+
+                EBREAK: begin
+                    cfsm <= EBREAK;
                 end
 
                 // TRAP reached when:
@@ -391,22 +409,22 @@ module friscv_rv32i_control
                              (auipc || jal || jalr))               ? 1'b1 :
                          (~cant_process_now && lui)                ? 1'b1 :
                          (auipc)                                   ? 1'b1 :
-                         (env[2])                                  ? 1'b1 :
+                         (csr_rd_wr)                               ? 1'b1 :
                                                                      1'b0 ;
     assign ctrl_rd_addr = rd;
 
     assign ctrl_rd_val = (jal || jalr) ? pc_plus4 :
-                         (lui)         ? {imm20, 12'b0} : 
+                         (lui)         ? {imm20, 12'b0} :
                          (auipc)       ? pc_auipc :
                          (env[2])      ? csr_rd_val :
                                          pc;
 
-    friscv_csr 
+    friscv_csr
     #(
         .CSR_DEPTH (CSR_DEPTH),
         .XLEN      (XLEN)
     )
-    csrs 
+    csrs
     (
         .aclk     (aclk        ),
         .aresetn  (aresetn     ),
@@ -419,6 +437,7 @@ module friscv_rv32i_control
         .rs1_addr (rs1         ),
         .rs1_val  (ctrl_rs1_val),
         .rd_addr  (rd          ),
+        .rd_wr    (csr_rd_wr   ),
         .rd_val   (csr_rd_val  )
     );
 

@@ -64,10 +64,6 @@
 `define FENCE   3'b000
 `define FENCEI  3'b001
 
-`define ECALL   3'b001
-`define EBREAK  3'b010
-`define CSRX    3'b100
-
 `define CSRRW   3'b001
 `define CSRRS   3'b010
 `define CSRRC   3'b011
@@ -75,6 +71,11 @@
 `define CSRRSI  3'b110
 `define CSRRCI  3'b111
 
+
+// env signal driven by decoder to indicate environment instruction
+`define ECALL   3'b001
+`define EBREAK  3'b010
+`define CSRX    3'b100
 
 //////////////////////////////////////////////////////////////////
 // Instruction bus feeding ALU

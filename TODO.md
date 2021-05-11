@@ -1,11 +1,5 @@
 # DOING
 
-- [ ] Fix memfy to correctly address unaligned request
-
-- [ ] Implement FENCE and FENCE.i
-
-- [ ] Add CSR instructions
-
 - [-] Develop top testbench to use asm programs and rely only on RAM to drive
       instructions and data into the core
     - [ ] Develop a unit test framework for ASM
@@ -25,34 +19,31 @@
         - pause every 2 cycles
     2. Driver throttle the valid, consumer is always ready
     3. Both Driver and consumer throttle the valid/ready handshake
-- [ ] Processing scheduler to assert readiness according the instruction
-
-- [ ] Support IRQ, timer, GPIOs
+- [ ] Support IRQ (PLIC/CLINT), timer, GPIOs
 - [ ] Design a generic memory bus
     - AMBA-like
     - Support outstanding requests
     - Support ID, OR, PROT and ERROR
     - Write completion
     - Detect IO request
-    - forward to control FENCE information
-- [ ] Read processor datasheet and grab dev ideas
+    - forward info for FENCE(i)
 - [ ] Implement in-house profiler to check branching, stall time, ...
-- [ ] synthesis project
+- [ ] Synthesis project
 - [ ] Document specification,architecture, possible evolution and timing
       diagrams. Spec: in-order, stage depth, interupt, GPIOs, memory init
+    - Read processor datasheet and grab dev ideas
 - [ ] Support multiple ALUs in parallel, differents spec (integer/float, mult/div)
-      How to dispatch workloqd and share ISA registers
-- [ ] Support oustanding requests (in-order)
-    - Separate read and write memory channels
+      Processing scheduler to assert readiness according the instruction and ISA regs accessed
 - [ ] Implement instruction cache with branch prediction and outstanding request
 - [ ] Implement data cache
 - [ ] Support privilieged instructions (virtualization, hypevisor support)
 - [ ] Study MMU topic for RISCV (think about linux driver dev, use same interface than ARM?)
-- [ ] Study SIMD architecture
-- [ ] Study vector architecture (IBM Cell like?)
-- [ ] Application to GPGPU area
-- [ ] Many-core architecture
-- [ ] Support float16 & float8, more generaly low-precision arithmetic like int8...
+- [ ] Next CPU architecture:
+    - [ ] Study SIMD architecture
+    - [ ] Study vector architecture (IBM Cell like?)
+    - [ ] Application to GPGPU area
+    - [ ] Many-core architecture
+    - [ ] Support float16 & float8, more generaly low-precision arithmetic like int8...
 
 
 # Verification/Validation Backlog

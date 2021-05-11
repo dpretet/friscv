@@ -16,6 +16,7 @@ module friscv_rv32i_testbench();
     logic                   aclk;
     logic                   aresetn;
     logic                   srst;
+    logic                   ebreak;
     logic                   enable;
     logic                   inst_en;
     logic [INST_ADDRW -1:0] inst_addr;
@@ -29,6 +30,7 @@ module friscv_rv32i_testbench();
     logic [XLEN       -1:0] mem_rdata;
     logic                   mem_ready;
     integer                 inst_counter;
+    integer                 timer;
 
     friscv_rv32i
     #(
@@ -43,6 +45,7 @@ module friscv_rv32i_testbench();
     aresetn,
     srst,
     enable,
+    ebreak,
     inst_en,
     inst_addr,
     inst_rdata,
@@ -126,6 +129,7 @@ module friscv_rv32i_testbench();
         aresetn = 1'b0;
         srst = 1'b0;
         inst_ready = 1'b1;
+        timer = 0;
         @(posedge aclk);
         @(posedge aclk);
         @(posedge aclk);
@@ -152,13 +156,13 @@ module friscv_rv32i_testbench();
 
         `INFO("Start test");
         @(posedge aclk);
-        $display("Instruction number: %0d", `TEST_INSTRUCTION_NUMBER);
-        while (inst_counter<`TEST_INSTRUCTION_NUMBER) begin
-            if (inst_en && inst_ready)
-                inst_counter = inst_counter + 1;
+        while (ebreak==1'b0 && timer<100) begin
+            timer = timer + 1;
             @(posedge aclk);
         end
-        repeat(20) @(posedge aclk);
+        repeat(5) @(posedge aclk);
+        `ASSERT((dut.x31==0), "TEST FAILED");
+        $display("Nb of errors: %0d", dut.x31);
         `INFO("Stop test");
 
     `UNIT_TEST_END
