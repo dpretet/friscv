@@ -48,10 +48,8 @@
 
 # Verification/Validation Backlog
 
-- [~] Define the architecture of the first testbench. Goal: use C/asm to produce
-      a RAM init file to drive the testcases
-    - [ ] how to stop a testcase? on certain amount of data? by spying gpio
-          status? taking a look to a CSR register?
+- [ ] Design a UART and its DPI to scanf/printf from a terminal
+      https://github.com/rdiez/uart_dpi
 - [ ] Define the hardware platform to use
 - [ ] Prepare a hardware execution environment for preliminary testing
 - [ ] Prepare a hardware execution environment for OS testing
@@ -68,6 +66,8 @@
 
 # DONE
 
+- [X] Define the architecture of the first testbench. Goal: use C/asm to produce
+      a RAM init file to drive the testcases. Break with a EBREAK instruction
 - [X] Understand vexrisc and picorv32 make file
 - [X] Write a simple program, compile it, understand the asm
 - [X] transform object into hex file

@@ -122,8 +122,8 @@
 `define ALU_FIFO_DEPTH 8
 
 // Stop simulation if received an undefined/unsupported instruction
-`ifndef HALT_ON_ERROR
-`define HALT_ON_ERROR 0
+`ifndef TRAP_ERROR
+`define TRAP_ERROR 0
 `endif
 
 `endif

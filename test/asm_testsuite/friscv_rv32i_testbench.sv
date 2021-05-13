@@ -13,6 +13,8 @@ module friscv_rv32i_testbench();
     parameter BOOT_ADDR  = 0;
     parameter XLEN       = 32;
 
+    parameter TIMEOUT    = 100;
+
     logic                   aclk;
     logic                   aresetn;
     logic                   srst;
@@ -156,13 +158,16 @@ module friscv_rv32i_testbench();
 
         `INFO("Start test");
         @(posedge aclk);
-        while (ebreak==1'b0 && timer<100) begin
+        while (ebreak==1'b0 && timer<TIMEOUT) begin
             timer = timer + 1;
             @(posedge aclk);
         end
         repeat(5) @(posedge aclk);
         `ASSERT((dut.x31==0), "TEST FAILED");
-        $display("Nb of errors: %0d", dut.x31);
+        if (timer<TIMEOUT) begin
+            $display("Testcase errors: %0d", dut.x31);
+        end
+        `ASSERT((timer<100), "Reached timeout");
         `INFO("Stop test");
 
     `UNIT_TEST_END

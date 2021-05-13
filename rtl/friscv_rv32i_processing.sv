@@ -55,10 +55,14 @@ module friscv_rv32i_processing
         input  logic                        mem_ready
     );
 
+    logic memfy_en;
+    logic alu_en;
     logic alu_ready;
     logic alu_empty;
     logic memfy_ready;
     logic memfy_empty;
+
+    assign alu_en = proc_en & memfy_ready;
 
     friscv_rv32i_alu
     #(
@@ -70,7 +74,7 @@ module friscv_rv32i_processing
     .aclk          (aclk        ),
     .aresetn       (aresetn     ),
     .srst          (srst        ),
-    .alu_en        (proc_en     ),
+    .alu_en        (alu_en      ),
     .alu_ready     (alu_ready   ),
     .alu_empty     (alu_empty   ),
     .alu_instbus   (proc_instbus),
@@ -84,6 +88,7 @@ module friscv_rv32i_processing
     .alu_rd_strb   (alu_rd_strb )
     );
 
+    assign memfy_en = proc_en & alu_ready;
 
     friscv_rv32i_memfy
     #(
@@ -95,7 +100,7 @@ module friscv_rv32i_processing
     .aclk            (aclk          ),
     .aresetn         (aresetn       ),
     .srst            (srst          ),
-    .memfy_en        (proc_en       ),
+    .memfy_en        (memfy_en      ),
     .memfy_ready     (memfy_ready   ),
     .memfy_empty     (memfy_empty   ),
     .memfy_fenceinfo (proc_fenceinfo),

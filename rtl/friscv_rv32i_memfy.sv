@@ -243,6 +243,7 @@ module friscv_rv32i_memfy
 
     logic [`OPCODE_W   -1:0] opcode_r;
     logic [`FUNCT3_W   -1:0] funct3_r;
+    logic [`RD_W       -1:0] rd_r;
     logic [XLEN/8      -1:0] mem_strb_w;
     logic                    is_unaligned;
     logic [XLEN/8      -1:0] next_strb;
@@ -287,13 +288,8 @@ module friscv_rv32i_memfy
             mem_wdata <= {XLEN{1'b0}};
             mem_strb <= {XLEN/8{1'b0}};
             next_strb <= {XLEN/8{1'b0}};
-            memfy_rd_wr <= 1'b0;
-            memfy_rd_addr <= 5'b0;
-            memfy_rd_val <= {XLEN{1'b0}};
-            memfy_rd_strb <= {XLEN/8{1'b0}};
+            rd_r <= 5'b0;
             two_phases <= 1'b0;
-            memfy_rs1_addr <= 5'b0;
-            memfy_rs2_addr <= 5'b0;
             offset <= 2'b0;
         end else if (srst == 1'b1) begin
             memfy_ready <= 1'b0;
@@ -305,13 +301,8 @@ module friscv_rv32i_memfy
             mem_wdata <= {XLEN{1'b0}};
             mem_strb <= {XLEN/8{1'b0}};
             next_strb <= {XLEN/8{1'b0}};
-            memfy_rd_wr <= 1'b0;
-            memfy_rd_addr <= 5'b0;
-            memfy_rd_val <= {XLEN{1'b0}};
-            memfy_rd_strb <= {XLEN/8{1'b0}};
+            rd_r <= 5'b0;
             two_phases <= 1'b0;
-            memfy_rs1_addr <= 5'b0;
-            memfy_rs2_addr <= 5'b0;
             offset <= 2'b0;
         end else begin
 
@@ -321,17 +312,13 @@ module friscv_rv32i_memfy
             if (mem_en) begin
                 if (mem_ready) begin
                     if (opcode_r==`LOAD) begin
-                        memfy_rd_wr <= 1'b1;
-                        memfy_rd_val <= get_rd_val(funct3_r, mem_rdata, offset);
                         if (two_phases) begin
                             two_phases <= 1'b0;
                             mem_en <= 1'b1;
                             mem_addr <= mem_addr + 1;
-                            memfy_rd_strb <= get_rd_strb(funct3_r, offset, 0);
                         end else begin
                             mem_en <= 1'b0;
                             memfy_ready <= 1'b1;
-                            memfy_rd_strb <= get_rd_strb(funct3_r, offset, 1);
                         end
                     end else begin
                         if (two_phases) begin
@@ -344,8 +331,6 @@ module friscv_rv32i_memfy
                             memfy_ready <= 1'b1;
                         end
                     end
-                end else begin
-                    memfy_rd_wr <= 1'b0;
                 end
 
             // LOAD or STORE instruction acknowledgment
@@ -375,11 +360,8 @@ module friscv_rv32i_memfy
                     mem_strb <= {XLEN/8{1'b0}};
                 end
                
-                // registers setup
-                memfy_rd_wr <= 1'b0;
-                memfy_rd_addr <= rd;
-                memfy_rs1_addr <= rs1;
-                memfy_rs2_addr <= rs2;
+                // rd registers setup
+                rd_r <= rd;
 
             // Wait for an instruction
             end else begin
@@ -387,14 +369,18 @@ module friscv_rv32i_memfy
                 two_phases <= 1'b0;
                 mem_en <= 1'b0;
                 mem_wr <= 1'b0;
-                memfy_rd_wr <= 1'b0;
-                memfy_rd_addr <= 5'b0;
-                memfy_rd_val <= {XLEN{1'b0}};
-                memfy_rd_strb <= {XLEN/8{1'b0}};
             end
         end
 
     end
+
+    assign memfy_rd_wr = (mem_en && mem_ready && (opcode_r==`LOAD)) ? 1'b1 : 1'b0;
+    assign memfy_rd_addr = rd_r;
+    assign memfy_rd_val = get_rd_val(funct3_r, mem_rdata, offset);
+    assign memfy_rd_strb = get_rd_strb(funct3_r, offset, ~two_phases);
+
+    assign memfy_rs1_addr = rs1;
+    assign memfy_rs2_addr = rs2;
 
     // Indicates a memory access needs to be performed
     assign mem_access = (opcode == `LOAD)  ? 1'b1 :

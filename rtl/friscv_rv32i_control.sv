@@ -10,9 +10,13 @@
 module friscv_rv32i_control
 
     #(
+        // CSR registers depth
         parameter CSR_DEPTH = 12,
+        // Address bus width [Up to XLEN bits]
         parameter ADDRW     = 16,
+        // Primary address to boot to load the firmware [0:2**ADDRW-1]
         parameter BOOT_ADDR = 0,
+        // Registers width, 32 bits for RV32i. [CAN'T BE CHANGED]
         parameter XLEN      = 32
     )(
         // clock & reset
@@ -74,6 +78,7 @@ module friscv_rv32i_control
     logic             processing;
     logic [2    -1:0] fence;
     logic [3    -1:0] env;
+    logic             load_store;
 
     // Flag raised when receiving an unsupported/undefined instruction
     logic inst_error;
@@ -90,7 +95,7 @@ module friscv_rv32i_control
 
     pc_fsm cfsm;
 
-    // Program counter, expressed in bytes
+    // Program counter width, expressed in bits
     localparam              PC_W = 32;
 
     logic        [PC_W-1:0] pc_plus4;
@@ -292,6 +297,8 @@ module friscv_rv32i_control
 
     assign cant_process_now = (processing && ~proc_ready) ? 1'b1 : 1'b0;
 
+    assign load_store = (opcode==`LOAD || opcode==`STORE) ? 1'b1 : 1'b0;
+
     always @ (posedge aclk or negedge aresetn) begin
 
         if (aresetn == 1'b0) begin
@@ -327,10 +334,12 @@ module friscv_rv32i_control
                 // Run the core operations
                 RUN: begin
 
-                    // Completly stop the execution and $stop the simulation
-                    if (`HALT_ON_ERROR && inst_error) begin
+                    `ifdef TRAP_ERROR
+                    // Completly stop the execution and $stop()  the simulation
+                    if (`TRAP_ERROR && inst_error) begin
                         cfsm <= TRAP;
                     end
+                    `endif
 
                     if (inst_ready || load_stored) begin
 
@@ -338,33 +347,31 @@ module friscv_rv32i_control
                         if (load_stored) begin
                             if (proc_ready && csr_ready)  begin
                                 inst_en <= 1'b1;
-                                pc_reg <= pc;
                                 load_stored <= 1'b0;
                             end
                         // Need to branch/process but ALU/memfy didn't finish
                         // to execute last instruction, so store the
                         // instruction. Only reached if the instruction is
                         // a processing
-                        end else if (inst_ready && ~lui &&
-                                     ((env[2]) ||
-                                      (|fence && cant_process_now) ||
-                                      (cant_branch_now || cant_process_now))
+                        end else if (inst_ready && //~lui && ~auipc &&
+                                     // ((env[2]) ||
+                                      // (|fence && cant_process_now) ||
+                                      (cant_branch_now || cant_process_now)
                                     ) begin
                             load_stored <= 1'b1;
                             inst_en <= 1'b0;
                             pc_reg <= pc;
                             stored_inst <= inst_rdata;
 
-                        // Reach a EBREAK instruction, need to stall the core
-                        end else if (env[1]) begin
+                        // Reach an EBREAK instruction, need to stall the core
+                        end else if (inst_ready && env[1]) begin
                             inst_en <= 1'b0;
                             ebreak <= 1'b1;
                             cfsm <= EBREAK;
 
                         // Continue processing if LUI or processing
                         // or branching
-                        end else if (lui ||
-                                (~cant_branch_now && ~cant_process_now)) begin
+                        end else if (~cant_branch_now && ~cant_process_now) begin
                             load_stored <= 1'b0;
                             inst_en <= 1'b1;
                             pc_reg <= pc;

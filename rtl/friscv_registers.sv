@@ -152,7 +152,7 @@ module friscv_registers
     // register source 2 read circuit for memfy
     assign memfy_rs2_val = regs[memfy_rs2_addr];
 
-    // registers value outputs for CSR and debug
+    // registers value outputs for debug
     assign x0  = regs[ 0];
     assign x1  = regs[ 1];
     assign x2  = regs[ 2];

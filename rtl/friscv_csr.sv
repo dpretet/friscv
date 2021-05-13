@@ -81,6 +81,7 @@ module friscv_csr
                 // Wait for a new instruction
                 default: begin
                     rd_wr <= 1'b0;
+                    ready <= 1'b1;
                     if (valid) begin
                         ready <= 1'b0;
                         cfsm <= COMPUTE;

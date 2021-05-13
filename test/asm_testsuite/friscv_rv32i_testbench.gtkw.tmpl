@@ -1,22 +1,22 @@
 [*]
 [*] GTKWave Analyzer v3.3.107 (w)1999-2020 BSI
-[*] Wed Apr 28 18:58:09 2021
+[*] Wed May 12 06:33:17 2021
 [*]
 [dumpfile] __TMPL__
-[dumpfile_mtime] "Wed Apr 28 18:48:55 2021"
-[dumpfile_size] 20738
-[savefile] "/Users/damien/workspace/hdl/friscv/test/asm_testsuite/friscv_rv32i_testbench.gtkw"
+[dumpfile_mtime] "Wed May 12 06:32:56 2021"
+[dumpfile_size] 50336
+[savefile] "/Users/damien/workspace/hdl/friscv/test/asm_testsuite/friscv_rv32i_test1_testbench.gtkw"
 [timestart] 0
-[size] 1979 1024
+[size] 2253 1341
 [pos] -1 -1
-*-13.400259 31080 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-14.400259 30800 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] dut.
 [treeopen] dut.control_unit.
 [treeopen] friscv_rv32i_testbench.
 [sst_width] 193
 [signals_width] 423
 [sst_expanded] 1
-[sst_vpaned_height] 329
+[sst_vpaned_height] 330
 @c00200
 -Top
 @28
@@ -115,45 +115,74 @@ dut.x30[31:0]
 dut.x31[31:0]
 @1401200
 -Top
-@800201
+@800200
 -control
-@29
+@28
 dut.control_unit.aclk
 dut.control_unit.aresetn
 dut.control_unit.srst
-@201
+@200
 -
-@29
+@28
 dut.control_unit.inst_en
-@23
+@22
 dut.control_unit.inst_addr[15:0]
 dut.control_unit.inst_rdata[31:0]
-@29
+@28
 dut.control_unit.inst_ready
-@201
+@200
 -
 @23
+[color] 6
 dut.control_unit.cfsm[3:0]
+@22
 dut.control_unit.instruction[31:0]
-@29
+@28
 dut.control_unit.load_stored
-@23
+dut.control_unit.cant_branch_now
+dut.control_unit.cant_process_now
+[color] 6
+dut.control_unit.ebreak
+@22
 dut.control_unit.stored_inst[31:0]
-@201
+@200
 -
-@23
-dut.control_unit.pc_reg[31:0]
-dut.control_unit.pc[31:0]
-dut.control_unit.pc_plus4[31:0]
-dut.control_unit.pc_auipc[31:0]
-dut.control_unit.pc_branching[31:0]
-dut.control_unit.pc_jal[31:0]
-dut.control_unit.pc_jalr[31:0]
-@201
+@28
+dut.control_unit.lui
+dut.control_unit.auipc
+dut.control_unit.jal
+dut.control_unit.jalr
+dut.control_unit.branching
+dut.control_unit.processing
+dut.control_unit.env[2:0]
+dut.control_unit.fence[1:0]
+@200
 -
-@23
+@28
+dut.control_unit.ctrl_rd_wr
+@22
+dut.control_unit.ctrl_rd_addr[4:0]
+dut.control_unit.ctrl_rd_val[31:0]
+@200
+-
+@22
+dut.control_unit.ctrl_rs1_addr[4:0]
+dut.control_unit.ctrl_rs1_val[31:0]
+dut.control_unit.ctrl_rs2_addr[4:0]
+dut.control_unit.ctrl_rs2_val[31:0]
+@200
+-
+@28
+dut.control_unit.csr_rd_wr
+@22
+dut.control_unit.csr_rd_val[31:0]
+@28
+dut.control_unit.csr_ready
+@200
+-
+@22
 dut.control_unit.instruction[31:0]
-@c00023
+@c00022
 dut.control_unit.opcode[6:0]
 @28
 (0)dut.control_unit.opcode[6:0]
@@ -163,25 +192,9 @@ dut.control_unit.opcode[6:0]
 (4)dut.control_unit.opcode[6:0]
 (5)dut.control_unit.opcode[6:0]
 (6)dut.control_unit.opcode[6:0]
-@1401201
+@1401200
 -group_end
-@29
-dut.control_unit.processing
-dut.control_unit.auipc
-dut.control_unit.jal
-dut.control_unit.jalr
-dut.control_unit.system
-dut.control_unit.branching
-dut.control_unit.cant_branch_now
-dut.control_unit.cant_process_now
-dut.control_unit.goto_branch
-dut.control_unit.beq
-dut.control_unit.bge
-dut.control_unit.bgeu
-dut.control_unit.blt
-dut.control_unit.bltu
-dut.control_unit.bne
-@23
+@22
 dut.control_unit.imm12[11:0]
 dut.control_unit.imm20[19:0]
 dut.control_unit.pred[3:0]
@@ -191,7 +204,25 @@ dut.control_unit.rs2[4:0]
 dut.control_unit.shamt[5:0]
 dut.control_unit.succ[3:0]
 dut.control_unit.zimm[4:0]
-@1000201
+@200
+-
+@22
+dut.control_unit.pc_reg[31:0]
+dut.control_unit.pc[31:0]
+dut.control_unit.pc_plus4[31:0]
+dut.control_unit.pc_auipc[31:0]
+dut.control_unit.pc_branching[31:0]
+dut.control_unit.pc_jal[31:0]
+dut.control_unit.pc_jalr[31:0]
+@28
+dut.control_unit.goto_branch
+dut.control_unit.beq
+dut.control_unit.bge
+dut.control_unit.bgeu
+dut.control_unit.blt
+dut.control_unit.bltu
+dut.control_unit.bne
+@1000200
 -control
 @c00200
 -alu
@@ -259,6 +290,8 @@ processing.alu.alu_rs1_addr[4:0]
 processing.alu.alu_rs1_val[31:0]
 processing.alu.alu_rs2_addr[4:0]
 processing.alu.alu_rs2_val[31:0]
+@200
+-
 @28
 processing.alu.alu_rd_wr
 @22
@@ -315,11 +348,8 @@ instruction_ram.aresetn
 instruction_ram.p1_addr[15:0]
 @28
 instruction_ram.p1_en
-@21
-instruction_ram.p1_rdata[31:0]
-@28
-instruction_ram.p1_ready
 @22
+instruction_ram.p1_rdata[31:0]
 instruction_ram.p1_strb[3:0]
 instruction_ram.p1_wdata[31:0]
 @28
@@ -330,9 +360,6 @@ instruction_ram.p2_addr[15:0]
 instruction_ram.p2_en
 @22
 instruction_ram.p2_rdata[31:0]
-@28
-instruction_ram.p2_ready
-@22
 instruction_ram.p2_strb[3:0]
 instruction_ram.p2_wdata[31:0]
 @28
