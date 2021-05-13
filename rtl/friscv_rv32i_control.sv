@@ -105,6 +105,7 @@ module friscv_rv32i_control
     logic signed [PC_W-1:0] pc_branching;
     logic        [PC_W-1:0] pc;
     logic        [PC_W-1:0] pc_reg;
+    logic        [PC_W-1:0] pc_saved;
     // Extra decoding used during branching
     logic                   beq;
     logic                   bne;
@@ -305,13 +306,15 @@ module friscv_rv32i_control
             cfsm <= BOOT;
             inst_en <= 1'b0;
             pc_reg <= {(PC_W){1'b0}};
+            pc_saved <= {(PC_W){1'b0}};
             load_stored <= 1'b0;
-            stored_inst <= {XLEN{1'b0}}       ;
+            stored_inst <= {XLEN{1'b0}};
             ebreak <= 1'b0;
         end else if (srst == 1'b1) begin
             cfsm <= BOOT;
             inst_en <= 1'b0;
             pc_reg <= {(PC_W){1'b0}};
+            pc_saved <= {(PC_W){1'b0}};
             load_stored <= 1'b0;
             stored_inst <= {XLEN{1'b0}};
             ebreak <= 1'b0;
@@ -361,6 +364,7 @@ module friscv_rv32i_control
                             load_stored <= 1'b1;
                             inst_en <= 1'b0;
                             pc_reg <= pc;
+                            pc_saved <= pc_plus4;
                             stored_inst <= inst_rdata;
 
                         // Reach an EBREAK instruction, need to stall the core
@@ -420,11 +424,12 @@ module friscv_rv32i_control
                                                                      1'b0 ;
     assign ctrl_rd_addr = rd;
 
-    assign ctrl_rd_val = (jal || jalr) ? pc_plus4 :
-                         (lui)         ? {imm20, 12'b0} :
-                         (auipc)       ? pc_auipc :
-                         (env[2])      ? csr_rd_val :
-                                         pc;
+    assign ctrl_rd_val = ((jal || jalr) && load_stored)  ? pc_saved :
+                         ((jal || jalr) && ~load_stored) ? pc_plus4 :
+                         (lui)                           ? {imm20, 12'b0} :
+                         (auipc)                         ? pc_auipc :
+                         (env[2])                        ? csr_rd_val :
+                                                           pc;
 
     friscv_csr
     #(

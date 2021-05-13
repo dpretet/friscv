@@ -1,22 +1,23 @@
 [*]
 [*] GTKWave Analyzer v3.3.107 (w)1999-2020 BSI
-[*] Wed May 12 06:33:17 2021
+[*] Thu May 13 13:04:50 2021
 [*]
 [dumpfile] __TMPL__
-[dumpfile_mtime] "Wed May 12 06:32:56 2021"
-[dumpfile_size] 50336
-[savefile] "/Users/damien/workspace/hdl/friscv/test/asm_testsuite/friscv_rv32i_test1_testbench.gtkw"
+[dumpfile_mtime] "Thu May 13 13:03:37 2021"
+[dumpfile_size] 70308
+[savefile] "/Users/damien/workspace/hdl/friscv/test/asm_testsuite/friscv_rv32i_testbench.gtkw.tmpl.gtkw"
 [timestart] 0
-[size] 2253 1341
+[size] 1755 1341
 [pos] -1 -1
-*-14.400259 30800 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-14.765748 33000 33000 37000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] dut.
 [treeopen] dut.control_unit.
 [treeopen] friscv_rv32i_testbench.
+[treeopen] processing.
 [sst_width] 193
 [signals_width] 423
 [sst_expanded] 1
-[sst_vpaned_height] 330
+[sst_vpaned_height] 336
 @c00200
 -Top
 @28
@@ -127,27 +128,39 @@ dut.control_unit.srst
 dut.control_unit.inst_en
 @22
 dut.control_unit.inst_addr[15:0]
+[color] 2
+dut.control_unit.pc[31:0]
 dut.control_unit.inst_rdata[31:0]
 @28
 dut.control_unit.inst_ready
 @200
 -
-@23
+@28
+dut.control_unit.proc_en
+@22
+[color] 2
+dut.control_unit.instruction[31:0]
+dut.control_unit.proc_instbus[86:0]
+@28
+dut.control_unit.proc_ready
+dut.control_unit.proc_empty
+@22
+dut.control_unit.proc_fenceinfo[3:0]
+@200
+-
+@22
 [color] 6
 dut.control_unit.cfsm[3:0]
-@22
 dut.control_unit.instruction[31:0]
 @28
 dut.control_unit.load_stored
+@22
+dut.control_unit.stored_inst[31:0]
+@28
 dut.control_unit.cant_branch_now
 dut.control_unit.cant_process_now
 [color] 6
 dut.control_unit.ebreak
-@22
-dut.control_unit.stored_inst[31:0]
-@200
--
-@28
 dut.control_unit.lui
 dut.control_unit.auipc
 dut.control_unit.jal
@@ -180,6 +193,8 @@ dut.control_unit.csr_rd_val[31:0]
 dut.control_unit.csr_ready
 @200
 -
+@c00200
+-Instructions
 @22
 dut.control_unit.instruction[31:0]
 @c00022
@@ -204,8 +219,10 @@ dut.control_unit.rs2[4:0]
 dut.control_unit.shamt[5:0]
 dut.control_unit.succ[3:0]
 dut.control_unit.zimm[4:0]
-@200
--
+@1401200
+-Instructions
+@c00200
+-PCs
 @22
 dut.control_unit.pc_reg[31:0]
 dut.control_unit.pc[31:0]
@@ -222,9 +239,13 @@ dut.control_unit.bgeu
 dut.control_unit.blt
 dut.control_unit.bltu
 dut.control_unit.bne
+@1401200
+-PCs
+@200
+-
 @1000200
 -control
-@c00200
+@800200
 -alu
 @28
 processing.alu.aclk
@@ -240,7 +261,6 @@ processing.alu.alu_instbus[86:0]
 processing.alu.alu_ready
 processing.alu.alu_empty
 @200
--
 -
 @22
 processing.alu.opcode[6:0]
@@ -298,9 +318,9 @@ processing.alu.alu_rd_wr
 processing.alu.alu_rd_addr[4:0]
 processing.alu.alu_rd_strb[3:0]
 processing.alu.alu_rd_val[31:0]
-@1401200
+@1000200
 -alu
-@c00200
+@800200
 -memfy
 @28
 processing.memfy.aclk
@@ -317,6 +337,15 @@ processing.memfy.opcode[6:0]
 processing.memfy.rs1[4:0]
 processing.memfy.rs2[4:0]
 processing.memfy.rd[4:0]
+@200
+-
+@22
+processing.memfy.memfy_rs1_addr[4:0]
+processing.memfy.memfy_rs1_val[31:0]
+@23
+processing.memfy.memfy_rs2_addr[4:0]
+@22
+processing.memfy.memfy_rs2_val[31:0]
 @200
 -
 @28
@@ -337,7 +366,7 @@ processing.memfy.memfy_rd_wr
 processing.memfy.memfy_rd_addr[4:0]
 processing.memfy.memfy_rd_val[31:0]
 processing.memfy.memfy_rd_strb[3:0]
-@1401200
+@1000200
 -memfy
 @c00200
 -instruction RAM
@@ -367,5 +396,83 @@ instruction_ram.p2_wr
 instruction_ram.srst
 @1401200
 -instruction RAM
+@800200
+-ISA Registers
+@200
+-
+@800200
+-RW Interfaces
+@28
+dut.isa_registers.ctrl_rd_wr
+@22
+dut.isa_registers.ctrl_rd_addr[4:0]
+dut.isa_registers.ctrl_rd_val[31:0]
+dut.isa_registers.ctrl_rs1_addr[4:0]
+dut.isa_registers.ctrl_rs1_val[31:0]
+dut.isa_registers.ctrl_rs2_addr[4:0]
+dut.isa_registers.ctrl_rs2_val[31:0]
+@200
+-
+@28
+dut.isa_registers.alu_rd_wr
+@22
+dut.isa_registers.alu_rd_addr[4:0]
+dut.isa_registers.alu_rd_strb[3:0]
+dut.isa_registers.alu_rd_val[31:0]
+dut.isa_registers.alu_rs1_addr[4:0]
+dut.isa_registers.alu_rs1_val[31:0]
+dut.isa_registers.alu_rs2_addr[4:0]
+dut.isa_registers.alu_rs2_val[31:0]
+@200
+-
+@28
+dut.isa_registers.memfy_rd_wr
+@22
+dut.isa_registers.memfy_rd_addr[4:0]
+dut.isa_registers.memfy_rd_strb[3:0]
+dut.isa_registers.memfy_rd_val[31:0]
+dut.isa_registers.memfy_rs1_addr[4:0]
+dut.isa_registers.memfy_rs1_val[31:0]
+dut.isa_registers.memfy_rs2_addr[4:0]
+dut.isa_registers.memfy_rs2_val[31:0]
+@1000200
+-RW Interfaces
+@200
+-
+@22
+dut.isa_registers.x0[31:0]
+dut.isa_registers.x1[31:0]
+dut.isa_registers.x2[31:0]
+dut.isa_registers.x3[31:0]
+dut.isa_registers.x4[31:0]
+dut.isa_registers.x5[31:0]
+dut.isa_registers.x6[31:0]
+dut.isa_registers.x7[31:0]
+dut.isa_registers.x8[31:0]
+dut.isa_registers.x9[31:0]
+dut.isa_registers.x10[31:0]
+dut.isa_registers.x11[31:0]
+dut.isa_registers.x12[31:0]
+dut.isa_registers.x13[31:0]
+dut.isa_registers.x14[31:0]
+dut.isa_registers.x15[31:0]
+dut.isa_registers.x16[31:0]
+dut.isa_registers.x17[31:0]
+dut.isa_registers.x18[31:0]
+dut.isa_registers.x19[31:0]
+dut.isa_registers.x20[31:0]
+dut.isa_registers.x21[31:0]
+dut.isa_registers.x22[31:0]
+dut.isa_registers.x23[31:0]
+dut.isa_registers.x24[31:0]
+dut.isa_registers.x25[31:0]
+dut.isa_registers.x26[31:0]
+dut.isa_registers.x27[31:0]
+dut.isa_registers.x28[31:0]
+dut.isa_registers.x29[31:0]
+dut.isa_registers.x30[31:0]
+dut.isa_registers.x31[31:0]
+@1000200
+-ISA Registers
 [pattern_trace] 1
 [pattern_trace] 0
