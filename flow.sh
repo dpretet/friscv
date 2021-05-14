@@ -32,7 +32,7 @@ function printinfo {
 }
 
 function printsuccess {
-    echo -e "${Green}INFO: ${1}${NC}"
+    echo -e "${Green}SUCCESS: ${1}${NC}"
 }
 
 help() {
@@ -91,7 +91,8 @@ main() {
 
 
     if [[ $1 == "lint" ]]; then
-        printinfo "Start linting"
+
+        printinfo "Start lint flow"
         verilator --lint-only +1800-2017ext+sv -Wall -cdc \
             -I./rtl\
             ./rtl/friscv_h.sv\
@@ -107,8 +108,11 @@ main() {
             --top-module friscv_rv32i
     fi
     if [[ $1 == "sim" ]]; then
+
+        source script/setup.sh
         iverilog -V
-        printinfo "INFO: Start simulation"
+
+        printinfo "Start RTL simulation flow"
         cd "$FRISCVDIR/test/rtl_unit_tests"
         for test in *_testbench.sv; do
             ./run.sh "$test"
@@ -119,11 +123,17 @@ main() {
         else
             printsuccess "${Green}Execution passed${NC}"
         fi
+
+        printinfo "Start ASM simulation flow"
+        cd "${FRISCVDIR}/test/asm_testsuite"
+        ./run.sh
+        ret=$((ret+$?))
+
         exit $ret
     fi
 
     if [[ $1 == "syn" ]]; then
-        printinfo "Start synthesis"
+        printinfo "Start synthesis flow"
         cd "$FRISCVDIR/syn"
         ./run.sh
         return $?
