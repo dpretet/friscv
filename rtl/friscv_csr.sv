@@ -8,7 +8,7 @@
 `include "friscv_h.sv"
 
 module friscv_csr
-    
+
     #(
         parameter CSR_DEPTH = 12,
         parameter XLEN = 32
@@ -24,23 +24,30 @@ module friscv_csr
         input  logic [5         -1:0] rs1_addr,
         input  logic [XLEN      -1:0] rs1_val,
         input  logic [5         -1:0] rd_addr,
-        output logic                  rd_wr,
-        output logic [XLEN      -1:0] rd_val
+        output logic                  rd_wr_en,
+        output logic [5         -1:0] rd_wr_addr,
+        output logic [XLEN      -1:0] rd_wr_val
     );
 
     typedef enum logic [1:0] {
         IDLE,
-        COMPUTE, 
+        COMPUTE,
         STORE
     } fsm;
 
     fsm cfsm;
 
-    logic wren;
-    logic rden;
+    logic csr_wr;
+    logic csr_rd;
     logic [XLEN-1:0] oldval;
     logic [XLEN-1:0] newval;
     logic [XLEN-1:0] csrs [2**CSR_DEPTH-1:0];
+
+    logic [`FUNCT3_W -1:0] funct3_r;
+    logic [`CSR_W    -1:0] csr_r;
+    logic [`ZIMM_W   -1:0] zimm_r;
+    logic [5         -1:0] rs1_addr_r;
+    logic [XLEN      -1:0] rs1_val_r;
 
     `ifdef FRISCV_SIM
     initial begin
@@ -50,40 +57,61 @@ module friscv_csr
     `endif
 
     always @ (posedge aclk) begin
-        if (wren) begin
-            csrs[csr] <= newval;
+        if (csr_wr) begin
+            csrs[csr_r] <= newval;
         end
-        if (rden) begin
+        if (csr_rd) begin
             oldval <= csrs[csr];
         end
     end
 
-    assign rden = (cfsm==IDLE && valid) ? 1'b1 : 1'b0;
+    assign csr_rd = (cfsm==IDLE && valid) ? 1'b1 : 1'b0;
 
     always @ (posedge aclk or negedge aresetn) begin
         if (aresetn==1'b0) begin
-            rd_wr <= 1'b0;
-            rd_val <= {XLEN{1'b0}};
+            rd_wr_en <= 1'b0;
+            rd_wr_val <= {XLEN{1'b0}};
             ready <= 1'b0;
-            wren <= 1'b0;
+            csr_wr <= 1'b0;
             newval <= {XLEN{1'b0}};
+            funct3_r <= {`FUNCT3_W{1'b0}};
+            csr_r <= {`CSR_W{1'b0}};
+            zimm_r <= {`ZIMM_W{1'b0}};
+            rs1_addr_r <= 5'b0;
+            rs1_val_r <= {XLEN{1'b0}};
+            rd_wr_addr <= 5'b0;
             cfsm <= IDLE;
         end else if (srst) begin
-            rd_wr <= 1'b0;
-            rd_val <= {XLEN{1'b0}};
+            rd_wr_en <= 1'b0;
+            rd_wr_val <= {XLEN{1'b0}};
             ready <= 1'b0;
-            wren <= 1'b0;
+            csr_wr <= 1'b0;
             newval <= {XLEN{1'b0}};
+            funct3_r <= {`FUNCT3_W{1'b0}};
+            csr_r <= {`CSR_W{1'b0}};
+            zimm_r <= {`ZIMM_W{1'b0}};
+            rs1_addr_r <= 5'b0;
+            rs1_val_r <= {XLEN{1'b0}};
+            rd_wr_addr <= 5'b0;
             cfsm <= IDLE;
         end else begin
             case(cfsm)
 
                 // Wait for a new instruction
                 default: begin
-                    rd_wr <= 1'b0;
+
+                    csr_wr <= 1'b0;
+                    rd_wr_en <= 1'b0;
                     ready <= 1'b1;
+
                     if (valid) begin
                         ready <= 1'b0;
+                        funct3_r <= funct3;
+                        csr_r <= csr;
+                        zimm_r <= zimm;
+                        rs1_addr_r <= rs1_addr;
+                        rs1_val_r <= rs1_val;
+                        rd_wr_addr <= rd_addr;
                         cfsm <= COMPUTE;
                     end
                 end
@@ -92,72 +120,73 @@ module friscv_csr
                 // the ISA register
                 COMPUTE: begin
 
-                    cfsm <= IDLE;
-                    ready <= 1'b1;
+                    cfsm <= STORE;
 
                     // Swap RS1 and CSR
-                    if (funct3==`CSRRW) begin
-                        if (rd_addr!=5'b0) begin 
-                            wren <= 1'b1;
-                            rd_wr <= 1'b1;
-                            rd_val <= oldval;
+                    if (funct3_r==`CSRRW) begin
+                        if (rd_wr_addr!=5'b0) begin
+                            csr_wr <= 1'b1;
+                            rd_wr_en <= 1'b1;
+                            rd_wr_val <= oldval;
                         end
-                        newval <= rs1_val;
+                        newval <= rs1_val_r;
                     // Save CSR and apply a set mask
-                    end else if (funct3==`CSRRS) begin
-                        rd_wr <= 1'b1;
-                        rd_val <= oldval;
-                        if (rs1_addr!=5'b0) begin 
-                            wren <= 1'b1;
-                            newval <= oldval | rs1_val;
+                    end else if (funct3_r==`CSRRS) begin
+                        rd_wr_en <= 1'b1;
+                        rd_wr_val <= oldval;
+                        if (rs1_addr_r!=5'b0) begin
+                            csr_wr <= 1'b1;
+                            newval <= oldval | rs1_val_r;
                         end
-                    
+
                     // Save CSR then apply a set mask
-                    end else if (funct3==`CSRRC) begin
-                        rd_wr <= 1'b1;
-                        rd_val <= oldval;
-                        if (rs1_addr!=5'b0) begin 
-                            wren <= 1'b1;
-                            newval <= oldval & rs1_val;
+                    end else if (funct3_r==`CSRRC) begin
+                        rd_wr_en <= 1'b1;
+                        rd_wr_val <= oldval;
+                        if (rs1_addr!=5'b0) begin
+                            csr_wr <= 1'b1;
+                            newval <= oldval & rs1_val_r;
                         end
 
                     // Save CSR then apply a clear mask
-                    end else if (funct3==`CSRRWI) begin
-                        if (rd_addr!=5'b0) begin 
-                            wren <= 1'b1;
-                            rd_wr <= 1'b1;
-                            rd_val <= oldval;
+                    end else if (funct3_r==`CSRRWI) begin
+                        if (rd_wr_addr!=5'b0) begin
+                            csr_wr <= 1'b1;
+                            rd_wr_en <= 1'b1;
+                            rd_wr_val <= oldval;
                         end
                         newval <= {{XLEN-5{1'b0}}, zimm};
 
-                    end else if (funct3==`CSRRSI) begin
-                        rd_wr <= 1'b1;
-                        rd_val <= oldval;
-                        if (zimm!=5'b0) begin 
-                            wren <= 1'b1;
-                            newval <= oldval | {{XLEN-`ZIMM_W{1'b0}}, zimm};
+                    end else if (funct3_r==`CSRRSI) begin
+                        rd_wr_en <= 1'b1;
+                        rd_wr_val <= oldval;
+                        if (zimm_r!=5'b0) begin
+                            csr_wr <= 1'b1;
+                            newval <= oldval | {{XLEN-`ZIMM_W{1'b0}}, zimm_r};
                         end
 
-                    end else if (funct3==`CSRRCI) begin
-                        rd_wr <= 1'b1;
-                        rd_val <= oldval;
-                        if (zimm!=5'b0) begin 
-                            wren <= 1'b1;
-                            newval <= oldval & {{XLEN-`ZIMM_W{1'b0}}, zimm};
+                    end else if (funct3_r==`CSRRCI) begin
+                        rd_wr_en <= 1'b1;
+                        rd_wr_val <= oldval;
+                        if (zimm_r!=5'b0) begin
+                            csr_wr <= 1'b1;
+                            newval <= oldval & {{XLEN-`ZIMM_W{1'b0}}, zimm_r};
                         end
-                        
+
                     end
                 end
 
-                // Take time to store new CSR value, handles the 
+                // Take time to store new CSR value, handles the
                 // RAM behavior according the RAM technology which
-                // may be write first / read first. Avoid consecutive 
+                // may be write first / read first. Avoid consecutive
                 // CSR instructions to fail
                 STORE: begin
-                    wren <= 1'b0;
-                    rd_wr <= 1'b0;
-                    ready <= 1'b1;
-                    cfsm <= IDLE;
+                    csr_wr <= 1'b0;
+                    rd_wr_en <= 1'b0;
+                    if (rd_wr_en==1'b0) begin
+                        ready <= 1'b1;
+                        cfsm <= IDLE;
+                    end
                 end
             endcase
         end

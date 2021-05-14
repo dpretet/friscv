@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.107 (w)1999-2020 BSI
-[*] Thu May 13 13:04:50 2021
+[*] Fri May 14 07:58:10 2021
 [*]
 [dumpfile] __TMPL__
-[dumpfile_mtime] "Thu May 13 13:03:37 2021"
-[dumpfile_size] 70308
-[savefile] "/Users/damien/workspace/hdl/friscv/test/asm_testsuite/friscv_rv32i_testbench.gtkw.tmpl.gtkw"
-[timestart] 0
+[dumpfile_mtime] "Fri May 14 07:57:35 2021"
+[dumpfile_size] 93598
+[savefile] "/Users/damien/workspace/hdl/friscv/test/asm_testsuite/friscv_rv32i_test4_testbench.gtkw"
+[timestart] 5970
 [size] 1755 1341
 [pos] -1 -1
-*-14.765748 33000 33000 37000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-13.316732 33700 33000 37000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] dut.
 [treeopen] dut.control_unit.
 [treeopen] friscv_rv32i_testbench.
@@ -17,7 +17,7 @@
 [sst_width] 193
 [signals_width] 423
 [sst_expanded] 1
-[sst_vpaned_height] 336
+[sst_vpaned_height] 335
 @c00200
 -Top
 @28
@@ -141,8 +141,9 @@ dut.control_unit.proc_en
 [color] 2
 dut.control_unit.instruction[31:0]
 dut.control_unit.proc_instbus[86:0]
-@28
+@29
 dut.control_unit.proc_ready
+@28
 dut.control_unit.proc_empty
 @22
 dut.control_unit.proc_fenceinfo[3:0]
@@ -163,9 +164,12 @@ dut.control_unit.cant_process_now
 dut.control_unit.ebreak
 dut.control_unit.lui
 dut.control_unit.auipc
+[color] 3
 dut.control_unit.jal
+[color] 3
 dut.control_unit.jalr
 dut.control_unit.branching
+dut.control_unit.load_store
 dut.control_unit.processing
 dut.control_unit.env[2:0]
 dut.control_unit.fence[1:0]
@@ -221,7 +225,7 @@ dut.control_unit.succ[3:0]
 dut.control_unit.zimm[4:0]
 @1401200
 -Instructions
-@c00200
+@800200
 -PCs
 @22
 dut.control_unit.pc_reg[31:0]
@@ -239,13 +243,13 @@ dut.control_unit.bgeu
 dut.control_unit.blt
 dut.control_unit.bltu
 dut.control_unit.bne
-@1401200
+@1000200
 -PCs
 @200
 -
 @1000200
 -control
-@800200
+@c00200
 -alu
 @28
 processing.alu.aclk
@@ -318,7 +322,7 @@ processing.alu.alu_rd_wr
 processing.alu.alu_rd_addr[4:0]
 processing.alu.alu_rd_strb[3:0]
 processing.alu.alu_rd_val[31:0]
-@1000200
+@1401200
 -alu
 @800200
 -memfy
@@ -342,9 +346,7 @@ processing.memfy.rd[4:0]
 @22
 processing.memfy.memfy_rs1_addr[4:0]
 processing.memfy.memfy_rs1_val[31:0]
-@23
 processing.memfy.memfy_rs2_addr[4:0]
-@22
 processing.memfy.memfy_rs2_val[31:0]
 @200
 -

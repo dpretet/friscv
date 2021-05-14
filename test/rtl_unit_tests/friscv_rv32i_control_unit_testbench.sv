@@ -22,6 +22,7 @@ module friscv_rv32i_control_unit_testbench();
     logic                      aresetn;
     logic                      srst;
     logic                      inst_en;
+    logic                      ebreak;
     logic [ADDRW        -1:0]  inst_addr;
     logic [XLEN         -1:0]  inst_rdata;
     logic                      inst_ready;
@@ -62,6 +63,7 @@ module friscv_rv32i_control_unit_testbench();
     aclk,
     aresetn,
     srst,
+    ebreak,
     inst_en,
     inst_addr,
     inst_rdata,
@@ -153,7 +155,7 @@ module friscv_rv32i_control_unit_testbench();
         `ASSERT((dut.inst_error==1'b0));
 
         @(posedge aclk);
- 
+
         `MSG("BRANCHING");
         inst_rdata = 7'b1100011;
         @(posedge aclk);
@@ -608,77 +610,8 @@ module friscv_rv32i_control_unit_testbench();
 
     `UNIT_TEST("ENV instructions - CSR")
 
-        instructions[0] = {12'b0, 5'h2, `CSRRW, 5'h3, 7'b1110011};
-        data[0] = 'h98765432;
-        result[0] = 'h00000000;
-
-        instructions[1] = {12'b0, 5'h3, `CSRRW, 5'h4, 7'b1110011};
-        data[1] = 'h55555555;
-        result[1] = 'h98765432;
-
-        instructions[2] = {12'b0, 5'h5, `CSRRS, 5'h6, 7'b1110011};
-        data[2] = 'hAAAAAAAA;
-        result[2] = 'hFFFFFFFF;
-
-        instructions[3] = {12'b0, 5'h8, `CSRRC, 5'h9, 7'b1110011};
-        data[3] = 'hAAAAAAAA;
-        result[3] = 'hAAAAAAAA;
-
-        // while (inst_en==1'b0) @(posedge aclk);
-        // inst_rdata = instructions[0];
-        // inst_ready = 1'b1;
-                // @(posedge aclk);
-
-        for (int i=0; i<4; i=i+1) begin
-            fork
-            begin
-                while (inst_en==1'b0) @(posedge aclk);
-                // while (inst_addr==inst_addr_r) @(posedge aclk);
-                `MSG("CSR Fetch");
-                inst_rdata = instructions[i];
-                ctrl_rs1_val = data[i];
-                inst_ready = 1'b1;
-                @(posedge aclk);
-                inst_rdata = instructions[i+1];
-                inst_ready = 1'b0;
-                @(posedge aclk);
-                @(posedge aclk);
-            end
-            begin
-                while (ctrl_rd_wr == 1'b0) @(posedge aclk);
-                $display("i: %0d", i);
-                `ASSERT((ctrl_rd_val==result[i]));
-                @(posedge aclk);
-                @(posedge aclk);
-                @(posedge aclk);
-                @(posedge aclk);
-            end
-            join_any
-        end
-
-        // while (inst_en == 1'b0) @(posedge aclk);
-        // `MSG("CRSRW");
-        // @(posedge aclk);
-        // inst_rdata = {12'b0, 5'h2, `CSRRW, 5'h3, 7'b1110011};
-        // ctrl_rs1_val = 'h98765432;
-        // inst_ready = 1'b1;
-        // @(negedge aclk);
-        // `ASSERT((dut.pc == 32'h4), "program counter must be 0x4");
-        // @(posedge aclk);
-        // @(posedge aclk);
-// 
-        // ctrl_rs1_val = 'h00000000;
-        // inst_ready = 1'b1;
-        // inst_rdata = {12'b0, 5'h2, `CSRRW, 5'h3, 7'b1110011};
-        // @(negedge aclk);
-        // `ASSERT((dut.pc == 32'h8), "program counter must be 0x8");
-        // `ASSERT((ctrl_rd_val!='h98765432));
-        // @(posedge aclk);
-        // @(posedge aclk);
-// 
         `CRITICAL("TODO: Complete all CSR instructions check");
         `CRITICAL("Check X0 as rs/rd");
-        `CRITICAL("TODO: Check interleaving with processing instruction (or anyone else)");
 
     `UNIT_TEST_END
 

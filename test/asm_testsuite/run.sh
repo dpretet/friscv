@@ -22,7 +22,8 @@ fi
 
 # Search for all folders and execute makefile to create the asm/verilog files
 # Once created, the program are converted along this script to init the RAMs
-find . -type d ! -name common -exec make -C {} clean all \; -exec ./bin2hex.py {}/{}.v {}.v \;
+echo "INFO: Build ASM/C testcases and create RAM initialization files"
+find . -type d ! -name common -exec make -C {} all \; -exec ./bin2hex.py {}/{}.v {}.v \;
 
 echo "INFO: Start ASM Testsuite"
 echo "PID: $$"
@@ -49,6 +50,7 @@ for test in test*.v; do
 
     # Execute the testcase with SVUT. Will stop once it reaches a EBREAK instruction
     svutRun -t ./friscv_rv32i_testbench.sv | tee -a simulation.log
+    ret=$((ret+$?))
 
     # Copy the VCD generated, create a GTKWave file from the template then
     # add into the path to the good VCD file.
@@ -68,7 +70,7 @@ fi
 ec=$(grep -c "ERROR:" simulation.log)
 
 if [[ $ec != 0 ]]; then
-    echo -e "${RED}ERROR: !! Execution failed !!"
+    echo -e "${RED}ERROR: Execution failed !"
     exit 1
 fi
 

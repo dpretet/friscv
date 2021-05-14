@@ -105,7 +105,8 @@ module friscv_rv32i_control
     logic signed [PC_W-1:0] pc_branching;
     logic        [PC_W-1:0] pc;
     logic        [PC_W-1:0] pc_reg;
-    logic        [PC_W-1:0] pc_saved;
+    logic        [PC_W-1:0] pc_jal_saved;
+    logic        [PC_W-1:0] pc_auipc_saved;
     // Extra decoding used during branching
     logic                   beq;
     logic                   bne;
@@ -125,6 +126,7 @@ module friscv_rv32i_control
     // ready flag of CSR dedicated module
     logic                   csr_ready;
     logic                   csr_rd_wr;
+    logic [5          -1:0] csr_rd_addr;
     logic [XLEN       -1:0] csr_rd_val;
 
     ///////////////////////////////////////////////////////////////////////////
@@ -195,7 +197,7 @@ module friscv_rv32i_control
     //
     ///////////////////////////////////////////////////////////////////////////
 
-    assign proc_en = (inst_ready | load_stored) & processing & (cfsm==RUN);
+    assign proc_en = (inst_ready | load_stored) & processing & (cfsm==RUN) & csr_ready;
 
     assign proc_instbus[`OPCODE +: `OPCODE_W] = opcode;
     assign proc_instbus[`FUNCT3 +: `FUNCT3_W] = funct3;
@@ -306,7 +308,8 @@ module friscv_rv32i_control
             cfsm <= BOOT;
             inst_en <= 1'b0;
             pc_reg <= {(PC_W){1'b0}};
-            pc_saved <= {(PC_W){1'b0}};
+            pc_jal_saved <= {(PC_W){1'b0}};
+            pc_auipc_saved <= {(PC_W){1'b0}};
             load_stored <= 1'b0;
             stored_inst <= {XLEN{1'b0}};
             ebreak <= 1'b0;
@@ -314,7 +317,8 @@ module friscv_rv32i_control
             cfsm <= BOOT;
             inst_en <= 1'b0;
             pc_reg <= {(PC_W){1'b0}};
-            pc_saved <= {(PC_W){1'b0}};
+            pc_jal_saved <= {(PC_W){1'b0}};
+            pc_auipc_saved <= {(PC_W){1'b0}};
             load_stored <= 1'b0;
             stored_inst <= {XLEN{1'b0}};
             ebreak <= 1'b0;
@@ -346,36 +350,37 @@ module friscv_rv32i_control
 
                     if (inst_ready || load_stored) begin
 
-                        // Wait for ALU/memfy to be ready to branch
-                        if (load_stored) begin
-                            if (proc_ready && csr_ready)  begin
-                                inst_en <= 1'b1;
-                                load_stored <= 1'b0;
-                            end
-                        // Need to branch/process but ALU/memfy didn't finish
-                        // to execute last instruction, so store the
-                        // instruction. Only reached if the instruction is
-                        // a processing
-                        end else if (inst_ready && //~lui && ~auipc &&
-                                     // ((env[2]) ||
-                                      // (|fence && cant_process_now) ||
-                                      (cant_branch_now || cant_process_now)
-                                    ) begin
-                            load_stored <= 1'b1;
-                            inst_en <= 1'b0;
-                            pc_reg <= pc;
-                            pc_saved <= pc_plus4;
-                            stored_inst <= inst_rdata;
-
                         // Reach an EBREAK instruction, need to stall the core
-                        end else if (inst_ready && env[1]) begin
+                        if (inst_ready && env[1]) begin
                             inst_en <= 1'b0;
                             ebreak <= 1'b1;
                             cfsm <= EBREAK;
 
+                        // Wait for ALU/memfy to be ready to branch
+                        end else if (load_stored) begin
+                            if (proc_ready && csr_ready)  begin
+                                inst_en <= 1'b1;
+                                load_stored <= 1'b0;
+                            end
+
+                        // Need to branch/process but ALU/memfy didn't finish
+                        // to execute last instruction, so store the
+                        // instruction. Only reached if the instruction is
+                        // a processing
+                        end else if (inst_ready &&
+                                      (~csr_ready || 
+                                       cant_branch_now || cant_process_now)
+                                    ) begin
+                            load_stored <= 1'b1;
+                            inst_en <= 1'b0;
+                            pc_reg <= pc;
+                            pc_jal_saved <= pc_plus4;
+                            pc_auipc_saved <= pc_reg;
+                            stored_inst <= inst_rdata;
+
                         // Continue processing if LUI or processing
                         // or branching
-                        end else if (~cant_branch_now && ~cant_process_now) begin
+                        end else if (csr_ready && ~cant_branch_now && ~cant_process_now) begin
                             load_stored <= 1'b0;
                             inst_en <= 1'b1;
                             pc_reg <= pc;
@@ -416,19 +421,23 @@ module friscv_rv32i_control
     assign ctrl_rs2_addr = rs2;
 
     // register destination
-    assign ctrl_rd_wr =  (~cant_branch_now && ~cant_process_now &&
-                             (auipc || jal || jalr))               ? 1'b1 :
-                         (~cant_process_now && lui)                ? 1'b1 :
-                         (auipc)                                   ? 1'b1 :
+    assign ctrl_rd_wr =  (cfsm!=RUN)                               ? 1'b0 :
+                         (~cant_branch_now && 
+                            ~cant_process_now && 
+                            csr_ready &&
+                            (auipc || jal || jalr))                ? 1'b1 :   
                          (csr_rd_wr)                               ? 1'b1 :
+                         (~cant_process_now && csr_ready && lui)   ? 1'b1 :
+                         (~cant_process_now && csr_ready && auipc) ? 1'b1 :
                                                                      1'b0 ;
-    assign ctrl_rd_addr = rd;
+    assign ctrl_rd_addr = (csr_rd_wr || ~csr_ready) ? csr_rd_addr : rd;
 
-    assign ctrl_rd_val = ((jal || jalr) && load_stored)  ? pc_saved :
+    assign ctrl_rd_val = (csr_rd_wr)                     ? csr_rd_val :
+                         ((jal || jalr) && load_stored)  ? pc_jal_saved :
                          ((jal || jalr) && ~load_stored) ? pc_plus4 :
                          (lui)                           ? {imm20, 12'b0} :
-                         (auipc)                         ? pc_auipc :
-                         (env[2])                        ? csr_rd_val :
+                         (auipc && load_stored)          ? pc_auipc_saved :
+                         (auipc && ~load_stored)         ? pc_auipc       :
                                                            pc;
 
     friscv_csr
@@ -438,19 +447,20 @@ module friscv_rv32i_control
     )
     csrs
     (
-        .aclk     (aclk        ),
-        .aresetn  (aresetn     ),
-        .srst     (srst        ),
-        .valid    (env[2]      ),
-        .ready    (csr_ready   ),
-        .funct3   (funct3      ),
-        .csr      (csr         ),
-        .zimm     (zimm        ),
-        .rs1_addr (rs1         ),
-        .rs1_val  (ctrl_rs1_val),
-        .rd_addr  (rd          ),
-        .rd_wr    (csr_rd_wr   ),
-        .rd_val   (csr_rd_val  )
+        .aclk       (aclk        ),
+        .aresetn    (aresetn     ),
+        .srst       (srst        ),
+        .valid      (env[2]      ),
+        .ready      (csr_ready   ),
+        .funct3     (funct3      ),
+        .csr        (csr         ),
+        .zimm       (zimm        ),
+        .rs1_addr   (rs1         ),
+        .rs1_val    (ctrl_rs1_val),
+        .rd_addr    (rd          ),
+        .rd_wr_en   (csr_rd_wr   ),
+        .rd_wr_addr (csr_rd_addr ),
+        .rd_wr_val  (csr_rd_val  )
     );
 
 
