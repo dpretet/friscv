@@ -9,4 +9,5 @@
 ../../rtl/friscv_rv32i_memfy.sv
 ../../rtl/friscv_registers.sv
 ../../rtl/friscv_csr.sv
+../../rtl/friscv_stats.sv
 +define+FRISCV_SIM

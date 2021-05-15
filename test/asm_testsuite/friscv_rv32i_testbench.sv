@@ -151,11 +151,6 @@ module friscv_rv32i_testbench();
 
     `UNIT_TEST("Run program")
 
-        // how to stop?
-        // - accessing a memory range
-        // - using a ecall/ebreak instructions
-        // - use asm into C
-
         `INFO("Start test");
         @(posedge aclk);
         while (ebreak==1'b0 && timer<TIMEOUT) begin
