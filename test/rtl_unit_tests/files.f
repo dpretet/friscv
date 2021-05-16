@@ -9,3 +9,7 @@
 ../../rtl/friscv_registers.sv
 ../../rtl/friscv_scfifo.sv
 ../../rtl/friscv_scfifo_ram.sv
+../../rtl/friscv_apb_interconnect.sv
+../../rtl/friscv_gpios.sv
+../../rtl/friscv_uart.sv
+../../rtl/friscv_user_interfaces.sv

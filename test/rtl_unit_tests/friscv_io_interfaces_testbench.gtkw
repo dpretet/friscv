@@ -1,0 +1,143 @@
+[*]
+[*] GTKWave Analyzer v3.3.107 (w)1999-2020 BSI
+[*] Mon May 17 12:39:46 2021
+[*]
+[dumpfile] "/Users/damien/workspace/hdl/friscv/test/rtl_unit_tests/friscv_io_interfaces_testbench.vcd"
+[dumpfile_mtime] "Mon May 17 12:39:25 2021"
+[dumpfile_size] 9783
+[savefile] "/Users/damien/workspace/hdl/friscv/test/rtl_unit_tests/friscv_io_interfaces_testbench.gtkw"
+[timestart] 0
+[size] 2001 1249
+[pos] -1 -1
+*-15.762380 114000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] friscv_io_interfaces_testbench.
+[treeopen] friscv_io_interfaces_testbench.dut.
+[sst_width] 193
+[signals_width] 300
+[sst_expanded] 1
+[sst_vpaned_height] 395
+@800200
+-interconnect
+@28
+friscv_io_interfaces_testbench.dut.apb_interconnect.aclk
+friscv_io_interfaces_testbench.dut.apb_interconnect.aresetn
+friscv_io_interfaces_testbench.dut.apb_interconnect.srst
+friscv_io_interfaces_testbench.dut.apb_interconnect.mst_en
+friscv_io_interfaces_testbench.dut.apb_interconnect.mst_wr
+@22
+friscv_io_interfaces_testbench.dut.apb_interconnect.mst_addr[15:0]
+friscv_io_interfaces_testbench.dut.apb_interconnect.mst_wdata[31:0]
+friscv_io_interfaces_testbench.dut.apb_interconnect.mst_strb[3:0]
+friscv_io_interfaces_testbench.dut.apb_interconnect.mst_rdata[31:0]
+@28
+friscv_io_interfaces_testbench.dut.apb_interconnect.mst_ready
+@200
+-
+@28
+friscv_io_interfaces_testbench.dut.apb_interconnect.slv0_en
+friscv_io_interfaces_testbench.dut.apb_interconnect.slv0_wr
+@22
+friscv_io_interfaces_testbench.dut.apb_interconnect.slv0_addr[15:0]
+friscv_io_interfaces_testbench.dut.apb_interconnect.slv0_wdata[31:0]
+friscv_io_interfaces_testbench.dut.apb_interconnect.slv0_strb[3:0]
+friscv_io_interfaces_testbench.dut.apb_interconnect.slv0_rdata[31:0]
+@28
+friscv_io_interfaces_testbench.dut.apb_interconnect.slv0_ready
+@200
+-
+@28
+friscv_io_interfaces_testbench.dut.apb_interconnect.slv1_en
+friscv_io_interfaces_testbench.dut.apb_interconnect.slv1_wr
+@22
+friscv_io_interfaces_testbench.dut.apb_interconnect.slv1_addr[15:0]
+friscv_io_interfaces_testbench.dut.apb_interconnect.slv1_wdata[31:0]
+friscv_io_interfaces_testbench.dut.apb_interconnect.slv1_strb[3:0]
+friscv_io_interfaces_testbench.dut.apb_interconnect.slv1_rdata[31:0]
+@28
+friscv_io_interfaces_testbench.dut.apb_interconnect.slv1_ready
+@1000200
+-interconnect
+@800200
+-GPIOs
+@28
+friscv_io_interfaces_testbench.dut.gpios.aclk
+friscv_io_interfaces_testbench.dut.gpios.aresetn
+friscv_io_interfaces_testbench.dut.gpios.srst
+friscv_io_interfaces_testbench.dut.gpios.mst_en
+friscv_io_interfaces_testbench.dut.gpios.mst_wr
+@22
+friscv_io_interfaces_testbench.dut.gpios.mst_addr[15:0]
+friscv_io_interfaces_testbench.dut.gpios.mst_wdata[31:0]
+friscv_io_interfaces_testbench.dut.gpios.mst_strb[3:0]
+friscv_io_interfaces_testbench.dut.gpios.mst_rdata[31:0]
+@28
+friscv_io_interfaces_testbench.dut.gpios.mst_ready
+@200
+-
+@22
+friscv_io_interfaces_testbench.dut.gpios.register0[31:0]
+friscv_io_interfaces_testbench.dut.gpios.register1[31:0]
+@200
+-
+@22
+friscv_io_interfaces_testbench.dut.gpios.gpio_in[31:0]
+friscv_io_interfaces_testbench.dut.gpios.gpio_out[31:0]
+@1000200
+-GPIOs
+@800200
+-UART
+@28
+friscv_io_interfaces_testbench.dut.uart.aclk
+friscv_io_interfaces_testbench.dut.uart.aresetn
+friscv_io_interfaces_testbench.dut.uart.srst
+friscv_io_interfaces_testbench.dut.uart.busy
+friscv_io_interfaces_testbench.dut.uart.enable
+@200
+-
+@28
+friscv_io_interfaces_testbench.dut.uart.mst_en
+@29
+friscv_io_interfaces_testbench.dut.uart.mst_wr
+@22
+friscv_io_interfaces_testbench.dut.uart.mst_addr[15:0]
+friscv_io_interfaces_testbench.dut.uart.mst_wdata[31:0]
+friscv_io_interfaces_testbench.dut.uart.mst_strb[3:0]
+friscv_io_interfaces_testbench.dut.uart.mst_rdata[31:0]
+@28
+friscv_io_interfaces_testbench.dut.uart.mst_ready
+@200
+-
+@22
+friscv_io_interfaces_testbench.dut.uart.register0[31:0]
+friscv_io_interfaces_testbench.dut.uart.register1[31:0]
+friscv_io_interfaces_testbench.dut.uart.register2[31:0]
+friscv_io_interfaces_testbench.dut.uart.register3[31:0]
+@200
+-
+@28
+friscv_io_interfaces_testbench.dut.uart.rx_push
+@22
+friscv_io_interfaces_testbench.dut.uart.rx_data[31:0]
+@28
+friscv_io_interfaces_testbench.dut.uart.rx_full
+friscv_io_interfaces_testbench.dut.uart.rx_pull
+friscv_io_interfaces_testbench.dut.uart.rx_empty
+@200
+-
+@28
+friscv_io_interfaces_testbench.dut.uart.tx_push
+friscv_io_interfaces_testbench.dut.uart.tx_full
+friscv_io_interfaces_testbench.dut.uart.tx_pull
+@22
+friscv_io_interfaces_testbench.dut.uart.tx_data[31:0]
+@28
+friscv_io_interfaces_testbench.dut.uart.tx_empty
+@200
+-
+@28
+friscv_io_interfaces_testbench.dut.uart.uart_rx
+friscv_io_interfaces_testbench.dut.uart.uart_tx
+@1000200
+-UART
+[pattern_trace] 1
+[pattern_trace] 0
