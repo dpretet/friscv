@@ -19,6 +19,7 @@ module friscv_stats
     logic [XLEN-1:0] inst_wait;
     logic [XLEN-1:0] inst_served;
 
+    // Number of active cycles since moved out of reset
     always @ (posedge aclk or negedge aresetn) begin
         if (~aresetn) begin
             uptime <= {XLEN{1'b0}};
@@ -29,25 +30,29 @@ module friscv_stats
         end
     end
 
+    // Number of cycles the controller waited for an instruction
     always @ (posedge aclk or negedge aresetn) begin
         if (~aresetn) begin
             inst_wait <= {XLEN{1'b0}};
         end else if (srst) begin
             inst_wait <= {XLEN{1'b0}};
         end else begin
-            if (inst_en && ~inst_ready)
+            if (inst_en && ~inst_ready) begin
                 inst_wait <= inst_wait + 1;
+            end 
         end
     end
 
+    // Number of cycles the controller was active
     always @ (posedge aclk or negedge aresetn) begin
         if (~aresetn) begin
             inst_served <= {XLEN{1'b0}};
         end else if (srst) begin
             inst_served <= {XLEN{1'b0}};
         end else begin
-            if (inst_en && inst_ready)
+            if (inst_en && inst_ready) begin
                 inst_served <= inst_served + 1;
+            end
         end
     end
 

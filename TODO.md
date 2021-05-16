@@ -1,14 +1,13 @@
 # DOING
 
 - [ ] Add GPIOs
-- [ ] Develop some ASM programs
+- [ ] Add a debug interface (UART, JTAG) + DPI
 - [ ] Synthesis session
 
 # BACKLOG
 
 Control:
 - [ ] Add IRQ (CLINT/CLIC/PLIC) + timer
-- [ ] Add a debug interface (UART, JTAG) + DPI
 - [ ] Support privilieged instructions
 
 Cache stages:
@@ -36,6 +35,7 @@ Documentation:
 
 # Verification/Validation Backlog
 
+- [ ] Develop some ASM programs
 - [ ] Develop C testuite: test pointers with int, char & function
 - [ ] Define the hardware platform to use
 - [ ] Prepare a hardware execution environment for preliminary testing

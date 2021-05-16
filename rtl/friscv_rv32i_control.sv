@@ -78,7 +78,6 @@ module friscv_rv32i_control
     logic             processing;
     logic [2    -1:0] fence;
     logic [3    -1:0] env;
-    logic             load_store;
 
     // Flag raised when receiving an unsupported/undefined instruction
     logic inst_error;
@@ -95,18 +94,16 @@ module friscv_rv32i_control
 
     pc_fsm cfsm;
 
-    // Program counter width, expressed in bits
-    localparam              PC_W = 32;
-
-    logic        [PC_W-1:0] pc_plus4;
-    logic signed [PC_W-1:0] pc_auipc;
-    logic signed [PC_W-1:0] pc_jal;
-    logic signed [PC_W-1:0] pc_jalr;
-    logic signed [PC_W-1:0] pc_branching;
-    logic        [PC_W-1:0] pc;
-    logic        [PC_W-1:0] pc_reg;
-    logic        [PC_W-1:0] pc_jal_saved;
-    logic        [PC_W-1:0] pc_auipc_saved;
+    // All program counter for the different instructions
+    logic        [XLEN-1:0] pc_plus4;
+    logic signed [XLEN-1:0] pc_auipc;
+    logic signed [XLEN-1:0] pc_jal;
+    logic signed [XLEN-1:0] pc_jalr;
+    logic signed [XLEN-1:0] pc_branching;
+    logic        [XLEN-1:0] pc;
+    logic        [XLEN-1:0] pc_reg;
+    logic        [XLEN-1:0] pc_jal_saved;
+    logic        [XLEN-1:0] pc_auipc_saved;
     // Extra decoding used during branching
     logic                   beq;
     logic                   bne;
@@ -115,7 +112,7 @@ module friscv_rv32i_control
     logic                   bltu;
     logic                   bgeu;
     logic                   goto_branch;
-    // Circuit stoing an instruction which can't be process now
+    // Circuit storing an instruction which can't be process now
     logic                   load_stored;
     logic [XLEN       -1:0] stored_inst;
     logic [XLEN       -1:0] instruction;
@@ -125,6 +122,7 @@ module friscv_rv32i_control
     logic                   cant_process_now;
     // ready flag of CSR dedicated module
     logic                   csr_ready;
+    // RD write interface of the CSR module
     logic                   csr_rd_wr;
     logic [5          -1:0] csr_rd_addr;
     logic [XLEN       -1:0] csr_rd_val;
@@ -141,20 +139,24 @@ module friscv_rv32i_control
     //
     //   - jumping
     //   - branching
-    //   - system
+    //   - lui
+    //   - auipc
+    //   - jal
+    //   - jalr
+    //   - fence
+    //   - env (CSR/EBREAK/ECALL)
     //   - processing
-    //
-    // The first three sets are handlded in control (this module) and dedicated
-    // to instruction memory parsing thru the pc (program counter) and software
-    // interaction (for instance `ecall` or `break` instructions).
     //
     // Processing is handled by ALU & Memfy, responsible of data memory access,
     // registers management and arithmetic/logic operations.
     //
+    // All the other flags are handlded in this module.
+    //
     ///////////////////////////////////////////////////////////////////////////
 
     // In case control unit has been stalled, use the last instruction
-    // received.
+    // received. Assume the RAM will not change the unprocessd instruction
+    // until the enable is re-asserted
     assign instruction = (load_stored) ? stored_inst : inst_rdata;
 
     friscv_rv32i_decoder
@@ -193,7 +195,8 @@ module friscv_rv32i_control
 
     ///////////////////////////////////////////////////////////////////////////
     //
-    // Instruction sourcing Stage
+    // Instruction sourcing Stage: put in shape the instruction bus passed to
+    // the processing module
     //
     ///////////////////////////////////////////////////////////////////////////
 
@@ -225,7 +228,7 @@ module friscv_rv32i_control
     ///////////////////////////////////////////////////////////////////////////
 
     // increment counter by 4 because we index bytes
-    assign pc_plus4 = pc_reg + {{(PC_W-3){1'b0}},3'b100};
+    assign pc_plus4 = pc_reg + {{(XLEN-3){1'b0}},3'b100};
 
     // AUIPC: Add Upper Immediate into Program Counter
     assign pc_auipc = $signed(pc_reg) + $signed({imm20,12'b0});
@@ -254,7 +257,7 @@ module friscv_rv32i_control
                 (jalr)                      ? {pc_jalr[31:1],1'b0} :
                 // branching and comparaison is true
                 (branching && goto_branch)  ? pc_branching :
-                // branching and comparaison is true
+                // branching and comparaison is false
                 (branching && ~goto_branch) ? pc_plus4 :
                 // arithmetic processing
                 (processing)                ? pc_plus4 :
@@ -290,35 +293,27 @@ module friscv_rv32i_control
                           (funct3 == `BGEU && bgeu)) ? 1'b1 :
                                                        1'b0;
 
-    // The FSM switching the program counter
+    // The FSM updating the program counter, managing the incoming
+    // instructions and the processing unit
     ///////////////////////////////////////////////////////////////////////////
-
-    // Two flags to stop the processor if ALU/memfy are computing
-    assign cant_branch_now = ((jal || jalr || branching) &&
-                               ~proc_ready) ? 1'b1 :
-                                              1'b0;
-
-    assign cant_process_now = (processing && ~proc_ready) ? 1'b1 : 1'b0;
-
-    assign load_store = (opcode==`LOAD || opcode==`STORE) ? 1'b1 : 1'b0;
 
     always @ (posedge aclk or negedge aresetn) begin
 
         if (aresetn == 1'b0) begin
             cfsm <= BOOT;
             inst_en <= 1'b0;
-            pc_reg <= {(PC_W){1'b0}};
-            pc_jal_saved <= {(PC_W){1'b0}};
-            pc_auipc_saved <= {(PC_W){1'b0}};
+            pc_reg <= {(XLEN){1'b0}};
+            pc_jal_saved <= {(XLEN){1'b0}};
+            pc_auipc_saved <= {(XLEN){1'b0}};
             load_stored <= 1'b0;
             stored_inst <= {XLEN{1'b0}};
             ebreak <= 1'b0;
         end else if (srst == 1'b1) begin
             cfsm <= BOOT;
             inst_en <= 1'b0;
-            pc_reg <= {(PC_W){1'b0}};
-            pc_jal_saved <= {(PC_W){1'b0}};
-            pc_auipc_saved <= {(PC_W){1'b0}};
+            pc_reg <= {(XLEN){1'b0}};
+            pc_jal_saved <= {(XLEN){1'b0}};
+            pc_auipc_saved <= {(XLEN){1'b0}};
             load_stored <= 1'b0;
             stored_inst <= {XLEN{1'b0}};
             ebreak <= 1'b0;
@@ -356,17 +351,15 @@ module friscv_rv32i_control
                             ebreak <= 1'b1;
                             cfsm <= EBREAK;
 
-                        // Wait for ALU/memfy to be ready to branch
+                        // Wait for ALU/memfy/CSR to continue the processing
                         end else if (load_stored) begin
                             if (proc_ready && csr_ready)  begin
                                 inst_en <= 1'b1;
                                 load_stored <= 1'b0;
                             end
 
-                        // Need to branch/process but ALU/memfy didn't finish
-                        // to execute last instruction, so store the
-                        // instruction. Only reached if the instruction is
-                        // a processing
+                        // Need to branch/process but ALU/memfy/CSR didn't finish
+                        // to execute last instruction, so store it.
                         end else if (inst_ready &&
                                       (~csr_ready || 
                                        cant_branch_now || cant_process_now)
@@ -378,12 +371,12 @@ module friscv_rv32i_control
                             pc_auipc_saved <= pc_reg;
                             stored_inst <= inst_rdata;
 
-                        // Continue processing if LUI or processing
-                        // or branching
+                        // Process as long as instruction are available
                         end else if (csr_ready && ~cant_branch_now && ~cant_process_now) begin
                             load_stored <= 1'b0;
                             inst_en <= 1'b1;
                             pc_reg <= pc;
+
                         end else begin
                             inst_en <= 1'b0;
                             load_stored <= 1'b0;
@@ -398,7 +391,7 @@ module friscv_rv32i_control
 
                 // TRAP reached when:
                 // - received an undefined/unsupported instruction
-                // - TODO: reach if address are not 4 bytes aligned
+                // - received an EBREAK instruction
                 TRAP: begin
                     $error("ERROR: Received an unsupported/unspecified instruction");
                     $stop();
@@ -408,6 +401,13 @@ module friscv_rv32i_control
 
         end
     end
+
+    // Two flags to stop the processor if ALU/memfy are computing
+    assign cant_branch_now = ((jal || jalr || branching) &&
+                               ~proc_ready) ? 1'b1 :
+                                              1'b0;
+
+    assign cant_process_now = (processing && ~proc_ready) ? 1'b1 : 1'b0;
 
     // select only MSB because RAM is addressed by word while program counter
     // is byte-oriented
@@ -440,6 +440,7 @@ module friscv_rv32i_control
                          (auipc && ~load_stored)         ? pc_auipc       :
                                                            pc;
 
+    // Module managing the ISA CSR
     friscv_csr
     #(
         .CSR_DEPTH (CSR_DEPTH),

@@ -122,8 +122,9 @@ module friscv_rv32i_decoder
             end
 
             // Emvironment
-            // - call / break
-            // - CSR
+            // - ecall  : env[0]
+            // - ebreak : env[1]
+            // - CSR    : env[2]
             7'b1110011: begin
                 lui = 1'b0;
                 auipc = 1'b0;

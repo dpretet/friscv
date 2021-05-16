@@ -95,9 +95,10 @@ module friscv_csr
             rd_wr_addr <= 5'b0;
             cfsm <= IDLE;
         end else begin
+
+            // Wait for a new instruction
             case(cfsm)
 
-                // Wait for a new instruction
                 default: begin
 
                     csr_wr <= 1'b0;
@@ -130,7 +131,7 @@ module friscv_csr
                             rd_wr_val <= oldval;
                         end
                         newval <= rs1_val_r;
-                    // Save CSR and apply a set mask
+                    // Save CSR in RS1 and apply a set mask with rs1
                     end else if (funct3_r==`CSRRS) begin
                         rd_wr_en <= 1'b1;
                         rd_wr_val <= oldval;
@@ -139,7 +140,7 @@ module friscv_csr
                             newval <= oldval | rs1_val_r;
                         end
 
-                    // Save CSR then apply a set mask
+                    // Save CSR in RS1 then apply a clear mask fwith rs1
                     end else if (funct3_r==`CSRRC) begin
                         rd_wr_en <= 1'b1;
                         rd_wr_val <= oldval;
@@ -148,7 +149,7 @@ module friscv_csr
                             newval <= oldval & rs1_val_r;
                         end
 
-                    // Save CSR then apply a clear mask
+                    // Store CSR in RS1 then set CSR to Zimm
                     end else if (funct3_r==`CSRRWI) begin
                         if (rd_wr_addr!=5'b0) begin
                             csr_wr <= 1'b1;
@@ -157,6 +158,7 @@ module friscv_csr
                         end
                         newval <= {{XLEN-5{1'b0}}, zimm};
 
+                    // Save CSR in RS1 and apply a set mask with Zimm
                     end else if (funct3_r==`CSRRSI) begin
                         rd_wr_en <= 1'b1;
                         rd_wr_val <= oldval;
@@ -165,6 +167,7 @@ module friscv_csr
                             newval <= oldval | {{XLEN-`ZIMM_W{1'b0}}, zimm_r};
                         end
 
+                    // Save CSR in RS1 and apply a clear mask with Zimm
                     end else if (funct3_r==`CSRRCI) begin
                         rd_wr_en <= 1'b1;
                         rd_wr_val <= oldval;

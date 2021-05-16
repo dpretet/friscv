@@ -47,7 +47,7 @@ module friscv_rv32i_memfy
     
     ///////////////////////////////////////////////////////////////////////////
     //
-    // Functions declarations
+    // Functions declaration
     //
     ///////////////////////////////////////////////////////////////////////////
   
@@ -140,7 +140,7 @@ module friscv_rv32i_memfy
     endfunction
 
     ///////////////////////////////////////////////////////////////////////////
-    // Create the strobe vector to aply during a RD write 
+    // Create the strobe vector to apply during a RD write 
     // Args:
     //      - funct3: opcode's funct3 identifier
     //      - rdata: the word to align
@@ -166,7 +166,7 @@ module friscv_rv32i_memfy
     endfunction
 
     ///////////////////////////////////////////////////////////////////////////
-    // Create the strobe vector to aply during a RD write
+    // Create the strobe vector to apply during a RD write
     // Args:
     //      - funct3: opcode's funct3 identifier
     //      - phase: first (0) or second (1) phase of the STORE request
@@ -221,7 +221,7 @@ module friscv_rv32i_memfy
 
     ///////////////////////////////////////////////////////////////////////////
     //
-    // Parameters and variables declarations
+    // Parameters and variables declaration
     //
     ///////////////////////////////////////////////////////////////////////////
 
@@ -272,7 +272,7 @@ module friscv_rv32i_memfy
 
     ///////////////////////////////////////////////////////////////////////////
     //
-    // Control circuit managing memory and registers accesses
+    // Control circuit managing memory and register accesses
     //
     ///////////////////////////////////////////////////////////////////////////
 
@@ -311,6 +311,7 @@ module friscv_rv32i_memfy
             // Accepts a new instruction once memory completes the request
             if (mem_en) begin
                 if (mem_ready) begin
+                    // LOAD
                     if (opcode_r==`LOAD) begin
                         if (two_phases) begin
                             two_phases <= 1'b0;
@@ -320,6 +321,7 @@ module friscv_rv32i_memfy
                             mem_en <= 1'b0;
                             memfy_ready <= 1'b1;
                         end
+                    // STORE
                     end else begin
                         if (two_phases) begin
                             two_phases <= 1'b0;
@@ -333,13 +335,14 @@ module friscv_rv32i_memfy
                     end
                 end
 
-            // LOAD or STORE instruction acknowledgment
+            // LOAD or STORE instruction acknowledgment to instruction controller
             end else if (memfy_en && mem_access) begin
 
                 // Control flow
                 memfy_ready <= 1'b0;
                 opcode_r <= opcode;
                 funct3_r <= funct3;
+
                 // request will be executed in two phases because unaligned
                 // and targets two memory addresses
                 if (is_unaligned) two_phases <= 1'b1;
@@ -349,18 +352,21 @@ module friscv_rv32i_memfy
                 mem_en <= 1'b1;
                 mem_addr <= {2'b0, addr[ADDRW-1:2]};
                 offset <= addr[1:0];
+
+                // STORE
                 if (opcode==`STORE) begin
                     mem_wr <= 1'b1;
                     mem_wdata <= get_aligned_mem_data(memfy_rs2_val, addr[1:0]);
                     mem_strb <= get_mem_strb(funct3, addr[1:0], 0);
                     next_strb <= get_mem_strb(funct3, addr[1:0], 1);
+                // LOAD
                 end else begin
                     mem_wr <= 1'b0;
                     mem_wdata <= {XLEN{1'b0}};
                     mem_strb <= {XLEN/8{1'b0}};
                 end
                
-                // rd registers setup
+                // rd register setup
                 rd_r <= rd;
 
             // Wait for an instruction
@@ -397,11 +403,11 @@ module friscv_rv32i_memfy
                           (funct3==`LW  && addr[1:0]!=2'b0) ? 1'b1 :
                                                               1'b0 ;
 
-    // Unused: may be used later to indicate a buffer or instructions is 
-    // empty or not
+    // Unused: may be used later to indicate a buffer  is 
+    // empty or not, needed for outstanding request support
     assign memfy_empty = 1'b1;
 
-    // Information forwarded control unit for FENCE executions:
+    // Unused: information forwarded to control unit for FENCE executions:
     // bit 0: memory write
     // bit 1: nmemory read
     // bit 2: device output
