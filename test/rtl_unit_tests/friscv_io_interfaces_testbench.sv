@@ -7,7 +7,7 @@ module friscv_io_interfaces_testbench();
 
     `SVUT_SETUP
 
-    parameter ADDRW     = 16;
+    parameter ADDRW     = 15;
     parameter XLEN      = 32;
     parameter SLV0_ADDR = 0;
     parameter SLV0_SIZE = 8;
@@ -28,6 +28,8 @@ module friscv_io_interfaces_testbench();
     logic [XLEN   -1:0] gpio_out;
     logic               uart_rx;
     logic               uart_tx;
+    logic               uart_rts;
+    logic               uart_cts;
 
     integer timeout;
 
@@ -55,7 +57,9 @@ module friscv_io_interfaces_testbench();
     gpio_in,
     gpio_out,
     uart_rx,
-    uart_tx
+    uart_tx,
+    uart_rts,
+    uart_cts
     );
 
     /// to create a clock:
@@ -75,7 +79,8 @@ module friscv_io_interfaces_testbench();
         #20;
         aresetn <= 1'b1;
         gpio_in = 32'h00000000;
-        uart_rx = 1'b0;
+        uart_rx = 1'b1;
+        uart_cts = 1'b1;
         @(posedge aclk);
     end
     endtask

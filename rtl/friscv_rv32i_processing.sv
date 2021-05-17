@@ -11,7 +11,11 @@ module friscv_rv32i_processing
 
     #(
         parameter ADDRW = 16,
-        parameter XLEN  = 32
+        parameter XLEN  = 32,
+        parameter GPIO_BASE_ADDR = 0,
+        parameter GPIO_BASE_SIZE = 2048,
+        parameter DATA_MEM_BASE_ADDR = 2048,
+        parameter DATA_MEM_BASE_SIZE = 16384
     )(
         // clock & reset
         input  logic                        aclk,
@@ -66,60 +70,63 @@ module friscv_rv32i_processing
 
     friscv_rv32i_alu
     #(
-    .ADDRW     (ADDRW),
-    .XLEN      (XLEN)
+        .XLEN      (XLEN)
     )
     alu
     (
-    .aclk          (aclk        ),
-    .aresetn       (aresetn     ),
-    .srst          (srst        ),
-    .alu_en        (alu_en      ),
-    .alu_ready     (alu_ready   ),
-    .alu_empty     (alu_empty   ),
-    .alu_instbus   (proc_instbus),
-    .alu_rs1_addr  (alu_rs1_addr),
-    .alu_rs1_val   (alu_rs1_val ),
-    .alu_rs2_addr  (alu_rs2_addr),
-    .alu_rs2_val   (alu_rs2_val ),
-    .alu_rd_wr     (alu_rd_wr   ),
-    .alu_rd_addr   (alu_rd_addr ),
-    .alu_rd_val    (alu_rd_val  ),
-    .alu_rd_strb   (alu_rd_strb )
+        .aclk          (aclk        ),
+        .aresetn       (aresetn     ),
+        .srst          (srst        ),
+        .alu_en        (alu_en      ),
+        .alu_ready     (alu_ready   ),
+        .alu_empty     (alu_empty   ),
+        .alu_instbus   (proc_instbus),
+        .alu_rs1_addr  (alu_rs1_addr),
+        .alu_rs1_val   (alu_rs1_val ),
+        .alu_rs2_addr  (alu_rs2_addr),
+        .alu_rs2_val   (alu_rs2_val ),
+        .alu_rd_wr     (alu_rd_wr   ),
+        .alu_rd_addr   (alu_rd_addr ),
+        .alu_rd_val    (alu_rd_val  ),
+        .alu_rd_strb   (alu_rd_strb )
     );
 
     assign memfy_en = proc_en & alu_ready;
 
     friscv_rv32i_memfy
     #(
-    .ADDRW     (ADDRW),
-    .XLEN      (XLEN)
+        .ADDRW              (ADDRW),
+        .XLEN               (XLEN),
+        .GPIO_BASE_ADDR     (GPIO_BASE_ADDR),
+        .GPIO_BASE_SIZE     (GPIO_BASE_SIZE),
+        .DATA_MEM_BASE_ADDR (DATA_MEM_BASE_ADDR),
+        .DATA_MEM_BASE_SIZE (DATA_MEM_BASE_SIZE)
     )
     memfy
     (
-    .aclk            (aclk          ),
-    .aresetn         (aresetn       ),
-    .srst            (srst          ),
-    .memfy_en        (memfy_en      ),
-    .memfy_ready     (memfy_ready   ),
-    .memfy_empty     (memfy_empty   ),
-    .memfy_fenceinfo (proc_fenceinfo),
-    .memfy_instbus   (proc_instbus  ),
-    .memfy_rs1_addr  (memfy_rs1_addr),
-    .memfy_rs1_val   (memfy_rs1_val ),
-    .memfy_rs2_addr  (memfy_rs2_addr),
-    .memfy_rs2_val   (memfy_rs2_val ),
-    .memfy_rd_wr     (memfy_rd_wr   ),
-    .memfy_rd_addr   (memfy_rd_addr ),
-    .memfy_rd_val    (memfy_rd_val  ),
-    .memfy_rd_strb   (memfy_rd_strb ),
-    .mem_en          (mem_en        ),
-    .mem_wr          (mem_wr        ),
-    .mem_addr        (mem_addr      ),
-    .mem_wdata       (mem_wdata     ),
-    .mem_strb        (mem_strb      ),
-    .mem_rdata       (mem_rdata     ),
-    .mem_ready       (mem_ready     )
+        .aclk            (aclk          ),
+        .aresetn         (aresetn       ),
+        .srst            (srst          ),
+        .memfy_en        (memfy_en      ),
+        .memfy_ready     (memfy_ready   ),
+        .memfy_empty     (memfy_empty   ),
+        .memfy_fenceinfo (proc_fenceinfo),
+        .memfy_instbus   (proc_instbus  ),
+        .memfy_rs1_addr  (memfy_rs1_addr),
+        .memfy_rs1_val   (memfy_rs1_val ),
+        .memfy_rs2_addr  (memfy_rs2_addr),
+        .memfy_rs2_val   (memfy_rs2_val ),
+        .memfy_rd_wr     (memfy_rd_wr   ),
+        .memfy_rd_addr   (memfy_rd_addr ),
+        .memfy_rd_val    (memfy_rd_val  ),
+        .memfy_rd_strb   (memfy_rd_strb ),
+        .mem_en          (mem_en        ),
+        .mem_wr          (mem_wr        ),
+        .mem_addr        (mem_addr      ),
+        .mem_wdata       (mem_wdata     ),
+        .mem_strb        (mem_strb      ),
+        .mem_rdata       (mem_rdata     ),
+        .mem_ready       (mem_ready     )
     );
 
 
@@ -130,4 +137,3 @@ module friscv_rv32i_processing
 endmodule
 
 `resetall
-

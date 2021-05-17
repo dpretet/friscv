@@ -25,9 +25,9 @@ fi
 ec=$(grep -c "ERROR:" icarus.log)
 
 if [[ $ec != 0 ]]; then
-    echo -e "${RED}ERROR: !! Execution failed !!"
+    echo -e "${RED}ERROR: !! Execution failed !!${NC}"
     exit 1
 fi
 
-echo -e "${GREEN}SUCCESS: RTL Unit Tests flow successfully terminated ^^"
+echo -e "${GREEN}SUCCESS: RTL Unit Tests flow successfully terminated ^^${NC}"
 exit 0

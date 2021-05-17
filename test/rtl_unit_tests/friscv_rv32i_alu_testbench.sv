@@ -8,7 +8,6 @@ module friscv_rv32i_alu_testbench();
 
     `SVUT_SETUP
 
-    parameter ADDRW = 16;
     parameter XLEN  = 32;
 
     logic                      aclk;
@@ -45,16 +44,15 @@ module friscv_rv32i_alu_testbench();
     logic [`INST_BUS_W-1:0] insts_store[16-1:0];
     logic [`INST_BUS_W-1:0] insts_lui[16-1:0];
     logic [`INST_BUS_W-1:0] instruction;
-    logic [XLEN          -1:0] datas[16-1:0];
-    logic [XLEN          -1:0] rs1_data[16-1:0];
-    logic [XLEN          -1:0] rs2_data[16-1:0];
-    logic [XLEN          -1:0] results[16-1:0];
+    logic [XLEN       -1:0] datas[16-1:0];
+    logic [XLEN       -1:0] rs1_data[16-1:0];
+    logic [XLEN       -1:0] rs2_data[16-1:0];
+    logic [XLEN       -1:0] results[16-1:0];
 
     integer                    timeout;
 
     friscv_rv32i_alu
     #(
-    ADDRW,
     XLEN
     )
     dut

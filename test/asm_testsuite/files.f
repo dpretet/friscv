@@ -10,4 +10,11 @@
 ../../rtl/friscv_registers.sv
 ../../rtl/friscv_csr.sv
 ../../rtl/friscv_stats.sv
+../../rtl/friscv_apb_interconnect.sv
+../../rtl/friscv_gpios.sv
+../../rtl/friscv_uart.sv
+../../rtl/friscv_user_interfaces.sv
+../../rtl/friscv_mem_router.sv
+../../rtl/friscv_scfifo.sv
+../../rtl/friscv_scfifo_ram.sv
 +define+FRISCV_SIM

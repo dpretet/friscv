@@ -31,15 +31,21 @@ module friscv_rv32i_testbench();
     logic [XLEN/8     -1:0] mem_strb;
     logic [XLEN       -1:0] mem_rdata;
     logic                   mem_ready;
+    logic [XLEN       -1:0] gpio_in;
+    logic [XLEN       -1:0] gpio_out;
+    logic                   uart_tx;
+    logic                   uart_rx;
+    logic                   uart_rts;
+    logic                   uart_cts;
     integer                 inst_counter;
     integer                 timer;
 
     friscv_rv32i
     #(
+    XLEN,
     INST_ADDRW,
     DATA_ADDRW,
-    BOOT_ADDR,
-    XLEN
+    BOOT_ADDR
     )
     dut
     (
@@ -58,7 +64,13 @@ module friscv_rv32i_testbench();
     mem_wdata,
     mem_strb,
     mem_rdata,
-    mem_ready
+    mem_ready,
+    gpio_in,
+    gpio_out,
+    uart_rx,
+    uart_tx,
+    uart_rts,
+    uart_cts
     );
 
     scram
@@ -132,6 +144,8 @@ module friscv_rv32i_testbench();
         srst = 1'b0;
         inst_ready = 1'b1;
         timer = 0;
+        uart_cts = 1'b1;
+        uart_rx = 1'b1;
         @(posedge aclk);
         @(posedge aclk);
         @(posedge aclk);

@@ -10,7 +10,6 @@
 module friscv_rv32i_alu
 
     #(
-        parameter ADDRW = 16,
         parameter XLEN  = 32
     )(
         // clock & reset

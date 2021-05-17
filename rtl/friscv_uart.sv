@@ -28,12 +28,17 @@ module friscv_uart
         output logic                        mst_ready,
         // UART interface
         input  logic                        uart_rx,
-        output logic                        uart_tx
+        output logic                        uart_tx,
+        output logic                        uart_rts,
+        input  logic                        uart_cts
     );
 
     logic            enable;
     logic            busy;
     logic            loopback_mode;
+    logic            parity_en;
+    logic            parity_mode;
+    logic            stop_mode;
     logic [XLEN-1:0] register0;
     logic [XLEN-1:0] register1;
     logic [XLEN-1:0] register2;
@@ -57,16 +62,21 @@ module friscv_uart
     //
     // ## Register 0: Control and Status [RW] - Address 0 - 13 bits
     //
-    // - bit 0:     Enable the UART engine (RX and TX) [RW]
-    // - bit 1:     loopback mode, every received data will be stored in RX
-    //              FIFO and send back to TX
-    // - bit 7:2:   Reserved
+    // - bit 0:     Enable the UART engine (both RX and TX) [RW]
+    // - bit 1:     Loopback mode, every received data will be stored in RX
+    //              FIFO and forwarded back to TX
+    // - bit 2:     Enable parity bit
+    // - bit 3:     0 for even parity, 1 for odd parity
+    // - bit 4:     0 for one stop bit, 1 for two stop bits
+    // - bit 7:5:   Reserved
     // - bit 8:     Busy flag, the UART engine is processing (RX or TX) [RO]
     // - bit 9:     TX FIFO is empty [RO]
     // - bit 10:    TX FIFO is full [RO]
     // - bit 11:    RX FIFO is empty [RO]
     // - bit 12:    RX FIFO is full [RO]
-    // - bit 31:13: Reserved
+    // - bit 13:    UART RTS, flagging it can't receive anymore data
+    // - bit 14:    UART CTS, flagging it can't send anymore data
+    // - bit 31:15: Reserved
     //
     // If a transfer (RX or TX) is active and the enable bit is setup back to
     // 0, the transfer will terminate only after the complete frame transmission
@@ -118,8 +128,8 @@ module friscv_uart
     //////////////////////////////////////////////////////////////////////////
  
     assign register0 = {{XLEN-16{1'b0}}, 
-                        3'b0, rx_full, rx_empty, tx_full, tx_empty, busy,
-                        6'b0, loopback_mode, enable};
+                        1'b0, uart_cts, uart_rts, rx_full, rx_empty, tx_full, tx_empty, busy,
+                        3'b0, stop_mode, parity_mode, parity_en, loopback_mode, enable};
 
     assign busy = 1'b0;
 
@@ -132,6 +142,9 @@ module friscv_uart
         if (~aresetn) begin
             enable <= 1'b0;
             loopback_mode <= 1'b0;
+            parity_en <= 1'b0;
+            parity_mode <= 1'b0;
+            stop_mode <= 1'b0;
             tx_push <= 1'b0;
             rx_pull <= 1'b0;
             register1 <= {XLEN{1'b0}};
@@ -141,6 +154,9 @@ module friscv_uart
         end else if (srst) begin
             enable <= 1'b0;
             loopback_mode <= 1'b0;
+            parity_en <= 1'b0;
+            parity_mode <= 1'b0;
+            stop_mode <= 1'b0;
             tx_push <= 1'b0;
             rx_pull <= 1'b0;
             register1 <= {XLEN{1'b0}};
@@ -164,6 +180,9 @@ module friscv_uart
                         if (mst_strb[0]) begin
                             enable <= mst_wdata[0];
                             loopback_mode <= mst_wdata[1];
+                            parity_en <= mst_wdata[2];
+                            parity_mode <= mst_wdata[3];
+                            stop_mode <= mst_wdata[4];
                         end
                         mst_ready <= 1'b1;
                     end else begin
@@ -294,6 +313,9 @@ module friscv_uart
             else rx_push <= 1'b0;
         end
     end
+
+    // RTS indicates to the other side it can't receive anymore data
+    assign uart_rts = ~rx_full;
 
 endmodule
 

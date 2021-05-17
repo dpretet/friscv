@@ -11,10 +11,26 @@
 module friscv_rv32i
 
     #(
-        parameter INST_ADDRW = 16,
-        parameter DATA_ADDRW = 16,
-        parameter BOOT_ADDR  = 0,
-        parameter XLEN       = 32
+        // 32 bits architecture
+        parameter XLEN               = 32,
+        // Address buses width
+        parameter INST_ADDRW         = 16,
+        parameter DATA_ADDRW         = 16,
+        // Boot address used by the control unit
+        parameter BOOT_ADDR          = 0,
+        // Define the address of GPIO peripheral in APB interconnect
+        parameter GPIO_SLV0_ADDR     = 0,
+        parameter GPIO_SLV0_SIZE     = 8,
+        parameter GPIO_SLV1_ADDR     = 8,
+        parameter GPIO_SLV1_SIZE     = 16,
+        // Define the memory map of GPIO and data memory
+        // in the global memory space
+        parameter GPIO_BASE_ADDR     = 0,
+        parameter GPIO_BASE_SIZE     = 2048,
+        parameter DATA_MEM_BASE_ADDR = 2048,
+        parameter DATA_MEM_BASE_SIZE = 16384,
+        // UART FIFO Depth
+        parameter UART_FIFO_DEPTH = 4
     )(
         // clock/reset interface
         input  logic                  aclk,
@@ -36,7 +52,15 @@ module friscv_rv32i
         output logic [XLEN      -1:0] mem_wdata,
         output logic [XLEN/8    -1:0] mem_strb,
         input  logic [XLEN      -1:0] mem_rdata,
-        input  logic                  mem_ready
+        input  logic                  mem_ready,
+        // GPIO interface
+        input  logic [XLEN      -1:0] gpio_in,
+        output logic [XLEN      -1:0] gpio_out,
+        // UART interface
+        input  logic                  uart_rx,
+        output logic                  uart_tx,
+        output logic                  uart_rts,
+        input  logic                  uart_cts
     );
 
     logic [5     -1:0] ctrl_rs1_addr;
@@ -98,86 +122,51 @@ module friscv_rv32i
     logic [XLEN  -1:0] x30;
     logic [XLEN  -1:0] x31;
 
-    logic                      proc_en;
-    logic [`INST_BUS_W-   1:0] proc_instbus;
-    logic                      proc_ready;
-    logic                      memfy_ready;
-    logic                      proc_empty;
-    logic [4             -1:0] proc_fenceinfo;
+    logic                        proc_en;
+    logic [`INST_BUS_W     -1:0] proc_instbus;
+    logic                        proc_ready;
+    logic                        memfy_ready;
+    logic                        proc_empty;
+    logic [4               -1:0] proc_fenceinfo;
 
+    logic                        mst_en;
+    logic                        mst_wr;
+    logic [DATA_ADDRW      -1:0] mst_addr;
+    logic [XLEN            -1:0] mst_wdata;
+    logic [XLEN/8          -1:0] mst_strb;
+    logic [XLEN            -1:0] mst_rdata;
+    logic                        mst_ready;
 
-    friscv_rv32i_control
+    logic                        gpio_en;
+    logic                        gpio_wr;
+    logic [DATA_ADDRW      -1:0] gpio_addr;
+    logic [XLEN            -1:0] gpio_wdata;
+    logic [XLEN/8          -1:0] gpio_strb;
+    logic [XLEN            -1:0] gpio_rdata;
+    logic                        gpio_ready;
+
+    //////////////////////////////////////////////////////////////////////////
+    // Module logging internal statistics of the core
+    //////////////////////////////////////////////////////////////////////////
+    friscv_stats
     #(
-        .ADDRW     (INST_ADDRW),
-        .BOOT_ADDR (BOOT_ADDR),
-        .XLEN      (XLEN)
+        .XLEN (XLEN)
     )
-    control_unit
+    statistic
     (
-        .aclk           (aclk          ),
-        .aresetn        (aresetn       ),
-        .srst           (srst          ),
-        .ebreak         (ebreak        ),
-        .inst_en        (inst_en       ),
-        .inst_addr      (inst_addr     ),
-        .inst_rdata     (inst_rdata    ),
-        .inst_ready     (inst_ready    ),
-        .proc_en        (proc_en       ),
-        .proc_ready     (proc_ready    ),
-        .proc_empty     (proc_empty    ),
-        .proc_fenceinfo (proc_fenceinfo),
-        .proc_instbus   (proc_instbus  ),
-        .ctrl_rs1_addr  (ctrl_rs1_addr ),
-        .ctrl_rs1_val   (ctrl_rs1_val  ),
-        .ctrl_rs2_addr  (ctrl_rs2_addr ),
-        .ctrl_rs2_val   (ctrl_rs2_val  ),
-        .ctrl_rd_wr     (ctrl_rd_wr    ),
-        .ctrl_rd_addr   (ctrl_rd_addr  ),
-        .ctrl_rd_val    (ctrl_rd_val   )
+        .aclk       (aclk      ),
+        .aresetn    (aresetn   ),
+        .srst       (srst      ),
+        .enable     (enable    ),
+        .inst_en    (inst_en   ),
+        .inst_ready (inst_ready),
+        .debug      (          )
     );
 
 
-    friscv_rv32i_processing 
-    #(
-        .ADDRW (DATA_ADDRW),
-        .XLEN  (XLEN)
-    )
-    processing 
-    (
-        .aclk           (aclk          ),
-        .aresetn        (aresetn       ),
-        .srst           (srst          ),
-        .proc_en        (proc_en       ),
-        .proc_ready     (proc_ready    ),
-        .proc_empty     (proc_empty    ),
-        .proc_fenceinfo (proc_fenceinfo),
-        .proc_instbus   (proc_instbus  ),
-        .alu_rs1_addr   (alu_rs1_addr  ),
-        .alu_rs1_val    (alu_rs1_val   ),
-        .alu_rs2_addr   (alu_rs2_addr  ),
-        .alu_rs2_val    (alu_rs2_val   ),
-        .alu_rd_wr      (alu_rd_wr     ),
-        .alu_rd_addr    (alu_rd_addr   ),
-        .alu_rd_val     (alu_rd_val    ),
-        .alu_rd_strb    (alu_rd_strb   ),
-        .memfy_rs1_addr (memfy_rs1_addr),
-        .memfy_rs1_val  (memfy_rs1_val ),
-        .memfy_rs2_addr (memfy_rs2_addr),
-        .memfy_rs2_val  (memfy_rs2_val ),
-        .memfy_rd_wr    (memfy_rd_wr   ),
-        .memfy_rd_addr  (memfy_rd_addr ),
-        .memfy_rd_val   (memfy_rd_val  ),
-        .memfy_rd_strb  (memfy_rd_strb ),
-        .mem_en         (mem_en        ),
-        .mem_wr         (mem_wr        ),
-        .mem_addr       (mem_addr      ),
-        .mem_wdata      (mem_wdata     ),
-        .mem_strb       (mem_strb      ),
-        .mem_rdata      (mem_rdata     ),
-        .mem_ready      (mem_ready     )
-    );
-
-
+    //////////////////////////////////////////////////////////////////////////
+    // ISA Registers x0 -> x31
+    //////////////////////////////////////////////////////////////////////////
     friscv_registers
     #(
         .XLEN (XLEN)
@@ -245,19 +234,158 @@ module friscv_rv32i
     );
 
 
-    friscv_stats 
+    //////////////////////////////////////////////////////////////////////////
+    // Central controller sequencing the operations
+    //////////////////////////////////////////////////////////////////////////
+    friscv_rv32i_control
     #(
-        .XLEN (XLEN)
+        .ADDRW     (INST_ADDRW),
+        .BOOT_ADDR (BOOT_ADDR),
+        .XLEN      (XLEN)
     )
-    dut 
+    control_unit
     (
-        .aclk       (aclk      ),
-        .aresetn    (aresetn   ),
-        .srst       (srst      ),
-        .enable     (enable    ),
-        .inst_en    (inst_en   ),
-        .inst_ready (inst_ready),
-        .debug      (          )
+        .aclk           (aclk          ),
+        .aresetn        (aresetn       ),
+        .srst           (srst          ),
+        .ebreak         (ebreak        ),
+        .inst_en        (inst_en       ),
+        .inst_addr      (inst_addr     ),
+        .inst_rdata     (inst_rdata    ),
+        .inst_ready     (inst_ready    ),
+        .proc_en        (proc_en       ),
+        .proc_ready     (proc_ready    ),
+        .proc_empty     (proc_empty    ),
+        .proc_fenceinfo (proc_fenceinfo),
+        .proc_instbus   (proc_instbus  ),
+        .ctrl_rs1_addr  (ctrl_rs1_addr ),
+        .ctrl_rs1_val   (ctrl_rs1_val  ),
+        .ctrl_rs2_addr  (ctrl_rs2_addr ),
+        .ctrl_rs2_val   (ctrl_rs2_val  ),
+        .ctrl_rd_wr     (ctrl_rd_wr    ),
+        .ctrl_rd_addr   (ctrl_rd_addr  ),
+        .ctrl_rd_val    (ctrl_rd_val   )
+    );
+
+
+    //////////////////////////////////////////////////////////////////////////
+    // All ISA enxtensions supported: standard arithmetic / memory, ...
+    //////////////////////////////////////////////////////////////////////////
+    friscv_rv32i_processing
+    #(
+        .ADDRW              (DATA_ADDRW),
+        .XLEN               (XLEN),
+        .GPIO_BASE_ADDR     (GPIO_BASE_ADDR),
+        .GPIO_BASE_SIZE     (GPIO_BASE_SIZE),
+        .DATA_MEM_BASE_ADDR (DATA_MEM_BASE_ADDR),
+        .DATA_MEM_BASE_SIZE (DATA_MEM_BASE_SIZE)
+    )
+    processing
+    (
+        .aclk           (aclk          ),
+        .aresetn        (aresetn       ),
+        .srst           (srst          ),
+        .proc_en        (proc_en       ),
+        .proc_ready     (proc_ready    ),
+        .proc_empty     (proc_empty    ),
+        .proc_fenceinfo (proc_fenceinfo),
+        .proc_instbus   (proc_instbus  ),
+        .alu_rs1_addr   (alu_rs1_addr  ),
+        .alu_rs1_val    (alu_rs1_val   ),
+        .alu_rs2_addr   (alu_rs2_addr  ),
+        .alu_rs2_val    (alu_rs2_val   ),
+        .alu_rd_wr      (alu_rd_wr     ),
+        .alu_rd_addr    (alu_rd_addr   ),
+        .alu_rd_val     (alu_rd_val    ),
+        .alu_rd_strb    (alu_rd_strb   ),
+        .memfy_rs1_addr (memfy_rs1_addr),
+        .memfy_rs1_val  (memfy_rs1_val ),
+        .memfy_rs2_addr (memfy_rs2_addr),
+        .memfy_rs2_val  (memfy_rs2_val ),
+        .memfy_rd_wr    (memfy_rd_wr   ),
+        .memfy_rd_addr  (memfy_rd_addr ),
+        .memfy_rd_val   (memfy_rd_val  ),
+        .memfy_rd_strb  (memfy_rd_strb ),
+        .mem_en         (mst_en        ),
+        .mem_wr         (mst_wr        ),
+        .mem_addr       (mst_addr      ),
+        .mem_wdata      (mst_wdata     ),
+        .mem_strb       (mst_strb      ),
+        .mem_rdata      (mst_rdata     ),
+        .mem_ready      (mst_ready     )
+    );
+
+
+    //////////////////////////////////////////////////////////////////////////
+    // Switching logic to dispatch the IO and data memory access
+    //////////////////////////////////////////////////////////////////////////
+    friscv_mem_router
+    #(
+        .ADDRW              (DATA_ADDRW),
+        .XLEN               (XLEN),
+        .GPIO_BASE_ADDR     (GPIO_BASE_ADDR),
+        .GPIO_BASE_SIZE     (GPIO_BASE_SIZE),
+        .DATA_MEM_BASE_ADDR (DATA_MEM_BASE_ADDR),
+        .DATA_MEM_BASE_SIZE (DATA_MEM_BASE_SIZE)
+    )
+    mem_router
+    (
+        .aclk           (aclk          ),
+        .aresetn        (aresetn       ),
+        .srst           (srst          ),
+        .mst_en         (mst_en        ),
+        .mst_wr         (mst_wr        ),
+        .mst_addr       (mst_addr      ),
+        .mst_wdata      (mst_wdata     ),
+        .mst_strb       (mst_strb      ),
+        .mst_rdata      (mst_rdata     ),
+        .mst_ready      (mst_ready     ),
+        .gpio_en        (gpio_en       ),
+        .gpio_wr        (gpio_wr       ),
+        .gpio_addr      (gpio_addr     ),
+        .gpio_wdata     (gpio_wdata    ),
+        .gpio_strb      (gpio_strb     ),
+        .gpio_rdata     (gpio_rdata    ),
+        .gpio_ready     (gpio_ready    ),
+        .data_mem_en    (mem_en        ),
+        .data_mem_wr    (mem_wr        ),
+        .data_mem_addr  (mem_addr      ),
+        .data_mem_wdata (mem_wdata     ),
+        .data_mem_strb  (mem_strb      ),
+        .data_mem_rdata (mem_rdata     ),
+        .data_mem_ready (mem_ready     )
+    );
+
+
+    //////////////////////////////////////////////////////////////////////////
+    // All the IO peripherals: GPIO, UART, ...
+    //////////////////////////////////////////////////////////////////////////
+    friscv_io_interfaces
+    #(
+        .ADDRW           (DATA_ADDRW),
+        .XLEN            (XLEN),
+        .SLV0_ADDR       (GPIO_SLV0_ADDR),
+        .SLV0_SIZE       (GPIO_SLV0_SIZE),
+        .SLV1_ADDR       (GPIO_SLV1_ADDR),
+        .SLV1_SIZE       (GPIO_SLV1_SIZE),
+        .UART_FIFO_DEPTH (UART_FIFO_DEPTH)
+    )
+    ios
+    (
+        .aclk      (aclk      ),
+        .aresetn   (aresetn   ),
+        .srst      (srst      ),
+        .mst_en    (mst_en    ),
+        .mst_wr    (gpio_wr   ),
+        .mst_addr  (gpio_addr ),
+        .mst_wdata (gpio_wdata),
+        .mst_strb  (gpio_strb ),
+        .mst_rdata (gpio_rdata),
+        .mst_ready (gpio_ready),
+        .gpio_in   (gpio_in   ),
+        .gpio_out  (gpio_out  ),
+        .uart_rx   (uart_rx   ),
+        .uart_tx   (uart_tx   )
     );
 
     endmodule

@@ -10,12 +10,13 @@
 module friscv_io_interfaces
 
     #(
-        parameter ADDRW     = 16,
-        parameter XLEN      = 32,
-        parameter SLV0_ADDR = 0,
-        parameter SLV0_SIZE = 8,
-        parameter SLV1_ADDR = 8,
-        parameter SLV1_SIZE = 16
+        parameter ADDRW           = 16,
+        parameter XLEN            = 32,
+        parameter SLV0_ADDR       = 0,
+        parameter SLV0_SIZE       = 8,
+        parameter SLV1_ADDR       = 8,
+        parameter SLV1_SIZE       = 16,
+        parameter UART_FIFO_DEPTH = 4
     )(
         // clock & reset
         input  logic               aclk,
@@ -34,7 +35,9 @@ module friscv_io_interfaces
         output logic [XLEN   -1:0] gpio_out,
         // UART interface
         input  logic               uart_rx,
-        output logic               uart_tx
+        output logic               uart_tx,
+        output logic               uart_rts,
+        input  logic               uart_cts
     );
 
     logic              slv0_en;
@@ -52,7 +55,7 @@ module friscv_io_interfaces
     logic [XLEN  -1:0] slv1_rdata;
     logic              slv1_ready;
 
-    friscv_apb_interconnect 
+    friscv_apb_interconnect
     #(
         .ADDRW     (ADDRW    ),
         .XLEN      (XLEN     ),
@@ -61,7 +64,7 @@ module friscv_io_interfaces
         .SLV1_ADDR (SLV1_ADDR),
         .SLV1_SIZE (SLV1_SIZE)
     )
-    apb_interconnect 
+    apb_interconnect
     (
         .aclk       (aclk      ),
         .aresetn    (aresetn   ),
@@ -90,12 +93,12 @@ module friscv_io_interfaces
     );
 
 
-    friscv_gpios 
+    friscv_gpios
     #(
         .ADDRW (ADDRW),
         .XLEN  (XLEN )
     )
-    gpios 
+    gpios
     (
         .aclk      (aclk      ),
         .aresetn   (aresetn   ),
@@ -111,12 +114,13 @@ module friscv_io_interfaces
         .gpio_out  (gpio_out  )
     );
 
-    friscv_uart 
+    friscv_uart
     #(
-        .ADDRW (ADDRW),
-        .XLEN  (XLEN )
+        .ADDRW           (ADDRW),
+        .XLEN            (XLEN ),
+        .RXTX_FIFO_DEPTH (UART_FIFO_DEPTH)
     )
-    uart 
+    uart
     (
         .aclk      (aclk      ),
         .aresetn   (aresetn   ),

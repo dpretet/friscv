@@ -11,7 +11,11 @@ module friscv_rv32i_memfy
 
     #(
         parameter ADDRW = 16,
-        parameter XLEN  = 32
+        parameter XLEN  = 32,
+        parameter GPIO_BASE_ADDR = 0,
+        parameter GPIO_BASE_SIZE = 2048,
+        parameter DATA_MEM_BASE_ADDR = 2048,
+        parameter DATA_MEM_BASE_SIZE = 16384
     )(
         // clock & reset
         input  logic                        aclk,
@@ -44,13 +48,13 @@ module friscv_rv32i_memfy
         input  logic                        mem_ready
     );
 
-    
+
     ///////////////////////////////////////////////////////////////////////////
     //
     // Functions declaration
     //
     ///////////////////////////////////////////////////////////////////////////
-  
+
     ///////////////////////////////////////////////////////////////////////////
     // Align the read memory value to write in RD. Right shift the data.
     // Args:
@@ -140,7 +144,7 @@ module friscv_rv32i_memfy
     endfunction
 
     ///////////////////////////////////////////////////////////////////////////
-    // Create the strobe vector to apply during a RD write 
+    // Create the strobe vector to apply during a RD write
     // Args:
     //      - funct3: opcode's funct3 identifier
     //      - rdata: the word to align
@@ -365,7 +369,7 @@ module friscv_rv32i_memfy
                     mem_wdata <= {XLEN{1'b0}};
                     mem_strb <= {XLEN/8{1'b0}};
                 end
-               
+
                 // rd register setup
                 rd_r <= rd;
 
@@ -396,14 +400,14 @@ module friscv_rv32i_memfy
     // The address to access during a LOAD or a STORE
     assign addr = $signed({{(XLEN-12){imm12[11]}}, imm12}) + $signed(memfy_rs1_val);
 
-    assign is_unaligned = (funct3==`SH  && addr[1:0]==2'h3) ? 1'b1 : 
+    assign is_unaligned = (funct3==`SH  && addr[1:0]==2'h3) ? 1'b1 :
                           (funct3==`SW  && addr[1:0]!=2'b0) ? 1'b1 :
-                          (funct3==`LH  && addr[1:0]==2'h3) ? 1'b1 : 
-                          (funct3==`LHU && addr[1:0]==2'h3) ? 1'b1 : 
+                          (funct3==`LH  && addr[1:0]==2'h3) ? 1'b1 :
+                          (funct3==`LHU && addr[1:0]==2'h3) ? 1'b1 :
                           (funct3==`LW  && addr[1:0]!=2'b0) ? 1'b1 :
                                                               1'b0 ;
 
-    // Unused: may be used later to indicate a buffer  is 
+    // Unused: may be used later to indicate a buffer  is
     // empty or not, needed for outstanding request support
     assign memfy_empty = 1'b1;
 

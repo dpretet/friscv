@@ -1,14 +1,13 @@
 # DOING
 
-- [ ] Add GPIOs
-- [ ] Add a debug interface (UART, JTAG) + DPI
+- [-] Add a debug interface (UART, JTAG) + DPI
 - [ ] Synthesis session
 
 # BACKLOG
 
 Control:
 - [ ] Add IRQ (CLINT/CLIC/PLIC) + timer
-- [ ] Support privilieged instructions
+- [ ] Support privileged instructions
 
 Cache stages:
 - [ ] Design a generic memory bus
@@ -70,6 +69,7 @@ Documentation:
 
 # DONE
 
+- [X] Add GPIOs
 - [X] Implement in-house profiler to check branching, stall time, ...
 - [X] Develop top testbench to use asm programs and rely only on RAM to drive
       instructions and data into the core
