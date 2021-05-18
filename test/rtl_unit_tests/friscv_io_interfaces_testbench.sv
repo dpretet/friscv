@@ -26,8 +26,7 @@ module friscv_io_interfaces_testbench();
     logic               mst_ready;
     logic [XLEN   -1:0] gpio_in;
     logic [XLEN   -1:0] gpio_out;
-    logic               uart_rx;
-    logic               uart_tx;
+    logic               uart_data;
     logic               uart_rts;
     logic               uart_cts;
 
@@ -56,10 +55,10 @@ module friscv_io_interfaces_testbench();
     mst_ready,
     gpio_in,
     gpio_out,
-    uart_rx,
-    uart_tx,
+    uart_data,
+    uart_data,
     uart_rts,
-    uart_cts
+    uart_rts
     );
 
     /// to create a clock:
@@ -79,8 +78,6 @@ module friscv_io_interfaces_testbench();
         #20;
         aresetn <= 1'b1;
         gpio_in = 32'h00000000;
-        uart_rx = 1'b1;
-        uart_cts = 1'b1;
         @(posedge aclk);
     end
     endtask
@@ -124,13 +121,13 @@ module friscv_io_interfaces_testbench();
 
     `UNIT_TEST_END
 
-    `UNIT_TEST("UART Write Testcase")
+    `UNIT_TEST("UART Configure Testcase")
 
         `MSG("Write UART");
         mst_en = 1'b1;
         mst_wr = 1'b1;
-        mst_addr = 'h9;
-        mst_wdata = 32'h9876543;
+        mst_addr = 'h8;
+        mst_wdata = 32'h1;
         mst_strb = 4'hF;
         @(posedge aclk);
         while (~mst_ready) @(posedge aclk);
@@ -140,19 +137,69 @@ module friscv_io_interfaces_testbench();
 
     `UNIT_TEST_END
 
+    `UNIT_TEST("UART Write Testcase")
+
+        mst_en = 1'b1;
+        mst_wr = 1'b1;
+        mst_addr = 'h8;
+        mst_wdata = 32'h1;
+        mst_strb = 4'hF;
+        @(posedge aclk);
+        while (~mst_ready) @(posedge aclk);
+        mst_en = 1'b0;
+        mst_wr = 1'b0;
+        repeat (3) @(posedge aclk);
+
+        `MSG("Write UART");
+        mst_en = 1'b1;
+        mst_wr = 1'b1;
+        mst_addr = 'hA;
+        mst_wdata = 32'ha5;
+        mst_strb = 4'hF;
+        @(posedge aclk);
+        while (~mst_ready) @(posedge aclk);
+        mst_en = 1'b0;
+        mst_wr = 1'b0;
+        repeat (50) @(posedge aclk);
+
+    `UNIT_TEST_END
+
     `UNIT_TEST("UART Read Testcase")
 
+        mst_en = 1'b1;
+        mst_wr = 1'b1;
+        mst_addr = 'h8;
+        mst_wdata = 32'h1;
+        mst_strb = 4'hF;
+        @(posedge aclk);
+        while (~mst_ready) @(posedge aclk);
+        mst_en = 1'b0;
+        mst_wr = 1'b0;
+        repeat (3) @(posedge aclk);
+
+        `MSG("Write UART");
+        mst_en = 1'b1;
+        mst_wr = 1'b1;
+        mst_addr = 'hA;
+        mst_wdata = 32'ha5;
+        mst_strb = 4'hF;
+        @(posedge aclk);
+        while (~mst_ready) @(posedge aclk);
+        mst_en = 1'b0;
+        mst_wr = 1'b0;
+        repeat (50) @(posedge aclk);
+
         `MSG("Read UART");
-        gpio_in = 32'ha5a5a5a5;
         mst_en = 1'b1;
         mst_wr = 1'b0;
-        mst_addr = 'h8;
-        mst_wdata = 32'h0;
+        mst_addr = 'hB;
+        mst_wdata = 32'ha5;
         mst_strb = 4'h0;
         @(posedge aclk);
         while (~mst_ready) @(posedge aclk);
         mst_en = 1'b0;
-        repeat (3) @(posedge aclk);
+        `ASSERT((mst_rdata==mst_wdata), "Wrong value read back from UART")
+        repeat (50) @(posedge aclk);
 
     `UNIT_TEST_END
 

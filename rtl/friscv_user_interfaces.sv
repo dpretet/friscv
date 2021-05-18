@@ -133,7 +133,9 @@ module friscv_io_interfaces
         .mst_rdata (slv1_rdata),
         .mst_ready (slv1_ready),
         .uart_rx   (uart_rx   ),
-        .uart_tx   (uart_tx   )
+        .uart_tx   (uart_tx   ),
+        .uart_rts  (uart_rts  ),
+        .uart_cts  (uart_cts  )
     );
 
     endmodule

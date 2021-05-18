@@ -1,6 +1,5 @@
 # DOING
 
-- [-] Add a debug interface (UART, JTAG) + DPI
 - [ ] Synthesis session
 
 # BACKLOG
@@ -69,6 +68,7 @@ Documentation:
 
 # DONE
 
+- [X] Add a debug interface (UART, JTAG) + DPI
 - [X] Add GPIOs
 - [X] Implement in-house profiler to check branching, stall time, ...
 - [X] Develop top testbench to use asm programs and rely only on RAM to drive
