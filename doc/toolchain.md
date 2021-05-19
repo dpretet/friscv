@@ -2,7 +2,7 @@
 
 On MacOs:
 
-````bash
+```bash
 brew install gawk gnu-sed gmp mpfr libmpc isl zlib expat
 git clone --recursive https://github.com/riscv/riscv-gnu-toolchain
 cd riscv-gnu-toolchain
