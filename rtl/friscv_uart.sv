@@ -323,16 +323,24 @@ module friscv_uart
                 end
                 XFER: begin
 
+                    tx_pull <= 1'b0;
                     tx_baud_cnt <= tx_baud_cnt + 1;
 
                     if (tx_baud_cnt==clock_divider) begin
                         tx_baud_cnt <= 16'b0;
                         tx_bit_cnt <= tx_bit_cnt + 1'b1;
-                        uart_tx <= tx_data_srr[0];
-                        tx_data_srr <= tx_data_srr >> 1;
-                        if (tx_bit_cnt==8) begin
+                        if (tx_bit_cnt==4'h8) begin
+                            uart_tx <= 1'b1;
                             tx_pull <= 1'b1;
+                        end else if (tx_bit_cnt==4'h9 && stop_mode==1'b0) begin
+                            uart_tx <= 1'b1;
                             txfsm <= RW;
+                        end else if (tx_bit_cnt==4'hA && stop_mode==1'b1) begin
+                            uart_tx <= 1'b1;
+                            txfsm <= RW;
+                        end else begin
+                            uart_tx <= tx_data_srr[0];
+                            tx_data_srr <= tx_data_srr >> 1;
                         end
                     end
                 end
@@ -398,7 +406,7 @@ module friscv_uart
                         rx_baud_cnt <= 16'b0;
                         rx_bit_cnt <= rx_bit_cnt + 1'b1;
                         rx_data <= {uart_rx_sync, rx_data[7:1]};
-                        if (rx_bit_cnt==8) begin
+                        if (rx_bit_cnt==4'h8) begin
                             rx_push <= 1'b1;
                             rxfsm <= RW;
                         end

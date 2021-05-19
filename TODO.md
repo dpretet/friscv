@@ -1,5 +1,14 @@
 # DOING
 
+- [ ] VPI for UART:
+    - update SVUT to pass extra string to vvp
+    - module for the agent, instanciating the UART agent
+        - function to open a socket and configure it
+        - task to initalize the UART agent in the testbench thru APB
+        - task/vpi to write in UART, reading periodically the socket
+        - task/vpi to read the UART (periodically) and send dat to the socket
+    - open a shell at every execution to connect to the socket
+    - C function to prepare to bind printf()
 - [ ] Synthesis session
 
 # BACKLOG
@@ -7,6 +16,7 @@
 Control:
 - [ ] Add IRQ (CLINT/CLIC/PLIC) + timer
 - [ ] Support privileged instructions
+- [ ] Study MMU topic, core + driver
 
 Cache stages:
 - [ ] Design a generic memory bus
@@ -52,7 +62,6 @@ Documentation:
       and auto-connect the UART
     - Able to update the FPGA bitstream with the new program
     - Interactive mode or non-blocking mode.
-- [ ] Study MMU topic for RISCV (think about linux driver dev, use same interface than ARM?)
 - [ ] Implement a neural network with the processor and TF lite
 - [ ] Next CPU architecture:
     - Study SIMD architecture

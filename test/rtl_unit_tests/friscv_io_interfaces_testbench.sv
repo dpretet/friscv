@@ -166,10 +166,11 @@ module friscv_io_interfaces_testbench();
 
     `UNIT_TEST("UART Read Testcase")
 
+        `MSG("Configure UART engine");
         mst_en = 1'b1;
         mst_wr = 1'b1;
         mst_addr = 'h8;
-        mst_wdata = 32'h1;
+        mst_wdata = 32'h11;
         mst_strb = 4'hF;
         @(posedge aclk);
         while (~mst_ready) @(posedge aclk);
@@ -182,6 +183,18 @@ module friscv_io_interfaces_testbench();
         mst_wr = 1'b1;
         mst_addr = 'hA;
         mst_wdata = 32'ha5;
+        mst_strb = 4'hF;
+        @(posedge aclk);
+        while (~mst_ready) @(posedge aclk);
+        mst_en = 1'b0;
+        mst_wr = 1'b0;
+
+        @(posedge aclk);
+        @(posedge aclk);
+        mst_en = 1'b1;
+        mst_wr = 1'b1;
+        mst_addr = 'hA;
+        mst_wdata = 32'h69;
         mst_strb = 4'hF;
         @(posedge aclk);
         while (~mst_ready) @(posedge aclk);

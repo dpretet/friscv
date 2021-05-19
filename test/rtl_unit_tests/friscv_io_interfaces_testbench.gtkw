@@ -1,21 +1,21 @@
 [*]
 [*] GTKWave Analyzer v3.3.107 (w)1999-2020 BSI
-[*] Tue May 18 18:55:25 2021
+[*] Wed May 19 11:20:14 2021
 [*]
 [dumpfile] "/Users/damien/workspace/hdl/friscv/test/rtl_unit_tests/friscv_io_interfaces_testbench.vcd"
-[dumpfile_mtime] "Tue May 18 18:43:06 2021"
-[dumpfile_size] 18018
+[dumpfile_mtime] "Wed May 19 11:18:24 2021"
+[dumpfile_size] 20107
 [savefile] "/Users/damien/workspace/hdl/friscv/test/rtl_unit_tests/friscv_io_interfaces_testbench.gtkw"
-[timestart] 459100
-[size] 2001 1249
+[timestart] 423000
+[size] 1829 1298
 [pos] -1 -1
-*-15.762379 666000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-15.762379 651400 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] friscv_io_interfaces_testbench.
 [treeopen] friscv_io_interfaces_testbench.dut.
 [sst_width] 193
 [signals_width] 300
 [sst_expanded] 1
-[sst_vpaned_height] 327
+[sst_vpaned_height] 293
 @c00200
 -interconnect
 @28
@@ -84,9 +84,7 @@ friscv_io_interfaces_testbench.dut.gpios.gpio_out[31:0]
 -UART
 @28
 friscv_io_interfaces_testbench.dut.uart.aclk
-@29
 friscv_io_interfaces_testbench.dut.uart.aresetn
-@28
 friscv_io_interfaces_testbench.dut.uart.srst
 friscv_io_interfaces_testbench.dut.uart.busy
 friscv_io_interfaces_testbench.dut.uart.enable
@@ -153,6 +151,29 @@ friscv_io_interfaces_testbench.dut.uart.register2[7:0]
 friscv_io_interfaces_testbench.dut.uart.register3[7:0]
 @200
 -
+@29
+friscv_io_interfaces_testbench.dut.uart.tx_push
+@23
+friscv_io_interfaces_testbench.dut.uart.register2[7:0]
+@29
+friscv_io_interfaces_testbench.dut.uart.tx_full
+friscv_io_interfaces_testbench.dut.uart.tx_pull
+@23
+friscv_io_interfaces_testbench.dut.uart.tx_data[7:0]
+friscv_io_interfaces_testbench.dut.uart.tx_data_srr[7:0]
+@29
+friscv_io_interfaces_testbench.dut.uart.tx_empty
+@200
+-
+@23
+friscv_io_interfaces_testbench.dut.uart.txfsm[3:0]
+friscv_io_interfaces_testbench.dut.uart.tx_baud_cnt[15:0]
+friscv_io_interfaces_testbench.dut.uart.tx_bit_cnt[3:0]
+friscv_io_interfaces_testbench.dut.uart.tx_data_srr[7:0]
+@29
+friscv_io_interfaces_testbench.dut.uart.uart_tx
+@200
+-
 @28
 friscv_io_interfaces_testbench.dut.uart.rx_push
 friscv_io_interfaces_testbench.dut.uart.rx_full
@@ -165,31 +186,11 @@ friscv_io_interfaces_testbench.dut.uart.rxfsm[3:0]
 friscv_io_interfaces_testbench.dut.uart.rx_baud_cnt[15:0]
 friscv_io_interfaces_testbench.dut.uart.rx_bit_cnt[3:0]
 friscv_io_interfaces_testbench.dut.uart.rx_data[7:0]
-@200
--
-@28
-friscv_io_interfaces_testbench.dut.uart.tx_push
-@22
-friscv_io_interfaces_testbench.dut.uart.register2[7:0]
-@28
-friscv_io_interfaces_testbench.dut.uart.tx_full
-friscv_io_interfaces_testbench.dut.uart.tx_pull
-@22
-friscv_io_interfaces_testbench.dut.uart.tx_data[7:0]
-@28
-friscv_io_interfaces_testbench.dut.uart.tx_empty
-@200
--
-@22
-friscv_io_interfaces_testbench.dut.uart.txfsm[3:0]
-friscv_io_interfaces_testbench.dut.uart.tx_baud_cnt[15:0]
-friscv_io_interfaces_testbench.dut.uart.tx_bit_cnt[3:0]
-friscv_io_interfaces_testbench.dut.uart.tx_data_srr[7:0]
-@200
--
 @28
 friscv_io_interfaces_testbench.dut.uart.uart_rx
-friscv_io_interfaces_testbench.dut.uart.uart_tx
+@200
+-
+@28
 friscv_io_interfaces_testbench.dut.uart.uart_cts
 friscv_io_interfaces_testbench.dut.uart.uart_rts
 @1000200
