@@ -84,56 +84,59 @@ module friscv_registers
     // ISA registers 0-31
     logic [XLEN-1:0] regs [2**5-1:0];
 
+    generate
+
+    for (genvar i=0; i<32; i++) begin: RegisterGeneration
+
     // registers' write circuit
     always @ (posedge aclk or negedge aresetn) begin
         // asynchronous reset
         if (aresetn == 1'b0) begin
-            for (integer i=0;i<32;i=i+1) begin
-                regs[i] <= {XLEN{1'b0}};
-            end
+            regs[i] <= {XLEN{1'b0}};
         // synchronous reset
         end else if (srst) begin
-            for (integer i=0;i<32;i=i+1) begin
-                regs[i] <= {XLEN{1'b0}};
-            end
+            regs[i] <= {XLEN{1'b0}};
         // write access to registers
         end else begin
 
             ///////////////////////////////////////////////
             // register 0 is alwyas 0, can't be overwritten
             ///////////////////////////////////////////////
-            //
-            if (alu_rd_wr && alu_rd_addr == 5'h0 ||
+
+            if ((alu_rd_wr && alu_rd_addr == 5'h0 ||
                 memfy_rd_wr && memfy_rd_addr == 5'h0 ||
-                ctrl_rd_wr && ctrl_rd_addr == 5'h0) begin
-                regs[alu_rd_addr] <= {XLEN{1'b0}};
+                ctrl_rd_wr && ctrl_rd_addr == 5'h0) && i==0) begin
+                regs[i] <= {XLEN{1'b0}};
 
             ///////////////////////////////////////////////
             // registers 1-31
             ///////////////////////////////////////////////
 
-            // Access from Central controller
-            end else if (ctrl_rd_wr && ctrl_rd_addr != 5'h0) begin
-                regs[ctrl_rd_addr] <= ctrl_rd_val;
+            // Access from central controller
+            end else if (ctrl_rd_wr && ctrl_rd_addr==i) begin
+                regs[i] <= ctrl_rd_val;
 
             // Access from data memory controller
-            end else if (memfy_rd_wr && memfy_rd_addr != 5'h0) begin
-                for (integer i=0;i<(XLEN/8);i=i+1) begin
-                    if (memfy_rd_strb[i]) begin
-                        regs[memfy_rd_addr][i*8+:8] <= memfy_rd_val[i*8+:8];
+            end else if (memfy_rd_wr && memfy_rd_addr==i) begin
+                for (integer s=0;s<(XLEN/8);s=s+1) begin
+                    if (memfy_rd_strb[s]) begin
+                        regs[i][s*8+:8] <= memfy_rd_val[s*8+:8];
                     end
                 end
 
             // Acess from ALU
-            end else if (alu_rd_wr && alu_rd_addr != 5'h0) begin
-                for (integer i=0;i<(XLEN/8);i=i+1) begin
-                    if (alu_rd_strb[i]) begin
-                        regs[alu_rd_addr][i*8+:8] <= alu_rd_val[i*8+:8];
+            end else if (alu_rd_wr && alu_rd_addr==i) begin
+                for (integer s=0;s<(XLEN/8);s=s+1) begin
+                    if (alu_rd_strb[s]) begin
+                        regs[i][s*8+:8] <= alu_rd_val[s*8+:8];
                     end
                 end
             end
         end
     end
+
+    end
+    endgenerate
 
     // register source 1 read circuit for control unit
     assign ctrl_rs1_val = regs[ctrl_rs1_addr];
