@@ -1,4 +1,4 @@
-# Test 4: CSRs: Throttle execution by acessing the ISA CSRs
+# Test 5: CSRs: Throttle execution by acessing the ISA CSRs
 
 This testcase executes memory and arithmetic instructions break up
 by CSR accesses. CSR instructions require several cycles to complete,

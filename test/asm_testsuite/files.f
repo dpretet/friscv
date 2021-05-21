@@ -1,6 +1,7 @@
 +incdir+../../rtl
 ./common/scram.sv
 ./common/apb_ram.sv
+./common/uart.sv
 ../../rtl/friscv_rv32i.sv
 ../../rtl/friscv_rv32i_control.sv
 ../../rtl/friscv_rv32i_decoder.sv
@@ -13,7 +14,7 @@
 ../../rtl/friscv_apb_interconnect.sv
 ../../rtl/friscv_gpios.sv
 ../../rtl/friscv_uart.sv
-../../rtl/friscv_user_interfaces.sv
+../../rtl/friscv_io_interfaces.sv
 ../../rtl/friscv_mem_router.sv
 ../../rtl/friscv_scfifo.sv
 ../../rtl/friscv_scfifo_ram.sv

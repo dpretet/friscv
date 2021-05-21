@@ -4,7 +4,7 @@
 `timescale 1 ns / 100 ps
 `include "../../rtl/friscv_h.sv"
 
-module friscv_rv32i_testbench();
+module main();
 
     `SVUT_SETUP
 
@@ -127,12 +127,31 @@ module friscv_rv32i_testbench();
     );
 
 
+    uart_vpi
+    #(
+    .ADDRW           (16),
+    .XLEN            (XLEN),
+    .RXTX_FIFO_DEPTH (127),
+    .CLK_DIVIDER     (8)
+    )
+    uart_vpi
+    (
+    .aclk     (aclk    ),
+    .aresetn  (aresetn ),
+    .srst     (srst    ),
+    .uart_rx  (uart_tx ),
+    .uart_tx  (uart_rx ),
+    .uart_rts (uart_cts),
+    .uart_cts (uart_rts)
+    );
+
     initial aclk = 0;
     always #1 aclk = ~aclk;
 
     initial begin
         $dumpfile("friscv_rv32i_testbench.vcd");
-        $dumpvars(0, friscv_rv32i_testbench);
+        $dumpvars(0, main);
+        // dumpvars(0, friscv_rv32i_testbench);
     end
 
     task setup(msg="");
@@ -144,14 +163,9 @@ module friscv_rv32i_testbench();
         srst = 1'b0;
         inst_ready = 1'b1;
         timer = 0;
-        uart_cts = 1'b1;
-        uart_rx = 1'b1;
-        @(posedge aclk);
-        @(posedge aclk);
-        @(posedge aclk);
-        @(posedge aclk);
-        @(posedge aclk);
+        repeat (5) @(posedge aclk);
         aresetn = 1'b1;
+        repeat (5) @(posedge aclk);
     end
     endtask
 
@@ -171,6 +185,7 @@ module friscv_rv32i_testbench();
             timer = timer + 1;
             @(posedge aclk);
         end
+        $uart_close;
         repeat(5) @(posedge aclk);
         `ASSERT((dut.x31==0), "TEST FAILED");
         if (timer<TIMEOUT) begin

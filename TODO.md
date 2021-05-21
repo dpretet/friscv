@@ -1,14 +1,13 @@
 # DOING
 
 - [ ] VPI for UART:
-    - update SVUT to pass extra string to vvp
-    - module for the agent, instanciating the UART agent
-        - function to open a socket and configure it
-        - task to initalize the UART agent in the testbench thru APB
-        - task/vpi to write in UART, reading periodically the socket
-        - task/vpi to read the UART (periodically) and send dat to the socket
+    - [X] update SVUT to pass extra string to vvp
+    - [-] module for the agent, instanciating the UART agent
+        - [X] task to initalize the UART agent in the testbench thru APB
+        - [ ] function to open a socket and configure it
+        - [ ] task to write in UART, reading periodically the socket
+        - [ ] task to read the UART (periodically) and send dat to the socket
     - open a shell at every execution to connect to the socket
-    - C function to prepare to bind printf()
 - [ ] Synthesis session
 
 # BACKLOG
@@ -33,10 +32,11 @@ Processing:
 - [ ] Design a generic pipeline stage for processing front-end
 - [ ] Support multiple ALUs in parallel, differents spec (float, mult/div, ...)
       Processing scheduler to assert readiness according the instruction and
-      ISA regs accessed
+      ISA regs accessed. Could be reused in control to avoid blocking AUIPC
+      and LUI
 
 Documentation:
-- [ ] specification: spec: in-order, stage depth, interupt, GPIOs...
+- [ ] specification: spec: in-order, stage depth, interrupt, GPIOs...
 - [ ] architecture, possible evolution
 - [ ] timing diagrams
 - [ ] Read processor datasheet and grab dev ideas
@@ -65,7 +65,7 @@ Documentation:
 - [ ] Implement a neural network with the processor and TF lite
 - [ ] Next CPU architecture:
     - Study SIMD architecture
-    - Study vector architecture (IBM Cell like?)
+    - Study vector architecture
     - Application to GPGPU area
     - Many-core architecture
     - Support float16 & float8, more generaly low-precision arithmetic like int8...

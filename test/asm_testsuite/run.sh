@@ -1,22 +1,38 @@
 #!/usr/bin/env bash
 
+# trap "kill $(ps $$ -o pid=); kill $(ps $iverilogPID -o pid=)"  SIGTERM SIGINT SIGFPE SIGSTP
+shutdown() {
+    echo "iverilog: $iverilogPID"
+    kill -9 "$iverilogPID"
+    kill -9 $$
+    exit 1
+}
+
+# trap "shutdown" SIGINT SIGTERM
+
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 NC='\033[0m' # No Color
 
 # -e: exit if one command fails
 # -o pipefail: causes a pipeline to fail if any command fails
-set -e -o pipefail
+# set -e -o pipefail
+
+echo "INFO: Start ASM Testsuite"
+PID=$$
+echo "PID: $PID"
 
 # erase first lonely testcases previously built
 rm -f ./test*.v
 rm -f ./*.log
 rm -f ./*.out
+rm -f ./*.o
+rm -f ./*.vpi
 # Then clean temp files into testcase folders
  if [ "$#" -eq 1 ] && [ "$1" == 'clean' ]; then
     find . -type d -exec make -C {} clean \;
     rm -f ./test*.*v
-    rm -f *.vcd
+    rm -f ./*.vcd
     exit 0
 fi
 
@@ -25,8 +41,6 @@ fi
 echo "INFO: Build ASM/C testcases and create RAM initialization files"
 find . -type d ! -name common -exec make -C {} all \; -exec ./bin2hex.py {}/{}.v {}.v \;
 
-echo "INFO: Start ASM Testsuite"
-echo "PID: $$"
 ret=0
 # Parse all available tests one by one and copy them into test.v
 # This test.v file name is expected in the testbench to init the data RAM
@@ -48,8 +62,13 @@ for test in test*.v; do
     echo "-------------------------------------------------------------------------------------"
     echo ""
 
+    # Compile the VPI binding the UART and launching the TCP socket
+    iverilog-vpi common/uart.c
+
     # Execute the testcase with SVUT. Will stop once it reaches a EBREAK instruction
-    svutRun -t ./friscv_rv32i_testbench.sv | tee -a simulation.log
+    svutRun -vpi "-M. -muart" -define "PORT=3333" -t ./friscv_rv32i_testbench.sv | tee -a simulation.log &
+    iverilogPID=$!
+    wait
     ret=$((ret+$?))
 
     # Copy the VCD generated, create a GTKWave file from the template then

@@ -385,7 +385,9 @@ module friscv_rv32i
         .gpio_in   (gpio_in   ),
         .gpio_out  (gpio_out  ),
         .uart_rx   (uart_rx   ),
-        .uart_tx   (uart_tx   )
+        .uart_tx   (uart_tx   ),
+        .uart_rts  (uart_rts  ),
+        .uart_cts  (uart_cts  )
     );
 
     endmodule
