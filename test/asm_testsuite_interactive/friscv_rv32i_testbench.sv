@@ -28,7 +28,7 @@ module friscv_rv32i_testbench();
     parameter DATA_MEM_BASE_SIZE = 16384;
     // UART FIFO Depth
     parameter UART_FIFO_DEPTH = 4;
-
+    
     // timeout used in the testbench to break the simulation
     parameter TIMEOUT    = 1000000;
 
@@ -99,9 +99,6 @@ module friscv_rv32i_testbench();
         uart_cts
     );
 
-    assign uart_rx = uart_tx;
-    assign uart_cts = uart_rts;
-
     scram
     #(
         .INIT  ("test.v"),
@@ -156,6 +153,25 @@ module friscv_rv32i_testbench();
     );
 
 
+    uart_vpi
+    #(
+        .ADDRW           (DATA_ADDRW),
+        .XLEN            (XLEN),
+        .RXTX_FIFO_DEPTH (UART_FIFO_DEPTH),
+        .CLK_DIVIDER     (8)
+    )
+    uart_vpi
+    (
+        .aclk     (aclk    ),
+        .aresetn  (aresetn ),
+        .srst     (srst    ),
+        .ebreak   (ebreak  ),
+        .uart_rx  (uart_tx ),
+        .uart_tx  (uart_rx ),
+        .uart_rts (uart_cts),
+        .uart_cts (uart_rts)
+    );
+
     initial aclk = 0;
     always #1 aclk = ~aclk;
 
@@ -195,6 +211,7 @@ module friscv_rv32i_testbench();
             timer = timer + 1;
             @(posedge aclk);
         end
+        $uart_close;
         repeat(5) @(posedge aclk);
         `ASSERT((dut.x31==0), "TEST FAILED");
         if (timer<TIMEOUT) begin

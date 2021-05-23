@@ -1,13 +1,5 @@
 # DOING
 
-- [ ] VPI for UART:
-    - [X] update SVUT to pass extra string to vvp
-    - [-] module for the agent, instanciating the UART agent
-        - [X] task to initalize the UART agent in the testbench thru APB
-        - [ ] function to open a socket and configure it
-        - [ ] task to write in UART, reading periodically the socket
-        - [ ] task to read the UART (periodically) and send dat to the socket
-    - open a shell at every execution to connect to the socket
 - [ ] Synthesis session
 
 # BACKLOG
@@ -73,6 +65,14 @@ Documentation:
 - [ ] Retro gaming platform
 - [ ] Build an Amiga
 
+To finalize:
+- [-] VPI for UART:
+    - [X] update SVUT to pass extra string to vvp
+    - [-] module for the agent, instanciating the UART agent
+        - [X] task to initalize the UART agent in the testbench thru APB
+        - [-] function to open a socket and configure it
+        - [-] task to write in UART, reading periodically the socket
+        - [-] task to read the UART (periodically) and send dat to the socket
 
 
 # DONE

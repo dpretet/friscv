@@ -1,6 +1,7 @@
 +incdir+../../rtl
 ./common/scram.sv
 ./common/apb_ram.sv
+./common/uart.sv
 ../../rtl/friscv_rv32i.sv
 ../../rtl/friscv_rv32i_control.sv
 ../../rtl/friscv_rv32i_decoder.sv

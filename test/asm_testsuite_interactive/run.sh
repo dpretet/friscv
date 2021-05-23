@@ -41,6 +41,9 @@ fi
 echo "INFO: Build ASM/C testcases and create RAM initialization files"
 find . -type d ! -name common -exec make -C {} all \; -exec ./bin2hex.py {}/{}.v {}.v \;
 
+# Compile the VPI binding the UART and launching the TCP socket
+iverilog-vpi common/uart.c
+
 ret=0
 # Parse all available tests one by one and copy them into test.v
 # This test.v file name is expected in the testbench to init the data RAM
@@ -63,7 +66,7 @@ for test in test*.v; do
     echo ""
 
     # Execute the testcase with SVUT. Will stop once it reaches a EBREAK instruction
-    svutRun -t ./friscv_rv32i_testbench.sv | tee -a simulation.log &
+    svutRun -vpi "-M. -muart" -define "PORT=3333" -t ./friscv_rv32i_testbench.sv | tee -a simulation.log &
     iverilogPID=$!
     wait
     ret=$((ret+$?))
