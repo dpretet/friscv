@@ -393,8 +393,10 @@ module friscv_rv32i_control
                 // - received an undefined/unsupported instruction
                 // - received an EBREAK instruction
                 TRAP: begin
+                    `ifdef FRISCV_SIM
                     $error("ERROR: Received an unsupported/unspecified instruction");
                     $stop();
+                    `endif
                 end
 
             endcase

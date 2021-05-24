@@ -83,10 +83,11 @@ module friscv_registers
 
     // ISA registers 0-31
     logic [XLEN-1:0] regs [2**5-1:0];
-
+    genvar i;
+    integer s;
     generate
 
-    for (genvar i=0; i<32; i++) begin: RegisterGeneration
+    for (i=0; i<32; i++) begin: RegisterGeneration
 
     // registers' write circuit
     always @ (posedge aclk or negedge aresetn) begin
@@ -118,7 +119,7 @@ module friscv_registers
 
             // Access from data memory controller
             end else if (memfy_rd_wr && memfy_rd_addr==i) begin
-                for (integer s=0;s<(XLEN/8);s=s+1) begin
+                for (s=0;s<(XLEN/8);s=s+1) begin
                     if (memfy_rd_strb[s]) begin
                         regs[i][s*8+:8] <= memfy_rd_val[s*8+:8];
                     end
@@ -126,7 +127,7 @@ module friscv_registers
 
             // Acess from ALU
             end else if (alu_rd_wr && alu_rd_addr==i) begin
-                for (integer s=0;s<(XLEN/8);s=s+1) begin
+                for (s=0;s<(XLEN/8);s=s+1) begin
                     if (alu_rd_strb[s]) begin
                         regs[i][s*8+:8] <= alu_rd_val[s*8+:8];
                     end

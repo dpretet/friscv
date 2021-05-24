@@ -1,5 +1,6 @@
 # DOING
 
+- [ ] Implement instruction cache with branch prediction
 - [ ] Synthesis session
 
 # BACKLOG
@@ -10,14 +11,13 @@ Control:
 - [ ] Study MMU topic, core + driver
 
 Cache stages:
-- [ ] Design a generic memory bus
+- [ ] Design a generic memory bus for data interface
     - AMBA-like
     - Support outstanding requests
     - Support ID, OR, PROT and ERROR
     - Write completion
     - Detect IO request
-    - forward info for FENCE(.i)
-- [ ] Implement instruction cache with branch prediction
+    - forward info for FENCE & FENCE.i
 - [ ] Implement data cache
 
 Processing:

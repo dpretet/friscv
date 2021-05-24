@@ -12,4 +12,4 @@
 ../../rtl/friscv_apb_interconnect.sv
 ../../rtl/friscv_gpios.sv
 ../../rtl/friscv_uart.sv
-../../rtl/friscv_user_interfaces.sv
+../../rtl/friscv_io_interfaces.sv

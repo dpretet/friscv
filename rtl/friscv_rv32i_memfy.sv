@@ -67,10 +67,10 @@ module friscv_rv32i_memfy
         input logic [XLEN  -1:0] data,
         input logic [2     -1:0] offset
     );
-        if (offset==2'b00) return data;
-        if (offset==2'b01) return {data[XLEN- 8-1:0], data[XLEN-1-:8]};
-        if (offset==2'b10) return {data[XLEN-16-1:0], data[XLEN-1-:16]};
-        if (offset==2'b11) return {data[XLEN-24-1:0], data[XLEN-1-:24]};
+        if (offset==2'b00) get_aligned_mem_data = data;
+        if (offset==2'b01) get_aligned_mem_data = {data[XLEN- 8-1:0], data[XLEN-1-:8]};
+        if (offset==2'b10) get_aligned_mem_data = {data[XLEN-16-1:0], data[XLEN-1-:16]};
+        if (offset==2'b11) get_aligned_mem_data = {data[XLEN-24-1:0], data[XLEN-1-:24]};
 
     endfunction
 
@@ -86,10 +86,10 @@ module friscv_rv32i_memfy
         input logic [XLEN  -1:0] data,
         input logic [2     -1:0] offset
     );
-        if (offset==2'b00) return data;
-        if (offset==2'b01) return {data[XLEN-24-1:0], data[XLEN-1:8]};
-        if (offset==2'b10) return {data[XLEN-16-1:0], data[XLEN-1:16]};
-        if (offset==2'b11) return {data[XLEN- 8-1:0], data[XLEN-1:24]};
+        if (offset==2'b00) get_aligned_rd_data = data;
+        if (offset==2'b01) get_aligned_rd_data = {data[XLEN-24-1:0], data[XLEN-1:8]};
+        if (offset==2'b10) get_aligned_rd_data = {data[XLEN-16-1:0], data[XLEN-1:16]};
+        if (offset==2'b11) get_aligned_rd_data = {data[XLEN- 8-1:0], data[XLEN-1:24]};
 
     endfunction
 
@@ -109,16 +109,16 @@ module friscv_rv32i_memfy
     );
         // Return STRB for first request phase
         if (~phase) begin
-            if (offset==2'b00) return strb;
-            if (offset==2'b01) return {strb[XLEN/8-2:0], 1'b0};
-            if (offset==2'b10) return {strb[XLEN/8-3:0], 2'b0};
-            if (offset==2'b11) return {strb[XLEN/8-4:0], 3'b0};
+            if (offset==2'b00) aligned_strb = strb;
+            if (offset==2'b01) aligned_strb = {strb[XLEN/8-2:0], 1'b0};
+            if (offset==2'b10) aligned_strb = {strb[XLEN/8-3:0], 2'b0};
+            if (offset==2'b11) aligned_strb = {strb[XLEN/8-4:0], 3'b0};
         // Return STRB for the second phase
         end else begin
-            if (offset==2'b00) return strb;
-            if (offset==2'b01) return {3'b0, strb[XLEN/8-1]};
-            if (offset==2'b10) return {2'b0, strb[XLEN/8-1-:2]};
-            if (offset==2'b11) return {1'b0, strb[XLEN/8-1-:3]};
+            if (offset==2'b00) aligned_strb = strb;
+            if (offset==2'b01) aligned_strb = {3'b0, strb[XLEN/8-1]};
+            if (offset==2'b10) aligned_strb = {2'b0, strb[XLEN/8-1-:2]};
+            if (offset==2'b11) aligned_strb = {1'b0, strb[XLEN/8-1-:3]};
         end
 
     endfunction
@@ -137,9 +137,9 @@ module friscv_rv32i_memfy
         input logic [1:0] offset,
         input logic       phase
     );
-        if (funct3==`SB) return aligned_strb({{(XLEN/8-1){1'b0}},1'b1}, offset, phase);
-        if (funct3==`SH) return aligned_strb({{(XLEN/8-2){1'b0}},2'b11}, offset, phase);
-        if (funct3==`SW) return aligned_strb({(XLEN/8){1'b1}}, offset, phase);
+        if (funct3==`SB) get_mem_strb = aligned_strb({{(XLEN/8-1){1'b0}},1'b1}, offset, phase);
+        if (funct3==`SH) get_mem_strb = aligned_strb({{(XLEN/8-2){1'b0}},2'b11}, offset, phase);
+        if (funct3==`SW) get_mem_strb = aligned_strb({(XLEN/8){1'b1}}, offset, phase);
 
     endfunction
 
@@ -161,11 +161,11 @@ module friscv_rv32i_memfy
 
         data_aligned = get_aligned_rd_data(rdata, offset);
 
-        if  (funct3==`LB)  return {{24{data_aligned[7]}}, data_aligned[7:0]};
-        if  (funct3==`LBU) return {{24{1'b0}}, data_aligned[7:0]};
-        if  (funct3==`LH)  return {{16{data_aligned[15]}}, data_aligned[15:0]};
-        if  (funct3==`LHU) return {{16{1'b0}}, data_aligned[15:0]};
-        if  (funct3==`LW)  return data_aligned;
+        if  (funct3==`LB)  get_rd_val = {{24{data_aligned[7]}}, data_aligned[7:0]};
+        if  (funct3==`LBU) get_rd_val = {{24{1'b0}}, data_aligned[7:0]};
+        if  (funct3==`LH)  get_rd_val = {{16{data_aligned[15]}}, data_aligned[15:0]};
+        if  (funct3==`LHU) get_rd_val = {{16{1'b0}}, data_aligned[15:0]};
+        if  (funct3==`LW)  get_rd_val = data_aligned;
 
     endfunction
 
@@ -183,39 +183,39 @@ module friscv_rv32i_memfy
         input logic            phase
     );
         if (funct3==`LB || funct3==`LBU) begin
-            return {{(XLEN/8-1){1'b0}},1'b1};
+            get_rd_strb = {{(XLEN/8-1){1'b0}},1'b1};
         end
         if (funct3==`LH || funct3==`LHU)  begin
             if (offset==2'h3) begin
                 if (~phase) begin
-                    return {{(XLEN/8-1){1'b0}},1'b1};
+                    get_rd_strb = {{(XLEN/8-1){1'b0}},1'b1};
                 end else begin
-                    return {{(XLEN/8-2){1'b0}},2'b10};
+                    get_rd_strb = {{(XLEN/8-2){1'b0}},2'b10};
                 end
             end else begin
-                return {{(XLEN/8-2){1'b0}},2'b11};
+                get_rd_strb = {{(XLEN/8-2){1'b0}},2'b11};
             end
         end
         if (funct3==`LW) begin
             if (offset==2'h0) begin
-                return {(XLEN/8){1'b1}};
+                get_rd_strb = {(XLEN/8){1'b1}};
             end else if (offset==2'h1) begin
                 if (~phase) begin
-                    return {{(XLEN/8-3){1'b0}},3'b111};
+                    get_rd_strb = {{(XLEN/8-3){1'b0}},3'b111};
                 end else begin
-                    return {1'b1, {(XLEN/8-1){1'b0}}};
+                    get_rd_strb = {1'b1, {(XLEN/8-1){1'b0}}};
                 end
             end else if (offset==2'h2) begin
                 if (~phase) begin
-                    return {{(XLEN/8-2){1'b0}},2'b11};
+                    get_rd_strb = {{(XLEN/8-2){1'b0}},2'b11};
                 end else begin
-                    return {2'b11, {(XLEN/8-2){1'b0}}};
+                    get_rd_strb = {2'b11, {(XLEN/8-2){1'b0}}};
                 end
             end else if (offset==2'h3) begin
                 if (~phase) begin
-                    return {{(XLEN/8-1){1'b0}},1'b1};
+                    get_rd_strb = {{(XLEN/8-1){1'b0}},1'b1};
                 end else begin
-                    return {3'b111, {(XLEN/8-3){1'b0}}};
+                    get_rd_strb = {3'b111, {(XLEN/8-3){1'b0}}};
                 end
             end
         end
