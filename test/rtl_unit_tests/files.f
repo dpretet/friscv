@@ -1,6 +1,7 @@
 +incdir+../../rtl
 +define+FRISCV_SIM
 ./scram.sv
+../common/axi4_ram.sv
 ../../rtl/friscv_rv32i_control.sv
 ../../rtl/friscv_rv32i_decoder.sv
 ../../rtl/friscv_rv32i_alu.sv
@@ -13,3 +14,7 @@
 ../../rtl/friscv_gpios.sv
 ../../rtl/friscv_uart.sv
 ../../rtl/friscv_io_interfaces.sv
+../../rtl/friscv_icache.sv
+../../rtl/friscv_icache_lines.sv
+../../rtl/friscv_icache_memctrl.sv
+

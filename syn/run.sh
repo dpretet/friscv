@@ -19,7 +19,7 @@ fi
 
 echo "INFO: Start synthesis flow"
 yosys -V
-cmd="yosys $design"
+cmd="yosys $design | tee friscv_rv32i.log"
 
 if eval "$cmd"; then
     echo "ERROR: Synthesis failed"

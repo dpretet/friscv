@@ -141,3 +141,4 @@ syn/*.lib
 syn/*.v
 obj_dir
 .DS_Store
+tags

@@ -31,7 +31,6 @@ module friscv_rv32i_top
     )(
         // clock/reset interface
         input  logic                  aclk,
-        input  logic                  aresetn,
         input  logic                  srst,
         // enable signal to activate the core
         input  logic                  enable,
@@ -80,8 +79,8 @@ module friscv_rv32i_top
     dut
     (
     .aclk       (aclk      ),
-    .aresetn    (aresetn   ),
-    .srst       (1'b0      ),
+    .aresetn    (1'b1      ),
+    .srst       (srst      ),
     .enable     (enable    ),
     .ebreak     (ebreak    ),
     .inst_en    (inst_en   ),
