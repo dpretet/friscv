@@ -1,4 +1,3 @@
-// copyright damien pretet 2021
 // distributed under the mit license
 // https://opensource.org/licenses/mit-license.php
 
@@ -8,24 +7,24 @@
 `include "friscv_h.sv"
 
 ///////////////////////////////////////////////////////////////////////////////
+//
 // Instruction cache module
 //
 // - Direct-mapped placement policy
-// - Random replacement policy
 // - Parametrizable cache depth
-// - Parametrizable cache line width
-// - Transparent operation for user, no need of user management
+// - Parametrizable cache line width (instruction per line)
+// - Transparent operation, no need of user management
 // - Software-based flush control with FENCE.i instruction
 // - Cache control & status observable by a debug interface
-//
-// The module is controlled by an APB interface driven by the control unit of
-// the processor, and requests to memory with an AXI4 interface.
+// - Slave APB interface to fetch instructions
+// - Master AXI4 interface to read central memory
 //
 ///////////////////////////////////////////////////////////////////////////////
 
 module friscv_icache
 
     #(
+
     ///////////////////////////////////////////////////////////////////////////
     // RISCV Architecture
     ///////////////////////////////////////////////////////////////////////////
@@ -37,35 +36,38 @@ module friscv_icache
     ///////////////////////////////////////////////////////////////////////////
 
     // Address bus width defined for both control and AXI4 address signals
-    parameter ADDRW = 8,
+    parameter ADDR_W = 8,
     // AXI ID width, setup by default to 8 and unused
-    parameter AXI_IDW = 8,
+    parameter AXI_ID_W = 8,
     // AXI4 data width, independant of control unit width
-    parameter AXI_DATAW = 8,
+    parameter AXI_DATA_W = 8,
 
     ///////////////////////////////////////////////////////////////////////////
-    // Cache setup
+    // Cache Setup
     ///////////////////////////////////////////////////////////////////////////
 
-    // Line width defining only the data payload in bits
-    parameter CACHE_LINE_WIDTH = 128,
+    // Line width defining only the data payload, in bits
+    parameter CACHE_LINE_W = 128,
     // Number of lines in the cache
     parameter CACHE_DEPTH = 512
 
     )(
+    // Clock / Reset
     input  logic                      aclk,
     input  logic                      aresetn,
     input  logic                      srst,
-    input  logic                      flush,
-    // instruction memory interface
+    // Flush control
+    input  logic                      flush_req,
+    output logic                      flush_ack,
+    // Instruction memory interface
     input  logic                      inst_en,
-    input  logic [ADDRW         -1:0] inst_addr,
+    input  logic [ADDR_W        -1:0] inst_addr,
     output logic [XLEN          -1:0] inst_rdata,
     output logic                      inst_ready,
     // AXI4 Read channels interface to central memory
     output logic                      icache_arvalid,
     input  logic                      icache_arready,
-    output logic [ADDRW         -1:0] icache_araddr,
+    output logic [ADDR_W        -1:0] icache_araddr,
     output logic [8             -1:0] icache_arlen,
     output logic [3             -1:0] icache_arsize,
     output logic [2             -1:0] icache_arburst,
@@ -74,34 +76,103 @@ module friscv_icache
     output logic [3             -1:0] icache_arprot,
     output logic [4             -1:0] icache_arqos,
     output logic [4             -1:0] icache_arregion,
-    output logic [AXI_IDW       -1:0] icache_arid,
+    output logic [AXI_ID_W      -1:0] icache_arid,
     input  logic                      icache_rvalid,
     output logic                      icache_rready,
-    input  logic [AXI_IDW       -1:0] icache_rid,
+    input  logic [AXI_ID_W      -1:0] icache_rid,
     input  logic [2             -1:0] icache_rresp,
-    input  logic [AXI_DATAW     -1:0] icache_rdata
+    input  logic [AXI_DATA_W    -1:0] icache_rdata,
+    input  logic                      icache_rlast
     );
 
-    ///////////////////////////////////////////////////////////////////////////
-    // Optional signals, unused and tied to recommended default values
-    ///////////////////////////////////////////////////////////////////////////
-
-    assign icache_arregion = 4'b0;
-    assign icache_arlock = 2'b0;
-    assign icache_arcache = 4'b0;
-    assign icache_arprot = 3'b0;
-    assign icache_arqos = 4'b0;
 
     ///////////////////////////////////////////////////////////////////////////
-    // Hardcoded setup
+    // Logic declarations
     ///////////////////////////////////////////////////////////////////////////
 
-    // Zero by default, unused in this version
-    assign icache_arid = {AXI_IDW{1'b0}};
-    // Always use INCR mode
-    assign icache_arburst = 2'b01;
+    logic                     cache_wen;
+    logic [ADDR_W       -1:0] cache_waddr;
+    logic [CACHE_LINE_W -1:0] cache_wdata;
+    logic                     cache_ren;
+    logic [ADDR_W       -1:0] cache_raddr;
+    logic [XLEN         -1:0] cache_rdata;
+    logic                     cache_hit;
+    logic                     cache_miss;
+    logic                     flushing;
+
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Cache lines Storage
+    ///////////////////////////////////////////////////////////////////////////
+
+    friscv_icache_lines 
+    #(
+        .XLEN         (XLEN),
+        .ADDR_W       (ADDR_W),
+        .CACHE_LINE_W (CACHE_LINE_W),
+        .CACHE_DEPTH  (CACHE_DEPTH)
+    )
+    cache_lines 
+    (
+        .aclk    (aclk         ),
+        .aresetn (aresetn      ),
+        .srst    (srst         ),
+        .flush   (flushing     ),
+        .wen     (cache_wen    ),
+        .waddr   (cache_waddr  ),
+        .wdata   (cache_wdata  ),
+        .ren     (cache_ren    ),
+        .raddr   (cache_raddr  ),
+        .rdata   (cache_rdata  ),
+        .hit     (cache_hit    ),
+        .miss    (cache_miss   )
+    );
+
+
+    friscv_icache_memctrl 
+    #(
+    .XLEN         (XLEN),
+    .ADDR_W       (ADDR_W),
+    .AXI_ID_W     (AXI_ID_W),
+    .AXI_DATA_W   (AXI_DATA_W),
+    .CACHE_LINE_W (CACHE_LINE_W),
+    .CACHE_DEPTH  (CACHE_DEPTH)
+    )
+    mem_ctrl 
+    (
+    .aclk           (aclk             ),
+    .aresetn        (aresetn          ),
+    .srst           (srst             ),
+    .flush_req      (flush_req        ),
+    .flush_ack      (flush_ack        ),
+    .flushing       (flushing         ),
+    .inst_en        (inst_en          ),
+    .inst_addr      (inst_addr        ),
+    .inst_rdata     (inst_rdata       ),
+    .inst_ready     (inst_ready       ),
+    .mem_arvalid    (icache_arvalid   ),
+    .mem_arready    (icache_arready   ),
+    .mem_araddr     (icache_araddr    ),
+    .mem_arlen      (icache_arlen     ),
+    .mem_arsize     (icache_arsize    ),
+    .mem_arburst    (icache_arburst   ),
+    .mem_arlock     (icache_arlock    ),
+    .mem_arcache    (icache_arcache   ),
+    .mem_arprot     (icache_arprot    ),
+    .mem_arqos      (icache_arqos     ),
+    .mem_arregion   (icache_arregion  ),
+    .mem_arid       (icache_arid      ),
+    .mem_rvalid     (icache_rvalid    ),
+    .mem_rready     (icache_rready    ),
+    .mem_rid        (icache_rid       ),
+    .mem_rresp      (icache_rresp     ),
+    .mem_rdata      (icache_rdata     ),
+    .mem_rlast      (icache_rlast     ),
+    .cache_wen      (cache_wen        ),
+    .cache_waddr    (cache_waddr      ),
+    .cache_wdata    (cache_wdata      )
+    );
 
 endmodule
 
 `resetall
-

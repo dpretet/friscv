@@ -1,7 +1,13 @@
 # DOING
 
-- [ ] Implement instruction cache with branch prediction
-- [ ] Synthesis session
+- [-] Implement instruction cache
+    - study is OK
+    - draft architecture
+    - prediction-like by spying register?
+
+- [-] Synthesis session:
+    - Run a FPGA synthesis
+    - Try to use OpenLane flow
 
 # BACKLOG
 
@@ -9,6 +15,7 @@ Control:
 - [ ] Add IRQ (CLINT/CLIC/PLIC) + timer
 - [ ] Support privileged instructions
 - [ ] Study MMU topic, core + driver
+- [ ] Branch prediction
 
 Cache stages:
 - [ ] Design a generic memory bus for data interface
@@ -32,6 +39,15 @@ Documentation:
 - [ ] architecture, possible evolution
 - [ ] timing diagrams
 - [ ] Read processor datasheet and grab dev ideas
+
+To finalize:
+- [-] VPI for UART:
+    - [X] update SVUT to pass extra string to vvp
+    - [-] module for the agent, instanciating the UART agent
+        - [X] task to initalize the UART agent in the testbench thru APB
+        - [-] function to open a socket and configure it
+        - [-] task to write in UART, reading periodically the socket
+        - [-] task to read the UART (periodically) and send dat to the socket
 
 # Verification/Validation Backlog
 
@@ -64,15 +80,6 @@ Documentation:
 - [ ] Build a testing platform to validate IPs
 - [ ] Retro gaming platform
 - [ ] Build an Amiga
-
-To finalize:
-- [-] VPI for UART:
-    - [X] update SVUT to pass extra string to vvp
-    - [-] module for the agent, instanciating the UART agent
-        - [X] task to initalize the UART agent in the testbench thru APB
-        - [-] function to open a socket and configure it
-        - [-] task to write in UART, reading periodically the socket
-        - [-] task to read the UART (periodically) and send dat to the socket
 
 
 # DONE
