@@ -34,7 +34,7 @@ module friscv_registers
         input  logic [5     -1:0] alu_rd_addr,
         input  logic [XLEN  -1:0] alu_rd_val,
         input  logic [XLEN/8-1:0] alu_rd_strb,
-        // register source   1 for memfy
+        // register source 1 for memfy
         input  logic [5     -1:0] memfy_rs1_addr,
         output logic [XLEN  -1:0] memfy_rs1_val,
         // register source 2 for memfy
@@ -45,6 +45,13 @@ module friscv_registers
         input  logic [5     -1:0] memfy_rd_addr,
         input  logic [XLEN  -1:0] memfy_rd_val,
         input  logic [XLEN/8-1:0] memfy_rd_strb,
+        // register source 1 for csr
+        input  logic [5     -1:0] csr_rs1_addr,
+        output logic [XLEN  -1:0] csr_rs1_val,
+        // register destination write from memfy
+        input  logic              csr_rd_wr,
+        input  logic [5     -1:0] csr_rd_addr,
+        input  logic [XLEN  -1:0] csr_rd_val,
         // registers output
         output logic [XLEN-1:0] x0,
         output logic [XLEN-1:0] x1,
@@ -116,6 +123,10 @@ module friscv_registers
             end else if (ctrl_rd_wr && ctrl_rd_addr==i) begin
                 regs[i] <= ctrl_rd_val;
 
+            // Access from CSR manager
+            end else if (csr_rd_wr && csr_rd_addr==i) begin
+                regs[i] <= csr_rd_val;
+
             // Access from data memory controller
             end else if (memfy_rd_wr && memfy_rd_addr==i) begin
                 for (s=0;s<(XLEN/8);s=s+1) begin
@@ -155,6 +166,9 @@ module friscv_registers
 
     // register source 2 read circuit for memfy
     assign memfy_rs2_val = regs[memfy_rs2_addr];
+
+    // register source 1 read circuit for CSR
+    assign csr_rs1_val = regs[csr_rs1_addr];
 
     // registers value outputs for debug
     assign x0  = regs[ 0];

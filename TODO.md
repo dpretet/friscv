@@ -4,10 +4,9 @@
     - study is OK
     - draft architecture
     - prediction-like by spying register?
-
-- [-] Synthesis session:
-    - Run a FPGA synthesis
-    - Try to use OpenLane flow
+    - [ ] Use AXI4-lite for instruction and implement FIFO-like storage for
+        instruction to parse and discard instruction
+- [ ] Option to read ISA registers on falling edge, not comb read
 
 # BACKLOG
 
@@ -84,6 +83,9 @@ To finalize:
 
 # DONE
 
+- [X] Move CSR out of control unit
+- [X] Synthesis session: OK for Yosys, needs to use another or lib to map
+      async/sync reset FFD.
 - [X] Add a debug interface (UART, JTAG) + DPI
 - [X] Add GPIOs
 - [X] Implement in-house profiler to check branching, stall time, ...

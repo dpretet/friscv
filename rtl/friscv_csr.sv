@@ -12,20 +12,18 @@ module friscv_csr
         parameter CSR_DEPTH = 12,
         parameter XLEN = 32
     )(
-        input  logic                  aclk,
-        input  logic                  aresetn,
-        input  logic                  srst,
-        input  logic                  valid,
-        output logic                  ready,
-        input  logic [`FUNCT3_W -1:0] funct3,
-        input  logic [`CSR_W    -1:0] csr,
-        input  logic [`ZIMM_W   -1:0] zimm,
-        input  logic [5         -1:0] rs1_addr,
-        input  logic [XLEN      -1:0] rs1_val,
-        input  logic [5         -1:0] rd_addr,
-        output logic                  rd_wr_en,
-        output logic [5         -1:0] rd_wr_addr,
-        output logic [XLEN      -1:0] rd_wr_val
+        input  logic                   aclk,
+        input  logic                   aresetn,
+        input  logic                   srst,
+        input  logic                   valid,
+        output logic                   ready,
+        input  logic [`INST_BUS_W-1:0] instbus,
+        // register source 1 query interface
+        output logic [5          -1:0] rs1_addr,
+        input  logic [XLEN       -1:0] rs1_val,
+        output logic                   rd_wr_en,
+        output logic [5          -1:0] rd_wr_addr,
+        output logic [XLEN       -1:0] rd_wr_val
     );
 
     typedef enum logic [1:0] {
@@ -35,6 +33,19 @@ module friscv_csr
     } fsm;
 
     fsm cfsm;
+
+    // instructions fields
+    logic [`OPCODE_W   -1:0] opcode;
+    logic [`FUNCT3_W   -1:0] funct3;
+    logic [`FUNCT7_W   -1:0] funct7;
+    logic [`RS1_W      -1:0] rs1;
+    logic [`RS2_W      -1:0] rs2;
+    logic [`RD_W       -1:0] rd;
+    logic [`ZIMM_W     -1:0] zimm;
+    logic [`IMM12_W    -1:0] imm12;
+    logic [`IMM20_W    -1:0] imm20;
+    logic [`CSR_W      -1:0] csr;
+    logic [`SHAMT_W    -1:0] shamt;
 
     logic csr_wr;
     logic csr_rd;
@@ -47,6 +58,18 @@ module friscv_csr
     logic [`ZIMM_W   -1:0] zimm_r;
     logic [5         -1:0] rs1_addr_r;
     logic [XLEN      -1:0] rs1_val_r;
+
+    assign opcode = instbus[`OPCODE +: `OPCODE_W];
+    assign funct3 = instbus[`FUNCT3 +: `FUNCT3_W];
+    assign funct7 = instbus[`FUNCT7 +: `FUNCT7_W];
+    assign rs1    = instbus[`RS1    +: `RS1_W   ];
+    assign rs2    = instbus[`RS2    +: `RS2_W   ];
+    assign rd     = instbus[`RD     +: `RD_W    ];
+    assign zimm   = instbus[`ZIMM   +: `ZIMM_W  ];
+    assign imm12  = instbus[`IMM12  +: `IMM12_W ];
+    assign imm20  = instbus[`IMM20  +: `IMM20_W ];
+    assign csr    = instbus[`CSR    +: `CSR_W   ];
+    assign shamt  = instbus[`SHAMT  +: `SHAMT_W ];
 
     `ifdef FRISCV_SIM
     initial begin
@@ -65,6 +88,8 @@ module friscv_csr
     end
 
     assign csr_rd = (cfsm==IDLE && valid) ? 1'b1 : 1'b0;
+
+    assign rs1_addr = rs1;
 
     always @ (posedge aclk or negedge aresetn) begin
         if (aresetn==1'b0) begin
@@ -109,9 +134,9 @@ module friscv_csr
                         funct3_r <= funct3;
                         csr_r <= csr;
                         zimm_r <= zimm;
-                        rs1_addr_r <= rs1_addr;
+                        rs1_addr_r <= rs1;
                         rs1_val_r <= rs1_val;
-                        rd_wr_addr <= rd_addr;
+                        rd_wr_addr <= rd;
                         cfsm <= COMPUTE;
                     end
                 end
@@ -143,7 +168,7 @@ module friscv_csr
                     end else if (funct3_r==`CSRRC) begin
                         rd_wr_en <= 1'b1;
                         rd_wr_val <= oldval;
-                        if (rs1_addr!=5'b0) begin
+                        if (rs1_addr_r!=5'b0) begin
                             csr_wr <= 1'b1;
                             newval <= oldval & rs1_val_r;
                         end
