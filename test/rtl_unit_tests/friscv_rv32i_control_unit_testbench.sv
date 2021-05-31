@@ -30,6 +30,9 @@ module friscv_rv32i_control_unit_testbench();
     logic                      proc_ready;
     logic                      proc_empty;
     logic [`INST_BUS_W   -1:0] proc_instbus;
+    logic                      csr_en;
+    logic                      csr_ready;
+    logic [`INST_BUS_W   -1:0] csr_instbus;
     logic [5             -1:0] ctrl_rs1_addr;
     logic [XLEN          -1:0] ctrl_rs1_val;
     logic [5             -1:0] ctrl_rs2_addr;
@@ -53,7 +56,6 @@ module friscv_rv32i_control_unit_testbench();
 
     friscv_rv32i_control
     #(
-    CSR_DEPTH,
     ADDRW,
     BOOT_ADDR,
     XLEN
@@ -73,6 +75,9 @@ module friscv_rv32i_control_unit_testbench();
     proc_empty,
     fenceinfo,
     proc_instbus,
+    csr_en,
+    csr_ready,
+    csr_instbus,
     ctrl_rs1_addr,
     ctrl_rs1_val,
     ctrl_rs2_addr,
@@ -99,6 +104,7 @@ module friscv_rv32i_control_unit_testbench();
         proc_ready = 1'b1;
         proc_empty = 1'b1;
         fenceinfo = 4'b0;
+        csr_ready = 1'b1;
         inst_rdata = {XLEN{1'b0}};
         inst_ready = 1'b0;
         ctrl_rs1_val <= {XLEN{1'b0}};

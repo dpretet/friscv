@@ -30,7 +30,9 @@ module friscv_rv32i
         parameter DATA_MEM_BASE_ADDR = 2048,
         parameter DATA_MEM_BASE_SIZE = 16384,
         // UART FIFO Depth
-        parameter UART_FIFO_DEPTH = 4
+        parameter UART_FIFO_DEPTH = 4,
+        // CSR registers depth
+        parameter CSR_DEPTH = 12
     )(
         // clock/reset interface
         input  logic                  aclk,
@@ -63,6 +65,11 @@ module friscv_rv32i
         input  logic                  uart_cts
     );
 
+
+    //////////////////////////////////////////////////////////////////////////
+    // Parameters and signals
+    //////////////////////////////////////////////////////////////////////////
+
     logic [5     -1:0] ctrl_rs1_addr;
     logic [XLEN  -1:0] ctrl_rs1_val;
     logic [5     -1:0] ctrl_rs2_addr;
@@ -88,6 +95,13 @@ module friscv_rv32i
     logic [5     -1:0] memfy_rd_addr;
     logic [XLEN  -1:0] memfy_rd_val;
     logic [XLEN/8-1:0] memfy_rd_strb;
+
+    logic [5     -1:0] csr_rs1_addr;
+    logic [XLEN  -1:0] csr_rs1_val;
+    logic              csr_rd_wr;
+    logic [5     -1:0] csr_rd_addr;
+    logic [XLEN  -1:0] csr_rd_val;
+    logic [XLEN/8-1:0] csr_rd_strb;
 
     logic [XLEN  -1:0] x0;
     logic [XLEN  -1:0] x1;
@@ -129,6 +143,10 @@ module friscv_rv32i
     logic                        proc_empty;
     logic [4               -1:0] proc_fenceinfo;
 
+    logic                        csr_en;
+    logic [`INST_BUS_W     -1:0] csr_instbus;
+    logic                        csr_ready;
+
     logic                        mst_en;
     logic                        mst_wr;
     logic [DATA_ADDRW      -1:0] mst_addr;
@@ -145,9 +163,11 @@ module friscv_rv32i
     logic [XLEN            -1:0] gpio_rdata;
     logic                        gpio_ready;
 
+
     //////////////////////////////////////////////////////////////////////////
     // Module logging internal statistics of the core
     //////////////////////////////////////////////////////////////////////////
+
     friscv_stats
     #(
         .XLEN (XLEN)
@@ -167,6 +187,7 @@ module friscv_rv32i
     //////////////////////////////////////////////////////////////////////////
     // ISA Registers x0 -> x31
     //////////////////////////////////////////////////////////////////////////
+
     friscv_registers
     #(
         .XLEN (XLEN)
@@ -199,6 +220,11 @@ module friscv_rv32i
         .memfy_rd_addr   (memfy_rd_addr  ),
         .memfy_rd_val    (memfy_rd_val   ),
         .memfy_rd_strb   (memfy_rd_strb  ),
+        .csr_rs1_addr    (csr_rs1_addr   ),
+        .csr_rs1_val     (csr_rs1_val    ),
+        .csr_rd_wr       (csr_rd_wr      ),
+        .csr_rd_addr     (csr_rd_addr    ),
+        .csr_rd_val      (csr_rd_val     ),
         .x0              (x0             ),
         .x1              (x1             ),
         .x2              (x2             ),
@@ -237,6 +263,7 @@ module friscv_rv32i
     //////////////////////////////////////////////////////////////////////////
     // Central controller sequencing the operations
     //////////////////////////////////////////////////////////////////////////
+
     friscv_rv32i_control
     #(
         .ADDRW     (INST_ADDRW),
@@ -258,6 +285,9 @@ module friscv_rv32i
         .proc_empty     (proc_empty    ),
         .proc_fenceinfo (proc_fenceinfo),
         .proc_instbus   (proc_instbus  ),
+        .csr_en         (csr_en        ),
+        .csr_ready      (csr_ready     ),
+        .csr_instbus    (csr_instbus   ),
         .ctrl_rs1_addr  (ctrl_rs1_addr ),
         .ctrl_rs1_val   (ctrl_rs1_val  ),
         .ctrl_rs2_addr  (ctrl_rs2_addr ),
@@ -271,6 +301,7 @@ module friscv_rv32i
     //////////////////////////////////////////////////////////////////////////
     // All ISA enxtensions supported: standard arithmetic / memory, ...
     //////////////////////////////////////////////////////////////////////////
+
     friscv_rv32i_processing
     #(
         .ADDRW              (DATA_ADDRW),
@@ -319,6 +350,7 @@ module friscv_rv32i
     //////////////////////////////////////////////////////////////////////////
     // Switching logic to dispatch the IO and data memory access
     //////////////////////////////////////////////////////////////////////////
+
     friscv_mem_router
     #(
         .ADDRW              (DATA_ADDRW),
@@ -360,6 +392,7 @@ module friscv_rv32i
     //////////////////////////////////////////////////////////////////////////
     // All the IO peripherals: GPIO, UART, ...
     //////////////////////////////////////////////////////////////////////////
+
     friscv_io_interfaces
     #(
         .ADDRW           (DATA_ADDRW),
@@ -390,6 +423,29 @@ module friscv_rv32i
         .uart_cts  (uart_cts  )
     );
 
+    //////////////////////////////////////////////////////////////////////////
+    // Module managing the ISA CSR
+    //////////////////////////////////////////////////////////////////////////
+ 
+    friscv_csr
+    #(
+        .CSR_DEPTH (CSR_DEPTH),
+        .XLEN      (XLEN)
+    )
+    csrs
+    (
+        .aclk       (aclk        ),
+        .aresetn    (aresetn     ),
+        .srst       (srst        ),
+        .valid      (csr_en      ),
+        .ready      (csr_ready   ),
+        .instbus    (csr_instbus ),
+        .rs1_addr   (csr_rs1_addr),
+        .rs1_val    (csr_rs1_val ),
+        .rd_wr_en   (csr_rd_wr   ),
+        .rd_wr_addr (csr_rd_addr ),
+        .rd_wr_val  (csr_rd_val  )
+    );
     endmodule
 
     `resetall

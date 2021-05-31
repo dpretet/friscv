@@ -7,11 +7,14 @@
 
 `include "friscv_h.sv"
 
+///////////////////////////////////////////////////////////////////////////////
+// Central controller of the processor, fetching instruction and driving
+// the ALU, the data memory controller and CSR manager
+///////////////////////////////////////////////////////////////////////////////
+
 module friscv_rv32i_control
 
     #(
-        // CSR registers depth
-        parameter CSR_DEPTH = 12,
         // Address bus width [Up to XLEN bits]
         parameter ADDRW     = 16,
         // Primary address to boot to load the firmware [0:2**ADDRW-1]
@@ -35,6 +38,10 @@ module friscv_rv32i_control
         input  logic                      proc_empty,
         input  logic [4             -1:0] proc_fenceinfo,
         output logic [`INST_BUS_W   -1:0] proc_instbus,
+        // interface to activate teh CSR management
+        output logic                      csr_en,
+        input  logic                      csr_ready,
+        output logic [`INST_BUS_W   -1:0] csr_instbus,
         // register source 1 query interface
         output logic [5             -1:0] ctrl_rs1_addr,
         input  logic [XLEN          -1:0] ctrl_rs1_val,
@@ -120,14 +127,6 @@ module friscv_rv32i_control
     // the instruction storage
     logic                   cant_branch_now;
     logic                   cant_process_now;
-    // ready flag of CSR dedicated module
-    logic                   csr_ready;
-    // RD write interface of the CSR module
-    logic                   csr_rd_wr;
-    logic [5          -1:0] csr_rd_addr;
-    logic [XLEN       -1:0] csr_rd_val;
-
-    ///////////////////////////////////////////////////////////////////////////
 
 
     ///////////////////////////////////////////////////////////////////////////
@@ -190,13 +189,11 @@ module friscv_rv32i_control
         .succ        (succ       )
     );
 
-    ///////////////////////////////////////////////////////////////////////////
-
 
     ///////////////////////////////////////////////////////////////////////////
     //
     // Instruction sourcing Stage: put in shape the instruction bus passed to
-    // the processing module
+    // the processing module and the CSR
     //
     ///////////////////////////////////////////////////////////////////////////
 
@@ -214,17 +211,13 @@ module friscv_rv32i_control
     assign proc_instbus[`CSR    +: `CSR_W   ] = csr   ;
     assign proc_instbus[`SHAMT  +: `SHAMT_W ] = shamt ;
 
-
-    ///////////////////////////////////////////////////////////////////////////
-
+    assign csr_en = env[2];
+    assign csr_instbus = proc_instbus;
 
     ///////////////////////////////////////////////////////////////////////////
     //
-    // Control flow FSM
-    //
-    ///////////////////////////////////////////////////////////////////////////
-
     // Program counter computation
+    //
     ///////////////////////////////////////////////////////////////////////////
 
     // increment counter by 4 because we index bytes
@@ -263,7 +256,11 @@ module friscv_rv32i_control
                 (processing)                ? pc_plus4 :
                                               pc_reg;
 
+
+    ///////////////////////////////////////////////////////////////////////////
+    //
     // Branching flags
+    //
     ///////////////////////////////////////////////////////////////////////////
 
     // BEQ: branch if equal
@@ -293,8 +290,12 @@ module friscv_rv32i_control
                           (funct3 == `BGEU && bgeu)) ? 1'b1 :
                                                        1'b0;
 
-    // The FSM updating the program counter, managing the incoming
-    // instructions and the processing unit
+
+    ///////////////////////////////////////////////////////////////////////////
+    //
+    // Control flow FSM: the FSM updating the program counter, managing the
+    // incoming instructions and the processing unit
+    //
     ///////////////////////////////////////////////////////////////////////////
 
     always @ (posedge aclk or negedge aresetn) begin
@@ -361,7 +362,7 @@ module friscv_rv32i_control
                         // Need to branch/process but ALU/memfy/CSR didn't finish
                         // to execute last instruction, so store it.
                         end else if (inst_ready &&
-                                      (~csr_ready || 
+                                      (~csr_ready ||
                                        cant_branch_now || cant_process_now)
                                     ) begin
                             load_stored <= 1'b1;
@@ -415,7 +416,11 @@ module friscv_rv32i_control
     // is byte-oriented
     assign inst_addr = pc[2+:ADDRW];
 
+
+    ///////////////////////////////////////////////////////////////////////////
+    //
     // ISA registers write stage
+    //
     ///////////////////////////////////////////////////////////////////////////
 
     // register source 1 & 2 read
@@ -424,47 +429,22 @@ module friscv_rv32i_control
 
     // register destination
     assign ctrl_rd_wr =  (cfsm!=RUN)                               ? 1'b0 :
-                         (~cant_branch_now && 
-                            ~cant_process_now && 
+                         (~cant_branch_now &&
+                            ~cant_process_now &&
                             csr_ready &&
-                            (auipc || jal || jalr))                ? 1'b1 :   
-                         (csr_rd_wr)                               ? 1'b1 :
+                            (auipc || jal || jalr))                ? 1'b1 :
                          (~cant_process_now && csr_ready && lui)   ? 1'b1 :
                          (~cant_process_now && csr_ready && auipc) ? 1'b1 :
                                                                      1'b0 ;
-    assign ctrl_rd_addr = (csr_rd_wr || ~csr_ready) ? csr_rd_addr : rd;
+    assign ctrl_rd_addr = rd;
 
-    assign ctrl_rd_val = (csr_rd_wr)                     ? csr_rd_val :
-                         ((jal || jalr) && load_stored)  ? pc_jal_saved :
+    assign ctrl_rd_val = ((jal || jalr) && load_stored)  ? pc_jal_saved :
                          ((jal || jalr) && ~load_stored) ? pc_plus4 :
                          (lui)                           ? {imm20, 12'b0} :
                          (auipc && load_stored)          ? pc_auipc_saved :
                          (auipc && ~load_stored)         ? pc_auipc       :
                                                            pc;
 
-    // Module managing the ISA CSR
-    friscv_csr
-    #(
-        .CSR_DEPTH (CSR_DEPTH),
-        .XLEN      (XLEN)
-    )
-    csrs
-    (
-        .aclk       (aclk        ),
-        .aresetn    (aresetn     ),
-        .srst       (srst        ),
-        .valid      (env[2]      ),
-        .ready      (csr_ready   ),
-        .funct3     (funct3      ),
-        .csr        (csr         ),
-        .zimm       (zimm        ),
-        .rs1_addr   (rs1         ),
-        .rs1_val    (ctrl_rs1_val),
-        .rd_addr    (rd          ),
-        .rd_wr_en   (csr_rd_wr   ),
-        .rd_wr_addr (csr_rd_addr ),
-        .rd_wr_val  (csr_rd_val  )
-    );
 
 
 endmodule

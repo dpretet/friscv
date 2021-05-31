@@ -1,7 +1,10 @@
 # DOING
 
+- [ ] Move CSR out of control unit
+- [ ] Use AXI4-lite for instruction and implement FIFO-like storage for
+      instruction to parse and discard instruction
 - [ ] Implement instruction cache with branch prediction
-- [ ] Synthesis session
+- [ ]  Option to read ISA registers on falling edge, not comb read
 
 # BACKLOG
 
@@ -77,6 +80,8 @@ To finalize:
 
 # DONE
 
+- [X] Synthesis session: OK for Yosys, needs to use another or lib to map
+      async/sync reset FFD.
 - [X] Add a debug interface (UART, JTAG) + DPI
 - [X] Add GPIOs
 - [X] Implement in-house profiler to check branching, stall time, ...
