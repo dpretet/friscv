@@ -1,5 +1,6 @@
 [*]
 [*] GTKWave Analyzer v3.3.107 (w)1999-2020 BSI
+<<<<<<< HEAD
 [*] Sun May 30 19:39:53 2021
 [*]
 [dumpfile] "/Users/damien/workspace/hdl/friscv/test/rtl_unit_tests/friscv_icache_testbench.vcd"
@@ -160,5 +161,22 @@ friscv_icache_testbench.mem_ctrl.roffset[3:0]
 friscv_icache_testbench.mem_ctrl.srst
 @1401201
 -mem_ctrl
+=======
+[*] Sun May 30 19:11:20 2021
+[*]
+[dumpfile] "/Users/damien/workspace/hdl/friscv/test/rtl_unit_tests/friscv_icache_testbench.vcd"
+[dumpfile_mtime] "Sun May 30 19:10:33 2021"
+[dumpfile_size] 8062
+[savefile] "/Users/damien/workspace/hdl/friscv/test/rtl_unit_tests/friscv_icache_testbench.gtkw"
+[timestart] 0
+[size] 1579 990
+[pos] 725 89
+*0.000000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] friscv_icache_testbench.
+[sst_width] 193
+[signals_width] 78
+[sst_expanded] 1
+[sst_vpaned_height] 304
+>>>>>>> 17e85e6ee5a2e3245138fc7e20f6532611e66354
 [pattern_trace] 1
 [pattern_trace] 0

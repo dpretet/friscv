@@ -107,14 +107,14 @@ module friscv_icache
     // Cache lines Storage
     ///////////////////////////////////////////////////////////////////////////
 
-    friscv_icache_lines 
+    friscv_icache_lines
     #(
         .XLEN         (XLEN),
         .ADDR_W       (ADDR_W),
         .CACHE_LINE_W (CACHE_LINE_W),
         .CACHE_DEPTH  (CACHE_DEPTH)
     )
-    cache_lines 
+    cache_lines
     (
         .aclk    (aclk       ),
         .aresetn (aresetn    ),
@@ -135,7 +135,7 @@ module friscv_icache
     // AXI4 memory controller
     ///////////////////////////////////////////////////////////////////////////
 
-    friscv_icache_memctrl 
+    friscv_icache_memctrl
     #(
     .XLEN         (XLEN),
     .ADDR_W       (ADDR_W),
@@ -144,7 +144,7 @@ module friscv_icache
     .CACHE_LINE_W (CACHE_LINE_W),
     .CACHE_DEPTH  (CACHE_DEPTH)
     )
-    mem_ctrl 
+    mem_ctrl
     (
     .aclk           (aclk           ),
     .aresetn        (aresetn        ),
