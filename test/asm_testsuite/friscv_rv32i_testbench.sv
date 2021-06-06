@@ -115,7 +115,7 @@ module friscv_rv32i_testbench();
         .srst     (srst),
         .p1_en    (inst_en),
         .p1_wr    (1'b0),
-        .p1_addr  (inst_addr),
+        .p1_addr  (inst_addr[2+:INST_ADDRW-2]),
         .p1_wdata ('h0),
         .p1_strb  (4'h0),
         .p1_rdata (inst_rdata),

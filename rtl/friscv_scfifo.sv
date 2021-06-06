@@ -13,6 +13,7 @@ module friscv_scfifo
         input  logic                  aclk,
         input  logic                  aresetn,
         input  logic                  srst,
+        input  logic                  flush,
         input  logic [DATA_WIDTH-1:0] data_in,
         input  logic                  push,
         output logic                  full,
@@ -32,7 +33,7 @@ module friscv_scfifo
         if (aresetn == 1'b0) begin
             wrptr <= {(ADDR_WIDTH+1){1'b0}};
         end
-        else if (srst) begin
+        else if (srst | flush) begin
             wrptr <= {(ADDR_WIDTH+1){1'b0}};
         end 
         else begin
@@ -47,7 +48,7 @@ module friscv_scfifo
         if (aresetn == 1'b0) begin
             rdptr <= {(ADDR_WIDTH+1){1'b0}};
         end
-        else if (srst) begin
+        else if (srst | flush) begin
             rdptr <= {(ADDR_WIDTH+1){1'b0}};
         end 
         else begin
@@ -59,27 +60,9 @@ module friscv_scfifo
     
     assign wr_en = push & !full;
 
-    assign empty_w = (wrptr == rdptr) ? 1'b1 : 1'b0;
+    assign empty = (wrptr == rdptr) ? 1'b1 : 1'b0;
     assign full = ((wrptr - rdptr) == {1'b1,{ADDR_WIDTH{1'b0}}}) ? 1'b1 : 1'b0;
 
-    // manages the empty flag, asserted once read reached last word and 
-    // empty has been asserted. Else the last word doesn't output
-    always @ (posedge aclk or negedge aresetn) begin
-        if (aresetn == 1'b0) begin
-            empty_r <= 1'b1;
-        end else if (srst == 1'b1) begin
-            empty_r <= 1'b1;
-        end else begin
-            if (~empty_w) begin
-                empty_r <= 1'b0;
-            end else if (empty_w && pull) begin
-                empty_r <= 1'b1;
-            end
-        end
-    end
-
-    assign empty = empty_w;
-    // assign empty = empty_r & empty_w;
 
     friscv_scfifo_ram 
     #( 

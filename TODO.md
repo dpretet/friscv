@@ -1,16 +1,31 @@
 # DOING
 
+- [-] Use AXI4-lite for instruction fetch
+    - AXI4-lite advantages:
+        - simple splitted-transaction protocol, supporting outstanding requests
+        - multiple IDs, attrributed to core, memctrl, cache, ...
+        - can be mapped to AXI4 effortless for cache purpose to fecth a
+          complete cache line
+        - controller can recover from from unaligned access natively and
+          4 KB boundary crossing
+        - could implement timeout/ongoing op flushing
+    - implement FIFO-like storage for instruction to parse and discard
+      instruction
+    - write can be issued without limits
+    - read can be issued as long they don't target the same registers
+    - error: move to supervisor, halt the processor, wait for the debugger.
+      Can also stop, dump registers and restart
+
 - [-] Implement instruction cache
-    - study is OK
-    - draft architecture
-    - prediction-like by spying register?
-    - [ ] Use AXI4-lite for instruction and implement FIFO-like storage for
-        instruction to parse and discard instruction
-- [ ] Option to read ISA registers on falling edge, not comb read
+    - Support AXI4-lite from control unit
+    - Pipeline operations
+    - Support outstanding requests
 
 # BACKLOG
 
 Control:
+- [ ] Support branch prediction
+- [ ] Option to read ISA registers on falling edge, not comb read
 - [ ] Add IRQ (CLINT/CLIC/PLIC) + timer
 - [ ] Support privileged instructions
 - [ ] Study MMU topic, core + driver
