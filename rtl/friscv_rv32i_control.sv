@@ -92,7 +92,7 @@ module friscv_rv32i_control
     // Control fsm
     typedef enum logic[3:0] {
         BOOT = 0,
-        RUN = 1,
+        FETCH = 1,
         BR_JP = 2,
         SYS = 3,
         TRAP = 4,
@@ -197,7 +197,7 @@ module friscv_rv32i_control
     //
     ///////////////////////////////////////////////////////////////////////////
 
-    assign proc_en = (inst_ready | load_stored) & processing & (cfsm==RUN) & csr_ready;
+    assign proc_en = (inst_ready | load_stored) & processing & (cfsm==FETCH) & csr_ready;
 
     assign proc_instbus[`OPCODE +: `OPCODE_W] = opcode;
     assign proc_instbus[`FUNCT3 +: `FUNCT3_W] = funct3;
@@ -330,15 +330,15 @@ module friscv_rv32i_control
                     pc_reg <= BOOT_ADDR << 2;
 
                     if (inst_ready && inst_en) begin
-                        cfsm <= RUN;
+                        cfsm <= FETCH;
                     end
                 end
 
                 // Run the core operations
-                RUN: begin
+                FETCH: begin
 
                     `ifdef TRAP_ERROR
-                    // Completly stop the execution and $stop()  the simulation
+                    // Completely stop the execution and $stop() the simulation
                     if (`TRAP_ERROR && inst_error) begin
                         cfsm <= TRAP;
                     end
@@ -412,9 +412,7 @@ module friscv_rv32i_control
 
     assign cant_process_now = (processing && ~proc_ready) ? 1'b1 : 1'b0;
 
-    // select only MSB because RAM is addressed by word while program counter
-    // is byte-oriented
-    assign inst_addr = pc[2+:ADDRW];
+    assign inst_addr = pc[ADDRW-1:0];
 
 
     ///////////////////////////////////////////////////////////////////////////
@@ -428,7 +426,7 @@ module friscv_rv32i_control
     assign ctrl_rs2_addr = rs2;
 
     // register destination
-    assign ctrl_rd_wr =  (cfsm!=RUN)                               ? 1'b0 :
+    assign ctrl_rd_wr =  (cfsm!=FETCH)                             ? 1'b0 :
                          (~cant_branch_now &&
                             ~cant_process_now &&
                             csr_ready &&
