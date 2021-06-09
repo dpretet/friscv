@@ -8,7 +8,8 @@ module friscv_scfifo_ram
 
     #(
         parameter ADDR_WIDTH = 8,
-        parameter DATA_WIDTH = 8
+        parameter DATA_WIDTH = 8,
+        parameter FFD_EN = 0
     )(
         input  logic                  aclk,
         input  logic                  wr_en,
@@ -26,7 +27,14 @@ module friscv_scfifo_ram
         end
     end
 
-    assign data_out = ram[addr_out];
+    generate if (FFD_EN==1) begin
+        always @ (posedge aclk) begin
+            data_out <= ram[addr_out];
+        end
+    end else begin
+        assign data_out = ram[addr_out];
+    end
+    endgenerate
 
 endmodule
 

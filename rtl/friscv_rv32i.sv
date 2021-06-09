@@ -12,8 +12,13 @@ module friscv_rv32i
     #(
         // 32 bits architecture
         parameter XLEN               = 32,
+        // Address bus width defined for both control and AXI4 address signals
+        parameter AXI_ADDR_W         = XLEN,
+        // AXI ID width, setup by default to 8 and unused
+        parameter AXI_ID_W           = 8,
+        // AXI4 data width, independant of control unit width
+        parameter AXI_DATA_W         = XLEN,
         // Address buses width
-        parameter INST_ADDRW         = 16,
         parameter DATA_ADDRW         = 16,
         // Boot address used by the control unit
         parameter BOOT_ADDR          = 0,
@@ -34,34 +39,40 @@ module friscv_rv32i
         parameter CSR_DEPTH = 12
     )(
         // clock/reset interface
-        input  logic                  aclk,
-        input  logic                  aresetn,
-        input  logic                  srst,
+        input  logic                      aclk,
+        input  logic                      aresetn,
+        input  logic                      srst,
         // enable signal to activate the core
-        input  logic                  enable,
+        input  logic                      enable,
         // Flag asserted when reaching a EBREAK
-        output logic                  ebreak,
+        output logic                      ebreak,
         // instruction memory interface
-        output logic                  inst_en,
-        output logic [INST_ADDRW-1:0] inst_addr,
-        input  logic [XLEN      -1:0] inst_rdata,
-        input  logic                  inst_ready,
+        output logic                      inst_arvalid,
+        input  logic                      inst_arready,
+        output logic [AXI_ADDR_W    -1:0] inst_araddr,
+        output logic [3             -1:0] inst_arprot,
+        output logic [AXI_ID_W      -1:0] inst_arid,
+        input  logic                      inst_rvalid,
+        output logic                      inst_rready,
+        input  logic [AXI_ID_W      -1:0] inst_rid,
+        input  logic [2             -1:0] inst_rresp,
+        input  logic [AXI_DATA_W    -1:0] inst_rdata,
         // data memory interface
-        output logic                  mem_en,
-        output logic                  mem_wr,
-        output logic [DATA_ADDRW-1:0] mem_addr,
-        output logic [XLEN      -1:0] mem_wdata,
-        output logic [XLEN/8    -1:0] mem_strb,
-        input  logic [XLEN      -1:0] mem_rdata,
-        input  logic                  mem_ready,
+        output logic                      mem_en,
+        output logic                      mem_wr,
+        output logic [DATA_ADDRW    -1:0] mem_addr,
+        output logic [XLEN          -1:0] mem_wdata,
+        output logic [XLEN/8        -1:0] mem_strb,
+        input  logic [XLEN          -1:0] mem_rdata,
+        input  logic                      mem_ready,
         // GPIO interface
-        input  logic [XLEN      -1:0] gpio_in,
-        output logic [XLEN      -1:0] gpio_out,
+        input  logic [XLEN          -1:0] gpio_in,
+        output logic [XLEN          -1:0] gpio_out,
         // UART interface
-        input  logic                  uart_rx,
-        output logic                  uart_tx,
-        output logic                  uart_rts,
-        input  logic                  uart_cts
+        input  logic                      uart_rx,
+        output logic                      uart_tx,
+        output logic                      uart_rts,
+        input  logic                      uart_cts
     );
 
 
@@ -173,13 +184,13 @@ module friscv_rv32i
     )
     statistic
     (
-        .aclk       (aclk      ),
-        .aresetn    (aresetn   ),
-        .srst       (srst      ),
-        .enable     (enable    ),
-        .inst_en    (inst_en   ),
-        .inst_ready (inst_ready),
-        .debug      (          )
+        .aclk       (aclk        ),
+        .aresetn    (aresetn     ),
+        .srst       (srst        ),
+        .enable     (enable      ),
+        .inst_en    (inst_arvalid),
+        .inst_ready (inst_arready),
+        .debug      (            )
     );
 
 
@@ -265,20 +276,29 @@ module friscv_rv32i
 
     friscv_rv32i_control
     #(
-        .ADDRW     (INST_ADDRW),
-        .BOOT_ADDR (BOOT_ADDR),
-        .XLEN      (XLEN)
+        .XLEN        (XLEN),
+        .AXI_ADDR_W  (AXI_ADDR_W),
+        .AXI_ID_W    (AXI_ID_W),
+        .AXI_DATA_W  (AXI_DATA_W),
+        .OSTDREQ_NUM (`INST_OSTDREQ_NUM),
+        .BOOT_ADDR   (BOOT_ADDR)
     )
-    control_unit
+    control 
     (
         .aclk           (aclk          ),
         .aresetn        (aresetn       ),
         .srst           (srst          ),
         .ebreak         (ebreak        ),
-        .inst_en        (inst_en       ),
-        .inst_addr      (inst_addr     ),
-        .inst_rdata     (inst_rdata    ),
-        .inst_ready     (inst_ready    ),
+        .arvalid        (inst_arvalid  ),
+        .arready        (inst_arready  ),
+        .araddr         (inst_araddr   ),
+        .arprot         (inst_arprot   ),
+        .arid           (inst_arid     ),
+        .rvalid         (inst_rvalid   ),
+        .rready         (inst_rready   ),
+        .rid            (inst_rid      ),
+        .rresp          (inst_rresp    ),
+        .rdata          (inst_rdata    ),
         .proc_en        (proc_en       ),
         .proc_ready     (proc_ready    ),
         .proc_empty     (proc_empty    ),

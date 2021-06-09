@@ -11,7 +11,12 @@ module friscv_rv32i_testbench();
     // 32 bits architecture
     parameter XLEN               = 32;
     // Address buses width
-    parameter INST_ADDRW         = 16;
+    parameter AXI_ADDR_W         = 16;
+    // AXI ID width, setup by default to 8 and unused
+    parameter AXI_ID_W           = 8;
+    // AXI4 data width, independant of control unit width
+    parameter AXI_DATA_W         = XLEN;
+    // Address buses width
     parameter DATA_ADDRW         = 16;
     // Boot address used by the control unit
     parameter BOOT_ADDR          = 0;
@@ -28,39 +33,65 @@ module friscv_rv32i_testbench();
     parameter DATA_MEM_BASE_SIZE = 16384;
     // UART FIFO Depth
     parameter UART_FIFO_DEPTH = 4;
+    parameter CSR_DEPTH = 12;
 
     // timeout used in the testbench to break the simulation
-    parameter TIMEOUT    = 1000000;
+    parameter TIMEOUT    = 10000;
 
-    logic                   aclk;
-    logic                   aresetn;
-    logic                   srst;
-    logic                   ebreak;
-    logic                   enable;
-    logic                   inst_en;
-    logic [INST_ADDRW -1:0] inst_addr;
-    logic [XLEN       -1:0] inst_rdata;
-    logic                   inst_ready;
-    logic                   mem_en;
-    logic                   mem_wr;
-    logic [DATA_ADDRW -1:0] mem_addr;
-    logic [XLEN       -1:0] mem_wdata;
-    logic [XLEN/8     -1:0] mem_strb;
-    logic [XLEN       -1:0] mem_rdata;
-    logic                   mem_ready;
-    logic [XLEN       -1:0] gpio_in;
-    logic [XLEN       -1:0] gpio_out;
-    logic                   uart_tx;
-    logic                   uart_rx;
-    logic                   uart_rts;
-    logic                   uart_cts;
-    integer                 inst_counter;
-    integer                 timer;
+    // Variable latency setup the AXI4-lite RAM model
+    parameter VARIABLE_LATENCY = 0;
+
+    logic                      aclk;
+    logic                      aresetn;
+    logic                      srst;
+    logic                      ebreak;
+    logic                      enable;
+
+    logic                      inst_arvalid;
+    logic                      inst_arready;
+    logic [AXI_ADDR_W    -1:0] inst_araddr;
+    logic [3             -1:0] inst_arprot;
+    logic [AXI_ID_W      -1:0] inst_arid;
+    logic                      inst_rvalid;
+    logic                      inst_rready;
+    logic [AXI_ID_W      -1:0] inst_rid;
+    logic [2             -1:0] inst_rresp;
+    logic [AXI_DATA_W    -1:0] inst_rdata;
+    logic                      inst_awvalid;
+    logic                      inst_awready;
+    logic [AXI_ADDR_W    -1:0] inst_awaddr;
+    logic [3             -1:0] inst_awprot;
+    logic [AXI_ID_W      -1:0] inst_awid;
+    logic                      inst_wvalid;
+    logic                      inst_wready;
+    logic [AXI_DATA_W    -1:0] inst_wdata;
+    logic [AXI_ID_W      -1:0] inst_wid;
+    logic [2             -1:0] inst_bresp;
+    logic                      inst_bvalid;
+    logic                      inst_bready;
+
+    logic                      mem_en;
+    logic                      mem_wr;
+    logic [DATA_ADDRW    -1:0] mem_addr;
+    logic [XLEN          -1:0] mem_wdata;
+    logic [XLEN/8        -1:0] mem_strb;
+    logic [XLEN          -1:0] mem_rdata;
+    logic                      mem_ready;
+    logic [XLEN          -1:0] gpio_in;
+    logic [XLEN          -1:0] gpio_out;
+    logic                      uart_tx;
+    logic                      uart_rx;
+    logic                      uart_rts;
+    logic                      uart_cts;
+    integer                    inst_counter;
+    integer                    timer;
 
     friscv_rv32i
     #(
         XLEN,
-        INST_ADDRW,
+        AXI_ADDR_W,
+        AXI_ID_W,
+        AXI_DATA_W,
         DATA_ADDRW,
         BOOT_ADDR,
         GPIO_SLV0_ADDR,
@@ -71,7 +102,8 @@ module friscv_rv32i_testbench();
         GPIO_BASE_SIZE,
         DATA_MEM_BASE_ADDR,
         DATA_MEM_BASE_SIZE,
-        UART_FIFO_DEPTH
+        UART_FIFO_DEPTH,
+        CSR_DEPTH
     )
     dut
     (
@@ -80,10 +112,16 @@ module friscv_rv32i_testbench();
         srst,
         enable,
         ebreak,
-        inst_en,
-        inst_addr,
+        inst_arvalid,
+        inst_arready,
+        inst_araddr,
+        inst_arprot,
+        inst_arid,
+        inst_rvalid,
+        inst_rready,
+        inst_rid,
+        inst_rresp,
         inst_rdata,
-        inst_ready,
         mem_en,
         mem_wr,
         mem_addr,
@@ -102,29 +140,43 @@ module friscv_rv32i_testbench();
     assign uart_rx = uart_tx;
     assign uart_cts = uart_rts;
 
-    scram
+
+    axi4l_ram
     #(
-        .INIT  ("test.v"),
-        .ADDRW (INST_ADDRW),
-        .DATAW (XLEN)
+        .INIT             ("test.v"),
+        .VARIABLE_LATENCY (VARIABLE_LATENCY),
+        .AXI_ADDR_W       (AXI_ADDR_W),
+        .AXI_ID_W         (AXI_ID_W),
+        .AXI_DATA_W       (AXI_DATA_W),
+        .OSTDREQ_NUM      (`INST_OSTDREQ_NUM)
     )
-    instruction_ram
+    inst_axi4l_ram
     (
-        .aclk     (aclk),
-        .aresetn  (aresetn),
-        .srst     (srst),
-        .p1_en    (inst_en),
-        .p1_wr    (1'b0),
-        .p1_addr  (inst_addr[2+:INST_ADDRW-2]),
-        .p1_wdata ('h0),
-        .p1_strb  (4'h0),
-        .p1_rdata (inst_rdata),
-        .p2_en    (1'b0),
-        .p2_wr    (1'b0),
-        .p2_addr  ({DATA_ADDRW{1'b0}}),
-        .p2_wdata ({XLEN{1'b0}}),
-        .p2_strb  ({XLEN/8{1'b0}}),
-        .p2_rdata (/*unused*/)
+        .aclk    (aclk        ),
+        .aresetn (aresetn     ),
+        .srst    (srst        ),
+        .awvalid (inst_awvalid),
+        .awready (inst_awready),
+        .awaddr  (inst_awaddr ),
+        .awprot  (inst_awprot ),
+        .awid    (inst_awid   ),
+        .wvalid  (inst_wvalid ),
+        .wready  (inst_wready ),
+        .wdata   (inst_wdata  ),
+        .wid     (inst_wid    ),
+        .bresp   (inst_bresp  ),
+        .bvalid  (inst_bvalid ),
+        .bready  (inst_bready ),
+        .arvalid (inst_arvalid),
+        .arready (inst_arready),
+        .araddr  (inst_araddr ),
+        .arprot  (inst_arprot ),
+        .arid    (inst_arid   ),
+        .rvalid  (inst_rvalid ),
+        .rready  (inst_rready ),
+        .rid     (inst_rid    ),
+        .rresp   (inst_rresp  ),
+        .rdata   (inst_rdata  )
     );
 
     apb_ram
@@ -166,12 +218,13 @@ module friscv_rv32i_testbench();
 
     task setup(msg="");
     begin
-        /// setup() runs when a test begins
+        inst_awvalid = 1'b0;
+        inst_wvalid = 1'b0;
+        inst_bready = 1'b0;
         enable = 0;
         inst_counter = 0;
         aresetn = 1'b0;
         srst = 1'b0;
-        inst_ready = 1'b1;
         timer = 0;
         repeat (5) @(posedge aclk);
         aresetn = 1'b1;

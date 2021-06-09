@@ -36,7 +36,7 @@ module friscv_icache
     ///////////////////////////////////////////////////////////////////////////
 
     // Address bus width defined for both control and AXI4 address signals
-    parameter ADDR_W = 8,
+    parameter ADDR_W = 32,
     // AXI ID width, setup by default to 8 and unused
     parameter AXI_ID_W = 8,
     // AXI4 data width, independant of control unit width

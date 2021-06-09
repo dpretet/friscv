@@ -14,12 +14,18 @@
 module friscv_rv32i_control
 
     #(
-        // Address bus width [Up to XLEN bits]
-        parameter ADDRW     = 16,
-        // Primary address to boot to load the firmware [0:2**ADDRW-1]
-        parameter BOOT_ADDR = 0,
         // Registers width, 32 bits for RV32i. [CAN'T BE CHANGED]
-        parameter XLEN      = 32
+        parameter XLEN = 32,
+        // Address bus width defined for both control and AXI4 address signals
+        parameter AXI_ADDR_W = XLEN,
+        // AXI ID width, setup by default to 8 and unused
+        parameter AXI_ID_W = 8,
+        // AXI4 data width, independant of control unit width
+        parameter AXI_DATA_W = XLEN,
+        // Number of outstanding requests supported
+        parameter OSTDREQ_NUM = 4,
+        // Primary address to boot to load the firmware [0:2**ADDRW-1]
+        parameter BOOT_ADDR = 0
     )(
         // clock & reset
         input  logic                      aclk,
@@ -27,10 +33,16 @@ module friscv_rv32i_control
         input  logic                      srst,
         output logic                      ebreak,
         // instruction memory interface
-        output logic                      inst_en,
-        output logic [ADDRW         -1:0] inst_addr,
-        input  logic [XLEN          -1:0] inst_rdata,
-        input  logic                      inst_ready,
+        output logic                      arvalid,
+        input  logic                      arready,
+        output logic [AXI_ADDR_W    -1:0] araddr,
+        output logic [3             -1:0] arprot,
+        output logic [AXI_ID_W      -1:0] arid,
+        input  logic                      rvalid,
+        output logic                      rready,
+        input  logic [AXI_ID_W      -1:0] rid,
+        input  logic [2             -1:0] rresp,
+        input  logic [AXI_DATA_W    -1:0] rdata,
         // interface to activate the processing
         output logic                      proc_en,
         input  logic                      proc_ready,
@@ -92,8 +104,8 @@ module friscv_rv32i_control
     typedef enum logic[3:0] {
         BOOT = 0,
         FETCH = 1,
-        BR_JP = 2,
-        SYS = 3,
+        HALT = 2,
+        RELOAD = 3,
         TRAP = 4,
         EBREAK = 5
     } pc_fsm;
@@ -118,15 +130,52 @@ module friscv_rv32i_control
     logic                   bltu;
     logic                   bgeu;
     logic                   goto_branch;
-    // Circuit storing an instruction which can't be process now
-    logic                   load_stored;
-    logic [XLEN       -1:0] stored_inst;
-    logic [XLEN       -1:0] instruction;
+    logic                   jump_branch;
     // Two flags used intot the FSM to stall the process and control
     // the instruction storage
     logic                   cant_branch_now;
     logic                   cant_process_now;
+    // FIFO signals
+    logic [XLEN       -1:0] instruction;
+    logic                   flush_fifo;
+    logic                   push_inst;
+    logic                   fifo_full;
+    logic                   pull_inst;
+    logic                   fifo_empty;
 
+
+    ///////////////////////////////////////////////////////////////////////////
+    //
+    // Load/Buffer Stage, a SC-FIFO storing the incoming instructions.
+    // This FIFO is controlled by the FSM issuing read request and can be 
+    // flushed in case branching or jumping is required.
+    //
+    ///////////////////////////////////////////////////////////////////////////
+
+    assign push_inst = rvalid & ~fifo_full && (arid == rid);
+    assign rready = ~fifo_full;
+
+    friscv_scfifo 
+    #(
+    .ADDR_WIDTH ($clog2(OSTDREQ_NUM)),
+    .DATA_WIDTH (AXI_DATA_W)
+    )
+    inst_fifo 
+    (
+    .aclk     (aclk),
+    .aresetn  (aresetn),
+    .srst     (srst),
+    .flush    (flush_fifo),
+    .data_in  (rdata),
+    .push     (push_inst),
+    .full     (fifo_full),
+    .data_out (instruction),
+    .pull     (pull_inst),
+    .empty    (fifo_empty)
+    );
+
+    // assign pull_inst = (csr_ready && ~cant_branch_now && ~cant_process_now && 
+                        // cfsm==FETCH && ~fifo_empty) ? 1'b1 : 1'b0;
 
     ///////////////////////////////////////////////////////////////////////////
     //
@@ -148,14 +197,10 @@ module friscv_rv32i_control
     // Processing is handled by ALU & Memfy, responsible of data memory access,
     // registers management and arithmetic/logic operations.
     //
-    // All the other flags are handlded in this module.
+    // All the other flags are handled in this module.
     //
     ///////////////////////////////////////////////////////////////////////////
 
-    // In case control unit has been stalled, use the last instruction
-    // received. Assume the RAM will not change the unprocessd instruction
-    // until the enable is re-asserted
-    assign instruction = (load_stored) ? stored_inst : inst_rdata;
 
     friscv_rv32i_decoder
     #(
@@ -196,7 +241,7 @@ module friscv_rv32i_control
     //
     ///////////////////////////////////////////////////////////////////////////
 
-    assign proc_en = (inst_ready | load_stored) & processing & (cfsm==FETCH) & csr_ready;
+    assign proc_en = (~fifo_empty) & processing & (cfsm==FETCH) & csr_ready;
 
     assign proc_instbus[`OPCODE +: `OPCODE_W] = opcode;
     assign proc_instbus[`FUNCT3 +: `FUNCT3_W] = funct3;
@@ -255,7 +300,6 @@ module friscv_rv32i_control
                 (processing)                ? pc_plus4 :
                                               pc_reg;
 
-
     ///////////////////////////////////////////////////////////////////////////
     //
     // Branching flags
@@ -301,39 +345,42 @@ module friscv_rv32i_control
 
         if (aresetn == 1'b0) begin
             cfsm <= BOOT;
-            inst_en <= 1'b0;
+            arvalid <= 1'b0;
+            araddr <= {AXI_ADDR_W{1'b0}};
             pc_reg <= {(XLEN){1'b0}};
             pc_jal_saved <= {(XLEN){1'b0}};
             pc_auipc_saved <= {(XLEN){1'b0}};
-            load_stored <= 1'b0;
-            stored_inst <= {XLEN{1'b0}};
             ebreak <= 1'b0;
+            flush_fifo <= 1'b0;
+            pull_inst <= 1'b0;
+            arid <= {AXI_ID_W{1'b0}};
         end else if (srst == 1'b1) begin
             cfsm <= BOOT;
-            inst_en <= 1'b0;
+            arvalid <= 1'b0;
+            araddr <= {AXI_ADDR_W{1'b0}};
             pc_reg <= {(XLEN){1'b0}};
             pc_jal_saved <= {(XLEN){1'b0}};
             pc_auipc_saved <= {(XLEN){1'b0}};
-            load_stored <= 1'b0;
-            stored_inst <= {XLEN{1'b0}};
             ebreak <= 1'b0;
+            flush_fifo <= 1'b0;
+            pull_inst <= 1'b0;
+            arid <= {AXI_ID_W{1'b0}};
         end else begin
 
             case (cfsm)
 
-                // Start to boot the RAM after reset. Take time to load the
-                // RAM and wait for readiness before moving forward to be sure
-                // the RAM drives a valid instruction
+                // Start to boot the RAM after reset.
                 default: begin
-                    inst_en <= 1'b1;
+
+                    arvalid <= 1'b1;
                     pc_reg <= BOOT_ADDR << 2;
 
-                    if (inst_ready && inst_en) begin
+                    if (arready) begin
                         cfsm <= FETCH;
                     end
                 end
 
-                // Run the core operations
+                // Fetch instructions
                 FETCH: begin
 
                     `ifdef TRAP_ERROR
@@ -343,49 +390,60 @@ module friscv_rv32i_control
                     end
                     `endif
 
-                    if (inst_ready || load_stored) begin
+                    // Manages read outstanding requests to fetch 
+                    // new instruction from memory
+                    if (~fifo_empty && jump_branch) begin
+                        araddr <= pc;
+                    end else if (arready) begin
+                        araddr <= araddr + 4;
+                    end
 
+                    if (~fifo_empty) begin
+                        
+                        // Needs to jump or branch thus stop the pipeline
+                        // and reload new instructions
+                        if (jump_branch) begin
+                            flush_fifo <= 1'b1;
+                            arvalid <= 1'b0;
+                            cfsm <= RELOAD;
                         // Reach an EBREAK instruction, need to stall the core
-                        if (inst_ready && env[1]) begin
-                            inst_en <= 1'b0;
+                        end else if (env[1]) begin
                             ebreak <= 1'b1;
                             cfsm <= EBREAK;
-
-                        // Wait for ALU/memfy/CSR to continue the processing
-                        end else if (load_stored) begin
-                            if (proc_ready && csr_ready)  begin
-                                inst_en <= 1'b1;
-                                load_stored <= 1'b0;
-                            end
+                        end
 
                         // Need to branch/process but ALU/memfy/CSR didn't finish
                         // to execute last instruction, so store it.
-                        end else if (inst_ready &&
-                                      (~csr_ready ||
-                                       cant_branch_now || cant_process_now)
-                                    ) begin
-                            load_stored <= 1'b1;
-                            inst_en <= 1'b0;
-                            pc_reg <= pc;
+                        else if (~csr_ready || cant_branch_now || cant_process_now)
+                        begin
                             pc_jal_saved <= pc_plus4;
                             pc_auipc_saved <= pc_reg;
-                            stored_inst <= inst_rdata;
-
+                            pull_inst <= 1'b0;
                         // Process as long as instruction are available
-                        end else if (csr_ready && ~cant_branch_now && ~cant_process_now) begin
-                            load_stored <= 1'b0;
-                            inst_en <= 1'b1;
+                        end else if (csr_ready && 
+                                     ~cant_branch_now && ~cant_process_now) 
+                        begin
                             pc_reg <= pc;
-
-                        end else begin
-                            inst_en <= 1'b0;
-                            load_stored <= 1'b0;
+                            pull_inst <= 1'b1;
                         end
 
+                    end else begin
+                        pull_inst <= 1'b0;
                     end
                 end
 
+                // Stop operations to reload new oustanding requests
+                RELOAD: begin
+                    arvalid <= 1'b1;
+                    arid <= arid + 1;
+                    flush_fifo <= 1'b0;
+                    pc_reg <= pc;
+                    cfsm <= FETCH;
+                end
+
                 EBREAK: begin
+                    arvalid <= 1'b0;
+                    ebreak <= 1'b1;
                     cfsm <= EBREAK;
                 end
 
@@ -404,14 +462,18 @@ module friscv_rv32i_control
         end
     end
 
+    // Unused
+    assign arprot = 3'b0;
+
+    // Needs to jump or branch, the request to cache/RAM needs to be restarted
+    assign jump_branch = (branching & goto_branch) | jal | jalr;
+
     // Two flags to stop the processor if ALU/memfy are computing
     assign cant_branch_now = ((jal || jalr || branching) &&
                                ~proc_ready) ? 1'b1 :
                                               1'b0;
 
     assign cant_process_now = (processing && ~proc_ready) ? 1'b1 : 1'b0;
-
-    assign inst_addr = pc[ADDRW-1:0];
 
 
     ///////////////////////////////////////////////////////////////////////////
@@ -428,19 +490,17 @@ module friscv_rv32i_control
     assign ctrl_rd_wr =  (cfsm!=FETCH)                             ? 1'b0 :
                          (~cant_branch_now &&
                             ~cant_process_now &&
-                            csr_ready &&
-                            (auipc || jal || jalr))                ? 1'b1 :
-                         (~cant_process_now && csr_ready && lui)   ? 1'b1 :
-                         (~cant_process_now && csr_ready && auipc) ? 1'b1 :
+                            csr_ready && pull_inst &&
+                            (auipc || jal || jalr || lui))         ? 1'b1 :
                                                                      1'b0 ;
     assign ctrl_rd_addr = rd;
 
-    assign ctrl_rd_val = ((jal || jalr) && load_stored)  ? pc_jal_saved :
-                         ((jal || jalr) && ~load_stored) ? pc_plus4 :
-                         (lui)                           ? {imm20, 12'b0} :
-                         (auipc && load_stored)          ? pc_auipc_saved :
-                         (auipc && ~load_stored)         ? pc_auipc       :
-                                                           pc;
+    assign ctrl_rd_val = ((jal || jalr) && pull_inst)  ? pc_jal_saved :
+                         ((jal || jalr) && ~pull_inst) ? pc_plus4 :
+                         (lui)                         ? {imm20, 12'b0} :
+                         (auipc && ~pull_inst)          ? pc_auipc_saved :
+                         (auipc && pull_inst)         ? pc_auipc       :
+                                                         pc;
 
 
 

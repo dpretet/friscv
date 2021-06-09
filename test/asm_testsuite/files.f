@@ -1,6 +1,8 @@
 +incdir+../../rtl
++define+FRISCV_SIM
 ./common/scram.sv
 ./common/apb_ram.sv
+../common/axi4l_ram.sv
 ../../rtl/friscv_rv32i.sv
 ../../rtl/friscv_rv32i_control.sv
 ../../rtl/friscv_rv32i_decoder.sv
@@ -17,4 +19,3 @@
 ../../rtl/friscv_mem_router.sv
 ../../rtl/friscv_scfifo.sv
 ../../rtl/friscv_scfifo_ram.sv
-+define+FRISCV_SIM

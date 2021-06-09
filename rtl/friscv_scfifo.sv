@@ -22,18 +22,24 @@ module friscv_scfifo
         output logic                  empty
     );
 
+    ///////////////////////////////////////////////////////////////////////////
+    // Parameters and signals declarations
+    ///////////////////////////////////////////////////////////////////////////
+
     logic                wr_en;
     logic [ADDR_WIDTH:0] wrptr;
     logic [ADDR_WIDTH:0] rdptr;
-    logic                empty_w;
-    logic                empty_r;
 
+
+    ///////////////////////////////////////////////////////////////////////////
     // Write Pointer Management
+    ///////////////////////////////////////////////////////////////////////////
+
     always @ (posedge aclk or negedge aresetn) begin
         if (aresetn == 1'b0) begin
             wrptr <= {(ADDR_WIDTH+1){1'b0}};
         end
-        else if (srst | flush) begin
+        else if (srst || flush) begin
             wrptr <= {(ADDR_WIDTH+1){1'b0}};
         end 
         else begin
@@ -43,31 +49,45 @@ module friscv_scfifo
         end
     end
 
+
+    ///////////////////////////////////////////////////////////////////////////
     // Read Pointer Management
+    ///////////////////////////////////////////////////////////////////////////
+
     always @ (posedge aclk or negedge aresetn) begin
         if (aresetn == 1'b0) begin
             rdptr <= {(ADDR_WIDTH+1){1'b0}};
         end
-        else if (srst | flush) begin
+        else if (srst || flush) begin
             rdptr <= {(ADDR_WIDTH+1){1'b0}};
         end 
         else begin
-            if (pull == 1'b1 && empty_w == 1'b0) begin
+            if (pull == 1'b1 && empty == 1'b0) begin
                 rdptr <= rdptr + 1'b1;
             end
         end
     end
     
-    assign wr_en = push & !full;
 
+    ///////////////////////////////////////////////////////////////////////////
+    // Full and empty flags
+    ///////////////////////////////////////////////////////////////////////////
+ 
     assign empty = (wrptr == rdptr) ? 1'b1 : 1'b0;
     assign full = ((wrptr - rdptr) == {1'b1,{ADDR_WIDTH{1'b0}}}) ? 1'b1 : 1'b0;
 
 
+    ///////////////////////////////////////////////////////////////////////////
+    // Internal RAM
+    ///////////////////////////////////////////////////////////////////////////
+
+    assign wr_en = push & !full;
+
     friscv_scfifo_ram 
     #( 
-        .ADDR_WIDTH     (ADDR_WIDTH),
-        .DATA_WIDTH     (DATA_WIDTH)
+        .ADDR_WIDTH (ADDR_WIDTH),
+        .DATA_WIDTH (DATA_WIDTH),
+        .FFD_EN     (0)
     ) 
         fifo_ram 
     (

@@ -17,15 +17,29 @@ module friscv_rv32i_control_unit_testbench();
     parameter ADDRW     = 16;
     parameter BOOT_ADDR =  0;
     parameter XLEN      = 32;
+    // Address bus width defined for both control and AXI4 address signals
+    parameter AXI_ADDR_W = 8;
+    // AXI ID width; setup by default to 8 and unused
+    parameter AXI_ID_W = 8;
+    // AXI4 data width; independant of control unit width
+    parameter AXI_DATA_W = XLEN;
+    // Number of outstanding requests supported
+    parameter OSTDREQ_NUM = 16;
 
     logic                      aclk;
     logic                      aresetn;
     logic                      srst;
-    logic                      inst_en;
     logic                      ebreak;
-    logic [ADDRW        -1:0]  inst_addr;
-    logic [XLEN         -1:0]  inst_rdata;
-    logic                      inst_ready;
+    logic                      arvalid;
+    logic                      arready;
+    logic [AXI_ADDR_W    -1:0] araddr;
+    logic [3             -1:0] arprot;
+    logic [AXI_ID_W      -1:0] arid;
+    logic                      rvalid;
+    logic                      rready;
+    logic [AXI_ID_W      -1:0] rid;
+    logic [2             -1:0] rresp;
+    logic [AXI_DATA_W    -1:0] rdata;
     logic                      proc_en;
     logic                      proc_ready;
     logic                      proc_empty;
@@ -52,39 +66,48 @@ module friscv_rv32i_control_unit_testbench();
     logic [XLEN          -1:0] instructions[16-1:0];
     logic [XLEN          -1:0] data[16-1:0];
     logic [XLEN          -1:0] result[16-1:0];
-    logic [ADDRW        -1:0]  inst_addr_r;
+    logic [ADDRW        -1:0]  araddr_r;
 
     friscv_rv32i_control
     #(
-    ADDRW,
-    BOOT_ADDR,
-    XLEN
+        XLEN,
+        AXI_ADDR_W,
+        AXI_ID_W,
+        AXI_DATA_W,
+        OSTDREQ_NUM,
+        BOOT_ADDR
     )
     dut
     (
-    aclk,
-    aresetn,
-    srst,
-    ebreak,
-    inst_en,
-    inst_addr,
-    inst_rdata,
-    inst_ready,
-    proc_en,
-    proc_ready,
-    proc_empty,
-    fenceinfo,
-    proc_instbus,
-    csr_en,
-    csr_ready,
-    csr_instbus,
-    ctrl_rs1_addr,
-    ctrl_rs1_val,
-    ctrl_rs2_addr,
-    ctrl_rs2_val,
-    ctrl_rd_wr,
-    ctrl_rd_addr,
-    ctrl_rd_val
+        aclk,
+        aresetn,
+        srst,
+        ebreak,
+        arvalid,
+        arready,
+        araddr,
+        arprot,
+        arid,
+        rvalid,
+        rready,
+        rid,
+        rresp,
+        rdata,
+        proc_en,
+        proc_ready,
+        proc_empty,
+        fenceinfo,
+        proc_instbus,
+        csr_en,
+        csr_ready,
+        csr_instbus,
+        ctrl_rs1_addr,
+        ctrl_rs1_val,
+        ctrl_rs2_addr,
+        ctrl_rs2_val,
+        ctrl_rd_wr,
+        ctrl_rd_addr,
+        ctrl_rd_val
     );
 
     /// An example to create a clock for icarus:
@@ -105,14 +128,19 @@ module friscv_rv32i_control_unit_testbench();
         proc_empty = 1'b1;
         fenceinfo = 4'b0;
         csr_ready = 1'b1;
-        inst_rdata = {XLEN{1'b0}};
-        inst_ready = 1'b0;
+        rdata = {XLEN{1'b0}};
+        rresp = 2'b0;
+        arready = 1'b0;
+        rvalid = 1'b0;
         ctrl_rs1_val <= {XLEN{1'b0}};
         ctrl_rs2_val <= {XLEN{1'b0}};
         #10;
         aresetn = 1'b1;
+        arready = 1'b1;
     end
     endtask
+
+    assign rid = arid;
 
     task teardown(msg="");
     begin
@@ -122,9 +150,9 @@ module friscv_rv32i_control_unit_testbench();
 
     always @ (posedge aclk or negedge aresetn) begin
 
-        if (~aresetn) inst_addr_r <= 'h0;
-        else if (srst) inst_addr_r <= 'h0;
-        else inst_addr_r <= inst_addr;
+        if (~aresetn) araddr_r <= 'h0;
+        else if (srst) araddr_r <= 'h0;
+        else araddr_r <= araddr;
     end
 
     `TEST_SUITE("Control Testsuite")
@@ -133,72 +161,73 @@ module friscv_rv32i_control_unit_testbench();
 
         @(posedge aclk);
         @(posedge aclk);
+        rvalid = 1'b1;
 
         `MSG("AUIPC");
-        inst_rdata = 7'b0010111;
+        rdata = 7'b0010111;
         @(posedge aclk);
         `ASSERT((dut.inst_error==1'b0));
 
         @(posedge aclk);
 
         `MSG("FENCE");
-        inst_rdata = 7'b0001111;
+        rdata = 7'b0001111;
         @(posedge aclk);
         `ASSERT((dut.inst_error==1'b0));
 
         @(posedge aclk);
 
         `MSG("JAL");
-        inst_rdata = 7'b1101111;
+        rdata = 7'b1101111;
         @(posedge aclk);
         `ASSERT((dut.inst_error==1'b0));
 
         @(posedge aclk);
 
         `MSG("JALR");
-        inst_rdata = 7'b1100111;
+        rdata = 7'b1100111;
         @(posedge aclk);
         `ASSERT((dut.inst_error==1'b0));
 
         @(posedge aclk);
 
         `MSG("BRANCHING");
-        inst_rdata = 7'b1100011;
+        rdata = 7'b1100011;
         @(posedge aclk);
         `ASSERT((dut.inst_error==1'b0));
 
         @(posedge aclk);
 
         `MSG("LOAD");
-        inst_rdata = 7'b0000011;
+        rdata = 7'b0000011;
         @(posedge aclk);
         `ASSERT((dut.inst_error==1'b0));
 
         @(posedge aclk);
 
         `MSG("ARITHMETIC REGISTER-to-REGISTER");
-        inst_rdata = 7'b0100011;
+        rdata = 7'b0100011;
         @(posedge aclk);
         `ASSERT((dut.inst_error==1'b0));
 
         @(posedge aclk);
 
         `MSG("ARITHMETIC IMMEDIATE");
-        inst_rdata = 7'b0010011;
+        rdata = 7'b0010011;
         @(posedge aclk);
         `ASSERT((dut.inst_error==1'b0));
 
         @(posedge aclk);
 
         `MSG("LUI");
-        inst_rdata = 7'b0110011;
+        rdata = 7'b0110011;
         @(posedge aclk);
         `ASSERT((dut.inst_error==1'b0));
 
         @(posedge aclk);
 
         `MSG("CSR");
-        inst_rdata = 7'b1110011;
+        rdata = 7'b1110011;
         @(posedge aclk);
         `ASSERT((dut.inst_error==1'b0));
 
@@ -206,56 +235,58 @@ module friscv_rv32i_control_unit_testbench();
 
     `UNIT_TEST("Verify invalid opcodes lead to failure")
 
-        `MSG("INVALID");
-        @(negedge aclk);
-        inst_rdata = 7'b0000001;
-        @(posedge aclk);
-        `ASSERT((dut.inst_error==1'b1), "should detect an issue");
+        rvalid = 1'b1;
 
         `MSG("INVALID");
         @(negedge aclk);
-        inst_rdata = 7'b0101001;
-        @(posedge aclk);
-        `ASSERT((dut.inst_error==1'b1), "should detect an issue");
+        rdata = 7'b0000001;
+        while (dut.pull_inst==1'b0) @(posedge aclk);
+        `ASSERT((dut.inst_error==1'b1), "should detect an issue with 0000001");
 
         `MSG("INVALID");
         @(negedge aclk);
-        inst_rdata = 7'b1111111;
-        @(posedge aclk);
-        `ASSERT((dut.inst_error==1'b1), "should detect an issue");
+        rdata = 7'b0101001;
+        while (dut.pull_inst==1'b0) @(posedge aclk);
+        `ASSERT((dut.inst_error==1'b1), "should detect an issue with 0000001");
 
         `MSG("INVALID");
         @(negedge aclk);
-        inst_rdata = 7'b0000000;
-        @(posedge aclk);
-        `ASSERT((dut.inst_error==1'b1), "should detect an issue");
+        rdata = 7'b1111111;
+        while (dut.pull_inst==1'b0) @(posedge aclk);
+        `ASSERT((dut.inst_error==1'b1), "should detect an issue with 0000001");
+
+        `MSG("INVALID");
+        @(negedge aclk);
+        rdata = 7'b0000000;
+        while (dut.pull_inst==1'b0) @(posedge aclk);
+        `ASSERT((dut.inst_error==1'b1), "should detect an issue with 0000001");
 
     `UNIT_TEST_END
 
     `UNIT_TEST("Check ALU/MEMFY is activated with valid opcodes")
 
-        while (inst_en == 1'b0) @(posedge aclk);
-        inst_ready = 1'b1;
+        while (arvalid == 1'b0) @(posedge aclk);
+        rvalid = 1'b1;
         proc_ready = 1'b1;
         @(posedge aclk);
 
         `MSG("LOAD");
-        inst_rdata = 7'b0000011;
+        rdata = 7'b0000011;
         @(posedge aclk);
         `ASSERT((dut.proc_en==1'b1));
 
         `MSG("STORE");
-        inst_rdata = 7'b0100011;
+        rdata = 7'b0100011;
         @(posedge aclk);
         `ASSERT((dut.proc_en==1'b1));
 
         `MSG("AITHMETIC IMMEDIATE");
-        inst_rdata = 7'b0010011;
+        rdata = 7'b0010011;
         @(posedge aclk);
         `ASSERT((dut.proc_en==1'b1));
 
         `MSG("AITHMETIC REGISTER-to-REGISTER");
-        inst_rdata = 7'b0110011;
+        rdata = 7'b0110011;
         @(posedge aclk);
         `ASSERT((dut.proc_en==1'b1));
 
@@ -264,97 +295,115 @@ module friscv_rv32i_control_unit_testbench();
 
     `UNIT_TEST("Check AUIPC opcode")
 
-        while (inst_en == 1'b0) @(posedge aclk);
-
-        `MSG("Zero move");
-        inst_ready = 1'b1;
-        inst_rdata = {20'b0, 5'b0, 7'b0010111};
-        @(negedge aclk);
-        `ASSERT((dut.pc == 32'h4), "program counter must be 0x4");
-        `ASSERT((dut.ctrl_rd_wr == 1'b1), "rd is not under write");
-        `ASSERT((dut.ctrl_rd_addr == 32'h0), "wrong rd target");
-        `ASSERT((dut.ctrl_rd_val == 32'h0), "rd must store 0x0");
+        while (arvalid == 1'b0) @(posedge aclk);
         @(posedge aclk);
 
-        `MSG("Move forward by 4 KB");
-        inst_ready = 1'b1;
-        inst_rdata = {20'h00001, 5'h0, 7'b0010111};
-        @(negedge aclk);
-        `ASSERT((dut.pc == 32'h8), "program counter must be 0x8");
-        `ASSERT((dut.ctrl_rd_wr == 1'b1), "rd is not under write");
-        `ASSERT((dut.ctrl_rd_addr == 32'h0), "wrong rd target");
-        `ASSERT((dut.ctrl_rd_val == 32'h1004), "rd must store 0x1004");
-        @(posedge aclk);
+        fork
+        begin
+            @(negedge aclk)
+            rvalid = 1'b1;
+            rdata = {20'b0, 5'b0, 7'b010111};
+            @(negedge aclk);
+            rdata = {20'h00001, 5'h0, 7'b0010111};
+            @(negedge aclk);
+            rdata = {20'h00001, 5'h3, 7'b0010111};
+            @(negedge aclk);
+            rdata = {20'hFFFFF, 5'h18, 7'b0010111};
+            @(negedge aclk);
+            rvalid = 1'b0;
+        end
+        begin
+            while (dut.ctrl_rd_wr==1'b0) @(negedge aclk);
+            // @(negedge aclk)
+            `MSG("AUIPC Imm. +0KB RD=0x0");
+            `ASSERT((dut.ctrl_rd_wr == 1'b1), "rd is not under write");
+            `ASSERT((dut.ctrl_rd_addr == 32'h0), "wrong rd target");
+            `ASSERT((dut.ctrl_rd_val == 32'h0), "rd must store 0x0");
+            // @(posedge aclk);
 
-        `MSG("Move forward by 4 KB");
-        inst_ready = 1'b1;
-        inst_rdata = {20'h00001, 5'h3, 7'b0010111};
-        @(negedge aclk);
-        `ASSERT((dut.pc == 32'hC), "program counter must be 0xC");
-        `ASSERT((dut.ctrl_rd_wr == 1'b1), "rd is not under write");
-        `ASSERT((dut.ctrl_rd_addr == 32'h3), "wrong rd target");
-        `ASSERT((dut.ctrl_rd_val == 32'h1008), "rd must store pc");
-        @(posedge aclk);
+            @(negedge aclk)
+            `MSG("AUIPC Imm. +4KB RD=0x0");
+            `ASSERT((dut.ctrl_rd_wr == 1'b1), "rd is not under write");
+            `ASSERT((dut.ctrl_rd_addr == 32'h0), "wrong rd target");
+            `ASSERT((dut.ctrl_rd_val == 32'h1004), "rd must store 0x1004");
+            // @(posedge aclk);
 
-        `MSG("Move backward by 4 KB");
-        inst_ready = 1'b1;
-        inst_rdata = {20'hFFFFF, 5'h18, 7'b0010111};
-        @(negedge aclk);
-        `ASSERT((dut.pc == 32'h10), "program counter must be0x10");
-        `ASSERT((dut.ctrl_rd_wr == 1'b1), "rd is not under write");
-        `ASSERT((dut.ctrl_rd_addr == 32'h18), "wrong rd target");
-        `ASSERT((dut.ctrl_rd_val == 32'hFFFFF00C), "rd must store pc");
+            @(negedge aclk)
+            `MSG("AUIPC Imm. +4KB RD=0x3");
+            `ASSERT((dut.ctrl_rd_wr == 1'b1), "rd is not under write");
+            `ASSERT((dut.ctrl_rd_addr == 32'h3), "wrong rd target");
+            `ASSERT((dut.ctrl_rd_val == 32'h1008), "rd must store pc");
+            // @(posedge aclk);
+
+            @(negedge aclk)
+            `MSG("AUIPC Imm. -4KB RD=0x18");
+            `ASSERT((dut.ctrl_rd_wr == 1'b1), "rd is not under write");
+            `ASSERT((dut.ctrl_rd_addr == 32'h18), "wrong rd target");
+            `ASSERT((dut.ctrl_rd_val == 32'hFFFFF00C), "rd must store pc");
+            @(posedge aclk);
+        end
+        join
 
     `UNIT_TEST_END
 
     `UNIT_TEST("Check JAL opcode")
 
-        while (inst_en == 1'b0) @(posedge aclk);
+        while (arvalid == 1'b0) @(posedge aclk);
         @(posedge aclk);
 
-        `MSG("Jump +0, rd=x0");
-        prev_pc = dut.pc + 4;
-        inst_ready = 1'b1;
-        inst_rdata = {25'b0, 7'b1101111};
-        @(negedge aclk);
-        `ASSERT((dut.pc == 32'h0), "program counter must keep 0 value");
-        `ASSERT((dut.ctrl_rd_wr == 1'b1), "rd is not under write");
-        `ASSERT((dut.ctrl_rd_addr == 32'h0), "rd must target x0");
-        `ASSERT((dut.ctrl_rd_val == prev_pc), "rd must store pc(-1)+4");
-        @(posedge aclk);
+        fork
+        begin
+            @(negedge aclk)
+            rvalid = 1'b1;
+            // rdata = {25'b0, 7'b1101111};
+            // @(negedge aclk)
+            // rdata = {25'h3, 7'b1101111};
+            // @(negedge aclk)
+            rdata = {{1'b0, 10'b0, 1'b1, 8'b0}, 5'h5, 7'b1101111};
+            @(negedge aclk)
+            rvalid = 1'b0;
+        end
+        begin
+            while (dut.ctrl_rd_wr==1'b0) @(negedge aclk);
+            // `MSG("Jump +0, rd=x0");
+            // prev_pc = dut.pc + 4;
+            // @(negedge aclk);
+            // `ASSERT((dut.pc == 32'h0), "program counter must keep 0 value");
+            // `ASSERT((dut.ctrl_rd_wr == 1'b1), "rd is not under write");
+            // `ASSERT((dut.ctrl_rd_addr == 32'h0), "rd must target x0");
+            // `ASSERT((dut.ctrl_rd_val == prev_pc), "rd must store pc(-1)+4");
 
-        `MSG("Jump +0, rd=x3");
-        prev_pc = dut.pc + 4;
-        inst_ready = 1'b1;
-        inst_rdata = {25'h3, 7'b1101111};
-        @(negedge aclk);
-        `ASSERT((dut.pc == 32'h0), "program counter must keep 0 value");
-        `ASSERT((dut.ctrl_rd_wr == 1'b1), "rd is not under write");
-        `ASSERT((dut.ctrl_rd_addr == 32'h3), "rd must target x3");
-        `ASSERT((dut.ctrl_rd_val == prev_pc), "rd must store pc(-1)+4");
-        @(posedge aclk);
+            // `MSG("Jump +0, rd=x3");
+            // prev_pc = dut.pc + 4;
+            // @(negedge aclk);
+            // `ASSERT((dut.pc == 32'h0), "program counter must keep 0 value");
+            // `ASSERT((dut.ctrl_rd_wr == 1'b1), "rd is not under write");
+            // `ASSERT((dut.ctrl_rd_addr == 32'h3), "rd must target x3");
+            // `ASSERT((dut.ctrl_rd_val == prev_pc), "rd must store pc(-1)+4");
 
-        `MSG("Jump +2048, rd=x5");
-        prev_pc = dut.pc + 4;
-        inst_ready = 1'b1;
-        inst_rdata = {{1'b0, 10'b0, 1'b1, 8'b0}, 5'h5, 7'b1101111};
-        @(negedge aclk);
-        `ASSERT((dut.pc == 32'h800), "program counter must be 2KB");
-        `ASSERT((dut.ctrl_rd_wr == 1'b1), "rd is not under write");
-        `ASSERT((dut.ctrl_rd_addr == 32'h5), "rd must target x3");
-        `ASSERT((dut.ctrl_rd_val == prev_pc), "rd must store pc(-1)+4");
+            `MSG("Jump +2048, rd=x5");
+            prev_pc = dut.pc + 4;
+            @(negedge aclk);
+            `ASSERT((dut.pc == 32'h800), "program counter must be 2KB");
+            `ASSERT((dut.ctrl_rd_wr == 1'b1), "rd is not under write");
+            `ASSERT((dut.ctrl_rd_addr == 32'h5), "rd must target x3");
+            `ASSERT((dut.ctrl_rd_val == prev_pc), "rd must store pc(-1)+4");
+        end
+        join
+
 
     `UNIT_TEST_END
 
+/*
     `UNIT_TEST("Check JALR opcode")
 
-        while (inst_en == 1'b0) @(posedge aclk);
+        while (arvalid == 1'b0) @(posedge aclk);
         @(posedge aclk);
 
         `MSG("Jump +0, rd=x0");
         prev_pc = dut.pc + 4;
-        inst_ready = 1'b1;
-        inst_rdata = {25'b0, 7'b1100111};
+        rvalid = 1'b1;
+        rdata = {25'b0, 7'b1100111};
         @(negedge aclk);
         `ASSERT((dut.pc == 32'h0), "program counter must keep 0 value");
         `ASSERT((dut.ctrl_rd_wr == 1'b1), "rd is not under write");
@@ -364,8 +413,8 @@ module friscv_rv32i_control_unit_testbench();
 
         `MSG("Jump +4KB, rd=x1");
         prev_pc = dut.pc + 4;
-        inst_ready = 1'b1;
-        inst_rdata = {12'h0, 5'h0, 3'h0, 5'h1, 7'b1100111};
+        rvalid = 1'b1;
+        rdata = {12'h0, 5'h0, 3'h0, 5'h1, 7'b1100111};
         @(negedge aclk);
         `ASSERT((dut.pc == 32'h0), "program counter must be 4KB");
         `ASSERT((dut.ctrl_rd_wr == 1'b1), "rd is not under write");
@@ -375,8 +424,8 @@ module friscv_rv32i_control_unit_testbench();
 
         `MSG("Jump +4KB, rd=x2");
         prev_pc = dut.pc + 4;
-        inst_ready = 1'b1;
-        inst_rdata = {12'h1, 5'h0, 3'h0, 5'h2, 7'b1100111};
+        rvalid = 1'b1;
+        rdata = {12'h1, 5'h0, 3'h0, 5'h2, 7'b1100111};
         @(negedge aclk);
         `ASSERT((dut.pc == 32'h0), "program counter must be 4KB");
         `ASSERT((dut.ctrl_rd_wr == 1'b1), "rd is not under write");
@@ -386,8 +435,8 @@ module friscv_rv32i_control_unit_testbench();
 
         `MSG("Jump +4KB, rd=x2");
         prev_pc = dut.pc + 4;
-        inst_ready = 1'b1;
-        inst_rdata = {12'h2, 5'h0, 3'h0, 5'h2, 7'b1100111};
+        rvalid = 1'b1;
+        rdata = {12'h2, 5'h0, 3'h0, 5'h2, 7'b1100111};
         @(negedge aclk);
         `ASSERT((dut.pc == 32'h2), "program counter must be 4KB");
         `ASSERT((dut.ctrl_rd_wr == 1'b1), "rd is not under write");
@@ -398,16 +447,16 @@ module friscv_rv32i_control_unit_testbench();
 
     `UNIT_TEST("Check all branching")
 
-        while (inst_en == 1'b0) @(posedge aclk);
+        while (arvalid == 1'b0) @(posedge aclk);
         @(posedge aclk);
-        inst_ready = 1'b1;
+        rvalid = 1'b1;
 
         `MSG("BEQ is true");
         prev_pc = dut.pc + 4;
         next_pc = dut.pc + offset;
         ctrl_rs1_val = 32'hFFFFFFFF;
         ctrl_rs2_val = 32'hFFFFFFFF;
-        inst_rdata = {17'h0, `BEQ, 5'h10, 7'b1100011};
+        rdata = {17'h0, `BEQ, 5'h10, 7'b1100011};
         @(negedge aclk);
         `ASSERT((dut.pc == 32'h10), "program counter must move forward by 16 bytes");
         @(posedge aclk);
@@ -417,7 +466,7 @@ module friscv_rv32i_control_unit_testbench();
         next_pc = dut.pc + offset;
         ctrl_rs1_val = 32'hFFFFFFFF;
         ctrl_rs2_val = 32'h00000000;
-        inst_rdata = {17'h0, `BEQ, 5'h2, 7'b1100011};
+        rdata = {17'h0, `BEQ, 5'h2, 7'b1100011};
         @(negedge aclk);
         `ASSERT((dut.pc == 32'h14), "program counter must move forward by 4 bytes");
         @(posedge aclk);
@@ -427,7 +476,7 @@ module friscv_rv32i_control_unit_testbench();
         next_pc = dut.pc + offset;
         ctrl_rs1_val = 32'hFFFFFFFF;
         ctrl_rs2_val = 32'h00FFFFFF;
-        inst_rdata = {17'h0, `BNE, 5'h10, 7'b1100011};
+        rdata = {17'h0, `BNE, 5'h10, 7'b1100011};
         @(negedge aclk);
         `ASSERT((dut.pc == 32'h24), "program counter must move forward by 16 bytes");
         @(posedge aclk);
@@ -437,7 +486,7 @@ module friscv_rv32i_control_unit_testbench();
         next_pc = dut.pc + offset;
         ctrl_rs1_val = 32'hFFFFFFFF;
         ctrl_rs2_val = 32'hFFFFFFFF;
-        inst_rdata = {17'h0, `BNE, 5'h10, 7'b1100011};
+        rdata = {17'h0, `BNE, 5'h10, 7'b1100011};
         @(negedge aclk);
         `ASSERT((dut.pc == 32'h28), "program counter must move forward by 4 bytes");
         @(posedge aclk);
@@ -447,7 +496,7 @@ module friscv_rv32i_control_unit_testbench();
         next_pc = dut.pc + offset;
         ctrl_rs1_val = 32'hFFFFFFFF;
         ctrl_rs2_val = 32'h00FFFFFF;
-        inst_rdata = {17'h0, `BLT, 5'h10, 7'b1100011};
+        rdata = {17'h0, `BLT, 5'h10, 7'b1100011};
         @(negedge aclk);
         `ASSERT((dut.pc == 32'h38), "program counter must move forward by 16 bytes");
         @(posedge aclk);
@@ -457,7 +506,7 @@ module friscv_rv32i_control_unit_testbench();
         next_pc = dut.pc + offset;
         ctrl_rs1_val = 32'hFFFFFFFF;
         ctrl_rs2_val = 32'hFFFFFFFF;
-        inst_rdata = {17'h0, `BLT, 5'h10, 7'b1100011};
+        rdata = {17'h0, `BLT, 5'h10, 7'b1100011};
         @(negedge aclk);
         `ASSERT((dut.pc == 32'h3C), "program counter must move forward by 4 bytes");
         @(posedge aclk);
@@ -467,7 +516,7 @@ module friscv_rv32i_control_unit_testbench();
         next_pc = dut.pc + offset;
         ctrl_rs1_val = 32'h00FFFFFF;
         ctrl_rs2_val = 32'h00FFFFFF;
-        inst_rdata = {17'h0, `BGE, 5'h10, 7'b1100011};
+        rdata = {17'h0, `BGE, 5'h10, 7'b1100011};
         @(negedge aclk);
         `ASSERT((dut.pc == 32'h4C), "program counter must move forward by 16 bytes");
         @(posedge aclk);
@@ -477,7 +526,7 @@ module friscv_rv32i_control_unit_testbench();
         next_pc = dut.pc + offset;
         ctrl_rs1_val = 32'h0FFFFFFF;
         ctrl_rs2_val = 32'h00FFFFFF;
-        inst_rdata = {17'h0, `BGE, 5'h10, 7'b1100011};
+        rdata = {17'h0, `BGE, 5'h10, 7'b1100011};
         @(negedge aclk);
         `ASSERT((dut.pc == 32'h5C), "program counter must move forward by 16 bytes");
         @(posedge aclk);
@@ -487,7 +536,7 @@ module friscv_rv32i_control_unit_testbench();
         next_pc = dut.pc + offset;
         ctrl_rs1_val = 32'h0F0FFFFF;
         ctrl_rs2_val = 32'h0FFFFFFF;
-        inst_rdata = {17'h0, `BGE, 5'h10, 7'b1100011};
+        rdata = {17'h0, `BGE, 5'h10, 7'b1100011};
         @(negedge aclk);
         `ASSERT((dut.pc == 32'h60), "program counter must move forward by 4 bytes");
         @(posedge aclk);
@@ -497,7 +546,7 @@ module friscv_rv32i_control_unit_testbench();
         next_pc = dut.pc + offset;
         ctrl_rs1_val = 32'h0000FFFF;
         ctrl_rs2_val = 32'h00FFFFFF;
-        inst_rdata = {17'h0, `BLTU, 5'h10, 7'b1100011};
+        rdata = {17'h0, `BLTU, 5'h10, 7'b1100011};
         @(negedge aclk);
         `ASSERT((dut.pc == 32'h70), "program counter must move forward by 16 bytes");
         @(posedge aclk);
@@ -507,7 +556,7 @@ module friscv_rv32i_control_unit_testbench();
         next_pc = dut.pc + offset;
         ctrl_rs1_val = 32'hFFFFFFFF;
         ctrl_rs2_val = 32'hFFFFFFFF;
-        inst_rdata = {17'h0, `BLTU, 5'h10, 7'b1100011};
+        rdata = {17'h0, `BLTU, 5'h10, 7'b1100011};
         @(negedge aclk);
         `ASSERT((dut.pc == 32'h74), "program counter must move forward by 4 bytes");
         @(posedge aclk);
@@ -517,7 +566,7 @@ module friscv_rv32i_control_unit_testbench();
         next_pc = dut.pc + offset;
         ctrl_rs1_val = 32'h0FFFFFFF;
         ctrl_rs2_val = 32'h00FFFFFF;
-        inst_rdata = {17'h0, `BGEU, 5'h10, 7'b1100011};
+        rdata = {17'h0, `BGEU, 5'h10, 7'b1100011};
         @(negedge aclk);
         `ASSERT((dut.pc == 32'h84), "program counter must move forward by 16 bytes");
         @(posedge aclk);
@@ -527,7 +576,7 @@ module friscv_rv32i_control_unit_testbench();
         next_pc = dut.pc + offset;
         ctrl_rs1_val = 32'h00FFFFF0;
         ctrl_rs2_val = 32'h00FFFFFF;
-        inst_rdata = {17'h0, `BGEU, 5'h10, 7'b1100011};
+        rdata = {17'h0, `BGEU, 5'h10, 7'b1100011};
         @(negedge aclk);
         `ASSERT((dut.pc == 32'h88), "program counter must move forward by 16 bytes");
 
@@ -543,11 +592,11 @@ module friscv_rv32i_control_unit_testbench();
 
         fork
         begin
-            while (inst_en==1'b0) @ (posedge aclk);
-            inst_ready = 1'b1;
-            inst_rdata = {imm20, rd, `LUI};
+            while (arvalid==1'b0) @ (posedge aclk);
+            rvalid = 1'b1;
+            rdata = {imm20, rd, `LUI};
             @(posedge aclk);
-            inst_ready = 1'b0;
+            rvalid = 1'b0;
             @(posedge aclk);
             @(posedge aclk);
             @(posedge aclk);
@@ -566,27 +615,27 @@ module friscv_rv32i_control_unit_testbench();
 
         @(posedge aclk);
         @(posedge aclk);
-        while (inst_en == 1'b0) @(posedge aclk);
+        while (arvalid == 1'b0) @(posedge aclk);
 
         `MSG("FENCE move");
-        inst_ready = 1'b1;
-        inst_rdata = {20'b0, 5'b0, 7'b0001111};
+        rvalid = 1'b1;
+        rdata = {20'b0, 5'b0, 7'b0001111};
         @(negedge aclk);
         `ASSERT((dut.pc == 32'h4), "FENCE - program counter must be 0x4");
         @(posedge aclk);
 
         `MSG("FENCE move but stalled by ALU/Memfy not ready");
         proc_ready = 1'b0;
-        inst_ready = 1'b1;
-        inst_rdata = {20'b0, 5'b0, 7'b0001111};
+        rvalid = 1'b1;
+        rdata = {20'b0, 5'b0, 7'b0001111};
         @(negedge aclk);
         `ASSERT((dut.pc == 32'h8), "FENCE - program counter must be 0x8");
         @(posedge aclk);
 
         `MSG("FENCE.I move");
         proc_ready = 1'b1;
-        inst_ready = 1'b1;
-        inst_rdata = {20'b1, 5'b0, 7'b0001111};
+        rvalid = 1'b1;
+        rdata = {20'b1, 5'b0, 7'b0001111};
         @(posedge aclk);
         `ASSERT((dut.pc == 32'hC), "FENCE.I - program counter must be 0xC");
         @(posedge aclk);
@@ -596,18 +645,18 @@ module friscv_rv32i_control_unit_testbench();
 
     `UNIT_TEST("ENV instructions - ECALL/EBREAK")
 
-        while (inst_en == 1'b0) @(posedge aclk);
+        while (arvalid == 1'b0) @(posedge aclk);
 
         `MSG("ECALL move");
-        inst_ready = 1'b1;
-        inst_rdata = {12'b0, 5'b0, 3'b0, 5'b0, 7'b1110011};
+        rvalid = 1'b1;
+        rdata = {12'b0, 5'b0, 3'b0, 5'b0, 7'b1110011};
         @(negedge aclk);
         `ASSERT((dut.pc == 32'h4), "program counter must be 0x4");
         @(posedge aclk);
 
         `MSG("EBREAK move");
-        inst_ready = 1'b1;
-        inst_rdata = {12'b1, 5'b0, 3'b0, 5'b0, 7'b1110011};
+        rvalid = 1'b1;
+        rdata = {12'b1, 5'b0, 3'b0, 5'b0, 7'b1110011};
         @(negedge aclk);
         `ASSERT((dut.pc == 32'h8), "program counter must be 0x8");
         @(posedge aclk);
@@ -620,7 +669,7 @@ module friscv_rv32i_control_unit_testbench();
         `CRITICAL("Check X0 as rs/rd");
 
     `UNIT_TEST_END
-
+*/
     `TEST_SUITE_END
 
 endmodule
