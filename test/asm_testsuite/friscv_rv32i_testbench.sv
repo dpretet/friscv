@@ -253,7 +253,7 @@ module friscv_rv32i_testbench();
         if (timer<TIMEOUT) begin
             $display("Testcase errors: %0d", dut.x31);
         end
-        `ASSERT((timer<100), "Reached timeout");
+        `ASSERT((timer<TIMEOUT), "Reached timeout");
         `INFO("Stop test");
 
     `UNIT_TEST_END

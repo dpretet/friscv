@@ -1,20 +1,24 @@
 [*]
 [*] GTKWave Analyzer v3.3.107 (w)1999-2020 BSI
-[*] Thu Jun 10 19:21:48 2021
+[*] Sun Jun 13 16:34:44 2021
 [*]
 [dumpfile] __TMPL__
-[dumpfile_mtime] "Thu Jun 10 18:50:48 2021"
-[dumpfile_size] 3379038
+[dumpfile_mtime] "Sun Jun 13 16:33:59 2021"
+[dumpfile_size] 208321
 [savefile] "/Users/damien/workspace/hdl/friscv/test/asm_testsuite/friscv_rv32i_testbench_main.gtkw"
-[timestart] 0
-[size] 2015 1050
-[pos] -1 -1
-*-14.000000 67000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[timestart] 187580
+[size] 1755 1161
+[pos] -29 -34
+*-14.000000 277000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] dut.
+[treeopen] dut.control.
+[treeopen] dut.control.inst_fifo.
+[treeopen] inst_axi4l_ram.
+[treeopen] processing.
 [sst_width] 193
-[signals_width] 341
+[signals_width] 272
 [sst_expanded] 1
-[sst_vpaned_height] 325
+[sst_vpaned_height] 218
 @c00200
 -AXI4-lite
 @28
@@ -22,11 +26,17 @@ inst_axi4l_ram.aclk
 inst_axi4l_ram.aresetn
 inst_axi4l_ram.srst
 @22
+inst_axi4l_ram.araddr[15:0]
 inst_axi4l_ram.arid[7:0]
 @28
 inst_axi4l_ram.arprot[2:0]
 inst_axi4l_ram.arvalid
 inst_axi4l_ram.arready
+@200
+-
+@22
+inst_axi4l_ram.araddr_s[15:0]
+inst_axi4l_ram.arid_s[7:0]
 @200
 -
 @22
@@ -68,10 +78,9 @@ dut.control.arready
 @22
 dut.control.rdata[31:0]
 dut.control.rid[7:0]
-@29
-[color] 7
-dut.control.rvalid
 @28
+[color] 4
+dut.control.rvalid
 dut.control.rready
 dut.control.rresp[1:0]
 @200
@@ -88,17 +97,101 @@ dut.control.ctrl_rs2_val[31:0]
 @200
 -
 @28
+dut.control.proc_en
+dut.control.proc_ready
+@22
+dut.control.proc_instbus[86:0]
+@28
+dut.control.proc_empty
+@22
+dut.control.proc_fenceinfo[3:0]
+@200
+-
+@28
 dut.control.push_inst
 dut.control.fifo_full
 dut.control.pull_inst
 @22
+[color] 7
 dut.control.instruction[31:0]
 @28
 dut.control.fifo_empty
 dut.control.inst_error
-dut.control.flush_fifo
 @200
 -
+@22
+[color] 2
+dut.control.cfsm[3:0]
+@28
+dut.control.flush_fifo
+@22
+dut.control.pc_reg[31:0]
+@28
+dut.control.processing
+dut.control.jump_branch
+dut.control.branching
+dut.control.goto_branch
+dut.control.cant_branch_now
+dut.control.cant_process_now
+dut.control.auipc
+dut.control.jal
+dut.control.jalr
+dut.control.lui
+dut.control.env[2:0]
+dut.control.fence[1:0]
+@200
+-
+@800200
+-PCs
+@22
+dut.control.pc[31:0]
+dut.control.pc_auipc[31:0]
+dut.control.pc_auipc_saved[31:0]
+dut.control.pc_branching[31:0]
+dut.control.pc_jal[31:0]
+dut.control.pc_jal_saved[31:0]
+dut.control.pc_jalr[31:0]
+dut.control.pc_plus4[31:0]
+@23
+dut.control.pc_reg[31:0]
+@1000200
+-PCs
+@200
+-
+@c00200
+-Instruction FIFO
+@28
+dut.control.inst_fifo.flush
+dut.control.inst_fifo.push
+dut.control.inst_fifo.wr_en
+@22
+dut.control.inst_fifo.wrptr[3:0]
+dut.control.inst_fifo.data_in[31:0]
+@28
+dut.control.inst_fifo.full
+dut.control.inst_fifo.pull
+@22
+dut.control.inst_fifo.data_out[31:0]
+dut.control.inst_fifo.rdptr[3:0]
+@28
+dut.control.inst_fifo.empty
+@200
+-
+@28
+dut.control.inst_fifo.fifo_ram.wr_en
+dut.control.inst_fifo.fifo_ram.addr_in[2:0]
+@22
+dut.control.inst_fifo.fifo_ram.data_in[31:0]
+@28
+dut.control.inst_fifo.fifo_ram.addr_out[2:0]
+@22
+dut.control.inst_fifo.fifo_ram.data_out[31:0]
+@1401200
+-Instruction FIFO
+@200
+-
+@800200
+-Instruction
 @22
 dut.control.opcode[6:0]
 @28
@@ -108,29 +201,15 @@ dut.control.funct7[6:0]
 dut.control.rs1[4:0]
 dut.control.rs2[4:0]
 dut.control.rd[4:0]
+dut.control.imm12[11:0]
+dut.control.imm20[19:0]
 dut.control.shamt[5:0]
 dut.control.succ[3:0]
 dut.control.pred[3:0]
 dut.control.zimm[4:0]
 dut.control.csr[11:0]
-@200
--
-@22
-[color] 7
-dut.control.cfsm[3:0]
-dut.control.pc_reg[31:0]
-@28
-dut.control.processing
-dut.control.branching
-dut.control.cant_branch_now
-dut.control.cant_process_now
-dut.control.auipc
-dut.control.jal
-dut.control.jalr
-dut.control.jump_branch
-dut.control.lui
-dut.control.env[2:0]
-dut.control.fence[1:0]
+@1000200
+-Instruction
 @200
 -
 @28
@@ -147,22 +226,66 @@ dut.control.pc_jalr[31:0]
 @200
 -
 @28
-dut.control.proc_en
-dut.control.proc_ready
-@22
-dut.control.proc_instbus[86:0]
-@28
-dut.control.proc_empty
-@22
-dut.control.proc_fenceinfo[3:0]
-@200
--
-@28
 dut.control.csr_en
 dut.control.csr_ready
 @22
 dut.control.csr_instbus[86:0]
 @1000200
 -Control
+@800200
+-ISA Registers
+@22
+isa_registers.x0[31:0]
+isa_registers.x1[31:0]
+isa_registers.x2[31:0]
+isa_registers.x3[31:0]
+isa_registers.x10[31:0]
+isa_registers.x11[31:0]
+isa_registers.x12[31:0]
+isa_registers.x13[31:0]
+isa_registers.x31[31:0]
+@1000200
+-ISA Registers
+@c00200
+-Memfy
+@28
+processing.memfy.memfy_en
+@22
+processing.memfy.memfy_instbus[86:0]
+@28
+processing.memfy.memfy_ready
+@22
+processing.memfy.opcode[6:0]
+@28
+processing.memfy.funct3[2:0]
+@22
+processing.memfy.funct7[6:0]
+processing.memfy.rs1[4:0]
+processing.memfy.rs2[4:0]
+processing.memfy.rd[4:0]
+@1401200
+-Memfy
+@c00200
+-processing
+@28
+processing.proc_en
+@22
+processing.proc_instbus[86:0]
+@28
+processing.proc_ready
+processing.alu_en
+processing.alu_ready
+processing.memfy_en
+processing.memfy_ready
+@200
+-
+@28
+processing.alu_rd_wr
+@22
+processing.alu_rd_addr[4:0]
+processing.alu_rd_strb[3:0]
+processing.alu_rd_val[31:0]
+@1401200
+-processing
 [pattern_trace] 1
 [pattern_trace] 0

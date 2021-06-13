@@ -104,17 +104,14 @@ module axi4l_ram
             random <= $urandom() % 5;
             rcounter <= 0;
             rvalid <= 1'b0;
-            rid <= {AXI_ID_W{1'b0}};
         end else if (srst) begin
             random <= $urandom() % 5;
             rcounter <= 0;
             rvalid <= 1'b0;
-            rid <= {AXI_ID_W{1'b0}};
         end else begin
             if (~raddr_empty) begin
                 if (random==rcounter) begin
                     rvalid <= 1'b1;
-                    rid <= arid_s;
                     if (rready) begin
                         if (VARIABLE_LATENCY>0) random <= $urandom() % 5;
                         else random <= 0;
@@ -132,6 +129,7 @@ module axi4l_ram
     end
 
     assign rdata = mem[araddr_s[ADDR_LSB_W+:AXI_ADDR_W-ADDR_LSB_W]];
+    assign rid = arid_s;
     assign rresp = 2'b0;
 
 endmodule

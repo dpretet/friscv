@@ -12,7 +12,7 @@ lui x15, 2
 lui x16, 2
 addi x17, x17, 3
 # Register used to store origin
-add  x20, x20, 0
+addi x20, x20, 0
 # Register used to store nb of errors
 addi x31, x31, 0
 

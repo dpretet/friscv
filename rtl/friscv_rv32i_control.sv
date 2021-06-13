@@ -174,8 +174,8 @@ module friscv_rv32i_control
     .empty    (fifo_empty)
     );
 
-    // assign pull_inst = (csr_ready && ~cant_branch_now && ~cant_process_now && 
-                        // cfsm==FETCH && ~fifo_empty) ? 1'b1 : 1'b0;
+    assign pull_inst = (csr_ready && ~cant_branch_now && ~cant_process_now && 
+                        cfsm==FETCH && ~fifo_empty) ? 1'b1 : 1'b0;
 
     ///////////////////////////////////////////////////////////////////////////
     //
@@ -352,7 +352,7 @@ module friscv_rv32i_control
             pc_auipc_saved <= {(XLEN){1'b0}};
             ebreak <= 1'b0;
             flush_fifo <= 1'b0;
-            pull_inst <= 1'b0;
+            // pull_inst <= 1'b0;
             arid <= {AXI_ID_W{1'b0}};
         end else if (srst == 1'b1) begin
             cfsm <= BOOT;
@@ -363,7 +363,7 @@ module friscv_rv32i_control
             pc_auipc_saved <= {(XLEN){1'b0}};
             ebreak <= 1'b0;
             flush_fifo <= 1'b0;
-            pull_inst <= 1'b0;
+            // pull_inst <= 1'b0;
             arid <= {AXI_ID_W{1'b0}};
         end else begin
 
@@ -392,7 +392,7 @@ module friscv_rv32i_control
 
                     // Manages read outstanding requests to fetch 
                     // new instruction from memory
-                    if (~fifo_empty && jump_branch) begin
+                    if (~fifo_empty && jump_branch && ~cant_branch_now && csr_ready) begin
                         araddr <= pc;
                     end else if (arready) begin
                         araddr <= araddr + 4;
@@ -402,9 +402,11 @@ module friscv_rv32i_control
                         
                         // Needs to jump or branch thus stop the pipeline
                         // and reload new instructions
-                        if (jump_branch) begin
+                        if (jump_branch && ~cant_branch_now && csr_ready) begin
                             flush_fifo <= 1'b1;
                             arvalid <= 1'b0;
+                            arid <= arid + 1;
+                            pc_reg <= pc;
                             cfsm <= RELOAD;
                         // Reach an EBREAK instruction, need to stall the core
                         end else if (env[1]) begin
@@ -418,26 +420,24 @@ module friscv_rv32i_control
                         begin
                             pc_jal_saved <= pc_plus4;
                             pc_auipc_saved <= pc_reg;
-                            pull_inst <= 1'b0;
+                            // pull_inst <= 1'b0;
                         // Process as long as instruction are available
                         end else if (csr_ready && 
                                      ~cant_branch_now && ~cant_process_now) 
                         begin
                             pc_reg <= pc;
-                            pull_inst <= 1'b1;
+                            // pull_inst <= 1'b1;
                         end
 
                     end else begin
-                        pull_inst <= 1'b0;
+                        // pull_inst <= 1'b0;
                     end
                 end
 
                 // Stop operations to reload new oustanding requests
                 RELOAD: begin
                     arvalid <= 1'b1;
-                    arid <= arid + 1;
                     flush_fifo <= 1'b0;
-                    pc_reg <= pc;
                     cfsm <= FETCH;
                 end
 
@@ -495,14 +495,12 @@ module friscv_rv32i_control
                                                                      1'b0 ;
     assign ctrl_rd_addr = rd;
 
-    assign ctrl_rd_val = ((jal || jalr) && pull_inst)  ? pc_jal_saved :
-                         ((jal || jalr) && ~pull_inst) ? pc_plus4 :
+    assign ctrl_rd_val = ((jal || jalr) && ~pull_inst) ? pc_jal_saved :
+                         ((jal || jalr) && pull_inst)  ? pc_plus4 :
                          (lui)                         ? {imm20, 12'b0} :
-                         (auipc && ~pull_inst)          ? pc_auipc_saved :
-                         (auipc && pull_inst)         ? pc_auipc       :
+                         (auipc && ~pull_inst)         ? pc_auipc_saved :
+                         (auipc && pull_inst)          ? pc_auipc       :
                                                          pc;
-
-
 
 endmodule
 
