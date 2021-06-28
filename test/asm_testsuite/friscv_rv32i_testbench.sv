@@ -10,16 +10,20 @@ module friscv_rv32i_testbench();
 
     // 32 bits architecture
     parameter XLEN               = 32;
+    // Boot address used by the control unit
+    parameter BOOT_ADDR          = 0;
+    // Number of outstanding requests used by the control unit
+    parameter INST_OSTDREQ_NUM   = 8;
+    // CSR registers depth
+    parameter CSR_DEPTH          = 12;
     // Address buses width
     parameter AXI_ADDR_W         = 16;
     // AXI ID width, setup by default to 8 and unused
     parameter AXI_ID_W           = 8;
     // AXI4 data width, independant of control unit width
-    parameter AXI_DATA_W         = XLEN;
+    parameter AXI_DATA_W         = `CACHE_LINE_W;
     // Address buses width
     parameter DATA_ADDRW         = 16;
-    // Boot address used by the control unit
-    parameter BOOT_ADDR          = 0;
     // Define the address of GPIO peripheral in APB interconnect
     parameter GPIO_SLV0_ADDR     = 0;
     parameter GPIO_SLV0_SIZE     = 2;
@@ -32,12 +36,17 @@ module friscv_rv32i_testbench();
     parameter DATA_MEM_BASE_ADDR = 2048;
     parameter DATA_MEM_BASE_SIZE = 16384;
     // UART FIFO Depth
-    parameter UART_FIFO_DEPTH = 4;
-    parameter CSR_DEPTH = 12;
+    parameter UART_FIFO_DEPTH    = 4;
+    // Enable Instruction cache
+    parameter ICACHE_EN          = 1;
+    // Line width defining only the data payload, in bits, must an
+    // integer multiple of XLEN
+    parameter CACHE_LINE_W       = `CACHE_LINE_W;
+    // Number of lines in the cache
+    parameter CACHE_DEPTH        = 512;
 
     // timeout used in the testbench to break the simulation
-    parameter TIMEOUT    = 10000;
-
+    parameter TIMEOUT = 10000;
     // Variable latency setup the AXI4-lite RAM model
     parameter VARIABLE_LATENCY = 0;
 
@@ -89,11 +98,13 @@ module friscv_rv32i_testbench();
     friscv_rv32i
     #(
         XLEN,
+        BOOT_ADDR,
+        INST_OSTDREQ_NUM,
+        CSR_DEPTH,
         AXI_ADDR_W,
         AXI_ID_W,
         AXI_DATA_W,
         DATA_ADDRW,
-        BOOT_ADDR,
         GPIO_SLV0_ADDR,
         GPIO_SLV0_SIZE,
         GPIO_SLV1_ADDR,
@@ -103,7 +114,9 @@ module friscv_rv32i_testbench();
         DATA_MEM_BASE_ADDR,
         DATA_MEM_BASE_SIZE,
         UART_FIFO_DEPTH,
-        CSR_DEPTH
+        ICACHE_EN,
+        CACHE_LINE_W,
+        CACHE_DEPTH
     )
     dut
     (
@@ -148,7 +161,7 @@ module friscv_rv32i_testbench();
         .AXI_ADDR_W       (AXI_ADDR_W),
         .AXI_ID_W         (AXI_ID_W),
         .AXI_DATA_W       (AXI_DATA_W),
-        .OSTDREQ_NUM      (`INST_OSTDREQ_NUM)
+        .OSTDREQ_NUM      (INST_OSTDREQ_NUM)
     )
     inst_axi4l_ram
     (
@@ -249,9 +262,9 @@ module friscv_rv32i_testbench();
             @(posedge aclk);
         end
         repeat(5) @(posedge aclk);
-        `ASSERT((dut.x31==0), "TEST FAILED");
+        `ASSERT((dut.isa_registers.regs[31]==0), "TEST FAILED");
         if (timer<TIMEOUT) begin
-            $display("Testcase errors: %0d", dut.x31);
+            $display("Testcase errors: %0d", dut.isa_registers.regs[31]);
         end
         `ASSERT((timer<TIMEOUT), "Reached timeout");
         `INFO("Stop test");

@@ -1,7 +1,7 @@
 PROJ_NAME=$(shell basename $(CURDIR))
 
 
-RISCV_PATH=/opt/riscv/
+RISCV_PATH=/usr/local/Cellar/riscv-gnu-toolchain/master
 CFLAGS += -march=rv32ia -mabi=ilp32
 RISCV_NAME = riscv64-unknown-elf
 RISCV_OBJCOPY = $(RISCV_PATH)/bin/$(RISCV_NAME)-objcopy

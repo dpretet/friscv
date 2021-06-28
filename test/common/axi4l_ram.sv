@@ -58,6 +58,10 @@ module axi4l_ram
     logic [AXI_DATA_W+AXI_ID_W-1:0] mem [2**AXI_ADDR_W-1:0];
     initial $readmemh(INIT, mem, 0, 2**AXI_ADDR_W-1);
 
+    // initial
+    // for (int i=0;i<32;i++)
+        // $display("%x", mem[i]);
+
     integer                 random;
     integer                 rcounter;
 
@@ -109,7 +113,7 @@ module axi4l_ram
             rcounter <= 0;
             rvalid <= 1'b0;
         end else begin
-            if (~raddr_empty) begin
+            if (~raddr_empty && ~rvalid) begin
                 if (random==rcounter) begin
                     rvalid <= 1'b1;
                     if (rready) begin

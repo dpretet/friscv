@@ -124,8 +124,6 @@
 // Control Unit Configuration
 //////////////////////////////////////////////////////////////////
 
-`define INST_OSTDREQ_NUM 8
-
 // Stop simulation if received an undefined/unsupported instruction
 `ifndef TRAP_ERROR
 `define TRAP_ERROR 0

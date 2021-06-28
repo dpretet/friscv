@@ -32,6 +32,9 @@ module friscv_rv32i_control
         input  logic                      aresetn,
         input  logic                      srst,
         output logic                      ebreak,
+        // Flush control
+        output logic                      flush_req,
+        input  logic                      flush_ack,
         // instruction memory interface
         output logic                      arvalid,
         input  logic                      arready,
@@ -152,7 +155,7 @@ module friscv_rv32i_control
     //
     ///////////////////////////////////////////////////////////////////////////
 
-    assign push_inst = rvalid & ~fifo_full && (arid == rid);
+    assign push_inst = rvalid & (arid == rid);
     assign rready = ~fifo_full;
 
     friscv_scfifo 
@@ -255,7 +258,7 @@ module friscv_rv32i_control
     assign proc_instbus[`CSR    +: `CSR_W   ] = csr   ;
     assign proc_instbus[`SHAMT  +: `SHAMT_W ] = shamt ;
 
-    assign csr_en = env[2];
+    assign csr_en = env[2] & (cfsm==FETCH) & ~fifo_empty;
     assign csr_instbus = proc_instbus;
 
     ///////////////////////////////////////////////////////////////////////////
@@ -461,6 +464,9 @@ module friscv_rv32i_control
 
         end
     end
+
+    // To implement
+    assign flush_req = 1'b0;
 
     // Unused
     assign arprot = 3'b0;

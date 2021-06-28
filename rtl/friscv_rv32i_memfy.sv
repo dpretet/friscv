@@ -61,6 +61,7 @@ module friscv_rv32i_memfy
     //      - offset: the shift to apply, ADDR's LSBs
     // Returns:
     //      - data aligned ready to store
+    ///////////////////////////////////////////////////////////////////////////
     function automatic logic [XLEN-1:0] get_aligned_mem_data(
 
         input logic [XLEN  -1:0] data,
@@ -80,6 +81,7 @@ module friscv_rv32i_memfy
     //      - offset: the shift to apply, ADDR's LSBs
     // Returns:
     //      - data aligned ready to store
+    ///////////////////////////////////////////////////////////////////////////
     function automatic logic [XLEN-1:0] get_aligned_rd_data(
 
         input logic [XLEN  -1:0] data,
@@ -100,6 +102,7 @@ module friscv_rv32i_memfy
     //      - phase: first (0) or second (1) phase of the request
     // Returns:
     //      - strobes aligned ready to store
+    ///////////////////////////////////////////////////////////////////////////
     function automatic logic [XLEN/8-1:0] aligned_strb(
 
         input logic [XLEN/8-1:0] strb,
@@ -130,6 +133,7 @@ module friscv_rv32i_memfy
     //      - phase: first (0) or second (1) phase of the STORE request
     // Returns:
     //      - the ready to use strobes
+    ///////////////////////////////////////////////////////////////////////////
     function automatic logic [XLEN/8-1:0] get_mem_strb(
 
         input logic [2:0] funct3,
@@ -150,6 +154,7 @@ module friscv_rv32i_memfy
     //      - offset: the shift to apply, ADDR's LSBs
     // Returns:
     //      - the ready to use strobes
+    ///////////////////////////////////////////////////////////////////////////
     function automatic logic [XLEN-1:0] get_rd_val(
 
         input logic [3   -1:0] funct3,
@@ -175,6 +180,7 @@ module friscv_rv32i_memfy
     //      - phase: first (0) or second (1) phase of the STORE request
     // Returns:
     //      - the ready to use strobes
+    ///////////////////////////////////////////////////////////////////////////
     function automatic logic [XLEN/8-1:0] get_rd_strb(
 
         input logic [3   -1:0] funct3,
@@ -310,7 +316,7 @@ module friscv_rv32i_memfy
         end else begin
 
             // LOAD or STORE completion: memory accesses span over multiple
-            // cycles, thus obliges to pause the pipeline
+            // cycles, thus oblige to pause the pipeline
             // Accepts a new instruction once memory completes the request
             if (mem_en) begin
                 if (mem_ready) begin
@@ -406,13 +412,13 @@ module friscv_rv32i_memfy
                           (funct3==`LW  && addr[1:0]!=2'b0) ? 1'b1 :
                                                               1'b0 ;
 
-    // Unused: may be used later to indicate a buffer  is
+    // Unused: may be used later to indicate a buffer is
     // empty or not, needed for outstanding request support
     assign memfy_empty = 1'b1;
 
     // Unused: information forwarded to control unit for FENCE executions:
     // bit 0: memory write
-    // bit 1: nmemory read
+    // bit 1: memory read
     // bit 2: device output
     // bit 3: device input
     assign memfy_fenceinfo = 4'b0;

@@ -10,33 +10,66 @@
 module friscv_rv32i
 
     #(
-        // 32 bits architecture
+        ///////////////////////////////////////////////////////////////////////////
+        // Global setup
+        ///////////////////////////////////////////////////////////////////////////
+
+        // RISCV Architecture
         parameter XLEN               = 32,
+        // Boot address used by the control unit
+        parameter BOOT_ADDR          = 0,
+        // Number of outstanding requests used by the control unit
+        parameter INST_OSTDREQ_NUM   = 8,
+        // CSR registers depth
+        parameter CSR_DEPTH          = 12,
+
+        ///////////////////////////////////////////////////////////////////////////
+        // AXI4 / AXI4-lite interface setup
+        ///////////////////////////////////////////////////////////////////////////
+
         // Address bus width defined for both control and AXI4 address signals
         parameter AXI_ADDR_W         = XLEN,
         // AXI ID width, setup by default to 8 and unused
         parameter AXI_ID_W           = 8,
         // AXI4 data width, independant of control unit width
         parameter AXI_DATA_W         = XLEN,
-        // Address buses width
+
+        ///////////////////////////////////////////////////////////////////////////
+        // Data interface and GPIO / peripherals setup
+        ///////////////////////////////////////////////////////////////////////////
+
+        // Data address bus width
         parameter DATA_ADDRW         = 16,
-        // Boot address used by the control unit
-        parameter BOOT_ADDR          = 0,
+
         // Define the address of GPIO peripheral in APB interconnect
         parameter GPIO_SLV0_ADDR     = 0,
         parameter GPIO_SLV0_SIZE     = 8,
         parameter GPIO_SLV1_ADDR     = 8,
         parameter GPIO_SLV1_SIZE     = 16,
+
         // Define the memory map of GPIO and data memory
-        // in the global memory space
+        // in the global memory space. Used to route the requests between
+        // data controller and GPIOs
         parameter GPIO_BASE_ADDR     = 0,
         parameter GPIO_BASE_SIZE     = 2048,
         parameter DATA_MEM_BASE_ADDR = 2048,
         parameter DATA_MEM_BASE_SIZE = 16384,
+
         // UART FIFO Depth
-        parameter UART_FIFO_DEPTH = 4,
-        // CSR registers depth
-        parameter CSR_DEPTH = 12
+        parameter UART_FIFO_DEPTH    = 4,
+
+        ///////////////////////////////////////////////////////////////////////////
+        // Instruction cache setup
+        ///////////////////////////////////////////////////////////////////////////
+
+        // Enable Instruction cache
+        parameter ICACHE_EN          = 0,
+        // Line width defining only the data payload, in bits, must an
+        // integer multiple of XLEN
+        parameter CACHE_LINE_W       = XLEN*4,
+        // Number of lines in the cache
+        parameter CACHE_DEPTH        = 512
+
     )(
         // clock/reset interface
         input  logic                      aclk,
@@ -80,71 +113,38 @@ module friscv_rv32i
     // Parameters and signals
     //////////////////////////////////////////////////////////////////////////
 
-    logic [5     -1:0] ctrl_rs1_addr;
-    logic [XLEN  -1:0] ctrl_rs1_val;
-    logic [5     -1:0] ctrl_rs2_addr;
-    logic [XLEN  -1:0] ctrl_rs2_val;
-    logic              ctrl_rd_wr;
-    logic [5     -1:0] ctrl_rd_addr;
-    logic [XLEN  -1:0] ctrl_rd_val;
+    logic [5               -1:0] ctrl_rs1_addr;
+    logic [XLEN            -1:0] ctrl_rs1_val;
+    logic [5               -1:0] ctrl_rs2_addr;
+    logic [XLEN            -1:0] ctrl_rs2_val;
+    logic                        ctrl_rd_wr;
+    logic [5               -1:0] ctrl_rd_addr;
+    logic [XLEN            -1:0] ctrl_rd_val;
 
-    logic [5     -1:0] alu_rs1_addr;
-    logic [XLEN  -1:0] alu_rs1_val;
-    logic [5     -1:0] alu_rs2_addr;
-    logic [XLEN  -1:0] alu_rs2_val;
-    logic              alu_rd_wr;
-    logic [5     -1:0] alu_rd_addr;
-    logic [XLEN  -1:0] alu_rd_val;
-    logic [XLEN/8-1:0] alu_rd_strb;
+    logic [5               -1:0] alu_rs1_addr;
+    logic [XLEN            -1:0] alu_rs1_val;
+    logic [5               -1:0] alu_rs2_addr;
+    logic [XLEN            -1:0] alu_rs2_val;
+    logic                        alu_rd_wr;
+    logic [5               -1:0] alu_rd_addr;
+    logic [XLEN            -1:0] alu_rd_val;
+    logic [XLEN/8          -1:0] alu_rd_strb;
 
-    logic [5     -1:0] memfy_rs1_addr;
-    logic [XLEN  -1:0] memfy_rs1_val;
-    logic [5     -1:0] memfy_rs2_addr;
-    logic [XLEN  -1:0] memfy_rs2_val;
-    logic              memfy_rd_wr;
-    logic [5     -1:0] memfy_rd_addr;
-    logic [XLEN  -1:0] memfy_rd_val;
-    logic [XLEN/8-1:0] memfy_rd_strb;
+    logic [5               -1:0] memfy_rs1_addr;
+    logic [XLEN            -1:0] memfy_rs1_val;
+    logic [5               -1:0] memfy_rs2_addr;
+    logic [XLEN            -1:0] memfy_rs2_val;
+    logic                        memfy_rd_wr;
+    logic [5               -1:0] memfy_rd_addr;
+    logic [XLEN            -1:0] memfy_rd_val;
+    logic [XLEN/8          -1:0] memfy_rd_strb;
 
-    logic [5     -1:0] csr_rs1_addr;
-    logic [XLEN  -1:0] csr_rs1_val;
-    logic              csr_rd_wr;
-    logic [5     -1:0] csr_rd_addr;
-    logic [XLEN  -1:0] csr_rd_val;
-    logic [XLEN/8-1:0] csr_rd_strb;
-
-    logic [XLEN  -1:0] x0;
-    logic [XLEN  -1:0] x1;
-    logic [XLEN  -1:0] x2;
-    logic [XLEN  -1:0] x3;
-    logic [XLEN  -1:0] x4;
-    logic [XLEN  -1:0] x5;
-    logic [XLEN  -1:0] x6;
-    logic [XLEN  -1:0] x7;
-    logic [XLEN  -1:0] x8;
-    logic [XLEN  -1:0] x9;
-    logic [XLEN  -1:0] x10;
-    logic [XLEN  -1:0] x11;
-    logic [XLEN  -1:0] x12;
-    logic [XLEN  -1:0] x13;
-    logic [XLEN  -1:0] x14;
-    logic [XLEN  -1:0] x15;
-    logic [XLEN  -1:0] x16;
-    logic [XLEN  -1:0] x17;
-    logic [XLEN  -1:0] x18;
-    logic [XLEN  -1:0] x19;
-    logic [XLEN  -1:0] x20;
-    logic [XLEN  -1:0] x21;
-    logic [XLEN  -1:0] x22;
-    logic [XLEN  -1:0] x23;
-    logic [XLEN  -1:0] x24;
-    logic [XLEN  -1:0] x25;
-    logic [XLEN  -1:0] x26;
-    logic [XLEN  -1:0] x27;
-    logic [XLEN  -1:0] x28;
-    logic [XLEN  -1:0] x29;
-    logic [XLEN  -1:0] x30;
-    logic [XLEN  -1:0] x31;
+    logic [5               -1:0] csr_rs1_addr;
+    logic [XLEN            -1:0] csr_rs1_val;
+    logic                        csr_rd_wr;
+    logic [5               -1:0] csr_rd_addr;
+    logic [XLEN            -1:0] csr_rd_val;
+    logic [XLEN/8          -1:0] csr_rd_strb;
 
     logic                        proc_en;
     logic [`INST_BUS_W     -1:0] proc_instbus;
@@ -173,6 +173,19 @@ module friscv_rv32i
     logic [XLEN            -1:0] gpio_rdata;
     logic                        gpio_ready;
 
+    logic                        inst_arvalid_s;
+    logic                        inst_arready_s;
+    logic [AXI_ADDR_W      -1:0] inst_araddr_s;
+    logic [3               -1:0] inst_arprot_s;
+    logic [AXI_ID_W        -1:0] inst_arid_s;
+    logic                        inst_rvalid_s;
+    logic                        inst_rready_s;
+    logic [AXI_ID_W        -1:0] inst_rid_s;
+    logic [2               -1:0] inst_rresp_s;
+    logic [XLEN            -1:0] inst_rdata_s;
+
+    logic                        flush_req;
+    logic                        flush_ack;
 
     //////////////////////////////////////////////////////////////////////////
     // Module logging internal statistics of the core
@@ -234,39 +247,7 @@ module friscv_rv32i
         .csr_rs1_val     (csr_rs1_val    ),
         .csr_rd_wr       (csr_rd_wr      ),
         .csr_rd_addr     (csr_rd_addr    ),
-        .csr_rd_val      (csr_rd_val     ),
-        .x0              (x0             ),
-        .x1              (x1             ),
-        .x2              (x2             ),
-        .x3              (x3             ),
-        .x4              (x4             ),
-        .x5              (x5             ),
-        .x6              (x6             ),
-        .x7              (x7             ),
-        .x8              (x8             ),
-        .x9              (x9             ),
-        .x10             (x10            ),
-        .x11             (x11            ),
-        .x12             (x12            ),
-        .x13             (x13            ),
-        .x14             (x14            ),
-        .x15             (x15            ),
-        .x16             (x16            ),
-        .x17             (x17            ),
-        .x18             (x18            ),
-        .x19             (x19            ),
-        .x20             (x20            ),
-        .x21             (x21            ),
-        .x22             (x22            ),
-        .x23             (x23            ),
-        .x24             (x24            ),
-        .x25             (x25            ),
-        .x26             (x26            ),
-        .x27             (x27            ),
-        .x28             (x28            ),
-        .x29             (x29            ),
-        .x30             (x30            ),
-        .x31             (x31            )
+        .csr_rd_val      (csr_rd_val     )
     );
 
 
@@ -279,26 +260,28 @@ module friscv_rv32i
         .XLEN        (XLEN),
         .AXI_ADDR_W  (AXI_ADDR_W),
         .AXI_ID_W    (AXI_ID_W),
-        .AXI_DATA_W  (AXI_DATA_W),
-        .OSTDREQ_NUM (`INST_OSTDREQ_NUM),
+        .AXI_DATA_W  (XLEN),
+        .OSTDREQ_NUM (INST_OSTDREQ_NUM),
         .BOOT_ADDR   (BOOT_ADDR)
     )
-    control 
+    control
     (
         .aclk           (aclk          ),
         .aresetn        (aresetn       ),
         .srst           (srst          ),
         .ebreak         (ebreak        ),
-        .arvalid        (inst_arvalid  ),
-        .arready        (inst_arready  ),
-        .araddr         (inst_araddr   ),
-        .arprot         (inst_arprot   ),
-        .arid           (inst_arid     ),
-        .rvalid         (inst_rvalid   ),
-        .rready         (inst_rready   ),
-        .rid            (inst_rid      ),
-        .rresp          (inst_rresp    ),
-        .rdata          (inst_rdata    ),
+        .flush_req      (flush_req     ),
+        .flush_ack      (flush_ack     ),
+        .arvalid        (inst_arvalid_s),
+        .arready        (inst_arready_s),
+        .araddr         (inst_araddr_s ),
+        .arprot         (inst_arprot_s ),
+        .arid           (inst_arid_s   ),
+        .rvalid         (inst_rvalid_s ),
+        .rready         (inst_rready_s ),
+        .rid            (inst_rid_s    ),
+        .rresp          (inst_rresp_s  ),
+        .rdata          (inst_rdata_s  ),
         .proc_en        (proc_en       ),
         .proc_ready     (proc_ready    ),
         .proc_empty     (proc_empty    ),
@@ -316,6 +299,77 @@ module friscv_rv32i
         .ctrl_rd_val    (ctrl_rd_val   )
     );
 
+
+    generate
+    if (ICACHE_EN) begin :  USE_ICACHE
+
+    friscv_icache
+    #(
+        .XLEN         (XLEN),
+        .OSTDREQ_NUM  (INST_OSTDREQ_NUM),
+        .AXI_ADDR_W   (AXI_ADDR_W),
+        .AXI_ID_W     (AXI_ID_W),
+        .AXI_DATA_W   (AXI_DATA_W),
+        .CACHE_LINE_W (CACHE_LINE_W),
+        .CACHE_DEPTH  (CACHE_DEPTH)
+    )
+    icache
+    (
+        .aclk              (aclk             ),
+        .aresetn           (aresetn          ),
+        .srst              (srst             ),
+        .flush_req         (flush_req        ),
+        .flush_ack         (flush_ack        ),
+        .ctrl_arvalid      (inst_arvalid_s   ),
+        .ctrl_arready      (inst_arready_s   ),
+        .ctrl_araddr       (inst_araddr_s    ),
+        .ctrl_arprot       (inst_arprot_s    ),
+        .ctrl_arid         (inst_arid_s      ),
+        .ctrl_rvalid       (inst_rvalid_s    ),
+        .ctrl_rready       (inst_rready_s    ),
+        .ctrl_rid          (inst_rid_s       ),
+        .ctrl_rresp        (inst_rresp_s     ),
+        .ctrl_rdata        (inst_rdata_s     ),
+        .icache_arvalid    (inst_arvalid     ),
+        .icache_arready    (inst_arready     ),
+        .icache_araddr     (inst_araddr      ),
+        .icache_arlen      (                 ),
+        .icache_arsize     (                 ),
+        .icache_arburst    (                 ),
+        .icache_arlock     (                 ),
+        .icache_arcache    (                 ),
+        .icache_arprot     (                 ),
+        .icache_arqos      (                 ),
+        .icache_arregion   (                 ),
+        .icache_arid       (inst_arid        ),
+        .icache_arprot     (inst_arprot      ),
+        .icache_rvalid     (inst_rvalid      ),
+        .icache_rready     (inst_rready      ),
+        .icache_rid        (inst_rid         ),
+        .icache_rresp      (inst_rresp       ),
+        .icache_rdata      (inst_rdata       ),
+        .icache_rlast      (1'b1             )
+    );
+
+    end else begin : NO_ICACHE
+
+    // Connect controller directly to top interface
+    assign inst_arvalid = inst_arvalid_s;
+    assign inst_arready_s = inst_arready;
+    assign inst_araddr = inst_araddr_s;
+    assign inst_arprot = inst_arprot_s;
+    assign inst_arid = inst_arid_s;
+    assign inst_rvalid_s = inst_rvalid;
+    assign inst_rready = inst_rready_s;
+    assign inst_rid_s = inst_rid;
+    assign inst_rresp_s = inst_rresp;
+    assign inst_rdata_s = inst_rdata;
+
+    // Always assert ack if requesting cache flush to avoid deadlock
+    assign flush_ack = 1'b1;
+
+    end
+    endgenerate
 
     //////////////////////////////////////////////////////////////////////////
     // All ISA enxtensions supported: standard arithmetic / memory, ...
@@ -445,7 +499,7 @@ module friscv_rv32i
     //////////////////////////////////////////////////////////////////////////
     // Module managing the ISA CSR
     //////////////////////////////////////////////////////////////////////////
- 
+
     friscv_csr
     #(
         .CSR_DEPTH (CSR_DEPTH),
@@ -465,6 +519,6 @@ module friscv_rv32i
         .rd_wr_addr (csr_rd_addr ),
         .rd_wr_val  (csr_rd_val  )
     );
-    endmodule
 
-    `resetall
+endmodule
+`resetall

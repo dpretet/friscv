@@ -51,40 +51,7 @@ module friscv_registers
         // register destination write from memfy
         input  logic              csr_rd_wr,
         input  logic [5     -1:0] csr_rd_addr,
-        input  logic [XLEN  -1:0] csr_rd_val,
-        // registers output
-        output logic [XLEN-1:0] x0,
-        output logic [XLEN-1:0] x1,
-        output logic [XLEN-1:0] x2,
-        output logic [XLEN-1:0] x3,
-        output logic [XLEN-1:0] x4,
-        output logic [XLEN-1:0] x5,
-        output logic [XLEN-1:0] x6,
-        output logic [XLEN-1:0] x7,
-        output logic [XLEN-1:0] x8,
-        output logic [XLEN-1:0] x9,
-        output logic [XLEN-1:0] x10,
-        output logic [XLEN-1:0] x11,
-        output logic [XLEN-1:0] x12,
-        output logic [XLEN-1:0] x13,
-        output logic [XLEN-1:0] x14,
-        output logic [XLEN-1:0] x15,
-        output logic [XLEN-1:0] x16,
-        output logic [XLEN-1:0] x17,
-        output logic [XLEN-1:0] x18,
-        output logic [XLEN-1:0] x19,
-        output logic [XLEN-1:0] x20,
-        output logic [XLEN-1:0] x21,
-        output logic [XLEN-1:0] x22,
-        output logic [XLEN-1:0] x23,
-        output logic [XLEN-1:0] x24,
-        output logic [XLEN-1:0] x25,
-        output logic [XLEN-1:0] x26,
-        output logic [XLEN-1:0] x27,
-        output logic [XLEN-1:0] x28,
-        output logic [XLEN-1:0] x29,
-        output logic [XLEN-1:0] x30,
-        output logic [XLEN-1:0] x31
+        input  logic [XLEN  -1:0] csr_rd_val
     );
 
     // ISA registers 0-31
@@ -170,7 +137,41 @@ module friscv_registers
     // register source 1 read circuit for CSR
     assign csr_rs1_val = regs[csr_rs1_addr];
 
-    // registers value outputs for debug
+    `ifdef FRISCV_SIM
+
+    logic [XLEN-1:0] x0;
+    logic [XLEN-1:0] x1;
+    logic [XLEN-1:0] x2;
+    logic [XLEN-1:0] x3;
+    logic [XLEN-1:0] x4;
+    logic [XLEN-1:0] x5;
+    logic [XLEN-1:0] x6;
+    logic [XLEN-1:0] x7;
+    logic [XLEN-1:0] x8;
+    logic [XLEN-1:0] x9;
+    logic [XLEN-1:0] x10;
+    logic [XLEN-1:0] x11;
+    logic [XLEN-1:0] x12;
+    logic [XLEN-1:0] x13;
+    logic [XLEN-1:0] x14;
+    logic [XLEN-1:0] x15;
+    logic [XLEN-1:0] x16;
+    logic [XLEN-1:0] x17;
+    logic [XLEN-1:0] x18;
+    logic [XLEN-1:0] x19;
+    logic [XLEN-1:0] x20;
+    logic [XLEN-1:0] x21;
+    logic [XLEN-1:0] x22;
+    logic [XLEN-1:0] x23;
+    logic [XLEN-1:0] x24;
+    logic [XLEN-1:0] x25;
+    logic [XLEN-1:0] x26;
+    logic [XLEN-1:0] x27;
+    logic [XLEN-1:0] x28;
+    logic [XLEN-1:0] x29;
+    logic [XLEN-1:0] x30;
+    logic [XLEN-1:0] x31;
+
     assign x0  = regs[ 0];
     assign x1  = regs[ 1];
     assign x2  = regs[ 2];
@@ -203,6 +204,8 @@ module friscv_registers
     assign x29 = regs[29];
     assign x30 = regs[30];
     assign x31 = regs[31];
+
+    `endif
 
 endmodule
 
