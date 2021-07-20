@@ -149,7 +149,7 @@ module friscv_rv32i_decoder
                 imm20 = 20'b0;
             end
 
-            // Fence
+            // Fence / Fence.i
             7'b0001111: begin
                 lui = 1'b0;
                 auipc = 1'b0;

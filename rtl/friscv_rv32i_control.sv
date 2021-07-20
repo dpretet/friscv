@@ -107,10 +107,11 @@ module friscv_rv32i_control
     typedef enum logic[3:0] {
         BOOT = 0,
         FETCH = 1,
-        HALT = 2,
-        RELOAD = 3,
-        TRAP = 4,
-        EBREAK = 5
+        RELOAD = 2,
+        TRAP = 3,
+        FENCE = 4,
+        FENCE_I = 5,
+        EBREAK = 6
     } pc_fsm;
 
     pc_fsm cfsm;
@@ -355,8 +356,8 @@ module friscv_rv32i_control
             pc_auipc_saved <= {(XLEN){1'b0}};
             ebreak <= 1'b0;
             flush_fifo <= 1'b0;
-            // pull_inst <= 1'b0;
             arid <= {AXI_ID_W{1'b0}};
+            flush_req <= 1'b0;
         end else if (srst == 1'b1) begin
             cfsm <= BOOT;
             arvalid <= 1'b0;
@@ -366,8 +367,8 @@ module friscv_rv32i_control
             pc_auipc_saved <= {(XLEN){1'b0}};
             ebreak <= 1'b0;
             flush_fifo <= 1'b0;
-            // pull_inst <= 1'b0;
             arid <= {AXI_ID_W{1'b0}};
+            flush_req <= 1'b0;
         end else begin
 
             case (cfsm)
@@ -394,9 +395,15 @@ module friscv_rv32i_control
                     `endif
 
                     // Manages read outstanding requests to fetch 
-                    // new instruction from memory
+                    // new instruction from memory:
+                    //
+                    //   - if fifo is feeding with instruction, need branch
+                    //     and can branch and CSR are ready, stop the addr
+                    //     issuer and load it with correct address to use
                     if (~fifo_empty && jump_branch && ~cant_branch_now && csr_ready) begin
                         araddr <= pc;
+                    //   - else continue to simply increment by instruction
+                    //     width
                     end else if (arready) begin
                         araddr <= araddr + 4;
                     end
@@ -415,6 +422,12 @@ module friscv_rv32i_control
                         end else if (env[1]) begin
                             ebreak <= 1'b1;
                             cfsm <= EBREAK;
+                        // Reach a FENCE.i instruction, need to flush the cache
+                        end else if (fence[1]) begin
+                            flush_fifo <= 1'b1;
+                            pc_reg <= pc;
+                            arvalid <= 1'b0;
+                            cfsm <= FENCE_I;
                         end
 
                         // Need to branch/process but ALU/memfy/CSR didn't finish
@@ -423,27 +436,38 @@ module friscv_rv32i_control
                         begin
                             pc_jal_saved <= pc_plus4;
                             pc_auipc_saved <= pc_reg;
-                            // pull_inst <= 1'b0;
                         // Process as long as instruction are available
                         end else if (csr_ready && 
                                      ~cant_branch_now && ~cant_process_now) 
                         begin
                             pc_reg <= pc;
-                            // pull_inst <= 1'b1;
                         end
 
-                    end else begin
-                        // pull_inst <= 1'b0;
                     end
                 end
 
-                // Stop operations to reload new oustanding requests
+                // Stop operations to reload new oustanding requests. Used to 
+                // reboot the cache and continue to fetch the addresses from
+                // a new origin
                 RELOAD: begin
                     arvalid <= 1'b1;
                     flush_fifo <= 1'b0;
                     cfsm <= FETCH;
                 end
 
+                // Launch a cache flush, req starts the flush and is kept 
+                // high as long ack is not asserted
+                FENCE_I: begin
+                    flush_req <= 1'b1;
+                    if (flush_ack) begin
+                        flush_req <= 1'b0;
+                        flush_fifo <= 1'b0;
+                        arvalid <= 1'b1;
+                        cfsm <= FETCH;
+                    end
+                end
+
+                // EBREAK completly stops the processor and wait for a reboot
                 EBREAK: begin
                     arvalid <= 1'b0;
                     ebreak <= 1'b1;
@@ -464,9 +488,6 @@ module friscv_rv32i_control
 
         end
     end
-
-    // To implement
-    assign flush_req = 1'b0;
 
     // Unused
     assign arprot = 3'b0;

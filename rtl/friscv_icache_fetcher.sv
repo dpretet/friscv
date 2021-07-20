@@ -1,3 +1,6 @@
+// distributed under the mit license
+// https://opensource.org/licenses/mit-license.php
+
 `timescale 1 ns / 1 ps
 `default_nettype none
 
@@ -69,7 +72,7 @@ module friscv_icache_fetcher
     );
 
     ///////////////////////////////////////////////////////////////////////////
-    // Logic declarations
+    // Parameters and signals
     ///////////////////////////////////////////////////////////////////////////
 
     // Missed-fetch FIFO depth
@@ -81,39 +84,43 @@ module friscv_icache_fetcher
         IDLE = 0,
         SERVE = 1,
         LOAD = 2,
-        MISSED = 3
+        MISSED = 3,
+        FLUSH = 4
     } seq_fsm;
 
     seq_fsm seq;
 
-    // Signals driving the FIFO buffering the intruction fetch stage request
+    // Sync reset controlled on flush request
     logic                     flush_fifo;
+
+    // Signals driving the FIFO buffering the to-fetch instruction
     logic                     fifo_full_if;
     logic                     pull_addr_if;
     logic                     fifo_empty_if;
-    // Signals driving the cache-missed instruction
+    // Signals driving the missed-fetch instruction
     logic                     fifo_full_mf;
     logic                     pull_addr_mf;
     logic                     fifo_empty_mf;
-    logic                     push_fifo_mf;
 
-    // instruction fetch address and ID read from the FIFO
+    // Instruction fetch address and ID read from the FIFO
     // buffering the instruction fetch stage
     logic [AXI_ADDR_W   -1:0] araddr_if;
     logic [AXI_ID_W     -1:0] arid_if;
 
-    // miss-fetched instruction and address, to read again once the
+    // Miss-fetched instruction and address, to read again once the
     // memory controller will fill the cache
     logic [AXI_ADDR_W   -1:0] araddr_mf;
     logic [AXI_ID_W     -1:0] arid_mf;
+
+    // Pipeline stage to move back data to AXI4-lite and to missed-fecth FIFO
     logic [AXI_ADDR_W   -1:0] araddr_ffd;
     logic [AXI_ID_W     -1:0] arid_ffd;
-
     logic [AXI_ID_W     -1:0] cache_rid;
 
-    assign ctrl_arready = ~fifo_full_if;
 
-    assign flush_fifo = 1'b0;
+    ///////////////////////////////////////////////////////////////////////////
+    // Buffering stage
+    ///////////////////////////////////////////////////////////////////////////
 
     // FIFO buffering the instruction to fetch from the controller
     friscv_scfifo
@@ -150,11 +157,8 @@ module friscv_icache_fetcher
         end
     end
 
-    // FIFO buffering missed-fetch instructions
-    // depth can store up to 4 missed instruction
-
-    assign push_fifo_mf = cache_miss;
-
+    // FIFO buffering missed-fetch instructions,
+    // depth can store up to 2 missed instruction
     friscv_scfifo
     #(
     .ADDR_WIDTH ($clog2(MF_FIFO_DEPTH)),
@@ -167,14 +171,15 @@ module friscv_icache_fetcher
     .srst     (srst),
     .flush    (flush_fifo),
     .data_in  ({arid_ffd, araddr_ffd}),
-    .push     (push_fifo_mf),
+    .push     (cache_miss),
     .full     (fifo_full_mf),
     .data_out ({arid_mf, araddr_mf}),
     .pull     (pull_addr_mf),
     .empty    (fifo_empty_mf)
     );
 
-    // Read cache when of the FIFO is filled
+    // Read cache when the FIFO is filled or when missed-fetch instruction
+    // occured
     assign cache_ren = ((~fifo_empty_if && (seq==IDLE || seq==SERVE)) ||
                         (~fifo_empty_mf && (seq==MISSED))
                        ) ? 1'b1 : 1'b0;
@@ -182,6 +187,11 @@ module friscv_icache_fetcher
     // Multiplexer stage to drive missed-fetch or to-fetch requests
     assign cache_raddr = (~fifo_empty_mf) ? araddr_mf : araddr_if;
     assign cache_rid = (~fifo_empty_mf) ? arid_mf : arid_if;
+
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Control flow
+    ///////////////////////////////////////////////////////////////////////////
 
     // FSM sequencer controlling the cache lines and the memory controller
     always @ (posedge aclk or negedge aresetn) begin
@@ -192,6 +202,8 @@ module friscv_icache_fetcher
             memctrl_arvalid <= 1'b0;
             memctrl_araddr <= {AXI_ADDR_W{1'b0}};
             memctrl_arid <= {AXI_ID_W{1'b0}};
+            flush_fifo <= 1'b0;
+            flush_ack <= 1'b0;
             seq <= IDLE;
         end else if (srst) begin
             pull_addr_if <= 1'b0;
@@ -199,6 +211,8 @@ module friscv_icache_fetcher
             memctrl_arvalid <= 1'b0;
             memctrl_araddr <= {AXI_ADDR_W{1'b0}};
             memctrl_arid <= {AXI_ID_W{1'b0}};
+            flush_fifo <= 1'b0;
+            flush_ack <= 1'b0;
             seq <= IDLE;
         end else begin
 
@@ -211,12 +225,21 @@ module friscv_icache_fetcher
                         seq <= SERVE;
                     end
                 end
+                // State to serve the instruction read request from the 
+                // core controller
                 SERVE: begin
                     pull_addr_if <= 1'b1;
+                    // If flush command is received, clear the FIFO content
+                    // and wait for req deassertion
+                    if (flush_req) begin
+                        pull_addr_if <= 1'b0;
+                        pull_addr_mf <= 1'b0;
+                        flush_fifo <= 1'b1;
+                        seq <= FLUSH;
                     // As soon a cache miss is detected, stop to pull the
                     // FIFO and move to read the AXI4 interface to grab the
                     // missing instruction
-                    if (cache_miss) begin
+                    end else if (cache_miss) begin
                         pull_addr_if <= 1'b0;
                         memctrl_arvalid <= 1'b1;
                         memctrl_araddr <= araddr_ffd;
@@ -227,30 +250,40 @@ module friscv_icache_fetcher
                         seq <= IDLE;
                     end
                 end
-                // Fetch a new instruction
+                // Fetch a new instruction in external memory
                 LOAD: begin
                     if (memctrl_arready) begin
                         memctrl_arvalid <= 1'b0;
                     end
                     // Go to read the cache lines once the memory controller
-                    // wrote a new cache line
+                    // wrote a new cache line, the read completion
                     if (cache_writing) begin
                         pull_addr_mf <= 1'b1;
                         seq <= MISSED;
                     end
                 end
+                // State to fetch the missed-fetch instruction in the
+                // dedicated FIFO> Empties it, possibiliy in several epochs
+                // Equivalent behavior than SERVE state.
                 MISSED: begin
+                    // If flush command is received, clear the FIFO content
+                    // and wait for req deassertion
+                    if (flush_req) begin
+                        pull_addr_if <= 1'b0;
+                        pull_addr_mf <= 1'b0;
+                        flush_fifo <= 1'b1;
+                        seq <= FLUSH;
                     // As soon a cache miss is detected, stop to pull the
                     // FIFO and move to read the AXI4 interface to grab the
                     // missing instruction
-                    if (cache_miss) begin
+                    end else if (cache_miss) begin
                         pull_addr_mf <= 1'b0;
                         memctrl_arvalid <= 1'b1;
                         memctrl_araddr <= araddr_ffd;
                         memctrl_arid <= arid_ffd;
                         seq <= LOAD;
                     // If other instruction fetchs have been issue,
-                    // continue to serve the instruction fetch controller
+                    // continue to serve the core controller
                     end else if (~fifo_empty_if && fifo_empty_mf) begin
                         pull_addr_if <= 1'b1;
                         pull_addr_mf <= 1'b0;
@@ -261,12 +294,32 @@ module friscv_icache_fetcher
                         seq <= IDLE;
                     end
                 end
+                // Clear the current context of the cache execution. Applied
+                // on an FENCE.I instruction execution.
+                FLUSH: begin
+                    // flush is done in 1 cycle in fetcher, wait req
+                    // deassertion then go back to IDLE to reboot
+                    flush_ack <= 1'b1;
+                    if (flush_req==1'b0) begin
+                        flush_ack <= 1'b0;
+                        flush_fifo <= 1'b0;
+                        seq <= IDLE;
+                    end
+                end
             endcase
 
         end
     end
 
-    // AXI4-lite completion going back to the intruction fetch controller
+
+    ///////////////////////////////////////////////////////////////////////////
+    // AXI4-lite interface management
+    ///////////////////////////////////////////////////////////////////////////
+
+    // Read request handshake
+    assign ctrl_arready = ~fifo_full_if;
+
+    // Read completion going back to the intruction fetch controller
     assign ctrl_rvalid = cache_hit;
     assign ctrl_rdata = cache_rdata;
     assign ctrl_rresp = 2'b0;
@@ -277,4 +330,3 @@ module friscv_icache_fetcher
 endmodule
 
 `resetall
-

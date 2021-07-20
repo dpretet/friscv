@@ -154,8 +154,8 @@ module friscv_icache
     .ctrl_rdata      (ctrl_rdata),
     .memctrl_arvalid (memctrl_arvalid),
     .memctrl_arready (memctrl_arready),
-    .memctrl_araddr  (memctrl_araddr ),
-    .memctrl_arprot  (memctrl_arprot ),
+    .memctrl_araddr  (memctrl_araddr),
+    .memctrl_arprot  (memctrl_arprot),
     .memctrl_arid    (memctrl_arid),
     .cache_writing   (cache_wen),
     .cache_ren       (cache_ren),
@@ -194,7 +194,7 @@ module friscv_icache
 
 
     ///////////////////////////////////////////////////////////////////////////
-    // AXI4 memory controller to read central memory
+    // AXI4 memory controller to read external memory
     ///////////////////////////////////////////////////////////////////////////
 
     friscv_icache_memctrl
@@ -242,7 +242,7 @@ module friscv_icache
     .cache_wdata    (cache_wdata)
     );
 
-    assign flush_ack = flush_ack_fetcher | flush_ack_memctrl;
+    assign flush_ack = flush_ack_fetcher & flush_ack_memctrl;
 
 endmodule
 

@@ -9,69 +9,68 @@
 module friscv_icache_memctrl
 
     #(
+        ///////////////////////////////////////////////////////////////////////////
+        // RISCV Architecture
+        ///////////////////////////////////////////////////////////////////////////
 
-    ///////////////////////////////////////////////////////////////////////////
-    // RISCV Architecture
-    ///////////////////////////////////////////////////////////////////////////
+        parameter XLEN = 32,
 
-    parameter XLEN = 32,
+        ///////////////////////////////////////////////////////////////////////////
+        // Interface Setup
+        ///////////////////////////////////////////////////////////////////////////
 
-    ///////////////////////////////////////////////////////////////////////////
-    // Interface Setup
-    ///////////////////////////////////////////////////////////////////////////
+        // Address bus width defined for both control and AXI4 address signals
+        parameter AXI_ADDR_W = 10,
+        // AXI ID width, setup by default to 8 and unused
+        parameter AXI_ID_W = 8,
+        // AXI4 data width, independant of control unit width
+        parameter AXI_DATA_W = XLEN*4,
 
-    // Address bus width defined for both control and AXI4 address signals
-    parameter AXI_ADDR_W = 8,
-    // AXI ID width, setup by default to 8 and unused
-    parameter AXI_ID_W = 8,
-    // AXI4 data width, independant of control unit width
-    parameter AXI_DATA_W = XLEN*4,
+        ///////////////////////////////////////////////////////////////////////////
+        // Cache Setup
+        ///////////////////////////////////////////////////////////////////////////
 
-    ///////////////////////////////////////////////////////////////////////////
-    // Cache Setup
-    ///////////////////////////////////////////////////////////////////////////
-
-    // Line width defining only the data payload, in bits
-    parameter CACHE_LINE_W = 128,
-    // Number of lines in the cache
-    parameter CACHE_DEPTH = XLEN*4
+        // Line width defining only the data payload, in bits
+        parameter CACHE_LINE_W = 128,
+        // Number of lines in the cache
+        parameter CACHE_DEPTH = 512
 
     )(
-    input  logic                      aclk,
-    input  logic                      aresetn,
-    input  logic                      srst,
-    input  logic                      flush_req,
-    output logic                      flush_ack,
-    output logic                      flush,
-    // ctrlruction memory interface
-    input  logic                      ctrl_arvalid,
-    output logic                      ctrl_arready,
-    input  logic [AXI_ADDR_W    -1:0] ctrl_araddr,
-    input  logic [3             -1:0] ctrl_arprot,
-    input  logic [AXI_ID_W      -1:0] ctrl_arid,
-    // AXI4 Read channels interface to central memory
-    output logic                      mem_arvalid,
-    input  logic                      mem_arready,
-    output logic [AXI_ADDR_W    -1:0] mem_araddr,
-    output logic [8             -1:0] mem_arlen,
-    output logic [3             -1:0] mem_arsize,
-    output logic [2             -1:0] mem_arburst,
-    output logic [2             -1:0] mem_arlock,
-    output logic [4             -1:0] mem_arcache,
-    output logic [3             -1:0] mem_arprot,
-    output logic [4             -1:0] mem_arqos,
-    output logic [4             -1:0] mem_arregion,
-    output logic [AXI_ID_W      -1:0] mem_arid,
-    input  logic                      mem_rvalid,
-    output logic                      mem_rready,
-    input  logic [AXI_ID_W      -1:0] mem_rid,
-    input  logic [2             -1:0] mem_rresp,
-    input  logic [AXI_DATA_W    -1:0] mem_rdata,
-    input  logic                      mem_rlast,
-    // Cache lines write interface
-    output logic                      cache_wen,
-    output logic [AXI_ADDR_W    -1:0] cache_waddr,
-    output logic [CACHE_LINE_W  -1:0] cache_wdata
+        input  logic                      aclk,
+        input  logic                      aresetn,
+        input  logic                      srst,
+        input  logic                      flush_req,
+        output logic                      flush_ack,
+        output logic                      flush,
+        // ctrlruction memory interface
+        input  logic                      ctrl_arvalid,
+        output logic                      ctrl_arready,
+        input  logic [AXI_ADDR_W    -1:0] ctrl_araddr,
+        input  logic [3             -1:0] ctrl_arprot,
+        input  logic [AXI_ID_W      -1:0] ctrl_arid,
+        // AXI4 Read channels interface to central memory
+        output logic                      mem_arvalid,
+        input  logic                      mem_arready,
+        output logic [AXI_ADDR_W    -1:0] mem_araddr,
+        output logic [8             -1:0] mem_arlen,
+        output logic [3             -1:0] mem_arsize,
+        output logic [2             -1:0] mem_arburst,
+        output logic [2             -1:0] mem_arlock,
+        output logic [4             -1:0] mem_arcache,
+        output logic [3             -1:0] mem_arprot,
+        output logic [4             -1:0] mem_arqos,
+        output logic [4             -1:0] mem_arregion,
+        output logic [AXI_ID_W      -1:0] mem_arid,
+        input  logic                      mem_rvalid,
+        output logic                      mem_rready,
+        input  logic [AXI_ID_W      -1:0] mem_rid,
+        input  logic [2             -1:0] mem_rresp,
+        input  logic [AXI_DATA_W    -1:0] mem_rdata,
+        input  logic                      mem_rlast,
+        // Cache lines write interface
+        output logic                      cache_wen,
+        output logic [AXI_ADDR_W    -1:0] cache_waddr,
+        output logic [CACHE_LINE_W  -1:0] cache_wdata
     );
 
 
@@ -84,6 +83,16 @@ module friscv_icache_memctrl
     // Parameters and signals
     //////////////////////////////////////////////////////////////////////////
 
+    // Control fsm
+    typedef enum logic[1:0] {
+        IDLE = 0,
+        FLUSH = 1,
+        ACK = 2
+    } ctrl_fsm;
+
+    ctrl_fsm cfsm;
+    logic [AXI_ADDR_W      :0] erase_addr;
+    logic                      erase_wen;
 
     ///////////////////////////////////////////////////////////////////////////
     // Optional signals, unused and tied to recommended default values
@@ -134,22 +143,71 @@ module friscv_icache_memctrl
     // Cache write
     ///////////////////////////////////////////////////////////////////////////
 
-    assign cache_wen = mem_rvalid;
-    assign cache_waddr = ctrl_araddr;
+    assign cache_wen = (cfsm==IDLE) ? mem_rvalid : erase_wen;
+    assign cache_waddr = (cfsm==IDLE) ? ctrl_araddr : erase_addr[AXI_ADDR_W-1:0];
     assign cache_wdata = mem_rdata;
 
 
     ///////////////////////////////////////////////////////////////////////////
-    // Flush support on FENCE.i instruction
+    // Flush support on FENCE.i instruction execution
     //
     // flush_ack is asserted for one cycle on flush_req has been asserted and
     // the entire cache lines have been erased
     ///////////////////////////////////////////////////////////////////////////
 
-    assign flush_ack = 1'b0;
-    assign flush = 1'b0;
+
+    always @ (posedge aclk or negedge aresetn) begin
+
+        if (aresetn == 1'b0) begin
+            cfsm <= IDLE;
+            flush_ack <= 1'b0;
+            flush <= 1'b0;
+            erase_wen <= 1'b0;
+            erase_addr <= {AXI_ADDR_W+1{1'b0}};
+        end else if (srst == 1'b1) begin
+            cfsm <= IDLE;
+            flush_ack <= 1'b0;
+            flush <= 1'b0;
+            erase_wen <= 1'b0;
+            erase_addr <= {AXI_ADDR_W+1{1'b0}};
+        end else begin
+
+            case (cfsm)
+                // Wait for flush request
+                default: begin
+                    flush <= 1'b0;
+                    flush_ack <= 1'b0;
+                    if (flush_req) begin
+                        erase_wen <= 1'b1;
+                        cfsm <= FLUSH;
+                    end
+                end
+                FLUSH: begin
+                    flush <= 1'b1;
+                    erase_wen <= 1'b1;
+                    erase_addr <= erase_addr + CACHE_LINE_W/8;
+                    if (erase_addr==CACHE_DEPTH) begin
+                        erase_wen <= 1'b0;
+                        erase_addr <= {AXI_ADDR_W+1{1'b0}};
+                        flush <= 1'b0;
+                        cfsm <= ACK;
+                    end
+                end
+                // Once cache has been erased wait for req deassertion
+                ACK: begin
+                    flush <= 1'b0;
+                    if (~flush_req) begin
+                        flush_ack <= 1'b0;
+                        cfsm <= IDLE;
+                    end else  begin
+                        flush_ack <= 1'b1;
+                    end
+                end
+            endcase
+
+        end
+    end
 
 endmodule
 
 `resetall
-
