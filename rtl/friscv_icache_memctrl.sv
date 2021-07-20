@@ -91,8 +91,10 @@ module friscv_icache_memctrl
     } ctrl_fsm;
 
     ctrl_fsm cfsm;
-    logic [AXI_ADDR_W      :0] erase_addr;
-    logic                      erase_wen;
+
+    // Used on flush request to erase the cache content
+    logic                erase_wen;
+    logic [AXI_ADDR_W:0] erase_addr;
 
     ///////////////////////////////////////////////////////////////////////////
     // Optional signals, unused and tied to recommended default values

@@ -135,7 +135,7 @@ module friscv_icache
     .AXI_ID_W    (AXI_ID_W),
     .AXI_DATA_W  (AXI_DATA_W)
     )
-    dut
+    fetcher
     (
     .aclk            (aclk),
     .aresetn         (aresetn),

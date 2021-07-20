@@ -92,6 +92,9 @@ module friscv_icache_fetcher
 
     // Sync reset controlled on flush request
     logic                     flush_fifo;
+    // Synch reset asserted when core controller changes the ARID
+    logic                     reboot;
+    logic [AXI_ID_W     -1:0] arid_reboot;
 
     // Signals driving the FIFO buffering the to-fetch instruction
     logic                     fifo_full_if;
@@ -122,6 +125,16 @@ module friscv_icache_fetcher
     // Buffering stage
     ///////////////////////////////////////////////////////////////////////////
 
+    // Reboot is asserted when core controller is jumping/branching and so 
+    // change the ARID. Flush the FIFOs on this event
+    always @ (posedge aclk or negedge aresetn) begin
+        if (~aresetn) arid_reboot <= {AXI_ID_W{1'b0}};
+        else if (srst) arid_reboot <= {AXI_ID_W{1'b0}};
+        else arid_reboot <= ctrl_arid;
+    end
+    
+    assign reboot = (ctrl_arid!=arid_reboot) ? 1'b1 : 1'b0;
+
     // FIFO buffering the instruction to fetch from the controller
     friscv_scfifo
     #(
@@ -133,7 +146,7 @@ module friscv_icache_fetcher
     .aclk     (aclk),
     .aresetn  (aresetn),
     .srst     (srst),
-    .flush    (flush_fifo),
+    .flush    (flush_fifo | reboot),
     .data_in  ({ctrl_arid, ctrl_araddr}),
     .push     (ctrl_arvalid),
     .full     (fifo_full_if),
@@ -148,7 +161,7 @@ module friscv_icache_fetcher
         if (~aresetn) begin
             araddr_ffd <= {AXI_ADDR_W{1'b0}};
             arid_ffd <= {AXI_ID_W{1'b0}};
-        end else if (srst) begin
+        end else if (srst || reboot) begin
             araddr_ffd <= {AXI_ADDR_W{1'b0}};
             arid_ffd <= {AXI_ID_W{1'b0}};
         end else begin
@@ -169,7 +182,7 @@ module friscv_icache_fetcher
     .aclk     (aclk),
     .aresetn  (aresetn),
     .srst     (srst),
-    .flush    (flush_fifo),
+    .flush    (flush_fifo | reboot),
     .data_in  ({arid_ffd, araddr_ffd}),
     .push     (cache_miss),
     .full     (fifo_full_mf),
@@ -317,7 +330,7 @@ module friscv_icache_fetcher
     ///////////////////////////////////////////////////////////////////////////
 
     // Read request handshake
-    assign ctrl_arready = ~fifo_full_if;
+    assign ctrl_arready = (~fifo_full_if && ~reboot) ? 1'b1 : 1'b0;
 
     // Read completion going back to the intruction fetch controller
     assign ctrl_rvalid = cache_hit;
