@@ -72,6 +72,12 @@ Features:
 - AXI4 master interface to read the system memory
 
 
+<p align="center">
+  <!--img width="100" height="100" src=""-->
+  <img src="./assets/iCache-top.png">
+</p>
+
+
 ## Notes
 
 Bandwidth / efficienty:
