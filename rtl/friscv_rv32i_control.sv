@@ -161,6 +161,7 @@ module friscv_rv32i_control
 
     friscv_scfifo 
     #(
+    .PASS_THRU (0),
     .ADDR_WIDTH ($clog2(OSTDREQ_NUM)),
     .DATA_WIDTH (AXI_DATA_W)
     )
@@ -213,28 +214,28 @@ module friscv_rv32i_control
     decoder
     (
         .instruction (instruction),
-        .opcode      (opcode     ),
-        .funct3      (funct3     ),
-        .funct7      (funct7     ),
-        .rs1         (rs1        ),
-        .rs2         (rs2        ),
-        .rd          (rd         ),
-        .zimm        (zimm       ),
-        .imm12       (imm12      ),
-        .imm20       (imm20      ),
-        .csr         (csr        ),
-        .shamt       (shamt      ),
-        .fence       (fence      ),
-        .lui         (lui        ),
-        .auipc       (auipc      ),
-        .jal         (jal        ),
-        .jalr        (jalr       ),
-        .branching   (branching  ),
-        .env         (env        ),
-        .processing  (processing ),
-        .inst_error  (inst_error ),
-        .pred        (pred       ),
-        .succ        (succ       )
+        .opcode      (opcode),
+        .funct3      (funct3),
+        .funct7      (funct7),
+        .rs1         (rs1),
+        .rs2         (rs2),
+        .rd          (rd),
+        .zimm        (zimm),
+        .imm12       (imm12),
+        .imm20       (imm20),
+        .csr         (csr),
+        .shamt       (shamt),
+        .fence       (fence),
+        .lui         (lui),
+        .auipc       (auipc),
+        .jal         (jal),
+        .jalr        (jalr),
+        .branching   (branching),
+        .env         (env),
+        .processing  (processing),
+        .inst_error  (inst_error),
+        .pred        (pred),
+        .succ        (succ)
     );
 
 
@@ -475,11 +476,11 @@ module friscv_rv32i_control
                 end
 
                 // TRAP reached when:
-                // - received an undefined/unsupported instruction
+                // - received an undefined instruction
                 // - received an EBREAK instruction
                 TRAP: begin
                     `ifdef FRISCV_SIM
-                    $error("ERROR: Received an unsupported/unspecified instruction");
+                    $error("ERROR: Received an unsupported instruction");
                     $stop();
                     `endif
                 end
@@ -514,12 +515,9 @@ module friscv_rv32i_control
     assign ctrl_rs2_addr = rs2;
 
     // register destination
-    assign ctrl_rd_wr =  (cfsm!=FETCH)                             ? 1'b0 :
-                         (~cant_branch_now &&
-                            ~cant_process_now &&
-                            csr_ready && pull_inst &&
-                            (auipc || jal || jalr || lui))         ? 1'b1 :
-                                                                     1'b0 ;
+    assign ctrl_rd_wr =  (cfsm!=FETCH)                                ? 1'b0 :
+                         (pull_inst && (auipc || jal || jalr || lui)) ? 1'b1 :
+                                                                        1'b0 ;
     assign ctrl_rd_addr = rd;
 
     assign ctrl_rd_val = ((jal || jalr) && ~pull_inst) ? pc_jal_saved :

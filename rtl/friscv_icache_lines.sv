@@ -9,7 +9,7 @@
 // Instruction cache lines
 //
 // - classic RAM interface (wr/rd, addr, data)
-// - direct-mapped cache
+// - direct-mapped (1-way) cache
 // - hit/miss flags to indicate cache status on read operation
 // - format the cache line (block) fetched from the memory before storage
 // - extract the requested instruction and manage hit/miss flags

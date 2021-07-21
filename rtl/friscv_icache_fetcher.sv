@@ -5,12 +5,16 @@
 `default_nettype none
 
 ///////////////////////////////////////////////////////////////////////////
+//
 // Fetcher stage: manages the read request in the cache or issue
 // a read request in central memory
+//
 // Composed by two FIFOs, the first buffers the incoming requests from
 // the fetch stage of the controller, the second buffers the missed
 // entries in the cache.
+//
 // A sequencer drives the cache read and the memory controller
+//
 ///////////////////////////////////////////////////////////////////////////
 
 
@@ -25,6 +29,9 @@ module friscv_icache_fetcher
         parameter XLEN = 32,
         // Number of outstanding requests supported
         parameter OSTDREQ_NUM = 4,
+        // Enable pipeline on cache
+        //   - bit 0: Use pass-thru mode in fetcher's FIFOs
+        parameter CACHE_PIPELINE = 32'h00000000,
 
         ///////////////////////////////////////////////////////////////////////
         // Interface Setup
@@ -77,6 +84,7 @@ module friscv_icache_fetcher
 
     // Missed-fetch FIFO depth
     localparam MF_FIFO_DEPTH = 2;
+    localparam PASS_THRU_MODE = CACHE_PIPELINE[0];
 
     // Control fsm, the sequencer driving the cache read and the memory
     // controller
@@ -138,6 +146,7 @@ module friscv_icache_fetcher
     // FIFO buffering the instruction to fetch from the controller
     friscv_scfifo
     #(
+    .PASS_THRU (PASS_THRU_MODE),
     .ADDR_WIDTH ($clog2(OSTDREQ_NUM)),
     .DATA_WIDTH (AXI_ADDR_W+AXI_ID_W)
     )
@@ -174,6 +183,7 @@ module friscv_icache_fetcher
     // depth can store up to 2 missed instruction
     friscv_scfifo
     #(
+    .PASS_THRU (PASS_THRU_MODE),
     .ADDR_WIDTH ($clog2(MF_FIFO_DEPTH)),
     .DATA_WIDTH (AXI_ADDR_W+AXI_ID_W)
     )

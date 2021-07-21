@@ -10,13 +10,14 @@
 //
 // Instruction cache circuit
 //
-// - Direct-mapped placement policy
+// - Direct-mapped (1-way) placement policy
 // - Parametrizable cache depth
 // - Parametrizable cache line width (instruction per line)
 // - Transparent operation, no need of user management
-// - Software-based flush control with FENCE.i instruction
+// - Software-based flush control with FENCE.i instruction (req/ack handshake)
 // - Cache control & status observable by a debug interface
-// - Slave AXI4-lite interface to fetch instructions
+// - Slave AXI4-lite interface to fetch instructions, with ARID support.
+//   New incoming ARID reboots the cache to save latency but doesn't flush.
 // - Master AXI4 interface to read central memory
 //
 ///////////////////////////////////////////////////////////////////////////////
@@ -55,9 +56,8 @@ module friscv_icache
         // Number of lines in the cache
         parameter CACHE_DEPTH = 512,
         // Enable pipeline on cache
-        // 0: No pipeline implemented
-        // 1: Cache line read insert FFDs on RAM output
-        parameter CACHE_PIPELINE = 1
+        //   - bit 0: use pass-thru mode in fetcher's FIFOs
+        parameter CACHE_PIPELINE = 32'h00000001
 
     )(
         // Clock / Reset
@@ -133,7 +133,8 @@ module friscv_icache
     .OSTDREQ_NUM (OSTDREQ_NUM),
     .AXI_ADDR_W  (AXI_ADDR_W),
     .AXI_ID_W    (AXI_ID_W),
-    .AXI_DATA_W  (AXI_DATA_W)
+    .AXI_DATA_W  (AXI_DATA_W),
+    .CACHE_PIPELINE (CACHE_PIPELINE)
     )
     fetcher
     (
@@ -199,7 +200,6 @@ module friscv_icache
 
     friscv_icache_memctrl
     #(
-    .XLEN         (XLEN),
     .AXI_ADDR_W   (AXI_ADDR_W),
     .AXI_ID_W     (AXI_ID_W),
     .AXI_DATA_W   (AXI_DATA_W),
