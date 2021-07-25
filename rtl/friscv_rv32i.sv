@@ -4,6 +4,7 @@
 `timescale 1ns / 1ps
 `default_nettype none
 `include "friscv_h.sv"
+`include "friscv_checkers.sv"
 
 `define RV32I
 
@@ -186,6 +187,26 @@ module friscv_rv32i
 
     logic                        flush_req;
     logic                        flush_ack;
+
+    //////////////////////////////////////////////////////////////////////////
+    // Check parameters setup consistency and break up if not supported
+    //////////////////////////////////////////////////////////////////////////
+    initial begin
+
+        `ifdef RV32I
+        `CHECKER((XLEN!=32), 
+            "Wrong architecture definition: 32 bits expected");
+        `endif
+
+        `CHECKER((CSR_DEPTH!=12), "CSR_DEPTH must be 12 bits wide");
+
+        `CHECKER((GPIO_SLV1_ADDR<(GPIO_BASE_ADDR+GPIO_SLV0_SIZE)), 
+            "GPIO_SLV1_ADDR spans over SLV0 address space");
+
+        `CHECKER((DATA_MEM_BASE_ADDR<(GPIO_BASE_ADDR+GPIO_BASE_SIZE)),
+            "DATA memory space spans over GPIO address space");
+    end
+
 
     //////////////////////////////////////////////////////////////////////////
     // Module logging internal statistics of the core
