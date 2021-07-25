@@ -1,4 +1,4 @@
-+incdir+../../rtl
++incdir+../../rtl+../../dep/svlogger
 +define+FRISCV_SIM
 ./common/scram.sv
 ./common/apb_ram.sv

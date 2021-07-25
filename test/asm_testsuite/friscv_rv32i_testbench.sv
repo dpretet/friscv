@@ -229,6 +229,8 @@ module friscv_rv32i_testbench();
         $dumpvars(0, friscv_rv32i_testbench);
     end
 
+    initial $timeformat(-9, 1, "ns", 8);
+
     task setup(msg="");
     begin
         inst_awvalid = 1'b0;

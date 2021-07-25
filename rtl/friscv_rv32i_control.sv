@@ -4,6 +4,7 @@
 `timescale 1 ns / 1 ps
 `default_nettype none
 
+`include "svlogger.sv"
 `include "friscv_h.sv"
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -147,11 +148,17 @@ module friscv_rv32i_control
     logic                   pull_inst;
     logic                   fifo_empty;
 
+    // Logger setup
+    svlogger log;
+    initial log = new("ControlUnit",
+                      `CONTROL_VERBOSITY,
+                      3);
+    string inst_str;
 
     ///////////////////////////////////////////////////////////////////////////
     //
     // Load/Buffer Stage, a SC-FIFO storing the incoming instructions.
-    // This FIFO is controlled by the FSM issuing read request and can be 
+    // This FIFO is controlled by the FSM issuing read request and can be
     // flushed in case branching or jumping is required.
     //
     ///////////////////////////////////////////////////////////////////////////
@@ -159,13 +166,13 @@ module friscv_rv32i_control
     assign push_inst = rvalid & (arid == rid);
     assign rready = ~fifo_full;
 
-    friscv_scfifo 
+    friscv_scfifo
     #(
     .PASS_THRU (0),
     .ADDR_WIDTH ($clog2(OSTDREQ_NUM)),
     .DATA_WIDTH (AXI_DATA_W)
     )
-    inst_fifo 
+    inst_fifo
     (
     .aclk     (aclk),
     .aresetn  (aresetn),
@@ -179,7 +186,7 @@ module friscv_rv32i_control
     .empty    (fifo_empty)
     );
 
-    assign pull_inst = (csr_ready && ~cant_branch_now && ~cant_process_now && 
+    assign pull_inst = (csr_ready && ~cant_branch_now && ~cant_process_now &&
                         cfsm==FETCH && ~fifo_empty) ? 1'b1 : 1'b0;
 
     ///////////////////////////////////////////////////////////////////////////
@@ -381,6 +388,7 @@ module friscv_rv32i_control
                     pc_reg <= BOOT_ADDR << 2;
 
                     if (arready) begin
+                        log.info("Boot the processor");
                         cfsm <= FETCH;
                     end
                 end
@@ -391,11 +399,12 @@ module friscv_rv32i_control
                     `ifdef TRAP_ERROR
                     // Completely stop the execution and $stop() the simulation
                     if (`TRAP_ERROR && inst_error) begin
+                        log.error("Decodiong error, received an error");
                         cfsm <= TRAP;
                     end
                     `endif
 
-                    // Manages read outstanding requests to fetch 
+                    // Manages read outstanding requests to fetch
                     // new instruction from memory:
                     //
                     //   - if fifo is feeding with instruction, need branch
@@ -410,10 +419,11 @@ module friscv_rv32i_control
                     end
 
                     if (~fifo_empty) begin
-                        
+
                         // Needs to jump or branch thus stop the pipeline
                         // and reload new instructions
                         if (jump_branch && ~cant_branch_now && csr_ready) begin
+                            log.info("Start Jump/Branch");
                             flush_fifo <= 1'b1;
                             arvalid <= 1'b0;
                             arid <= arid + 1;
@@ -421,10 +431,12 @@ module friscv_rv32i_control
                             cfsm <= RELOAD;
                         // Reach an EBREAK instruction, need to stall the core
                         end else if (env[1]) begin
+                            log.critical("Received EBREAK. Stop the processor");
                             ebreak <= 1'b1;
                             cfsm <= EBREAK;
                         // Reach a FENCE.i instruction, need to flush the cache
                         end else if (fence[1]) begin
+                            log.warning("Received FENCE.i. Start iCache flush");
                             flush_fifo <= 1'b1;
                             pc_reg <= pc;
                             arvalid <= 1'b0;
@@ -438,16 +450,18 @@ module friscv_rv32i_control
                             pc_jal_saved <= pc_plus4;
                             pc_auipc_saved <= pc_reg;
                         // Process as long as instruction are available
-                        end else if (csr_ready && 
-                                     ~cant_branch_now && ~cant_process_now) 
+                        end else if (csr_ready &&
+                                     ~cant_branch_now && ~cant_process_now)
                         begin
+                            $sformat(inst_str, "%x", instruction);
+                            log.debug({"Execute ", inst_str});
                             pc_reg <= pc;
                         end
 
                     end
                 end
 
-                // Stop operations to reload new oustanding requests. Used to 
+                // Stop operations to reload new oustanding requests. Used to
                 // reboot the cache and continue to fetch the addresses from
                 // a new origin
                 RELOAD: begin
@@ -456,7 +470,7 @@ module friscv_rv32i_control
                     cfsm <= FETCH;
                 end
 
-                // Launch a cache flush, req starts the flush and is kept 
+                // Launch a cache flush, req starts the flush and is kept
                 // high as long ack is not asserted
                 FENCE_I: begin
                     flush_req <= 1'b1;

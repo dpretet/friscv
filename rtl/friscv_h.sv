@@ -129,4 +129,10 @@
 `define TRAP_ERROR 0
 `endif
 
+`ifndef LOGGER
+`define LOGGER
+`define ICACHE_VERBOSITY 1
+`define CONTROL_VERBOSITY 1
+`endif
+
 `endif

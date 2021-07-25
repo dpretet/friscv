@@ -142,3 +142,4 @@ syn/*.v
 obj_dir
 .DS_Store
 tags
+test/*/*.txt
