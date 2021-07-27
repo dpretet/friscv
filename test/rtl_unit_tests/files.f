@@ -3,11 +3,11 @@
 ./scram.sv
 ../common/axi4_ram.sv
 ../../rtl/friscv_rv32i.sv
-../../rtl/friscv_rv32i_control.sv
-../../rtl/friscv_rv32i_decoder.sv
-../../rtl/friscv_rv32i_alu.sv
-../../rtl/friscv_rv32i_processing.sv
-../../rtl/friscv_rv32i_memfy.sv
+../../rtl/friscv_control.sv
+../../rtl/friscv_decoder.sv
+../../rtl/friscv_alu.sv
+../../rtl/friscv_processing.sv
+../../rtl/friscv_memfy.sv
 ../../rtl/friscv_registers.sv
 ../../rtl/friscv_csr.sv
 ../../rtl/friscv_stats.sv

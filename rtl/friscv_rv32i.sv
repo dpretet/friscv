@@ -194,13 +194,13 @@ module friscv_rv32i
     initial begin
 
         `ifdef RV32I
-        `CHECKER((XLEN!=32), 
+        `CHECKER((XLEN!=32),
             "Wrong architecture definition: 32 bits expected");
         `endif
 
         `CHECKER((CSR_DEPTH!=12), "CSR_DEPTH must be 12 bits wide");
 
-        `CHECKER((GPIO_SLV1_ADDR<(GPIO_BASE_ADDR+GPIO_SLV0_SIZE)), 
+        `CHECKER((GPIO_SLV1_ADDR<(GPIO_BASE_ADDR+GPIO_SLV0_SIZE)),
             "GPIO_SLV1_ADDR spans over SLV0 address space");
 
         `CHECKER((DATA_MEM_BASE_ADDR<(GPIO_BASE_ADDR+GPIO_BASE_SIZE)),
@@ -276,7 +276,7 @@ module friscv_rv32i
     // Central controller sequencing the operations
     //////////////////////////////////////////////////////////////////////////
 
-    friscv_rv32i_control
+    friscv_control
     #(
         .XLEN        (XLEN),
         .AXI_ADDR_W  (AXI_ADDR_W),
@@ -396,7 +396,7 @@ module friscv_rv32i
     // All ISA enxtensions supported: standard arithmetic / memory, ...
     //////////////////////////////////////////////////////////////////////////
 
-    friscv_rv32i_processing
+    friscv_processing
     #(
         .ADDRW              (DATA_ADDRW),
         .XLEN               (XLEN),

@@ -6,7 +6,7 @@
 
 `include "friscv_h.sv"
 
-module friscv_rv32i_alu
+module friscv_alu
 
     #(
         parameter XLEN  = 32

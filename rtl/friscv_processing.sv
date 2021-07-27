@@ -6,7 +6,7 @@
 
 `include "friscv_h.sv"
 
-module friscv_rv32i_processing
+module friscv_processing
 
     #(
         parameter ADDRW = 16,
@@ -67,7 +67,7 @@ module friscv_rv32i_processing
 
     assign alu_en = proc_en & memfy_ready;
 
-    friscv_rv32i_alu
+    friscv_alu
     #(
         .XLEN      (XLEN)
     )
@@ -92,7 +92,7 @@ module friscv_rv32i_processing
 
     assign memfy_en = proc_en & alu_ready;
 
-    friscv_rv32i_memfy
+    friscv_memfy
     #(
         .ADDRW              (ADDRW),
         .XLEN               (XLEN),

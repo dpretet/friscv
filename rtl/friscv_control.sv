@@ -12,7 +12,7 @@
 // the ALU, the data memory controller and CSR manager
 ///////////////////////////////////////////////////////////////////////////////
 
-module friscv_rv32i_control
+module friscv_control
 
     #(
         // Registers width, 32 bits for RV32i. [CAN'T BE CHANGED]
@@ -214,7 +214,7 @@ module friscv_rv32i_control
     ///////////////////////////////////////////////////////////////////////////
 
 
-    friscv_rv32i_decoder
+    friscv_decoder
     #(
         .XLEN   (XLEN)
     )

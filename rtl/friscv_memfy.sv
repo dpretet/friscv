@@ -6,7 +6,7 @@
 
 `include "friscv_h.sv"
 
-module friscv_rv32i_memfy
+module friscv_memfy
 
     #(
         parameter ADDRW = 16,

@@ -4,7 +4,7 @@
 `timescale 1 ns / 1 ps
 `default_nettype none
 
-module friscv_rv32i_decoder
+module friscv_decoder
 
     #(
         parameter XLEN = 32
