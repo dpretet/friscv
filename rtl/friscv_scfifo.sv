@@ -16,8 +16,9 @@
 // to the output stream without buffering it into the RAM. This mode reduces
 // the latency to transmit data if both producer and consumer are ready.
 //
-// CAUTION: this pass-thru mode introcue a full combinatorial circuit, be
-// sure to connect synchronous logic to avoid combinatorial loop.
+// CAUTION: this pass-thru mode implements a full combinatorial circuit, be
+// sure to connect synchronous logic to avoid combinatorial loop around the 
+// control flow.
 //
 ///////////////////////////////////////////////////////////////////////////////
 

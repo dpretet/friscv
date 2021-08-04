@@ -7,6 +7,7 @@
 module friscv_registers
 
     #(
+        parameter RV32E = 0,
         parameter XLEN = 32
     )(
         // clock and resets
@@ -54,13 +55,17 @@ module friscv_registers
         input  logic [XLEN  -1:0] csr_rd_val
     );
 
+    localparam REGNUM = (RV32E) ? 16 : 32;
+
     // ISA registers 0-31
-    logic [XLEN-1:0] regs [2**5-1:0];
+    logic [XLEN-1:0] regs [REGNUM-1:0];
+
     genvar i;
     integer s;
+
     generate
 
-    for (i=0; i<32; i++) begin: RegisterGeneration
+    for (i=0; i<REGNUM; i++) begin: RegisterGeneration
 
     // registers' write circuit
     always @ (posedge aclk or negedge aresetn) begin

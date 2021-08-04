@@ -3,10 +3,11 @@
 
 `timescale 1ns / 1ps
 `default_nettype none
-`include "friscv_h.sv"
-`include "friscv_checkers.sv"
 
 `define RV32I
+
+`include "friscv_h.sv"
+`include "friscv_checkers.sv"
 
 module friscv_rv32i
 
@@ -15,14 +16,18 @@ module friscv_rv32i
         // Global setup
         ///////////////////////////////////////////////////////////////////////////
 
+        // Instruction length (always 32, whatever the architecture)
+        parameter ILEN               = 32,
         // RISCV Architecture
         parameter XLEN               = 32,
         // Boot address used by the control unit
         parameter BOOT_ADDR          = 0,
         // Number of outstanding requests used by the control unit
         parameter INST_OSTDREQ_NUM   = 8,
-        // CSR registers depth
-        parameter CSR_DEPTH          = 12,
+        // Core Hart ID
+        parameter MHART_ID           = 0,
+        // RV32E architecture, limits integer registers to 16, else 32
+        parameter RV32E              = 0,
 
         ///////////////////////////////////////////////////////////////////////////
         // AXI4 / AXI4-lite interface setup
@@ -183,7 +188,7 @@ module friscv_rv32i
     logic                        inst_rready_s;
     logic [AXI_ID_W        -1:0] inst_rid_s;
     logic [2               -1:0] inst_rresp_s;
-    logic [XLEN            -1:0] inst_rdata_s;
+    logic [ILEN            -1:0] inst_rdata_s;
 
     logic                        flush_req;
     logic                        flush_ack;
@@ -193,12 +198,16 @@ module friscv_rv32i
     //////////////////////////////////////////////////////////////////////////
     initial begin
 
+        `CHECKER((ILEN!=32),
+            "ILEN can't be something else than 32 bits");
+
         `ifdef RV32I
         `CHECKER((XLEN!=32),
             "Wrong architecture definition: 32 bits expected");
         `endif
 
-        `CHECKER((CSR_DEPTH!=12), "CSR_DEPTH must be 12 bits wide");
+        `CHECKER((RV32E!=0 && RV32E!=1),
+            "RV32E can be only equal to 0 or 1");
 
         `CHECKER((GPIO_SLV1_ADDR<(GPIO_BASE_ADDR+GPIO_SLV0_SIZE)),
             "GPIO_SLV1_ADDR spans over SLV0 address space");
@@ -229,12 +238,13 @@ module friscv_rv32i
 
 
     //////////////////////////////////////////////////////////////////////////
-    // ISA Registers x0 -> x31
+    // ISA integer registers
     //////////////////////////////////////////////////////////////////////////
 
     friscv_registers
     #(
-        .XLEN (XLEN)
+        .RV32E  (RV32E),
+        .XLEN   (XLEN)
     )
     isa_registers
     (
@@ -278,6 +288,7 @@ module friscv_rv32i
 
     friscv_control
     #(
+        .ILEN        (ILEN),
         .XLEN        (XLEN),
         .AXI_ADDR_W  (AXI_ADDR_W),
         .AXI_ID_W    (AXI_ID_W),
@@ -322,10 +333,11 @@ module friscv_rv32i
 
 
     generate
-    if (ICACHE_EN) begin :  USE_ICACHE
+    if (ICACHE_EN) begin : USE_ICACHE
 
     friscv_icache
     #(
+        .ILEN         (ILEN),
         .XLEN         (XLEN),
         .OSTDREQ_NUM  (INST_OSTDREQ_NUM),
         .AXI_ADDR_W   (AXI_ADDR_W),
@@ -517,13 +529,15 @@ module friscv_rv32i
         .uart_cts  (uart_cts  )
     );
 
+
     //////////////////////////////////////////////////////////////////////////
-    // Module managing the ISA CSR
+    // ISA CSR registers
     //////////////////////////////////////////////////////////////////////////
 
     friscv_csr
     #(
-        .CSR_DEPTH (CSR_DEPTH),
+        .RV32E     (RV32E),
+        .MHART_ID  (MHART_ID),
         .XLEN      (XLEN)
     )
     csrs

@@ -112,20 +112,20 @@ main() {
         source script/setup.sh
         iverilog -V
 
-        echo ""
-        printinfo "Start RTL simulation flow"
+        # echo ""
+        # printinfo "Start RTL simulation flow"
 
-        cd "$FRISCVDIR/test/rtl_unit_tests"
+        # cd "$FRISCVDIR/test/rtl_unit_tests"
 
-        for test in *_testbench.sv; do
-            ./run.sh "$test"
-            ret=$((ret+$?))
-        done
-        if [ $ret != 0 ] ; then
-            printerror "Execution failed"
-        else
-            printsuccess "Execution passed"
-        fi
+        # for test in *_testbench.sv; do
+        #     ./run.sh "$test"
+        #     ret=$((ret+$?))
+        # done
+        # if [ $ret != 0 ] ; then
+        #     printerror "Execution failed"
+        # else
+        #     printsuccess "Execution passed"
+        # fi
 
         echo ""
         printinfo "Start ASM simulation flow"
@@ -137,10 +137,23 @@ main() {
 
         if [ $ret != 0 ] ; then
             printerror "Execution failed"
+            return $ret
         else
             printsuccess "Execution passed"
         fi
-        exit $ret
+
+        cd "${FRISCVDIR}/test/riscv-tests"
+
+        ./run.sh
+        ret=$((ret+$?))
+
+        if [ $ret != 0 ] ; then
+            printerror "Execution failed"
+            return $ret
+        else
+            printsuccess "Execution passed"
+        fi
+        exit 0
     fi
 
     if [[ $1 == "syn" ]]; then

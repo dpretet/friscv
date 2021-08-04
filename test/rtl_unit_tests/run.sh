@@ -29,5 +29,5 @@ if [[ $ec != 0 ]]; then
     exit 1
 fi
 
-echo -e "${GREEN}SUCCESS: RTL Unit Tests flow successfully terminated ^^${NC}"
+echo -e "${GREEN}SUCCESS: RTL Unit Test flow successfully terminated ^^${NC}"
 exit 0

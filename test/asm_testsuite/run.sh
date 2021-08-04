@@ -27,6 +27,7 @@ clean() {
     rm -f ./test*.*v
     rm -f ./*.vcd
     rm -f ./*testbench.gtkw
+    rm -f ./*.txt
     exit 0
 }
 #------------------------------------------------------------------------------
@@ -98,13 +99,13 @@ run_tests() {
 check_status() {
     # Exit if execution failed
     if [[ $test_ret != 0 ]]; then
-        echo -e "${RED}Execution testsuite failed${NC}"
+        echo -e "${RED}ASM testsuite failed :( ${NC}"
         exit 1
     fi
     # Double check the execution status by parsing the log
     ec=$(grep -c "ERROR:" simulation.log)
     if [[ $ec != 0 ]]; then
-        echo -e "${RED}ERROR: Execution failed !${NC}"
+        echo -e "${RED}ASM testsuite failed :( ${NC}"
         exit 1
     fi
 }
@@ -168,7 +169,7 @@ main() {
     check_status
 
     # OK, sounds good, exit gently
-    echo -e "${GREEN}SUCCESS: RTL Unit Tests flow successfully terminated ^^${NC}"
+    echo -e "${GREEN}SUCCESS: ASM Unit Test flow successfully terminated ^^${NC}"
     exit 0
 }
 

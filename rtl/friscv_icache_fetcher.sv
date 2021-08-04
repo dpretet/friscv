@@ -27,6 +27,8 @@ module friscv_icache_fetcher
         // General Setup
         ///////////////////////////////////////////////////////////////////////
 
+        // Instruction length (always 32, whatever the architecture)
+        parameter ILEN = 32,
         // RISCV Architecture
         parameter XLEN = 32,
         // Number of outstanding requests supported
@@ -64,7 +66,7 @@ module friscv_icache_fetcher
         input  logic                      ctrl_rready,
         output logic [AXI_ID_W      -1:0] ctrl_rid,
         output logic [2             -1:0] ctrl_rresp,
-        output logic [XLEN          -1:0] ctrl_rdata,
+        output logic [ILEN          -1:0] ctrl_rdata,
         // Memory controller read interface
         output logic                      memctrl_arvalid,
         input  logic                      memctrl_arready,
@@ -75,7 +77,7 @@ module friscv_icache_fetcher
         input  logic                      cache_writing,
         output logic                      cache_ren,
         output logic [AXI_ADDR_W    -1:0] cache_raddr,
-        input  logic [XLEN          -1:0] cache_rdata,
+        input  logic [ILEN          -1:0] cache_rdata,
         input  logic                      cache_hit,
         input  logic                      cache_miss
     );
@@ -133,8 +135,8 @@ module friscv_icache_fetcher
     // Logger setup
     svlogger log;
     initial log = new("iCache-Fetcher",
-                        `ICACHE_VERBOSITY,
-                        3);
+                      `ICACHE_VERBOSITY,
+                      `ICACHE_ROUTE);
 
     ///////////////////////////////////////////////////////////////////////////
     // Buffering stage
@@ -252,7 +254,7 @@ module friscv_icache_fetcher
                     pull_addr_if <= 1'b1;
                     pull_addr_mf <= 1'b0;
                     if (~fifo_empty_if) begin
-                        log.info("Start to serve");
+                        log.debug("Start to serve");
                         seq <= SERVE;
                     end
                 end
@@ -263,7 +265,7 @@ module friscv_icache_fetcher
                     // If flush command is received, clear the FIFO content
                     // and wait for req deassertion
                     if (flush_req) begin
-                        log.info("Start flush procedure");
+                        log.debug("Start flush procedure");
                         pull_addr_if <= 1'b0;
                         pull_addr_mf <= 1'b0;
                         flush_fifo <= 1'b1;
@@ -272,7 +274,7 @@ module friscv_icache_fetcher
                     // FIFO and move to read the AXI4 interface to grab the
                     // missing instruction
                     end else if (cache_miss) begin
-                        log.info("Cache miss");
+                        log.debug("Cache miss");
                         pull_addr_if <= 1'b0;
                         memctrl_arvalid <= 1'b1;
                         memctrl_araddr <= araddr_ffd;
@@ -280,20 +282,28 @@ module friscv_icache_fetcher
                         seq <= LOAD;
                     // When empty, go back to IDLE to wait new requests
                     end else if (fifo_empty_if) begin
-                        log.info("Go back to IDLE");
+                        log.debug("Go back to IDLE");
                         seq <= IDLE;
                     end
                 end
                 // Fetch a new instruction in external memory
                 LOAD: begin
+                    if (memctrl_arvalid &&memctrl_arready) begin
+                        log.debug("Read memory");
+                    end
                     if (memctrl_arready) begin
-                        log.info("Read memory");
                         memctrl_arvalid <= 1'b0;
                     end
+
+                    // If a reboot has been initiated, move back to IDLE
+                    // to avoid a race condition which will fetch twice 
+                    // the next first instruction
+                    if (reboot) begin
+                        seq <= IDLE;
                     // Go to read the cache lines once the memory controller
                     // wrote a new cache line, the read completion
-                    if (cache_writing) begin
-                        log.info("Go to missed-fetch state");
+                    end else if (cache_writing) begin
+                        log.debug("Go to missed-fetch state");
                         pull_addr_mf <= 1'b1;
                         seq <= MISSED;
                     end
@@ -305,7 +315,7 @@ module friscv_icache_fetcher
                     // If flush command is received, clear the FIFO content
                     // and wait for req deassertion
                     if (flush_req) begin
-                        log.info("Start flush procedure");
+                        log.debug("Start flush procedure");
                         pull_addr_if <= 1'b0;
                         pull_addr_mf <= 1'b0;
                         flush_fifo <= 1'b1;
@@ -314,7 +324,7 @@ module friscv_icache_fetcher
                     // FIFO and move to read the AXI4 interface to grab the
                     // missing instruction
                     end else if (cache_miss) begin
-                        log.info("Cache miss");
+                        log.debug("Cache miss");
                         pull_addr_mf <= 1'b0;
                         memctrl_arvalid <= 1'b1;
                         memctrl_araddr <= araddr_ffd;
@@ -323,13 +333,13 @@ module friscv_icache_fetcher
                     // If other instruction fetchs have been issue,
                     // continue to serve the core controller
                     end else if (~fifo_empty_if && fifo_empty_mf) begin
-                        log.info("Go to to-fetch state");
+                        log.debug("Go to to-fetch state");
                         pull_addr_if <= 1'b1;
                         pull_addr_mf <= 1'b0;
                         seq <= SERVE;
                     // When empty, go back to IDLE to wait new requests
                     end else if (fifo_empty_mf) begin
-                        log.info("Go back to IDLE");
+                        log.debug("Go back to IDLE");
                         pull_addr_mf <= 1'b0;
                         seq <= IDLE;
                     end
@@ -341,7 +351,7 @@ module friscv_icache_fetcher
                     // deassertion then go back to IDLE to reboot
                     flush_ack <= 1'b1;
                     if (flush_req==1'b0) begin
-                        log.info("Finished flush procedure");
+                        log.debug("Finished flush procedure");
                         flush_ack <= 1'b0;
                         flush_fifo <= 1'b0;
                         seq <= IDLE;

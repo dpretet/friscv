@@ -87,10 +87,10 @@ module friscv_uart
     //
     // - bit 0     : Enable the UART engine (both RX and TX) [RW]
     // - bit 1     : Loopback mode, every received data will be stored in RX
-    //               FIFO and forwarded back to TX
-    // - bit 2     : Enable parity bit
-    // - bit 3     : 0 for even parity, 1 for odd parity
-    // - bit 4     : 0 for one stop bit, 1 for two stop bits
+    //               FIFO and forwarded back to TX [RW]
+    // - bit 2     : Enable parity bit [RW]
+    // - bit 3     : 0 for even parity, 1 for odd parity [RW]
+    // - bit 4     : 0 for one stop bit, 1 for two stop bits [RW]
     // - bit 7:5   : Reserved
     // - bit 8     : Busy flag, the UART engine is processing (RX or TX) [RO]
     // - bit 9     : TX FIFO is empty [RO]
@@ -222,8 +222,8 @@ module friscv_uart
                 // Register 1: baud rate
                 end else if (mst_addr=={{ADDRW-1{1'b0}}, 1'b1}) begin
                     if (mst_wr) begin
-                        if (mst_strb[0]) clock_divider[ 0+:8] <= mst_wdata[ 0+:8];
-                        if (mst_strb[1]) clock_divider[ 8+:8] <= mst_wdata[ 8+:8];
+                        if (mst_strb[0]) clock_divider[0+:8] <= mst_wdata[0+:8];
+                        if (mst_strb[1]) clock_divider[8+:8] <= mst_wdata[8+:8];
                         mst_ready <= 1'b1;
                     end else begin
                         mst_rdata <= {16'b0, clock_divider};
@@ -235,7 +235,7 @@ module friscv_uart
                     if (mst_wr) begin
                         // Wait until the FIFO can store a new word
                         if (~tx_full) begin
-                            if (mst_strb[0]) register2[ 0+:8] <= mst_wdata[ 0+:8];
+                            if (mst_strb[0]) register2[0+:8] <= mst_wdata[0+:8];
                             tx_push <= 1'b1;
                             mst_ready <= 1'b1;
                         end

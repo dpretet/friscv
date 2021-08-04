@@ -8,14 +8,18 @@ module friscv_rv32i_testbench();
 
     `SVUT_SETUP
 
+    // Instruction lenght
+    parameter ILEN               = 32;
     // 32 bits architecture
     parameter XLEN               = 32;
     // Boot address used by the control unit
     parameter BOOT_ADDR          = 0;
     // Number of outstanding requests used by the control unit
     parameter INST_OSTDREQ_NUM   = 8;
-    // CSR registers depth
-    parameter CSR_DEPTH          = 12;
+    // MHART ID CSR register
+    parameter MHART_ID           = 0;
+    // RV32E architecture, limites integer registers to 16, else 32
+    parameter RV32E              = 0;
     // Address buses width
     parameter AXI_ADDR_W         = 16;
     // AXI ID width, setup by default to 8 and unused
@@ -97,10 +101,12 @@ module friscv_rv32i_testbench();
 
     friscv_rv32i
     #(
+        ILEN,
         XLEN,
         BOOT_ADDR,
         INST_OSTDREQ_NUM,
-        CSR_DEPTH,
+        MHART_ID,
+        RV32E,
         AXI_ADDR_W,
         AXI_ID_W,
         AXI_DATA_W,

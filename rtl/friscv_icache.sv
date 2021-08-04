@@ -29,6 +29,8 @@ module friscv_icache
         // General Setup
         ///////////////////////////////////////////////////////////////////////
 
+        // Instruction length (always 32, whatever the architecture)
+        parameter ILEN = 32,
         // RISCV Architecture
         parameter XLEN = 32,
         // Number of outstanding requests supported
@@ -77,7 +79,7 @@ module friscv_icache
         input  logic                      ctrl_rready,
         output logic [AXI_ID_W      -1:0] ctrl_rid,
         output logic [2             -1:0] ctrl_rresp,
-        output logic [XLEN          -1:0] ctrl_rdata,
+        output logic [ILEN          -1:0] ctrl_rdata,
         // AXI4 Read channels interface to central memory
         output logic                      icache_arvalid,
         input  logic                      icache_arready,
@@ -106,7 +108,7 @@ module friscv_icache
     logic [CACHE_LINE_W -1:0] cache_wdata;
     logic                     cache_ren;
     logic [AXI_ADDR_W   -1:0] cache_raddr;
-    logic [XLEN         -1:0] cache_rdata;
+    logic [ILEN         -1:0] cache_rdata;
     logic                     cache_hit;
     logic                     cache_miss;
 
@@ -129,11 +131,12 @@ module friscv_icache
 
     friscv_icache_fetcher
     #(
-    .XLEN        (XLEN),
-    .OSTDREQ_NUM (OSTDREQ_NUM),
-    .AXI_ADDR_W  (AXI_ADDR_W),
-    .AXI_ID_W    (AXI_ID_W),
-    .AXI_DATA_W  (AXI_DATA_W),
+    .ILEN           (ILEN),
+    .XLEN           (XLEN),
+    .OSTDREQ_NUM    (OSTDREQ_NUM),
+    .AXI_ADDR_W     (AXI_ADDR_W),
+    .AXI_ID_W       (AXI_ID_W),
+    .AXI_DATA_W     (AXI_DATA_W),
     .CACHE_PIPELINE (CACHE_PIPELINE)
     )
     fetcher
@@ -172,6 +175,7 @@ module friscv_icache
 
     friscv_icache_lines
     #(
+    .ILEN         (ILEN),
     .XLEN         (XLEN),
     .ADDR_W       (AXI_ADDR_W),
     .CACHE_LINE_W (CACHE_LINE_W),

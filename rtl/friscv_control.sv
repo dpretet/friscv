@@ -15,10 +15,12 @@
 module friscv_control
 
     #(
+        // Instruction length (always 32, whatever the architecture)
+        parameter ILEN = 32,
         // Registers width, 32 bits for RV32i. [CAN'T BE CHANGED]
         parameter XLEN = 32,
         // Address bus width defined for both control and AXI4 address signals
-        parameter AXI_ADDR_W = XLEN,
+        parameter AXI_ADDR_W = ILEN,
         // AXI ID width, setup by default to 8 and unused
         parameter AXI_ID_W = 8,
         // AXI4 data width, independant of control unit width
@@ -99,7 +101,7 @@ module friscv_control
     logic             branching;
     logic             processing;
     logic [2    -1:0] fence;
-    logic [3    -1:0] env;
+    logic [6    -1:0] sys;
 
     // Flag raised when receiving an unsupported/undefined instruction
     logic inst_error;
@@ -141,7 +143,7 @@ module friscv_control
     logic                   cant_branch_now;
     logic                   cant_process_now;
     // FIFO signals
-    logic [XLEN       -1:0] instruction;
+    logic [ILEN       -1:0] instruction;
     logic                   flush_fifo;
     logic                   push_inst;
     logic                   fifo_full;
@@ -152,7 +154,7 @@ module friscv_control
     svlogger log;
     initial log = new("ControlUnit",
                       `CONTROL_VERBOSITY,
-                      3);
+                      `CONTROL_ROUTE);
     string inst_str;
 
     ///////////////////////////////////////////////////////////////////////////
@@ -202,9 +204,9 @@ module friscv_control
     //   - auipc
     //   - jal
     //   - jalr
-    //   - fence
-    //   - env (CSR/EBREAK/ECALL)
-    //   - processing
+    //   - fence: FENCE (0) / FENCE.I (1)
+    //   - sys: CSR (0) / EBREAK (1) / ECALL (2)
+    //   - processing: alll others
     //
     // Processing is handled by ALU & Memfy, responsible of data memory access,
     // registers management and arithmetic/logic operations.
@@ -238,7 +240,7 @@ module friscv_control
         .jal         (jal),
         .jalr        (jalr),
         .branching   (branching),
-        .env         (env),
+        .sys         (sys),
         .processing  (processing),
         .inst_error  (inst_error),
         .pred        (pred),
@@ -267,7 +269,7 @@ module friscv_control
     assign proc_instbus[`CSR    +: `CSR_W   ] = csr   ;
     assign proc_instbus[`SHAMT  +: `SHAMT_W ] = shamt ;
 
-    assign csr_en = env[2] & (cfsm==FETCH) & ~fifo_empty;
+    assign csr_en = sys[2] & (cfsm==FETCH) & ~fifo_empty;
     assign csr_instbus = proc_instbus;
 
     ///////////////////////////////////////////////////////////////////////////
@@ -293,10 +295,10 @@ module friscv_control
 
     // program counter switching logic
     assign pc = (cfsm==BOOT)                ? pc_reg :
-                // FENCE or FENCE.I
+                // FENCE (0) or FENCE.I (1)
                 (|fence)                    ? pc_plus4 :
-                // ECALL/EBREAK/CSR
-                (|env)                      ? pc_plus4 :
+                // ECALL (0) / EBREAK (1) / CSR (2)
+                (|sys)                      ? pc_plus4 :
                 // Load immediate
                 (lui)                       ? pc_plus4 :
                 // Add upper immediate in PC
@@ -385,7 +387,8 @@ module friscv_control
                 default: begin
 
                     arvalid <= 1'b1;
-                    pc_reg <= BOOT_ADDR << 2;
+                    araddr <= BOOT_ADDR;
+                    pc_reg <= BOOT_ADDR;
 
                     if (arready) begin
                         log.info("Boot the processor");
@@ -396,47 +399,50 @@ module friscv_control
                 // Fetch instructions
                 FETCH: begin
 
-                    `ifdef TRAP_ERROR
-                    // Completely stop the execution and $stop() the simulation
-                    if (`TRAP_ERROR && inst_error) begin
-                        log.error("Decodiong error, received an error");
-                        cfsm <= TRAP;
-                    end
-                    `endif
-
                     // Manages read outstanding requests to fetch
                     // new instruction from memory:
                     //
-                    //   - if fifo is feeding with instruction, need branch
+                    //   - if fifo is filled with instruction, need branch
                     //     and can branch and CSR are ready, stop the addr
                     //     issuer and load it with correct address to use
+                    // TODO: why ~fifo_empty?
                     if (~fifo_empty && jump_branch && ~cant_branch_now && csr_ready) begin
                         araddr <= pc;
                     //   - else continue to simply increment by instruction
                     //     width
                     end else if (arready) begin
-                        araddr <= araddr + 4;
+                        araddr <= araddr + ILEN/8;
                     end
 
                     if (~fifo_empty) begin
 
+                        // Stop the execution when an supported instruction or
+                        // a decoding error has been issued
+                        if (inst_error) begin
+                            log.error("Decoding error, received an unsupported instruction");
+                            cfsm <= TRAP;
+                        end
+
                         // Needs to jump or branch thus stop the pipeline
                         // and reload new instructions
-                        if (jump_branch && ~cant_branch_now && csr_ready) begin
-                            log.info("Start Jump/Branch");
+                        else if (jump_branch && ~cant_branch_now && csr_ready) begin
+                            log.debug("Received Jump/Branch");
                             flush_fifo <= 1'b1;
                             arvalid <= 1'b0;
                             arid <= arid + 1;
                             pc_reg <= pc;
                             cfsm <= RELOAD;
+
                         // Reach an EBREAK instruction, need to stall the core
-                        end else if (env[1]) begin
-                            log.critical("Received EBREAK. Stop the processor");
+                        end else if (sys[1]) begin
+                            log.critical("Received EBREAK -> Stop the processor");
                             ebreak <= 1'b1;
                             cfsm <= EBREAK;
+
                         // Reach a FENCE.i instruction, need to flush the cache
+                        // the instruction pipeline
                         end else if (fence[1]) begin
-                            log.warning("Received FENCE.i. Start iCache flush");
+                            log.warning("Received FENCE.i -> Start iCache flush");
                             flush_fifo <= 1'b1;
                             pc_reg <= pc;
                             arvalid <= 1'b0;
@@ -449,12 +455,22 @@ module friscv_control
                         begin
                             pc_jal_saved <= pc_plus4;
                             pc_auipc_saved <= pc_reg;
+
                         // Process as long as instruction are available
                         end else if (csr_ready &&
                                      ~cant_branch_now && ~cant_process_now)
                         begin
                             $sformat(inst_str, "%x", instruction);
                             log.debug({"Execute ", inst_str});
+                            log.debug(get_inst_desc(
+                                        opcode,
+                                        funct3,
+                                        funct7,
+                                        rs1,
+                                        rs2,
+                                        rd,
+                                        imm12,
+                                        imm20));
                             pc_reg <= pc;
                         end
 
@@ -471,10 +487,13 @@ module friscv_control
                 end
 
                 // Launch a cache flush, req starts the flush and is kept
-                // high as long ack is not asserted
+                // high as long ack is not asserted.
+                // TODO: ensure the instruction pipeline is empty before
+                //       moving back to execution
                 FENCE_I: begin
                     flush_req <= 1'b1;
                     if (flush_ack) begin
+                        log.warning("FENCE.i finished");
                         flush_req <= 1'b0;
                         flush_fifo <= 1'b0;
                         arvalid <= 1'b1;
@@ -491,12 +510,12 @@ module friscv_control
 
                 // TRAP reached when:
                 // - received an undefined instruction
-                // - received an EBREAK instruction
+                // - received an unsupported instruction
+                // - received a XXXXXXXX instruction (undefined signal in sim)
                 TRAP: begin
-                    `ifdef FRISCV_SIM
-                    $error("ERROR: Received an unsupported instruction");
-                    $stop();
-                    `endif
+                    arvalid <= 1'b0;
+                    ebreak <= 1'b1;
+                    cfsm <= TRAP;
                 end
 
             endcase
@@ -504,13 +523,14 @@ module friscv_control
         end
     end
 
-    // Unused
+    // Unused AXI protection capability
     assign arprot = 3'b0;
 
     // Needs to jump or branch, the request to cache/RAM needs to be restarted
     assign jump_branch = (branching & goto_branch) | jal | jalr;
 
     // Two flags to stop the processor if ALU/memfy are computing
+
     assign cant_branch_now = ((jal || jalr || branching) &&
                                ~proc_ready) ? 1'b1 :
                                               1'b0;

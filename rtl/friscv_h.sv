@@ -4,6 +4,7 @@
 `ifndef FRISCV_H
 `define FRISCV_H
 
+`include "svlogger.sv"
 
 //////////////////////////////////////////////////////////////////
 // Opcodes' define
@@ -18,7 +19,8 @@
 `define STORE   7'b0100011
 `define I_ARITH 7'b0010011
 `define R_ARITH 7'b0110011
-`define ENV     7'b1110011
+`define SYS     7'b1110011
+`define FENCEX  7'b0001111
 
 
 //////////////////////////////////////////////////////////////////
@@ -117,22 +119,160 @@
 
 // total length of ALU instruction bus
 `define INST_BUS_W `OPCODE_W + `FUNCT3_W + `FUNCT7_W + `RS1_W + `RS2_W + \
-                      `RD_W + `ZIMM_W + `IMM12_W + `IMM20_W + `CSR_W + `SHAMT_W
+                   `RD_W + `ZIMM_W + `IMM12_W + `IMM20_W + `CSR_W + `SHAMT_W
 
 
 //////////////////////////////////////////////////////////////////
 // Control Unit Configuration
 //////////////////////////////////////////////////////////////////
 
-// Stop simulation if received an undefined/unsupported instruction
-`ifndef TRAP_ERROR
-`define TRAP_ERROR 0
-`endif
-
 `ifndef LOGGER
 `define LOGGER
-`define ICACHE_VERBOSITY 1
-`define CONTROL_VERBOSITY 1
+    `ifndef ICACHE_VERBOSITY
+        `define ICACHE_VERBOSITY `SVL_VERBOSE_DEBUG
+        `define ICACHE_ROUTE `SVL_ROUTE_ALL
+    `endif
+    `ifndef CONTROL_VERBOSITY
+        `define CONTROL_VERBOSITY `SVL_VERBOSE_DEBUG
+        `define CONTROL_ROUTE `SVL_ROUTE_ALL
+    `endif
 `endif
 
-`endif
+//////////////////////////////////////////////////////////////////
+// Shared tasks
+//////////////////////////////////////////////////////////////////
+
+function automatic string get_inst_desc(
+    input logic [7    -1:0] opcode,
+    input logic [3    -1:0] funct3,
+    input logic [7    -1:0] funct7,
+    input logic [5    -1:0] rs1,
+    input logic [5    -1:0] rs2,
+    input logic [5    -1:0] rd,
+    input logic [12   -1:0] imm12,
+    input logic [20   -1:0] imm20
+);
+
+    string text = "UNKNOWN";
+    string temp;
+
+    if (opcode==`LUI) begin
+        text = "LUI / U-type";
+        $sformat(temp, "rd: %x ", rd);
+        text = {temp, text};
+        $sformat(temp, "Imm20: %x ", imm20);
+        text = {temp, text};
+    end
+    if (opcode==`AUIPC) begin
+        text = "AUIPC / U-type";
+        $sformat(temp, "rd: %x ", rd);
+        text = {temp, text};
+        $sformat(temp, "Imm20: %x ", imm20);
+        text = {temp, text};
+    end
+    if (opcode==`JALR) begin
+        text = "JALR / I-type";
+        $sformat(temp, "rd: %x ", rd);
+        text = {temp, text};
+        $sformat(temp, "funct3: %x ", funct3);
+        text = {temp, text};
+        $sformat(temp, "rs1: %x ", rs1);
+        text = {temp, text};
+        $sformat(temp, "Imm12: %x ", imm12);
+        text = {temp, text};
+    end
+    if (opcode==`LOAD) begin
+        text = "LOAD / I-type";
+        $sformat(temp, "rd: %x ", rd);
+        text = {temp, text};
+        $sformat(temp, "funct3: %x ", funct3);
+        text = {temp, text};
+        $sformat(temp, "rs1: %x ", rs1);
+        text = {temp, text};
+        $sformat(temp, "Imm12: %x ", imm12);
+        text = {temp, text};
+    end
+    if (opcode==`I_ARITH) begin
+        text = "ARITH / I-type";
+        $sformat(temp, "rd: %x ", rd);
+        text = {temp, text};
+        $sformat(temp, "funct3: %x ", funct3);
+        text = {temp, text};
+        $sformat(temp, "rs1: %x ", rs1);
+        text = {temp, text};
+        $sformat(temp, "Imm12: %x ", imm12);
+        text = {temp, text};
+    end
+    if (opcode==`FENCEX) begin
+        if (funct3==`FENCE) text = "FENCE / I-type";
+        else  text = "FENCE.i / I-type";
+        $sformat(temp, "rd: %x ", rd);
+        text = {temp, text};
+        $sformat(temp, "funct3: %x ", funct3);
+        text = {temp, text};
+        $sformat(temp, "rs1: %x ", rs1);
+        text = {temp, text};
+        $sformat(temp, "Imm12: %x ", imm12);
+        text = {temp, text};
+    end
+    if (opcode==`SYS) begin
+        if (funct3==3'b000 && funct7==7'b0000000) text = "ECALL - I-type";
+        else if (funct3==3'b000 && funct7==7'b0000001) text = "EBREAK - I-type";
+        else text = "CSR / I-type";
+        $sformat(temp, "rd: %x ", rd);
+        text = {temp, text};
+        $sformat(temp, "funct3: %x ", funct3);
+        text = {temp, text};
+        $sformat(temp, "rs1: %x ", rs1);
+        text = {temp, text};
+        $sformat(temp, "Imm12: %x ", imm12);
+        text = {temp, text};
+    end
+    if (opcode==`JAL) begin
+        text = "JAL / J-type";
+        $sformat(temp, "rd: %x ", rd);
+        text = {temp, text};
+        $sformat(temp, "Imm20: %x ", imm20);
+        text = {temp, text};
+    end
+    if (opcode==`BRANCH) begin
+        text = "BRANCH / B-type";
+        $sformat(temp, "funct3: %x ", funct3);
+        text = {temp, text};
+        $sformat(temp, "rs1: %x ", rs1);
+        text = {temp, text};
+        $sformat(temp, "rs2: %x ", rs2);
+        text = {temp, text};
+        $sformat(temp, "Imm12: %x ", imm12);
+        text = {temp, text};
+    end
+    if (opcode==`STORE) begin
+        text = "STORE / S-type";
+        $sformat(temp, "funct3: %x ", funct3);
+        text = {temp, text};
+        $sformat(temp, "rs1: %x ", rs1);
+        text = {temp, text};
+        $sformat(temp, "rs2: %x ", rs2);
+        text = {temp, text};
+        $sformat(temp, "Imm12: %x ", imm12);
+        text = {temp, text};
+    end
+    if (opcode==`R_ARITH) begin
+        text = "ARITH / R-type";
+        $sformat(temp, "rd: %x ", rd);
+        text = {temp, text};
+        $sformat(temp, "funct3: %x ", funct3);
+        text = {temp, text};
+        $sformat(temp, "rs1: %x ", rs1);
+        text = {temp, text};
+        $sformat(temp, "rs2: %x ", rs2);
+        text = {temp, text};
+        $sformat(temp, "funct7: %x ", funct7);
+        text = {temp, text};
+    end
+
+    get_inst_desc = text;
+
+endfunction
+
+`endif // FRISCV_H

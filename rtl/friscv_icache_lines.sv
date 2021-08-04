@@ -19,6 +19,8 @@
 module friscv_icache_lines
 
     #(
+        // Instruction length (always 32, whatever the architecture)
+        parameter ILEN = 32,
         // Architecture
         parameter XLEN = 32,
         // Address bus width
@@ -37,7 +39,7 @@ module friscv_icache_lines
         input  logic [CACHE_LINE_W -1:0] wdata,
         input  logic                     ren,
         input  logic [ADDR_W       -1:0] raddr,
-        output logic [XLEN         -1:0] rdata,
+        output logic [ILEN         -1:0] rdata,
         output logic                     hit,
         output logic                     miss
     );
@@ -47,16 +49,16 @@ module friscv_icache_lines
     // Parameters to parse the address and cache line
     //////////////////////////////////////////////////////////////////////////
 
-    // Offset part into address value, 2 because we index dword (XLEN)
+    // Offset part into address value, 2 because we index dword (ILEN)
     localparam OFFSET_IX = 2;
-    localparam OFFSET_W = $clog2(CACHE_LINE_W/XLEN);
+    localparam OFFSET_W = $clog2(CACHE_LINE_W/ILEN);
 
     // Index part into address value, to parse the cache lines
     localparam INDEX_IX = OFFSET_IX + OFFSET_W;
     localparam INDEX_W = $clog2(CACHE_DEPTH);
 
     // Tag part, address's MSB stored along the data values, -2 because the
-    // address if by oriented but we address dword (XLEN)
+    // address if by oriented but we address dword (ILEN)
     localparam TAG_IX = INDEX_IX + INDEX_W;
     localparam TAG_W = ADDR_W - INDEX_W - OFFSET_W - 2;
 
@@ -147,11 +149,11 @@ module friscv_icache_lines
         if (~aresetn) begin
             hit <= 1'b0;
             miss <= 1'b0;
-            rdata <= {XLEN{1'b0}};
+            rdata <= {ILEN{1'b0}};
         end else if (srst) begin
             hit <= 1'b0;
             miss <= 1'b0;
-            rdata <= {XLEN{1'b0}};
+            rdata <= {ILEN{1'b0}};
         end else begin
             if (ren) begin
                 // hit indicates the cache line store the expected instruction
@@ -160,7 +162,7 @@ module friscv_icache_lines
                 // the expected instruction address
                 miss <= (~rset || rtag!=raddr[TAG_IX+:TAG_W]) ? 1'b1 : 1'b0;
                 // extract the instruction within the cache line
-                rdata <= rline[roffset*XLEN+:XLEN];
+                rdata <= rline[roffset*ILEN+:ILEN];
             end else begin
                 hit <= 1'b0;
                 miss <= 1'b0;

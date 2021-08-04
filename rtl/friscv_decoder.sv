@@ -27,7 +27,7 @@ module friscv_decoder
         output logic             jal,
         output logic             jalr,
         output logic             branching,
-        output logic [3    -1:0] env,
+        output logic [6    -1:0] sys,
         output logic             processing,
         output logic             inst_error,
         output logic [4    -1:0] pred,
@@ -46,7 +46,7 @@ module friscv_decoder
                 jal = 1'b0;
                 jalr = 1'b0;
                 branching = 1'b0;
-                env = 3'b0;
+                sys = 6'b0;
                 fence = 2'b0;
                 processing = 1'b0;
                 inst_error = 1'b0;
@@ -61,7 +61,7 @@ module friscv_decoder
                 jal = 1'b0;
                 jalr = 1'b0;
                 branching = 1'b0;
-                env = 3'b0;
+                sys = 6'b0;
                 fence = 2'b0;
                 processing = 1'b0;
                 inst_error = 1'b0;
@@ -76,7 +76,7 @@ module friscv_decoder
                 jal = 1'b1;
                 jalr = 1'b0;
                 branching = 1'b0;
-                env = 3'b0;
+                sys = 6'b0;
                 fence = 2'b0;
                 processing = 1'b0;
                 inst_error = 1'b0;
@@ -94,7 +94,7 @@ module friscv_decoder
                 jal = 1'b0;
                 jalr = 1'b1;
                 branching = 1'b0;
-                env = 3'b0;
+                sys = 6'b0;
                 fence = 2'b0;
                 processing = 1'b0;
                 inst_error = 1'b0;
@@ -109,7 +109,7 @@ module friscv_decoder
                 jal = 1'b0;
                 jalr = 1'b0;
                 branching = 1'b1;
-                env = 3'b0;
+                sys = 6'b0;
                 fence = 2'b0;
                 processing = 1'b0;
                 inst_error = 1'b0;
@@ -121,9 +121,12 @@ module friscv_decoder
             end
 
             // Emvironment
-            // - ecall  : env[0]
-            // - ebreak : env[1]
-            // - CSR    : env[2]
+            // - ecall  : sys[0]
+            // - ebreak : sys[1]
+            // - CSR    : sys[2]
+            // - mret   : sys[3]
+            // - sret   : sys[4]
+            // - uret   : sys[5]
             7'b1110011: begin
                 lui = 1'b0;
                 auipc = 1'b0;
@@ -131,16 +134,25 @@ module friscv_decoder
                 jalr = 1'b0;
                 branching = 1'b0;
                 if (instruction[14:12]==3'b000) begin
+                    // sret
+                    if (instruction[20+:12]==12'h102) begin
+                        sys = 6'b010000;
+                    // mret
+                    end else if (instruction[20+:12]==12'h302) begin
+                        sys = 6'b001000;
                     // ebreak
-                    if (instruction[20]==1'b1) begin
-                        env = 3'b010;
+                    end else if (instruction[20+:12]==12'h001) begin
+                        sys = 6'b000010;
                     // ecall
+                    end else if (instruction[20+:12]==12'h000) begin
+                        sys = 6'b000001;
+                    // uret
                     end else begin
-                        env = 3'b001;
+                        sys = 6'b100000;
                     end
                 // CSR
                 end else begin
-                    env = 3'b100;
+                    sys = 6'b000100;
                 end
                 fence = 2'b0;
                 processing = 1'b0;
@@ -156,7 +168,7 @@ module friscv_decoder
                 jal = 1'b0;
                 jalr = 1'b0;
                 branching = 1'b0;
-                env = 3'b0;
+                sys = 6'b0;
                 // fence.i
                 if (instruction[12]) begin
                     fence = 2'b10;
@@ -177,7 +189,7 @@ module friscv_decoder
                 jal = 1'b0;
                 jalr = 1'b0;
                 branching = 1'b0;
-                env = 3'b0;
+                sys = 6'b0;
                 fence = 2'b0;
                 processing = 1'b1;
                 inst_error = 1'b0;
@@ -192,7 +204,7 @@ module friscv_decoder
                 jal = 1'b0;
                 jalr = 1'b0;
                 branching = 1'b0;
-                env = 3'b0;
+                sys = 6'b0;
                 fence = 2'b0;
                 processing = 1'b1;
                 inst_error = 1'b0;
@@ -207,7 +219,7 @@ module friscv_decoder
                 jal = 1'b0;
                 jalr = 1'b0;
                 branching = 1'b0;
-                env = 3'b0;
+                sys = 6'b0;
                 fence = 2'b0;
                 processing = 1'b1;
                 inst_error = 1'b0;
@@ -222,7 +234,7 @@ module friscv_decoder
                 jal = 1'b0;
                 jalr = 1'b0;
                 branching = 1'b0;
-                env = 3'b0;
+                sys = 6'b0;
                 fence = 2'b0;
                 processing = 1'b1;
                 inst_error = 1'b0;
@@ -237,7 +249,7 @@ module friscv_decoder
                 jal = 1'b0;
                 jalr = 1'b0;
                 branching = 1'b0;
-                env = 3'b0;
+                sys = 6'b0;
                 fence = 2'b0;
                 processing = 1'b0;
                 inst_error = 1'b1;

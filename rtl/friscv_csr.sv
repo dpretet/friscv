@@ -9,7 +9,8 @@
 module friscv_csr
 
     #(
-        parameter CSR_DEPTH = 12,
+        parameter RV32E = 0,
+        parameter MHART_ID = 0,
         parameter XLEN = 32
     )(
         input  logic                   aclk,
@@ -26,6 +27,15 @@ module friscv_csr
         output logic [XLEN       -1:0] rd_wr_val
     );
 
+    // ------------------------------------------------------------------------
+    // TODO: Ensure CSRRW/CSRRWI read doesn't indude side effect on read if
+    //       rd=0 as specified in chapter 9 Zicsr
+    // ------------------------------------------------------------------------
+
+    // ------------------------------------------------------------------------
+    // Declarations
+    // ------------------------------------------------------------------------
+
     typedef enum logic [1:0] {
         IDLE,
         COMPUTE,
@@ -37,21 +47,16 @@ module friscv_csr
     // instructions fields
     logic [`OPCODE_W   -1:0] opcode;
     logic [`FUNCT3_W   -1:0] funct3;
-    logic [`FUNCT7_W   -1:0] funct7;
     logic [`RS1_W      -1:0] rs1;
-    logic [`RS2_W      -1:0] rs2;
     logic [`RD_W       -1:0] rd;
     logic [`ZIMM_W     -1:0] zimm;
-    logic [`IMM12_W    -1:0] imm12;
-    logic [`IMM20_W    -1:0] imm20;
     logic [`CSR_W      -1:0] csr;
-    logic [`SHAMT_W    -1:0] shamt;
 
-    logic csr_wr;
-    logic csr_rd;
+    logic csr_wren;
+    logic csr_rden;
     logic [XLEN-1:0] oldval;
     logic [XLEN-1:0] newval;
-    logic [XLEN-1:0] csrs [2**CSR_DEPTH-1:0];
+    logic [XLEN-1:0] csrs [2**12-1:0];
 
     logic [`FUNCT3_W -1:0] funct3_r;
     logic [`CSR_W    -1:0] csr_r;
@@ -59,44 +64,80 @@ module friscv_csr
     logic [5         -1:0] rs1_addr_r;
     logic [XLEN      -1:0] rs1_val_r;
 
+
+    // -------------------
+    // Machine-level CSRs:
+    // -------------------
+
+    // Machine Information Status
+    // logic [XLEN-1:0] mvendorid;  // 0xF11    MRO (not implemented)
+    // logic [XLEN-1:0] marchid;    // 0xF12    MRO (not implemented)
+    // logic [XLEN-1:0] mimpid;     // 0xF13    MRO (not implemented)
+    logic [XLEN-1:0] mhartid;       // 0xF14    MRO
+
+    // Machine Trap Status
+    logic [XLEN-1:0] mstatus;       // 0x300    MRW
+    logic [XLEN-1:0] misa;          // 0x301    MRW
+    logic [XLEN-1:0] medeleg;       // 0x302    MRW
+    logic [XLEN-1:0] mideleg;       // 0x303    MRW
+    logic [XLEN-1:0] mie;           // 0x304    MRW
+    logic [XLEN-1:0] mtvec;         // 0x305    MRW
+    logic [XLEN-1:0] mcounteren;    // 0x306    MRW
+
+    // Machine Trap Handling
+    logic [XLEN-1:0] mscratch;      // 0x340    MRW
+    logic [XLEN-1:0] mepc;          // 0x341    MRW
+    logic [XLEN-1:0] mcause;        // 0x342    MRW
+    logic [XLEN-1:0] mtval;         // 0x343    MRW
+    logic [XLEN-1:0] mip;           // 0x344    MRW
+
+    // Machine Memory Protection
+    logic [XLEN-1:0] pmpcfg0;       // 0x3A0    MRW
+    logic [XLEN-1:0] pmpcfg1;       // 0x3A1    MRW
+    logic [XLEN-1:0] pmpcfg2;       // 0x3A2    MRW
+    logic [XLEN-1:0] pmpcfg3;       // 0x3A3    MRW
+    logic [XLEN-1:0] pmpaddr0;      // 0x3B0    MRW
+
+
+    // ----------------------
+    // Supervisor-level CSRs:
+    // ----------------------
+
+    // Supervisor Protection and Translation
+    logic [XLEN-1:0] satp;          // 0x180
+
+
+    // ----------------
+    // User-level CSRs:
+    // ----------------
+
+    // User Counter/Timers
+    logic [XLEN-1:0] cycle;         // 0xC00
+
+
+    // ------------------------------------------------------------------------
+    // Decompose the instruction bus
+    // ------------------------------------------------------------------------
+
     assign opcode = instbus[`OPCODE +: `OPCODE_W];
     assign funct3 = instbus[`FUNCT3 +: `FUNCT3_W];
-    assign funct7 = instbus[`FUNCT7 +: `FUNCT7_W];
     assign rs1    = instbus[`RS1    +: `RS1_W   ];
-    assign rs2    = instbus[`RS2    +: `RS2_W   ];
     assign rd     = instbus[`RD     +: `RD_W    ];
     assign zimm   = instbus[`ZIMM   +: `ZIMM_W  ];
-    assign imm12  = instbus[`IMM12  +: `IMM12_W ];
-    assign imm20  = instbus[`IMM20  +: `IMM20_W ];
     assign csr    = instbus[`CSR    +: `CSR_W   ];
-    assign shamt  = instbus[`SHAMT  +: `SHAMT_W ];
-
-    `ifdef FRISCV_SIM
-    initial begin
-        for(int i=0; i<2**CSR_DEPTH; i=i+1)
-            csrs[i] = 32'h0;
-    end
-    `endif
-
-    always @ (posedge aclk) begin
-        if (csr_wr) begin
-            csrs[csr_r] <= newval;
-        end
-        if (csr_rd) begin
-            oldval <= csrs[csr];
-        end
-    end
-
-    assign csr_rd = (cfsm==IDLE && valid) ? 1'b1 : 1'b0;
 
     assign rs1_addr = rs1;
 
+
+    // ------------------------------------------------------------------------
+    // CSR execution machine
+    // ------------------------------------------------------------------------
     always @ (posedge aclk or negedge aresetn) begin
         if (aresetn==1'b0) begin
             rd_wr_en <= 1'b0;
             rd_wr_val <= {XLEN{1'b0}};
             ready <= 1'b0;
-            csr_wr <= 1'b0;
+            csr_wren <= 1'b0;
             newval <= {XLEN{1'b0}};
             funct3_r <= {`FUNCT3_W{1'b0}};
             csr_r <= {`CSR_W{1'b0}};
@@ -109,7 +150,7 @@ module friscv_csr
             rd_wr_en <= 1'b0;
             rd_wr_val <= {XLEN{1'b0}};
             ready <= 1'b0;
-            csr_wr <= 1'b0;
+            csr_wren <= 1'b0;
             newval <= {XLEN{1'b0}};
             funct3_r <= {`FUNCT3_W{1'b0}};
             csr_r <= {`CSR_W{1'b0}};
@@ -125,7 +166,7 @@ module friscv_csr
 
                 default: begin
 
-                    csr_wr <= 1'b0;
+                    csr_wren <= 1'b0;
                     rd_wr_en <= 1'b0;
                     ready <= 1'b1;
 
@@ -149,18 +190,16 @@ module friscv_csr
 
                     // Swap RS1 and CSR
                     if (funct3_r==`CSRRW) begin
-                        if (rd_wr_addr!=5'b0) begin
-                            csr_wr <= 1'b1;
-                            rd_wr_en <= 1'b1;
-                            rd_wr_val <= oldval;
-                        end
+                        csr_wren <= 1'b1;
+                        rd_wr_en <= 1'b1;
+                        rd_wr_val <= oldval;
                         newval <= rs1_val_r;
                     // Save CSR in RS1 and apply a set mask with rs1
                     end else if (funct3_r==`CSRRS) begin
                         rd_wr_en <= 1'b1;
                         rd_wr_val <= oldval;
                         if (rs1_addr_r!=5'b0) begin
-                            csr_wr <= 1'b1;
+                            csr_wren <= 1'b1;
                             newval <= oldval | rs1_val_r;
                         end
 
@@ -169,17 +208,15 @@ module friscv_csr
                         rd_wr_en <= 1'b1;
                         rd_wr_val <= oldval;
                         if (rs1_addr_r!=5'b0) begin
-                            csr_wr <= 1'b1;
+                            csr_wren <= 1'b1;
                             newval <= oldval & rs1_val_r;
                         end
 
                     // Store CSR in RS1 then set CSR to Zimm
                     end else if (funct3_r==`CSRRWI) begin
-                        if (rd_wr_addr!=5'b0) begin
-                            csr_wr <= 1'b1;
-                            rd_wr_en <= 1'b1;
-                            rd_wr_val <= oldval;
-                        end
+                        csr_wren <= 1'b1;
+                        rd_wr_en <= 1'b1;
+                        rd_wr_val <= oldval;
                         newval <= {{XLEN-5{1'b0}}, zimm};
 
                     // Save CSR in RS1 and apply a set mask with Zimm
@@ -187,7 +224,7 @@ module friscv_csr
                         rd_wr_en <= 1'b1;
                         rd_wr_val <= oldval;
                         if (zimm_r!=5'b0) begin
-                            csr_wr <= 1'b1;
+                            csr_wren <= 1'b1;
                             newval <= oldval | {{XLEN-`ZIMM_W{1'b0}}, zimm_r};
                         end
 
@@ -196,7 +233,7 @@ module friscv_csr
                         rd_wr_en <= 1'b1;
                         rd_wr_val <= oldval;
                         if (zimm_r!=5'b0) begin
-                            csr_wr <= 1'b1;
+                            csr_wren <= 1'b1;
                             newval <= oldval & {{XLEN-`ZIMM_W{1'b0}}, zimm_r};
                         end
 
@@ -208,7 +245,7 @@ module friscv_csr
                 // may be write first / read first. Avoid consecutive
                 // CSR instructions to fail
                 STORE: begin
-                    csr_wr <= 1'b0;
+                    csr_wren <= 1'b0;
                     rd_wr_en <= 1'b0;
                     if (rd_wr_en==1'b0) begin
                         ready <= 1'b1;
@@ -220,7 +257,136 @@ module friscv_csr
     end
 
 
+    // ------------------------------------------------------------------------
+    // CSRs description
+    // ------------------------------------------------------------------------
+
+    // HARTID - Read-only
+    assign mhartid = MHART_ID;
+
+    // ISA Description: supposed to be RW, is RO in this implementation
+
+    // Supported extensions
+    assign misa[0]  = 1'b0;                     // A Atomic extension
+    assign misa[1]  = 1'b0;                     // B Tentatively reserved for Bit-Manipulation extension
+    assign misa[2]  = 1'b0;                     // C Compressed extension
+    assign misa[3]  = 1'b0;                     // D Double-precision floating-point extension
+    assign misa[4]  = (RV32E) ? 1'b1 : 1'b0;    // E RV32E base ISA
+    assign misa[5]  = 1'b0;                     // F Single-precision floating-point extension
+    assign misa[6]  = 1'b0;                     // G Additional standard extensions present
+    assign misa[7]  = 1'b0;                     // H Hypervisor extension
+    assign misa[8]  = (~RV32E) ? 1'b1 : 1'b0;   // I RV32I/64I/128I base ISA
+    assign misa[9]  = 1'b0;                     // J Tentatively reserved for Dynamically Translated Languages extension
+    assign misa[10] = 1'b0;                     // K Reserved
+    assign misa[11] = 1'b0;                     // L Tentatively reserved for Decimal Floating-Point extension
+    assign misa[12] = 1'b0;                     // M Integer Multiply/Divide extension
+    assign misa[13] = 1'b0;                     // N User-level interrupts supported
+    assign misa[14] = 1'b0;                     // O Reserved
+    assign misa[15] = 1'b0;                     // P Tentatively reserved for Packed-SIMD extension
+    assign misa[16] = 1'b0;                     // Q Quad-precision floating-point extension
+    assign misa[17] = 1'b0;                     // R Reserved
+    assign misa[18] = 1'b0;                     // S Supervisor mode implemented
+    assign misa[19] = 1'b0;                     // T Tentatively reserved for Transactional Memory extension
+    assign misa[20] = 1'b0;                     // U User mode implemented
+    assign misa[21] = 1'b0;                     // V Tentatively reserved for Vector extension
+    assign misa[22] = 1'b0;                     // W Reserved
+    assign misa[23] = 1'b0;                     // X Non-standard extensions present
+    assign misa[24] = 1'b0;                     // Y Reserved
+    assign misa[25] = 1'b0;                     // Z Reserved
+
+
+    // MXLEN field encoding
+    generate
+    if (XLEN==32) begin : MXLEN_32
+        assign misa[31:26] = 6'b010000;
+    end else if (XLEN==64) begin: MXLEN_64
+        assign misa[63:26] = {2'h2,36'b0};
+    end else begin: MXLEN_128
+        assign misa[127:26] = {2'h3,100'b0};
+    end
+    endgenerate
+
+    // TODO: take in account current privilege mode check if rw is applicable
+
+    assign csr_rden = (cfsm==IDLE && valid) ? 1'b1 : 1'b0;
+
+    always @ (posedge aclk or negedge aresetn) begin
+        if (~aresetn) begin
+            oldval <= {XLEN{1'b0}};
+            mstatus <= {XLEN{1'b0}};
+            mtvec <= {XLEN{1'b0}};
+            mscratch <= {XLEN{1'b0}};
+            mepc <= {XLEN{1'b0}};
+            mcause <= {XLEN{1'b0}};
+            mtval <= {XLEN{1'b0}};
+        end else if (srst) begin
+            oldval <= {XLEN{1'b0}};
+            mstatus <= {XLEN{1'b0}};
+            mtvec <= {XLEN{1'b0}};
+            mscratch <= {XLEN{1'b0}};
+            mepc <= {XLEN{1'b0}};
+            mcause <= {XLEN{1'b0}};
+            mtval <= {XLEN{1'b0}};
+        end else begin
+
+            // Write circuit
+            if (csr_wren) begin
+                if (csr_r==12'h300) begin
+                    mstatus <= {newval[31], 8'b0,
+                                newval[22:11], 2'b0,
+                                newval[8:7], 1'b0,
+                                newval[5:3], 1'b0,
+                                newval[1:0]};
+                // end else if (csr_r==12'h301) begin
+                //     misa <= newval;
+                // end else if (csr_r==12'h302) begin
+                //     medeleg <= newval;
+                // end else if (csr_r==12'h303) begin
+                //     mideleg <= newval;
+                // end else if (csr_r==12'h304) begin
+                //      mie <= newval;
+                end else if (csr_r==12'h305) begin
+                    mtvec <= newval;
+                end else if (csr_r==12'h340) begin
+                    mscratch <= newval;
+                end else if (csr_r==12'h341) begin
+                    mepc <= {newval[XLEN-1:2], 2'b0}; // only support IALIGN=32
+                end else if (csr_r==12'h342) begin
+                    mcause <= newval;
+                end else if (csr_r==12'h343) begin
+                    mtval <= newval;
+                end
+            end
+
+            // Read circuit
+            if (csr_rden) begin
+                if (csr_r==12'h300) begin
+                    oldval <= mstatus;
+                end else if (csr_r==12'h301) begin
+                    oldval <= misa;
+                // end else if (csr_r==12'h302) begin
+                    // oldval <= medeleg;
+                // end else if (csr_r==12'h303) begin
+                    // oldval <= mideleg;
+                // end else if (csr_r==12'h304) begin
+                    // oldval <= mie;
+                end else if (csr_r==12'h305) begin
+                    oldval <= mtvec;
+                end else if (csr_r==12'h340) begin
+                    oldval <= mscratch;
+                end else if (csr_r==12'h341) begin
+                    oldval <= mepc;
+                end else if (csr_r==12'h342) begin
+                    oldval <= mcause;
+                end else if (csr_r==12'h343) begin
+                    oldval <= mtval;
+                end else begin
+                    oldval <= {XLEN{1'b0}};
+                end
+            end
+        end
+    end
+
 endmodule
 
 `resetall
-
