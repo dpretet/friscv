@@ -57,7 +57,7 @@ module friscv_rv32i_testbench();
     logic                      aclk;
     logic                      aresetn;
     logic                      srst;
-    logic                      ebreak;
+    logic [8             -1:0] status;
     logic                      enable;
 
     logic                      inst_arvalid;
@@ -130,7 +130,7 @@ module friscv_rv32i_testbench();
         aresetn,
         srst,
         enable,
-        ebreak,
+        status,
         inst_arvalid,
         inst_arready,
         inst_araddr,
@@ -265,7 +265,7 @@ module friscv_rv32i_testbench();
 
         `INFO("Start test");
         @(posedge aclk);
-        while (ebreak==1'b0 && timer<TIMEOUT) begin
+        while (status==8'b0 && timer<TIMEOUT) begin
             timer = timer + 1;
             @(posedge aclk);
         end

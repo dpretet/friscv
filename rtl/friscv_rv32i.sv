@@ -6,6 +6,10 @@
 
 `define RV32I
 
+`ifndef XLEN
+`define XLEN 32
+`endif
+
 `include "friscv_h.sv"
 `include "friscv_checkers.sv"
 
@@ -83,8 +87,8 @@ module friscv_rv32i
         input  logic                      srst,
         // enable signal to activate the core
         input  logic                      enable,
-        // Flag asserted when reaching a EBREAK
-        output logic                      ebreak,
+        // Internal core status
+        output logic [8             -1:0] status,
         // instruction memory interface
         output logic                      inst_arvalid,
         input  logic                      inst_arready,
@@ -193,6 +197,15 @@ module friscv_rv32i
     logic                        flush_req;
     logic                        flush_ack;
 
+    logic                        ebreak;
+    logic                        csr_ro_trap;
+
+    logic                        ctrl_mepc_wr;
+    logic [XLEN            -1:0] ctrl_mepc;
+    logic                        ctrl_mstatus_wr;
+    logic [XLEN            -1:0] ctrl_mstatus;
+    logic [`CSR_SB_W       -1:0] csr_sb;
+
     //////////////////////////////////////////////////////////////////////////
     // Check parameters setup consistency and break up if not supported
     //////////////////////////////////////////////////////////////////////////
@@ -201,10 +214,11 @@ module friscv_rv32i
         `CHECKER((ILEN!=32),
             "ILEN can't be something else than 32 bits");
 
-        `ifdef RV32I
         `CHECKER((XLEN!=32),
             "Wrong architecture definition: 32 bits expected");
-        `endif
+
+        `CHECKER((`XLEN!=32),
+            "Wrong architecture definition: 32 bits expected");
 
         `CHECKER((RV32E!=0 && RV32E!=1),
             "RV32E can be only equal to 0 or 1");
@@ -216,6 +230,18 @@ module friscv_rv32i
             "DATA memory space spans over GPIO address space");
     end
 
+    //////////////////////////////////////////////////////////////////////////
+    // Status bus moving out the core
+    //////////////////////////////////////////////////////////////////////////
+
+    // control circuit received an EBREAK instruction is stopped, waiting for
+    // the debugger to restart it
+    assign status[0] = ebreak;
+
+    // CSR circuit received a command to write into a read-only register
+    assign status[1] = csr_ro_trap;
+
+    assign status[7:2] = 6'b0;
 
     //////////////////////////////////////////////////////////////////////////
     // Module logging internal statistics of the core
@@ -298,37 +324,42 @@ module friscv_rv32i
     )
     control
     (
-        .aclk           (aclk          ),
-        .aresetn        (aresetn       ),
-        .srst           (srst          ),
-        .ebreak         (ebreak        ),
-        .flush_req      (flush_req     ),
-        .flush_ack      (flush_ack     ),
-        .arvalid        (inst_arvalid_s),
-        .arready        (inst_arready_s),
-        .araddr         (inst_araddr_s ),
-        .arprot         (inst_arprot_s ),
-        .arid           (inst_arid_s   ),
-        .rvalid         (inst_rvalid_s ),
-        .rready         (inst_rready_s ),
-        .rid            (inst_rid_s    ),
-        .rresp          (inst_rresp_s  ),
-        .rdata          (inst_rdata_s  ),
-        .proc_en        (proc_en       ),
-        .proc_ready     (proc_ready    ),
-        .proc_empty     (proc_empty    ),
-        .proc_fenceinfo (proc_fenceinfo),
-        .proc_instbus   (proc_instbus  ),
-        .csr_en         (csr_en        ),
-        .csr_ready      (csr_ready     ),
-        .csr_instbus    (csr_instbus   ),
-        .ctrl_rs1_addr  (ctrl_rs1_addr ),
-        .ctrl_rs1_val   (ctrl_rs1_val  ),
-        .ctrl_rs2_addr  (ctrl_rs2_addr ),
-        .ctrl_rs2_val   (ctrl_rs2_val  ),
-        .ctrl_rd_wr     (ctrl_rd_wr    ),
-        .ctrl_rd_addr   (ctrl_rd_addr  ),
-        .ctrl_rd_val    (ctrl_rd_val   )
+        .aclk           (aclk           ),
+        .aresetn        (aresetn        ),
+        .srst           (srst           ),
+        .ebreak         (ebreak         ),
+        .flush_req      (flush_req      ),
+        .flush_ack      (flush_ack      ),
+        .arvalid        (inst_arvalid_s ),
+        .arready        (inst_arready_s ),
+        .araddr         (inst_araddr_s  ),
+        .arprot         (inst_arprot_s  ),
+        .arid           (inst_arid_s    ),
+        .rvalid         (inst_rvalid_s  ),
+        .rready         (inst_rready_s  ),
+        .rid            (inst_rid_s     ),
+        .rresp          (inst_rresp_s   ),
+        .rdata          (inst_rdata_s   ),
+        .proc_en        (proc_en        ),
+        .proc_ready     (proc_ready     ),
+        .proc_empty     (proc_empty     ),
+        .proc_fenceinfo (proc_fenceinfo ),
+        .proc_instbus   (proc_instbus   ),
+        .csr_en         (csr_en         ),
+        .csr_ready      (csr_ready      ),
+        .csr_instbus    (csr_instbus    ),
+        .ctrl_rs1_addr  (ctrl_rs1_addr  ),
+        .ctrl_rs1_val   (ctrl_rs1_val   ),
+        .ctrl_rs2_addr  (ctrl_rs2_addr  ),
+        .ctrl_rs2_val   (ctrl_rs2_val   ),
+        .ctrl_rd_wr     (ctrl_rd_wr     ),
+        .ctrl_rd_addr   (ctrl_rd_addr   ),
+        .ctrl_rd_val    (ctrl_rd_val    ),
+        .mepc_wr        (ctrl_mepc_wr   ),
+        .mepc           (ctrl_mepc      ),
+        .mstatus_wr     (ctrl_mstatus_wr),
+        .mstatus        (ctrl_mstatus   ),
+        .csr_sb         (csr_sb         )
     );
 
 
@@ -542,17 +573,23 @@ module friscv_rv32i
     )
     csrs
     (
-        .aclk       (aclk        ),
-        .aresetn    (aresetn     ),
-        .srst       (srst        ),
-        .valid      (csr_en      ),
-        .ready      (csr_ready   ),
-        .instbus    (csr_instbus ),
-        .rs1_addr   (csr_rs1_addr),
-        .rs1_val    (csr_rs1_val ),
-        .rd_wr_en   (csr_rd_wr   ),
-        .rd_wr_addr (csr_rd_addr ),
-        .rd_wr_val  (csr_rd_val  )
+        .aclk            (aclk           ),
+        .aresetn         (aresetn        ),
+        .srst            (srst           ),
+        .valid           (csr_en         ),
+        .ready           (csr_ready      ),
+        .instbus         (csr_instbus    ),
+        .rs1_addr        (csr_rs1_addr   ),
+        .rs1_val         (csr_rs1_val    ),
+        .rd_wr_en        (csr_rd_wr      ),
+        .rd_wr_addr      (csr_rd_addr    ),
+        .rd_wr_val       (csr_rd_val     ),
+        .ro_trap         (csr_ro_trap    ),
+        .ctrl_mepc_wr    (ctrl_mepc_wr   ),
+        .ctrl_mepc       (ctrl_mepc      ),
+        .ctrl_mstatus_wr (ctrl_mstatus_wr),
+        .ctrl_mstatus    (ctrl_mstatus   ),
+        .csr_sb          (csr_sb         )
     );
 
 endmodule

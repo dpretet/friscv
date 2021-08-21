@@ -13,9 +13,11 @@ module friscv_csr
         parameter MHART_ID = 0,
         parameter XLEN = 32
     )(
+        // clock/reset interface
         input  logic                   aclk,
         input  logic                   aresetn,
         input  logic                   srst,
+        // Instruction bus
         input  logic                   valid,
         output logic                   ready,
         input  logic [`INST_BUS_W-1:0] instbus,
@@ -24,12 +26,22 @@ module friscv_csr
         input  logic [XLEN       -1:0] rs1_val,
         output logic                   rd_wr_en,
         output logic [5          -1:0] rd_wr_addr,
-        output logic [XLEN       -1:0] rd_wr_val
+        output logic [XLEN       -1:0] rd_wr_val,
+        // External source of CSRs
+        input logic                    ctrl_mepc_wr,
+        input logic [XLEN        -1:0] ctrl_mepc,
+        input logic                    ctrl_mstatus_wr,
+        input logic [XLEN        -1:0] ctrl_mstatus,
+        // status of the processor
+        output logic                   ro_trap,
+        // CSR shared bus
+        output logic [`CSR_SB_W  -1:0] csr_sb
     );
 
     // ------------------------------------------------------------------------
     // TODO: Ensure CSRRW/CSRRWI read doesn't indude side effect on read if
     //       rd=0 as specified in chapter 9 Zicsr
+    // TODO: Print CSR implemented at startup
     // ------------------------------------------------------------------------
 
     // ------------------------------------------------------------------------
@@ -64,6 +76,7 @@ module friscv_csr
     logic [5         -1:0] rs1_addr_r;
     logic [XLEN      -1:0] rs1_val_r;
 
+    logic                  ro_write_access;
 
     // -------------------
     // Machine-level CSRs:
@@ -115,6 +128,12 @@ module friscv_csr
     logic [XLEN-1:0] cycle;         // 0xC00
 
 
+    // Logger setup
+    svlogger log;
+    initial log = new("CSR",
+                      `CSR_VERBOSITY,
+                      `CSR_ROUTE);
+
     // ------------------------------------------------------------------------
     // Decompose the instruction bus
     // ------------------------------------------------------------------------
@@ -128,10 +147,20 @@ module friscv_csr
 
     assign rs1_addr = rs1;
 
+    // Flags an access which will try to modify a read-only register
+    assign ro_write_access = (csr[11:10]==2'b11 && 
+                                // only rs1=x0 and these opcodes will be legal
+                                ((rs1!=5'b0 &&
+                                    (funct3==`CSRRS || funct3==`CSRRC ||
+                                    funct3==`CSRRSI || funct3==`CSRRCI)) && 
+                                // Any RW opcode is illegal
+                                (funct3==`CSRRW && funct3==`CSRRWI))
+                             ) ? 1'b1 : 1'b0;
 
     // ------------------------------------------------------------------------
     // CSR execution machine
     // ------------------------------------------------------------------------
+
     always @ (posedge aclk or negedge aresetn) begin
         if (aresetn==1'b0) begin
             rd_wr_en <= 1'b0;
@@ -145,6 +174,7 @@ module friscv_csr
             rs1_addr_r <= 5'b0;
             rs1_val_r <= {XLEN{1'b0}};
             rd_wr_addr <= 5'b0;
+            ro_trap <= 1'b0;
             cfsm <= IDLE;
         end else if (srst) begin
             rd_wr_en <= 1'b0;
@@ -158,6 +188,7 @@ module friscv_csr
             rs1_addr_r <= 5'b0;
             rs1_val_r <= {XLEN{1'b0}};
             rd_wr_addr <= 5'b0;
+            ro_trap <= 1'b0;
             cfsm <= IDLE;
         end else begin
 
@@ -171,14 +202,20 @@ module friscv_csr
                     ready <= 1'b1;
 
                     if (valid) begin
-                        ready <= 1'b0;
-                        funct3_r <= funct3;
-                        csr_r <= csr;
-                        zimm_r <= zimm;
-                        rs1_addr_r <= rs1;
-                        rs1_val_r <= rs1_val;
-                        rd_wr_addr <= rd;
-                        cfsm <= COMPUTE;
+                        if (~ro_write_access) begin
+                            ready <= 1'b0;
+                            funct3_r <= funct3;
+                            csr_r <= csr;
+                            zimm_r <= zimm;
+                            rs1_addr_r <= rs1;
+                            rs1_val_r <= rs1_val;
+                            rd_wr_addr <= rd;
+                            ro_trap <= 1'b0;
+                            cfsm <= COMPUTE;
+                        end else begin
+                            log.error("Try to write into read-only register");
+                            ro_trap <= 1'b1;
+                        end
                     end
                 end
 
@@ -194,6 +231,7 @@ module friscv_csr
                         rd_wr_en <= 1'b1;
                         rd_wr_val <= oldval;
                         newval <= rs1_val_r;
+
                     // Save CSR in RS1 and apply a set mask with rs1
                     end else if (funct3_r==`CSRRS) begin
                         rd_wr_en <= 1'b1;
@@ -225,7 +263,7 @@ module friscv_csr
                         rd_wr_val <= oldval;
                         if (zimm_r!=5'b0) begin
                             csr_wren <= 1'b1;
-                            newval <= oldval | {{XLEN-`ZIMM_W{1'b0}}, zimm_r};
+                            newval <= oldval | {{(XLEN-`ZIMM_W){1'b0}}, zimm_r};
                         end
 
                     // Save CSR in RS1 and apply a clear mask with Zimm
@@ -234,7 +272,7 @@ module friscv_csr
                         rd_wr_val <= oldval;
                         if (zimm_r!=5'b0) begin
                             csr_wren <= 1'b1;
-                            newval <= oldval & {{XLEN-`ZIMM_W{1'b0}}, zimm_r};
+                            newval <= oldval & {{(XLEN-`ZIMM_W){1'b0}}, zimm_r};
                         end
 
                     end
@@ -298,78 +336,127 @@ module friscv_csr
     // MXLEN field encoding
     generate
     if (XLEN==32) begin : MXLEN_32
-        assign misa[31:26] = 6'b010000;
+        assign misa[31:26] = {2'h1, 4'b0};
     end else if (XLEN==64) begin: MXLEN_64
-        assign misa[63:26] = {2'h2,36'b0};
+        assign misa[63:26] = {2'h2, 36'b0};
     end else begin: MXLEN_128
-        assign misa[127:26] = {2'h3,100'b0};
+        assign misa[127:26] = {2'h3, 100'b0};
     end
     endgenerate
 
     // TODO: take in account current privilege mode check if rw is applicable
 
-    assign csr_rden = (cfsm==IDLE && valid) ? 1'b1 : 1'b0;
-
+    // MSTATUS (WPRI - Reserved Writes Preserve Values, Reads Ignore Values)
     always @ (posedge aclk or negedge aresetn) begin
         if (~aresetn) begin
-            oldval <= {XLEN{1'b0}};
             mstatus <= {XLEN{1'b0}};
+        end else if (srst) begin
+            mstatus <= {XLEN{1'b0}};
+        end else begin
+            if (ctrl_mstatus_wr) begin
+                mstatus <= {ctrl_mstatus[31], 8'b0, ctrl_mstatus[22:11], 2'b0,
+                            ctrl_mstatus[8:7], 1'b0, ctrl_mstatus[5:3], 1'b0,
+                            ctrl_mstatus[1:0]};
+            end else if (csr_wren) begin
+                if (csr_r==12'h300) begin
+                    mstatus <= {newval[31], 8'b0, newval[22:11], 2'b0,
+                                newval[8:7], 1'b0, newval[5:3], 1'b0,
+                                newval[1:0]};
+                end
+            end
+        end
+    end 
+
+    // MTVEC (WARL - Write Any Values, Reads Legal Values) 
+    always @ (posedge aclk or negedge aresetn) begin
+        if (~aresetn) begin
             mtvec <= {XLEN{1'b0}};
+        end else if (srst) begin
+            mtvec <= {XLEN{1'b0}};
+        end else begin
+            if (csr_wren) begin
+                if (csr_r==12'h305) begin
+                    mtvec <= newval;
+                end
+            end
+        end
+    end 
+
+    // MSCRATCH
+    always @ (posedge aclk or negedge aresetn) begin
+        if (~aresetn) begin
             mscratch <= {XLEN{1'b0}};
+        end else if (srst) begin
+            mscratch <= {XLEN{1'b0}};
+        end else begin
+            if (csr_wren) begin
+                if (csr_r==12'h340) begin
+                    mscratch <= newval;
+                end
+            end
+        end
+    end 
+
+    // MEPC, only support IALIGN=32
+    always @ (posedge aclk or negedge aresetn) begin
+        if (~aresetn) begin
             mepc <= {XLEN{1'b0}};
+        end else if (srst) begin
+            mepc <= {XLEN{1'b0}};
+        end else begin
+            if (ctrl_mepc_wr) begin
+                mepc <= {ctrl_mepc[XLEN-1:2], 2'b0}; 
+            end else if (csr_wren) begin
+                if (csr_r==12'h341) begin
+                    mepc <= {newval[XLEN-1:2], 2'b0};
+                end
+            end
+        end
+    end 
+
+    // MCAUSE
+    always @ (posedge aclk or negedge aresetn) begin
+        if (~aresetn) begin
             mcause <= {XLEN{1'b0}};
+        end else if (srst) begin
+            mcause <= {XLEN{1'b0}};
+        end else begin
+            if (csr_wren) begin
+                if (csr_r==12'h342) begin
+                    mcause <= newval;
+                end
+            end
+        end
+    end 
+
+    // MTVAL
+    always @ (posedge aclk or negedge aresetn) begin
+        if (~aresetn) begin
             mtval <= {XLEN{1'b0}};
         end else if (srst) begin
-            oldval <= {XLEN{1'b0}};
-            mstatus <= {XLEN{1'b0}};
-            mtvec <= {XLEN{1'b0}};
-            mscratch <= {XLEN{1'b0}};
-            mepc <= {XLEN{1'b0}};
-            mcause <= {XLEN{1'b0}};
             mtval <= {XLEN{1'b0}};
         end else begin
-
-            // Write circuit
             if (csr_wren) begin
-                if (csr_r==12'h300) begin
-                    mstatus <= {newval[31], 8'b0,
-                                newval[22:11], 2'b0,
-                                newval[8:7], 1'b0,
-                                newval[5:3], 1'b0,
-                                newval[1:0]};
-                // end else if (csr_r==12'h301) begin
-                //     misa <= newval;
-                // end else if (csr_r==12'h302) begin
-                //     medeleg <= newval;
-                // end else if (csr_r==12'h303) begin
-                //     mideleg <= newval;
-                // end else if (csr_r==12'h304) begin
-                //      mie <= newval;
-                end else if (csr_r==12'h305) begin
-                    mtvec <= newval;
-                end else if (csr_r==12'h340) begin
-                    mscratch <= newval;
-                end else if (csr_r==12'h341) begin
-                    mepc <= {newval[XLEN-1:2], 2'b0}; // only support IALIGN=32
-                end else if (csr_r==12'h342) begin
-                    mcause <= newval;
-                end else if (csr_r==12'h343) begin
+                if (csr_r==12'h343) begin
                     mtval <= newval;
                 end
             end
+        end
+    end 
 
-            // Read circuit
-            if (csr_rden) begin
+
+    // Read circuit
+    always @ (posedge aclk or negedge aresetn) begin
+        if (~aresetn) begin
+            oldval <= {XLEN{1'b0}};
+        end else if (srst) begin
+            oldval <= {XLEN{1'b0}};
+        end else begin
+            if (cfsm==IDLE && valid) begin
                 if (csr_r==12'h300) begin
                     oldval <= mstatus;
                 end else if (csr_r==12'h301) begin
                     oldval <= misa;
-                // end else if (csr_r==12'h302) begin
-                    // oldval <= medeleg;
-                // end else if (csr_r==12'h303) begin
-                    // oldval <= mideleg;
-                // end else if (csr_r==12'h304) begin
-                    // oldval <= mie;
                 end else if (csr_r==12'h305) begin
                     oldval <= mtvec;
                 end else if (csr_r==12'h340) begin
@@ -386,6 +473,15 @@ module friscv_csr
             end
         end
     end
+
+    //////////////////////////////////////////////////////////////////////////
+    // CSR Shared bus, for registers used across the processor
+    //////////////////////////////////////////////////////////////////////////
+
+    assign csr_sb[`MTVEC+:XLEN] = mtvec;
+    assign csr_sb[`MEPC+:XLEN] = mepc;
+    assign csr_sb[`MSTATUS+:XLEN] = mstatus;
+
 
 endmodule
 

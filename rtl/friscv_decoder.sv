@@ -126,7 +126,7 @@ module friscv_decoder
             // - CSR    : sys[2]
             // - mret   : sys[3]
             // - sret   : sys[4]
-            // - uret   : sys[5]
+            // - wfi    : sys[5]
             7'b1110011: begin
                 lui = 1'b0;
                 auipc = 1'b0;
@@ -146,7 +146,7 @@ module friscv_decoder
                     // ecall
                     end else if (instruction[20+:12]==12'h000) begin
                         sys = 6'b000001;
-                    // uret
+                    // wfi
                     end else begin
                         sys = 6'b100000;
                     end

@@ -4,8 +4,6 @@
 `ifndef FRISCV_H
 `define FRISCV_H
 
-`include "svlogger.sv"
-
 //////////////////////////////////////////////////////////////////
 // Opcodes' define
 //////////////////////////////////////////////////////////////////
@@ -69,12 +67,16 @@
 `define FENCE   3'b000
 `define FENCEI  3'b001
 
+`define IS_FENCE 0
+`define IS_FENCEI 1
+
 `define CSRRW   3'b001
 `define CSRRS   3'b010
 `define CSRRC   3'b011
 `define CSRRWI  3'b101
 `define CSRRSI  3'b110
 `define CSRRCI  3'b111
+
 
 //////////////////////////////////////////////////////////////////
 // env signal driven by decoder to indicate environment instruction
@@ -84,6 +86,12 @@
 `define EBREAK  3'b010
 `define CSRX    3'b100
 
+`define IS_ECALL  0
+`define IS_EBREAK 1
+`define IS_CSR    2
+`define IS_MRET   3
+`define IS_SRET   4
+`define IS_WFI    5
 
 //////////////////////////////////////////////////////////////////
 // Instruction bus feeding ALU
@@ -123,8 +131,23 @@
 
 
 //////////////////////////////////////////////////////////////////
-// Control Unit Configuration
+// CSR Shared Bus Definition
 //////////////////////////////////////////////////////////////////
+
+// CSR shared bus placement
+`define MTVEC    0
+`define MEPC    `MTVEC + `XLEN
+`define MSTATUS `MEPC + `XLEN
+
+// CSR shared bus width
+`define CSR_SB_W `MSTATUS + `XLEN
+
+
+//////////////////////////////////////////////////////////////////
+// Loggers setup
+//////////////////////////////////////////////////////////////////
+
+`include "svlogger.sv"
 
 `ifndef LOGGER
 `define LOGGER
@@ -136,7 +159,12 @@
         `define CONTROL_VERBOSITY `SVL_VERBOSE_DEBUG
         `define CONTROL_ROUTE `SVL_ROUTE_ALL
     `endif
+    `ifndef CSR_VERBOSITY
+        `define CSR_VERBOSITY `SVL_VERBOSE_DEBUG
+        `define CSR_ROUTE `SVL_ROUTE_ALL
+    `endif
 `endif
+
 
 //////////////////////////////////////////////////////////////////
 // Shared tasks
@@ -150,7 +178,8 @@ function automatic string get_inst_desc(
     input logic [5    -1:0] rs2,
     input logic [5    -1:0] rd,
     input logic [12   -1:0] imm12,
-    input logic [20   -1:0] imm20
+    input logic [20   -1:0] imm20,
+    input logic [12   -1:0] csr
 );
 
     string text = "UNKNOWN";
@@ -218,6 +247,9 @@ function automatic string get_inst_desc(
     if (opcode==`SYS) begin
         if (funct3==3'b000 && funct7==7'b0000000) text = "ECALL - I-type";
         else if (funct3==3'b000 && funct7==7'b0000001) text = "EBREAK - I-type";
+        else if (funct3==3'b000 && imm20==20'h105) text = "WFI - I-type";
+        else if (funct3==3'b000 && imm20==20'h102) text = "SRET - I-type";
+        else if (funct3==3'b000 && imm20==20'h302) text = "MRET - I-type";
         else text = "CSR / I-type";
         $sformat(temp, "rd: %x ", rd);
         text = {temp, text};
@@ -225,7 +257,7 @@ function automatic string get_inst_desc(
         text = {temp, text};
         $sformat(temp, "rs1: %x ", rs1);
         text = {temp, text};
-        $sformat(temp, "Imm12: %x ", imm12);
+        $sformat(temp, "csr: %x ", csr);
         text = {temp, text};
     end
     if (opcode==`JAL) begin

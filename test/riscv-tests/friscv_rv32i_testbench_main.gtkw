@@ -1,316 +1,38 @@
 [*]
 [*] GTKWave Analyzer v3.3.107 (w)1999-2020 BSI
-[*] Fri Aug 20 14:40:26 2021
+[*] Wed Aug 25 18:10:19 2021
 [*]
 [dumpfile] "/Users/damien/workspace/hdl/friscv/test/riscv-tests/tests/rv32ui-p-simple.vcd"
-[dumpfile_mtime] "Fri Aug 20 13:03:34 2021"
-[dumpfile_size] 342698
+[dumpfile_mtime] "Wed Aug 25 18:03:52 2021"
+[dumpfile_size] 16395216
 [savefile] "/Users/damien/workspace/hdl/friscv/test/riscv-tests/friscv_rv32i_testbench_main.gtkw"
-[timestart] 343910
-[size] 2050 1224
+[timestart] 242640
+[size] 2560 1440
 [pos] -1 -1
-*-14.055389 438140 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-14.055389 313540 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] control.
 [treeopen] control.inst_fifo.
-[treeopen] dut.
-[treeopen] dut.USE_ICACHE.
 [treeopen] dut.USE_ICACHE.icache.
-[treeopen] inst_axi4l_ram.
-[treeopen] processing.
 [sst_width] 193
-[signals_width] 457
+[signals_width] 283
 [sst_expanded] 1
-[sst_vpaned_height] 320
-@c00200
--AXI4-lite
+[sst_vpaned_height] 384
+@c00022
+dut.status[7:0]
 @28
-inst_axi4l_ram.aclk
-inst_axi4l_ram.aresetn
-inst_axi4l_ram.srst
-@22
-inst_axi4l_ram.arid[7:0]
-@28
-inst_axi4l_ram.arprot[2:0]
-inst_axi4l_ram.arvalid
-inst_axi4l_ram.arready
-@200
--
-@22
-inst_axi4l_ram.arid_s[7:0]
-@200
--
-@22
-inst_axi4l_ram.rid[7:0]
-@28
-inst_axi4l_ram.rresp[1:0]
-inst_axi4l_ram.rvalid
-inst_axi4l_ram.rready
-@200
--
-@28
-inst_axi4l_ram.raddr_full
-inst_axi4l_ram.raddr_pull
-inst_axi4l_ram.raddr_empty
-inst_axi4l_ram.raddr_pull
-@420
-inst_axi4l_ram.random
-inst_axi4l_ram.rcounter
+(0)dut.status[7:0]
+(1)dut.status[7:0]
+(2)dut.status[7:0]
+(3)dut.status[7:0]
+(4)dut.status[7:0]
+(5)dut.status[7:0]
+(6)dut.status[7:0]
+(7)dut.status[7:0]
 @1401200
--AXI4-lite
-@800200
--Control
-@28
-control.aclk
-control.aresetn
-control.ebreak
-@200
--
-@22
-control.arid[7:0]
-@28
-control.arprot[2:0]
-control.arvalid
-control.arready
-@200
--
-@28
-[color] 4
-control.rvalid
-@22
-control.rdata[31:0]
-control.rid[7:0]
-@28
-control.rready
-control.rresp[1:0]
-@200
--
-@28
-control.ctrl_rd_wr
-@22
-control.ctrl_rd_addr[4:0]
-control.ctrl_rd_val[31:0]
-control.ctrl_rs1_addr[4:0]
-control.ctrl_rs1_val[31:0]
-control.ctrl_rs2_addr[4:0]
-control.ctrl_rs2_val[31:0]
-@200
--
-@28
-control.proc_en
-control.proc_ready
-@22
-control.proc_instbus[86:0]
-@28
-control.proc_empty
-@22
-control.proc_fenceinfo[3:0]
-@200
--
-@28
-control.push_inst
-control.fifo_full
-control.pull_inst
-@22
-[color] 7
-control.instruction[31:0]
-@28
-control.fifo_empty
-control.inst_error
-@200
--
-@22
-[color] 2
-control.cfsm[3:0]
-@28
-control.flush_fifo
-@22
-control.pc_reg[31:0]
-@28
-control.processing
-control.jump_branch
-control.branching
-control.goto_branch
-control.cant_branch_now
-control.cant_process_now
-control.auipc
-control.jal
-control.jalr
-control.lui
-control.fence[1:0]
-@200
--
-@800200
--PCs
-@22
-control.pc[31:0]
-control.pc_auipc[31:0]
-control.pc_auipc_saved[31:0]
-control.pc_branching[31:0]
-control.pc_jal[31:0]
-control.pc_jal_saved[31:0]
-control.pc_jalr[31:0]
-control.pc_plus4[31:0]
-control.pc_reg[31:0]
-@1000200
--PCs
-@200
--
-@c00200
--Instruction FIFO
-@28
-control.inst_fifo.flush
-control.inst_fifo.push
-control.inst_fifo.wr_en
-@22
-control.inst_fifo.wrptr[3:0]
-control.inst_fifo.data_in[31:0]
-@28
-control.inst_fifo.full
-control.inst_fifo.pull
-@22
-control.inst_fifo.data_out[31:0]
-control.inst_fifo.rdptr[3:0]
-@28
-control.inst_fifo.empty
-@200
--
-@28
-control.inst_fifo.fifo_ram.wr_en
-control.inst_fifo.fifo_ram.addr_in[2:0]
-@22
-control.inst_fifo.fifo_ram.data_in[31:0]
-@28
-control.inst_fifo.fifo_ram.addr_out[2:0]
-@22
-control.inst_fifo.fifo_ram.data_out[31:0]
-@1401200
--Instruction FIFO
-@200
--
-@800200
--Instruction
-@22
-control.opcode[6:0]
-@28
-control.funct3[2:0]
-@22
-control.funct7[6:0]
-control.rs1[4:0]
-control.rs2[4:0]
-control.rd[4:0]
-control.imm12[11:0]
-control.imm20[19:0]
-control.shamt[5:0]
-control.succ[3:0]
-control.pred[3:0]
-control.zimm[4:0]
-control.csr[11:0]
-@23
-control.sys[5:0]
-@1000200
--Instruction
-@200
--
-@28
-control.goto_branch
-@22
-control.pc[31:0]
-control.pc_plus4[31:0]
-control.pc_auipc[31:0]
-control.pc_auipc_saved[31:0]
-control.pc_branching[31:0]
-control.pc_jal[31:0]
-control.pc_jal_saved[31:0]
-control.pc_jalr[31:0]
-@200
--
-@28
-control.csr_en
-control.csr_ready
-@22
-control.csr_instbus[86:0]
-@1000200
--Control
-@c00200
--ISA Registers
-@22
-isa_registers.x0[31:0]
-isa_registers.x1[31:0]
-isa_registers.x2[31:0]
-isa_registers.x3[31:0]
-isa_registers.x4[31:0]
-isa_registers.x5[31:0]
-isa_registers.x6[31:0]
-isa_registers.x7[31:0]
-isa_registers.x8[31:0]
-isa_registers.x9[31:0]
-isa_registers.x10[31:0]
-isa_registers.x11[31:0]
-isa_registers.x12[31:0]
-isa_registers.x13[31:0]
-isa_registers.x14[31:0]
-isa_registers.x15[31:0]
-isa_registers.x16[31:0]
-isa_registers.x17[31:0]
-isa_registers.x18[31:0]
-isa_registers.x19[31:0]
-isa_registers.x20[31:0]
-isa_registers.x21[31:0]
-isa_registers.x22[31:0]
-isa_registers.x23[31:0]
-isa_registers.x24[31:0]
-isa_registers.x25[31:0]
-isa_registers.x26[31:0]
-isa_registers.x27[31:0]
-isa_registers.x28[31:0]
-isa_registers.x29[31:0]
-isa_registers.x30[31:0]
-isa_registers.x31[31:0]
-@1401200
--ISA Registers
-@c00200
--Memfy
-@28
-processing.memfy.memfy_en
-@22
-processing.memfy.memfy_instbus[86:0]
-@28
-processing.memfy.memfy_ready
-@22
-processing.memfy.opcode[6:0]
-@28
-processing.memfy.funct3[2:0]
-@22
-processing.memfy.funct7[6:0]
-processing.memfy.rs1[4:0]
-processing.memfy.rs2[4:0]
-processing.memfy.rd[4:0]
-@1401200
--Memfy
-@c00200
--processing
-@28
-processing.proc_en
-@22
-processing.proc_instbus[86:0]
-@28
-processing.proc_ready
-processing.alu_en
-processing.alu_ready
-processing.memfy_en
-processing.memfy_ready
-@200
--
-@28
-processing.alu_rd_wr
-@22
-processing.alu_rd_addr[4:0]
-processing.alu_rd_strb[3:0]
-processing.alu_rd_val[31:0]
-@1401200
--processing
+-group_end
 @c00200
 -iCache
+-fetcher
 @28
 dut.USE_ICACHE.icache.aclk
 dut.USE_ICACHE.icache.aresetn
@@ -399,7 +121,7 @@ dut.USE_ICACHE.icache.icache_rvalid
 dut.USE_ICACHE.icache.icache_rready
 dut.USE_ICACHE.icache.icache_rlast
 @1401200
--iCache
+-fetcher
 @c00200
 -iCacheLines
 @28
@@ -443,6 +165,294 @@ dut.USE_ICACHE.icache.cache_lines.wdata[127:0]
 -
 @1401200
 -iCacheLines
+-iCache
+@800201
+-Control
+@29
+control.aclk
+control.aresetn
+control.ebreak
+@201
+-
+@23
+control.csr_sb[63:0]
+@201
+-
+@800201
+-Cache Bus
+@23
+control.arid[7:0]
+control.araddr[23:0]
+@29
+control.arprot[2:0]
+control.arvalid
+control.arready
+@201
+-
+@29
+[color] 4
+control.rvalid
+@23
+control.rdata[31:0]
+control.rid[7:0]
+@29
+control.rready
+control.rresp[1:0]
+@1000201
+-Cache Bus
+@201
+-
+@800201
+-instruction FIFO
+@29
+control.push_inst
+control.fifo_full
+@23
+[color] 7
+control.instruction[31:0]
+@29
+control.pull_inst
+control.fifo_empty
+control.inst_error
+@1000201
+-instruction FIFO
+@201
+-
+@c00201
+-Instruction
+@22
+control.opcode[6:0]
+@28
+control.funct3[2:0]
+@22
+control.funct7[6:0]
+control.rs1[4:0]
+control.rs2[4:0]
+control.rd[4:0]
+control.imm12[11:0]
+control.imm20[19:0]
+control.shamt[5:0]
+control.succ[3:0]
+control.pred[3:0]
+control.zimm[4:0]
+control.csr[11:0]
+control.sys[5:0]
+@1401201
+-Instruction
+@201
+-
+@800201
+-Sequencer
+@23
+[color] 2
+control.cfsm[3:0]
+@29
+control.cant_branch_now
+control.cant_process_now
+control.flush_fifo
+[color] 7
+control.fifo_empty
+@23
+[color] 7
+control.instruction[31:0]
+control.pc_reg[31:0]
+@29
+control.processing
+control.jump_branch
+control.branching
+control.goto_branch
+[color] 7
+control.auipc
+control.jal
+control.jalr
+control.lui
+control.fence[1:0]
+@c00023
+control.sys[5:0]
+@28
+(0)control.sys[5:0]
+(1)control.sys[5:0]
+(2)control.sys[5:0]
+(3)control.sys[5:0]
+(4)control.sys[5:0]
+(5)control.sys[5:0]
+@1401201
+-group_end
+@1000201
+-Sequencer
+@201
+-
+@c00201
+-PCs
+@22
+control.pc[31:0]
+control.pc_auipc[31:0]
+control.pc_auipc_saved[31:0]
+control.pc_branching[31:0]
+control.pc_jal[31:0]
+control.pc_jal_saved[31:0]
+control.pc_jalr[31:0]
+control.pc_plus4[31:0]
+control.pc_reg[31:0]
+@1401201
+-PCs
+@201
+-
+@c00201
+-processing bus
+@28
+control.proc_en
+control.proc_ready
+@22
+control.proc_instbus[86:0]
+@28
+control.proc_empty
+@22
+control.proc_fenceinfo[3:0]
+@1401201
+-processing bus
+@201
+-
+@c00201
+-ISA Access
+@28
+control.ctrl_rd_wr
+@22
+control.ctrl_rd_addr[4:0]
+control.ctrl_rd_val[31:0]
+control.ctrl_rs1_addr[4:0]
+control.ctrl_rs1_val[31:0]
+control.ctrl_rs2_addr[4:0]
+control.ctrl_rs2_val[31:0]
+@1401201
+-ISA Access
+@201
+-
+@1000201
+-Control
+@c00200
+-CSR
+@28
+csrs.valid
+csrs.ready
+@22
+csrs.opcode[6:0]
+csrs.csr[11:0]
+@28
+csrs.funct3[2:0]
+@22
+csrs.rd[4:0]
+csrs.rs1[4:0]
+csrs.zimm[4:0]
+@200
+-
+@28
+csrs.cfsm[1:0]
+csrs.ro_trap
+csrs.ro_write_access
+@200
+-
+@22
+[color] 4
+csrs.misa[31:0]
+[color] 7
+csrs.mhartid[31:0]
+[color] 4
+csrs.mcause[31:0]
+[color] 7
+csrs.mepc[31:0]
+[color] 4
+csrs.mscratch[31:0]
+[color] 7
+csrs.mstatus[31:0]
+[color] 4
+csrs.mtval[31:0]
+[color] 7
+csrs.mtvec[31:0]
+@1401200
+-CSR
+@c00200
+-ISA Registers
+@22
+isa_registers.x0[31:0]
+isa_registers.x1[31:0]
+isa_registers.x2[31:0]
+isa_registers.x3[31:0]
+isa_registers.x4[31:0]
+isa_registers.x5[31:0]
+isa_registers.x6[31:0]
+isa_registers.x7[31:0]
+isa_registers.x8[31:0]
+isa_registers.x9[31:0]
+isa_registers.x10[31:0]
+isa_registers.x11[31:0]
+isa_registers.x12[31:0]
+isa_registers.x13[31:0]
+isa_registers.x14[31:0]
+isa_registers.x15[31:0]
+isa_registers.x16[31:0]
+isa_registers.x17[31:0]
+isa_registers.x18[31:0]
+isa_registers.x19[31:0]
+isa_registers.x20[31:0]
+isa_registers.x21[31:0]
+isa_registers.x22[31:0]
+isa_registers.x23[31:0]
+isa_registers.x24[31:0]
+isa_registers.x25[31:0]
+isa_registers.x26[31:0]
+isa_registers.x27[31:0]
+isa_registers.x28[31:0]
+isa_registers.x29[31:0]
+isa_registers.x30[31:0]
+isa_registers.x31[31:0]
+@1401200
+-ISA Registers
+@c00200
+-processing
+@28
+processing.proc_en
+@22
+processing.proc_instbus[86:0]
+@28
+processing.proc_ready
+@200
+-
+@28
+processing.alu_en
+processing.alu_ready
+processing.memfy_en
+processing.memfy_ready
+@200
+-
+@28
+processing.alu_rd_wr
+@22
+processing.alu_rd_addr[4:0]
+processing.alu_rd_strb[3:0]
+processing.alu_rd_val[31:0]
+@200
+-
+@c00200
+-Memfy
+@28
+processing.memfy.memfy_en
+@22
+processing.memfy.memfy_instbus[86:0]
+@28
+processing.memfy.memfy_ready
+@22
+processing.memfy.opcode[6:0]
+@28
+processing.memfy.funct3[2:0]
+@22
+processing.memfy.funct7[6:0]
+processing.memfy.rs1[4:0]
+processing.memfy.rs2[4:0]
+processing.memfy.rd[4:0]
+@1401200
+-Memfy
+-processing
 @c00200
 -axi4l instruction RAM
 @28
@@ -473,31 +483,5 @@ inst_axi4l_ram.raddr_full
 inst_axi4l_ram.raddr_pull
 @1401200
 -axi4l instruction RAM
-@200
--
-@28
-csrs.valid
-csrs.ready
-@22
-csrs.opcode[6:0]
-csrs.csr[11:0]
-csrs.rd[4:0]
-csrs.rs1[4:0]
-csrs.zimm[4:0]
-@200
--
-@28
-csrs.cfsm[1:0]
-@200
--
-@22
-csrs.mcause[31:0]
-csrs.mepc[31:0]
-csrs.mhartid[31:0]
-csrs.misa[31:0]
-csrs.mscratch[31:0]
-csrs.mstatus[31:0]
-csrs.mtval[31:0]
-csrs.mtvec[31:0]
 [pattern_trace] 1
 [pattern_trace] 0

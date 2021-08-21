@@ -86,11 +86,12 @@ run_tests() {
         echo -e "${GREEN}INFO: Execute ${test}${NC}"
         echo ""
 
-        echo "Boot address: $BOOT_ADDR"
+        echo "XLEN:         $XLEN"
+        echo "BOOT_ADDR:    $BOOT_ADDR"
         echo "CACHE_LINE_W: $CACHE_LINE_W"
 
         # Execute the testcase with SVUT. Will stop once it reaches a EBREAK instruction
-        svutRun -t ./friscv_rv32i_testbench.sv -define "CACHE_LINE_W=$CACHE_LINE_W;BOOT_ADDR=$BOOT_ADDR" | tee -a simulation.log
+        svutRun -t ./friscv_rv32i_testbench.sv -define "CACHE_LINE_W=$CACHE_LINE_W;BOOT_ADDR=$BOOT_ADDR;XLEN=$XLEN;TCNAME=${test_name}" | tee -a simulation.log
         test_ret=$((test_ret+$?))
 
         # Copy the VCD generated, create a GTKWave file from the template then
@@ -179,11 +180,17 @@ main() {
     # Execute the tests
     run_tests
 
+    # Clean-up before exiting
+    rm -f *.vcd
+    rm -f test.v
+    rm -f *.out
+
     # Check status of the execution
     check_status
 
     # OK, sounds good, exit gently
     echo -e "${GREEN}SUCCESS: RISCV compliance testssuite successfully terminated ^^${NC}"
+
     exit 0
 }
 

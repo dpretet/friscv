@@ -68,7 +68,14 @@ module friscv_control
         // register destination for write
         output logic                      ctrl_rd_wr,
         output logic [5             -1:0] ctrl_rd_addr,
-        output logic [XLEN          -1:0] ctrl_rd_val
+        output logic [XLEN          -1:0] ctrl_rd_val,
+        // CSR registers
+        output logic                      mepc_wr,
+        output logic [XLEN          -1:0] mepc,
+        output logic                      mstatus_wr,
+        output logic [XLEN          -1:0] mstatus,
+        // CSR shared bus
+        input  logic [`CSR_SB_W     -1:0] csr_sb
     );
 
 
@@ -150,12 +157,59 @@ module friscv_control
     logic                   pull_inst;
     logic                   fifo_empty;
 
+    logic [XLEN       -1:0] sb_mepc;
+    logic [XLEN       -1:0] sb_mtvec;
+    logic [XLEN       -1:0] sb_mstatus;
+
+    logic [XLEN       -1:0] mstatus_for_mret;
+
     // Logger setup
     svlogger log;
     initial log = new("ControlUnit",
                       `CONTROL_VERBOSITY,
                       `CONTROL_ROUTE);
-    string inst_str;
+
+
+    /////////////////////////////////////////////////////////////////
+    // Used to print instruction during execution, relies on SVLogger
+    /////////////////////////////////////////////////////////////////
+
+    task print_instruction(
+        input logic [XLEN -1:0] instruction,
+        input logic [7    -1:0] opcode,
+        input logic [3    -1:0] funct3,
+        input logic [7    -1:0] funct7,
+        input logic [5    -1:0] rs1,
+        input logic [5    -1:0] rs2,
+        input logic [5    -1:0] rd,
+        input logic [12   -1:0] imm12,
+        input logic [20   -1:0] imm20,
+        input logic [12   -1:0] csr
+    );
+        string inst_str;
+        $sformat(inst_str, "%x", instruction);
+        log.debug({"Execute ", inst_str});
+        log.debug(get_inst_desc(
+                    opcode,
+                    funct3,
+                    funct7,
+                    rs1,
+                    rs2,
+                    rd,
+                    imm12,
+                    imm20,
+                    csr));
+    endtask
+
+
+    ///////////////////////////////////////////////////////////////////////////
+    // CSR Shared bus extraction
+    ///////////////////////////////////////////////////////////////////////////
+        
+    assign sb_mtvec = csr_sb[`MTVEC+:XLEN];
+    assign sb_mstatus = csr_sb[`MSTATUS+:XLEN];
+    assign sb_mepc = csr_sb[`MEPC+:XLEN];
+
 
     ///////////////////////////////////////////////////////////////////////////
     //
@@ -170,22 +224,22 @@ module friscv_control
 
     friscv_scfifo
     #(
-    .PASS_THRU (0),
-    .ADDR_WIDTH ($clog2(OSTDREQ_NUM)),
-    .DATA_WIDTH (AXI_DATA_W)
+        .PASS_THRU  (0),
+        .ADDR_WIDTH ($clog2(OSTDREQ_NUM)),
+        .DATA_WIDTH (AXI_DATA_W)
     )
     inst_fifo
     (
-    .aclk     (aclk),
-    .aresetn  (aresetn),
-    .srst     (srst),
-    .flush    (flush_fifo),
-    .data_in  (rdata),
-    .push     (push_inst),
-    .full     (fifo_full),
-    .data_out (instruction),
-    .pull     (pull_inst),
-    .empty    (fifo_empty)
+        .aclk     (aclk),
+        .aresetn  (aresetn),
+        .srst     (srst),
+        .flush    (flush_fifo),
+        .data_in  (rdata),
+        .push     (push_inst),
+        .full     (fifo_full),
+        .data_out (instruction),
+        .pull     (pull_inst),
+        .empty    (fifo_empty)
     );
 
     assign pull_inst = (csr_ready && ~cant_branch_now && ~cant_process_now &&
@@ -206,6 +260,7 @@ module friscv_control
     //   - jalr
     //   - fence: FENCE (0) / FENCE.I (1)
     //   - sys: CSR (0) / EBREAK (1) / ECALL (2)
+    //          MRET (4) / SRET (5) / WFI (6)
     //   - processing: alll others
     //
     // Processing is handled by ALU & Memfy, responsible of data memory access,
@@ -255,7 +310,10 @@ module friscv_control
     //
     ///////////////////////////////////////////////////////////////////////////
 
-    assign proc_en = (~fifo_empty) & processing & (cfsm==FETCH) & csr_ready;
+    // TODO: Needs csr_ready checking ?
+    assign proc_en = ~fifo_empty & processing & (cfsm==FETCH) & csr_ready;
+
+    assign csr_en = ~fifo_empty && sys[`IS_CSR] & (cfsm==FETCH);
 
     assign proc_instbus[`OPCODE +: `OPCODE_W] = opcode;
     assign proc_instbus[`FUNCT3 +: `FUNCT3_W] = funct3;
@@ -269,8 +327,8 @@ module friscv_control
     assign proc_instbus[`CSR    +: `CSR_W   ] = csr   ;
     assign proc_instbus[`SHAMT  +: `SHAMT_W ] = shamt ;
 
-    assign csr_en = sys[2] & (cfsm==FETCH) & ~fifo_empty;
     assign csr_instbus = proc_instbus;
+
 
     ///////////////////////////////////////////////////////////////////////////
     //
@@ -297,7 +355,7 @@ module friscv_control
     assign pc = (cfsm==BOOT)                ? pc_reg :
                 // FENCE (0) or FENCE.I (1)
                 (|fence)                    ? pc_plus4 :
-                // ECALL (0) / EBREAK (1) / CSR (2)
+                // System calls
                 (|sys)                      ? pc_plus4 :
                 // Load immediate
                 (lui)                       ? pc_plus4 :
@@ -344,8 +402,7 @@ module friscv_control
                           (funct3 == `BLT  && blt)  ||
                           (funct3 == `BGE  && bge)  ||
                           (funct3 == `BLTU && bltu) ||
-                          (funct3 == `BGEU && bgeu)) ? 1'b1 :
-                                                       1'b0;
+                          (funct3 == `BGEU && bgeu)) ? 1'b1 : 1'b0;
 
 
     ///////////////////////////////////////////////////////////////////////////
@@ -368,6 +425,10 @@ module friscv_control
             flush_fifo <= 1'b0;
             arid <= {AXI_ID_W{1'b0}};
             flush_req <= 1'b0;
+            mepc_wr <= 1'b0;
+            mepc <= {XLEN{1'b0}};
+            mstatus_wr <= 1'b0;
+            mstatus <= {XLEN{1'b0}};
         end else if (srst == 1'b1) begin
             cfsm <= BOOT;
             arvalid <= 1'b0;
@@ -379,6 +440,10 @@ module friscv_control
             flush_fifo <= 1'b0;
             arid <= {AXI_ID_W{1'b0}};
             flush_req <= 1'b0;
+            mepc_wr <= 1'b0;
+            mepc <= {XLEN{1'b0}};
+            mstatus_wr <= 1'b0;
+            mstatus <= {XLEN{1'b0}};
         end else begin
 
             case (cfsm)
@@ -396,24 +461,32 @@ module friscv_control
                     end
                 end
 
-                // Fetch instructions
+                // Fetch instructions from the cache (or the memory)
                 FETCH: begin
 
                     // Manages read outstanding requests to fetch
                     // new instruction from memory:
                     //
-                    //   - if fifo is filled with instruction, need branch
+                    //   - if fifo is filled with instruction, need a jump
                     //     and can branch and CSR are ready, stop the addr
                     //     issuer and load it with correct address to use
-                    // TODO: why ~fifo_empty?
-                    if (~fifo_empty && jump_branch && ~cant_branch_now && csr_ready) begin
-                        araddr <= pc;
-                    //   - else continue to simply increment by instruction
-                    //     width
+                    //
+                    if (~fifo_empty && (jump_branch || sys[`IS_ECALL] || sys[`IS_MRET]) &&
+                        ~cant_branch_now && csr_ready) begin
+                        // ECALL
+                        if (sys[`IS_ECALL]) araddr <= sb_mtvec;
+                        else if (sys[`IS_MRET]) araddr <= sb_mepc;
+                        // All other jumps
+                        else araddr <= pc;
+                    //
+                    //   - else continue to simply increment by instruction width
+                    //   TODO: don't continue to increment if need to jump?
+                    //
                     end else if (arready) begin
                         araddr <= araddr + ILEN/8;
                     end
 
+                    // Manages the PC vs the different instructions to execute
                     if (~fifo_empty) begin
 
                         // Stop the execution when an supported instruction or
@@ -426,6 +499,7 @@ module friscv_control
                         // Needs to jump or branch thus stop the pipeline
                         // and reload new instructions
                         else if (jump_branch && ~cant_branch_now && csr_ready) begin
+
                             log.debug("Received Jump/Branch");
                             flush_fifo <= 1'b1;
                             arvalid <= 1'b0;
@@ -433,16 +507,43 @@ module friscv_control
                             pc_reg <= pc;
                             cfsm <= RELOAD;
 
+                        // Reach an ECALL instruction, jump to trap handler
+                        end else if (sys[`IS_ECALL] && ~cant_branch_now && csr_ready) begin
+
+                            log.critical("Received ECALL -> Jump to trap handler");
+                            flush_fifo <= 1'b1;
+                            arvalid <= 1'b0;
+                            arid <= arid + 1;
+                            pc_reg <= sb_mtvec;
+                            mepc_wr <= 1'b1;
+                            mepc <= pc_reg;
+                            cfsm <= RELOAD;
+
                         // Reach an EBREAK instruction, need to stall the core
-                        end else if (sys[1]) begin
+                        end else if (sys[`IS_EBREAK]) begin
+
                             log.critical("Received EBREAK -> Stop the processor");
+                            flush_fifo <= 1'b1;
                             ebreak <= 1'b1;
                             cfsm <= EBREAK;
 
+                        // Reach a MRET instruction, jump to exception return
+                        end else if (sys[`IS_MRET] && ~cant_branch_now && csr_ready) begin
+
+                            log.critical("Received MRET -> Jump to return handler");
+                            flush_fifo <= 1'b1;
+                            arvalid <= 1'b0;
+                            arid <= arid + 1;
+                            pc_reg <= sb_mtvec;
+                            mstatus_wr <= 1'b1;
+                            mstatus <= mstatus_for_mret;
+                            cfsm <= RELOAD;
+
                         // Reach a FENCE.i instruction, need to flush the cache
                         // the instruction pipeline
-                        end else if (fence[1]) begin
-                            log.warning("Received FENCE.i -> Start iCache flush");
+                        end else if (fence[`IS_FENCEI]) begin
+
+                            log.critical("Received FENCE.i -> Start iCache flush");
                             flush_fifo <= 1'b1;
                             pc_reg <= pc;
                             arvalid <= 1'b0;
@@ -451,29 +552,19 @@ module friscv_control
 
                         // Need to branch/process but ALU/memfy/CSR didn't finish
                         // to execute last instruction, so store it.
-                        else if (~csr_ready || cant_branch_now || cant_process_now)
-                        begin
+                        else if (~csr_ready || cant_branch_now || cant_process_now) begin
+
                             pc_jal_saved <= pc_plus4;
                             pc_auipc_saved <= pc_reg;
 
-                        // Process as long as instruction are available
+                        // Process as long instructions are available
                         end else if (csr_ready &&
-                                     ~cant_branch_now && ~cant_process_now)
-                        begin
-                            $sformat(inst_str, "%x", instruction);
-                            log.debug({"Execute ", inst_str});
-                            log.debug(get_inst_desc(
-                                        opcode,
-                                        funct3,
-                                        funct7,
-                                        rs1,
-                                        rs2,
-                                        rd,
-                                        imm12,
-                                        imm20));
+                                     ~cant_branch_now && ~cant_process_now) begin
+
+                            print_instruction(instruction, opcode, funct3,
+                                              funct7, rs1, rs2, rd, imm12, imm20, csr);
                             pc_reg <= pc;
                         end
-
                     end
                 end
 
@@ -481,6 +572,8 @@ module friscv_control
                 // reboot the cache and continue to fetch the addresses from
                 // a new origin
                 RELOAD: begin
+                    mepc_wr <= 1'b0;
+                    mstatus_wr <= 1'b0;
                     arvalid <= 1'b1;
                     flush_fifo <= 1'b0;
                     cfsm <= FETCH;
@@ -493,7 +586,7 @@ module friscv_control
                 FENCE_I: begin
                     flush_req <= 1'b1;
                     if (flush_ack) begin
-                        log.warning("FENCE.i finished");
+                        log.critical("FENCE.i finished");
                         flush_req <= 1'b0;
                         flush_fifo <= 1'b0;
                         arvalid <= 1'b1;
@@ -502,12 +595,15 @@ module friscv_control
                 end
 
                 // EBREAK completly stops the processor and wait for a reboot
+                // TODO: Understand how to manage EBREAK when software needs
                 EBREAK: begin
                     arvalid <= 1'b0;
                     ebreak <= 1'b1;
+                    flush_fifo <= 1'b0;
                     cfsm <= EBREAK;
                 end
 
+                // TODO: REMOVE TO HANDLE CORRECTLY SUCH EXCEPTIONS
                 // TRAP reached when:
                 // - received an undefined instruction
                 // - received an unsupported instruction
@@ -560,6 +656,27 @@ module friscv_control
                          (auipc && ~pull_inst)         ? pc_auipc_saved :
                          (auipc && pull_inst)          ? pc_auipc       :
                                                          pc;
+
+
+    ///////////////////////////////////////////////////////////////////////////
+    //
+    // Prepare CSR registers content to store during exceptions and trap
+    //
+    ///////////////////////////////////////////////////////////////////////////
+
+    // MSTATUS CSR to write when executing MRET
+    assign mstatus_for_mret = {sb_mstatus[XLEN-1:12],  // WPRI
+                               2'b11,                  // MPP
+                               sb_mstatus[10:9],       // WPRI
+                               1'b0,                   // SPP
+                               1'b1,                   // MPIE
+                               sb_mstatus[6],          // WPRI
+                               1'b0,                   // SPIE
+                               1'b0,                   // UPIE
+                               sb_mstatus[7],          // MIE
+                               sb_mstatus[2],          // WPRI
+                               1'b0,                   // SIE
+                               1'b0};                  // UIE
 
 endmodule
 

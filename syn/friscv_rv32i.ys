@@ -15,10 +15,9 @@ read -sv -I../rtl/ ../rtl/friscv_scfifo_ram.sv
 read -sv -I../rtl/ ../rtl/friscv_stats.sv
 read -sv -I../rtl/ ../rtl/friscv_uart.sv
 read -sv -I../rtl/ ../rtl/friscv_rv32i.sv
-read -sv friscv_rv32i_top.sv
 
 # elaborate design hierarchy
-hierarchy -check -top friscv_rv32i_top
+hierarchy -check -top friscv_rv32i
 
 # The synthesis flow:
 
