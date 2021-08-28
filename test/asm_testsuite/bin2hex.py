@@ -5,18 +5,52 @@ import sys
 
 # Read the memory content dropped by the compilation and pack it
 # into a cache line. Can have any number of instructions per line, from 1 to N
+# Print in stdout the boot address detected in the dumped file
 
 def main(argv0, in_name, out_name, inst_per_line=4):
 
     opcodes = []
+    bootaddr=''
+    newaddr=0
+    linew=0
+    bytecount=0
+    linebytecount = 0
 
     hexmem = open(in_name, 'r')
     # print(hexmem.read())
     for strings in hexmem.read().split("\n"):
-        if "@" in strings or not strings:
+
+        # If just empty pass to the next
+        if not strings:
             pass
+
+        # If boot address not found yet, store it
+        elif "@" in strings and bootaddr=='':
+            bootaddr = int(strings[1:], base=16)
+            # print("Boot address: ", str(bootaddr))
+            opcodes = bootaddr * ["00"]
+            bytecount = bootaddr
         else:
-            opcodes.extend(strings.split(" "))
+
+            linedata = strings.split(" ")
+
+            # Grab the line byte count right after the first address
+            if bootaddr!='' and linebytecount==0:
+                linebytecount = len(linedata)
+                # print("Line byte count: ", linebytecount)
+                # print(strings)
+
+            # Store new bytes until a new address section
+            if "@" not in strings:
+                opcodes.extend(linedata)
+                opcodes.extend((linebytecount-len(linedata))*["00"])
+                bytecount += len(linedata)
+
+            # Reached a new address section, fills the gap with 0
+            else:
+                newaddr = int(strings[1:], base=16)
+                opcodes.extend((newaddr-bytecount)*["00"])
+                # print("Reach new address section: ", newaddr)
 
     instrs = []
     instr = ""
@@ -47,6 +81,8 @@ def main(argv0, in_name, out_name, inst_per_line=4):
     for instr in instrs:
         verimem.write(instr + "\n")
 
+    print(bootaddr)
+    return
 
 if __name__ == '__main__':
-    main(*sys.argv)
+    sys.exit(main(*sys.argv))

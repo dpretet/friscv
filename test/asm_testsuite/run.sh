@@ -56,7 +56,7 @@ run_tests() {
     # Search for all folders and execute makefile to create the asm/verilog files
     # Once created, the program are converted along this script to init the RAMs
     echo "INFO: Build ASM/C testcases and create RAM initialization files"
-    find . -type d ! -name common -exec make -C {} all \; -exec ./bin2hex.py {}/{}.v {}.v $INST_PER_LINE \;
+    find . -type d ! -name common -exec make -C {} all \; -exec ../common/bin2hex.py {}/{}.v {}.v $INST_PER_LINE \;
 
     # Parse all available tests one by one and copy them into test.v
     # This test.v file name is expected in the testbench to init the data RAM
@@ -64,7 +64,7 @@ run_tests() {
 
         # Get test name by removing the extension
         test_name=${test%%.*}
-        gtk_file="./friscv_rv32i_${test_name}_testbench.gtkw"
+        gtk_file="./friscv_${test_name}_testbench.gtkw"
 
         # Copy the testcase to run
         rm -f test.v
@@ -80,13 +80,13 @@ run_tests() {
         echo ""
 
         # Execute the testcase with SVUT. Will stop once it reaches a EBREAK instruction
-        svutRun -t ./friscv_rv32i_testbench.sv -define "CACHE_LINE_W=$CACHE_LINE_W" | tee -a simulation.log
+        svutRun -t ./friscv_testbench.sv -define "CACHE_LINE_W=$CACHE_LINE_W" | tee -a simulation.log
         test_ret=$((test_ret+$?))
 
         # Copy the VCD generated, create a GTKWave file from the template then
         # add into the path to the good VCD file.
-        cp ./friscv_rv32i_testbench.vcd "$test_name.vcd"
-        cp ./friscv_rv32i_testbench.gtkw.tmpl "$gtk_file"
+        cp ./friscv_testbench.vcd "$test_name.vcd"
+        cp ./friscv_testbench.gtkw.tmpl "$gtk_file"
         sed -i '' "s|__TMPL__|\"$test_name.vcd\"|g" "$gtk_file"
     done
 }

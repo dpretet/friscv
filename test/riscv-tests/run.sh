@@ -74,7 +74,7 @@ run_tests() {
         echo $test
 
         echo "./bin2hex.py ${test} test.v $INST_PER_LINE"
-        BOOT_ADDR=$(./bin2hex.py "$test" test.v $INST_PER_LINE)
+        BOOT_ADDR=$(../common/bin2hex.py "$test" test.v $INST_PER_LINE)
 
         # Get test name by removing the extension
         test_file=$(basename $test)
@@ -91,13 +91,13 @@ run_tests() {
         echo "CACHE_LINE_W: $CACHE_LINE_W"
 
         # Execute the testcase with SVUT. Will stop once it reaches a EBREAK instruction
-        svutRun -t ./friscv_rv32i_testbench.sv -define "CACHE_LINE_W=$CACHE_LINE_W;BOOT_ADDR=$BOOT_ADDR;XLEN=$XLEN;TCNAME=${test_name}" | tee -a simulation.log
+        svutRun -t ./friscv_testbench.sv -define "CACHE_LINE_W=$CACHE_LINE_W;BOOT_ADDR=$BOOT_ADDR;XLEN=$XLEN;TCNAME=${test_name}" | tee -a simulation.log
         test_ret=$((test_ret+$?))
 
         # Copy the VCD generated, create a GTKWave file from the template then
         # add into the path to the good VCD file.
-        cp ./friscv_rv32i_testbench.vcd "./tests/$test_name.vcd"
-        cp ./friscv_rv32i_testbench.gtkw.tmpl "./tests/$gtk_file"
+        cp ./friscv_testbench.vcd "./tests/$test_name.vcd"
+        cp ./friscv_testbench.gtkw.tmpl "./tests/$gtk_file"
         sed -i '' "s|__TMPL__|\"$test_name.vcd\"|g" "./tests/$gtk_file"
 
     done

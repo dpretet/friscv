@@ -5,7 +5,7 @@
 `include "svut_h.sv"
 `include "../../rtl/friscv_h.sv"
 
-module friscv_rv32i_testbench();
+module tb();
 
     `SVUT_SETUP
 
@@ -250,8 +250,8 @@ module friscv_rv32i_testbench();
     always #1 aclk = ~aclk;
 
     initial begin
-        $dumpfile("friscv_rv32i_testbench.vcd");
-        $dumpvars(0, friscv_rv32i_testbench);
+        $dumpfile("friscv_testbench.vcd");
+        $dumpvars(0, tb);
     end
 
     initial begin

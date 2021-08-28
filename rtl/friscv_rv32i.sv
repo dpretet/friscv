@@ -197,7 +197,7 @@ module friscv_rv32i
     logic                        flush_req;
     logic                        flush_ack;
 
-    logic                        ebreak;
+    logic [2               -1:0] traps;
     logic                        csr_ro_trap;
 
     logic                        ctrl_mepc_wr;
@@ -234,14 +234,15 @@ module friscv_rv32i
     // Status bus moving out the core
     //////////////////////////////////////////////////////////////////////////
 
-    // control circuit received an EBREAK instruction is stopped, waiting for
-    // the debugger to restart it
-    assign status[0] = ebreak;
+    // EBREAK instruction received
+    assign status[0] = traps[0];
+    // MRET is under execution
+    assign status[1] = traps[1];
 
     // CSR circuit received a command to write into a read-only register
-    assign status[1] = csr_ro_trap;
+    assign status[2] = csr_ro_trap;
 
-    assign status[7:2] = 6'b0;
+    assign status[7:3] = 5'b0;
 
     //////////////////////////////////////////////////////////////////////////
     // Module logging internal statistics of the core
@@ -327,7 +328,7 @@ module friscv_rv32i
         .aclk           (aclk           ),
         .aresetn        (aresetn        ),
         .srst           (srst           ),
-        .ebreak         (ebreak         ),
+        .traps          (traps          ),
         .flush_req      (flush_req      ),
         .flush_ack      (flush_ack      ),
         .arvalid        (inst_arvalid_s ),

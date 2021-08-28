@@ -34,7 +34,7 @@ module friscv_control
         input  logic                      aclk,
         input  logic                      aresetn,
         input  logic                      srst,
-        output logic                      ebreak,
+        output logic [2             -1:0] traps,
         // Flush control
         output logic                      flush_req,
         input  logic                      flush_ack,
@@ -421,7 +421,7 @@ module friscv_control
             pc_reg <= {(XLEN){1'b0}};
             pc_jal_saved <= {(XLEN){1'b0}};
             pc_auipc_saved <= {(XLEN){1'b0}};
-            ebreak <= 1'b0;
+            traps <= 2'b0;
             flush_fifo <= 1'b0;
             arid <= {AXI_ID_W{1'b0}};
             flush_req <= 1'b0;
@@ -436,7 +436,7 @@ module friscv_control
             pc_reg <= {(XLEN){1'b0}};
             pc_jal_saved <= {(XLEN){1'b0}};
             pc_auipc_saved <= {(XLEN){1'b0}};
-            ebreak <= 1'b0;
+            traps <= 2'b0;
             flush_fifo <= 1'b0;
             arid <= {AXI_ID_W{1'b0}};
             flush_req <= 1'b0;
@@ -524,7 +524,7 @@ module friscv_control
 
                             log.critical("Received EBREAK -> Stop the processor");
                             flush_fifo <= 1'b1;
-                            ebreak <= 1'b1;
+                            traps[0] <= 1'b1;
                             cfsm <= EBREAK;
 
                         // Reach a MRET instruction, jump to exception return
@@ -532,6 +532,7 @@ module friscv_control
 
                             log.critical("Received MRET -> Jump to return handler");
                             flush_fifo <= 1'b1;
+                            traps[1] <= 1'b1;
                             arvalid <= 1'b0;
                             arid <= arid + 1;
                             pc_reg <= sb_mtvec;
@@ -597,8 +598,8 @@ module friscv_control
                 // EBREAK completly stops the processor and wait for a reboot
                 // TODO: Understand how to manage EBREAK when software needs
                 EBREAK: begin
+                    traps <= 2'b0;
                     arvalid <= 1'b0;
-                    ebreak <= 1'b1;
                     flush_fifo <= 1'b0;
                     cfsm <= EBREAK;
                 end
@@ -610,7 +611,6 @@ module friscv_control
                 // - received a XXXXXXXX instruction (undefined signal in sim)
                 TRAP: begin
                     arvalid <= 1'b0;
-                    ebreak <= 1'b1;
                     cfsm <= TRAP;
                 end
 
