@@ -227,6 +227,7 @@ reset_vector:                                                           \
 //-----------------------------------------------------------------------
 
 #define RVTEST_CODE_END                                                 \
+        ebreak;                                                         \
         unimp
 
 //-----------------------------------------------------------------------
@@ -238,7 +239,7 @@ reset_vector:                                                           \
         li TESTNUM, 1;                                                  \
         li a7, 93;                                                      \
         li a0, 0;                                                       \
-        ecall
+        ebreak
 
 #define TESTNUM gp
 #define RVTEST_FAIL                                                     \
@@ -248,7 +249,8 @@ reset_vector:                                                           \
         or TESTNUM, TESTNUM, 1;                                         \
         li a7, 93;                                                      \
         addi a0, TESTNUM, 0;                                            \
-        ecall
+        add x31, x31, 1;                                                \
+        ebreak
 
 //-----------------------------------------------------------------------
 // Data Section Macro

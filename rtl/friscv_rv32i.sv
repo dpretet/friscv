@@ -197,13 +197,15 @@ module friscv_rv32i
     logic                        flush_req;
     logic                        flush_ack;
 
-    logic [2               -1:0] traps;
+    logic [4               -1:0] traps;
     logic                        csr_ro_trap;
 
     logic                        ctrl_mepc_wr;
     logic [XLEN            -1:0] ctrl_mepc;
     logic                        ctrl_mstatus_wr;
     logic [XLEN            -1:0] ctrl_mstatus;
+    logic                        ctrl_mcause_wr;
+    logic [XLEN            -1:0] ctrl_mcause;
     logic [`CSR_SB_W       -1:0] csr_sb;
 
     //////////////////////////////////////////////////////////////////////////
@@ -234,15 +236,18 @@ module friscv_rv32i
     // Status bus moving out the core
     //////////////////////////////////////////////////////////////////////////
 
-    // EBREAK instruction received
+    // ECALL
     assign status[0] = traps[0];
-    // MRET is under execution
+    // EBREAK instruction received
     assign status[1] = traps[1];
-
+    // MRET is under execution
+    assign status[2] = traps[2];
+    // Received a unsupported instruction
+    assign status[3] = traps[3];
     // CSR circuit received a command to write into a read-only register
-    assign status[2] = csr_ro_trap;
-
-    assign status[7:3] = 5'b0;
+    assign status[4] = csr_ro_trap;
+    // RESERVED
+    assign status[7:5] = 3'b0;
 
     //////////////////////////////////////////////////////////////////////////
     // Module logging internal statistics of the core
@@ -360,6 +365,8 @@ module friscv_rv32i
         .mepc           (ctrl_mepc      ),
         .mstatus_wr     (ctrl_mstatus_wr),
         .mstatus        (ctrl_mstatus   ),
+        .mcause_wr      (ctrl_mcause_wr ),
+        .mcause         (ctrl_mcause    ),
         .csr_sb         (csr_sb         )
     );
 
@@ -436,6 +443,41 @@ module friscv_rv32i
     end
     endgenerate
 
+
+    //////////////////////////////////////////////////////////////////////////
+    // ISA CSR registers
+    //////////////////////////////////////////////////////////////////////////
+
+    friscv_csr
+    #(
+        .RV32E     (RV32E),
+        .MHART_ID  (MHART_ID),
+        .XLEN      (XLEN)
+    )
+    csrs
+    (
+        .aclk            (aclk           ),
+        .aresetn         (aresetn        ),
+        .srst            (srst           ),
+        .valid           (csr_en         ),
+        .ready           (csr_ready      ),
+        .instbus         (csr_instbus    ),
+        .rs1_addr        (csr_rs1_addr   ),
+        .rs1_val         (csr_rs1_val    ),
+        .rd_wr_en        (csr_rd_wr      ),
+        .rd_wr_addr      (csr_rd_addr    ),
+        .rd_wr_val       (csr_rd_val     ),
+        .ro_trap         (csr_ro_trap    ),
+        .ctrl_mepc_wr    (ctrl_mepc_wr   ),
+        .ctrl_mepc       (ctrl_mepc      ),
+        .ctrl_mstatus_wr (ctrl_mstatus_wr),
+        .ctrl_mstatus    (ctrl_mstatus   ),
+        .ctrl_mcause_wr  (ctrl_mcause_wr ),
+        .ctrl_mcause     (ctrl_mcause    ),
+        .csr_sb          (csr_sb         )
+    );
+
+
     //////////////////////////////////////////////////////////////////////////
     // All ISA enxtensions supported: standard arithmetic / memory, ...
     //////////////////////////////////////////////////////////////////////////
@@ -486,7 +528,7 @@ module friscv_rv32i
 
 
     //////////////////////////////////////////////////////////////////////////
-    // Switching logic to dispatch the IO and data memory access
+    // Switching logic to dispatch the IO and data memory accesses
     //////////////////////////////////////////////////////////////////////////
 
     friscv_mem_router
@@ -546,7 +588,7 @@ module friscv_rv32i
         .aclk      (aclk      ),
         .aresetn   (aresetn   ),
         .srst      (srst      ),
-        .mst_en    (mst_en    ),
+        .mst_en    (gpio_en   ),
         .mst_wr    (gpio_wr   ),
         .mst_addr  (gpio_addr ),
         .mst_wdata (gpio_wdata),
@@ -561,37 +603,6 @@ module friscv_rv32i
         .uart_cts  (uart_cts  )
     );
 
-
-    //////////////////////////////////////////////////////////////////////////
-    // ISA CSR registers
-    //////////////////////////////////////////////////////////////////////////
-
-    friscv_csr
-    #(
-        .RV32E     (RV32E),
-        .MHART_ID  (MHART_ID),
-        .XLEN      (XLEN)
-    )
-    csrs
-    (
-        .aclk            (aclk           ),
-        .aresetn         (aresetn        ),
-        .srst            (srst           ),
-        .valid           (csr_en         ),
-        .ready           (csr_ready      ),
-        .instbus         (csr_instbus    ),
-        .rs1_addr        (csr_rs1_addr   ),
-        .rs1_val         (csr_rs1_val    ),
-        .rd_wr_en        (csr_rd_wr      ),
-        .rd_wr_addr      (csr_rd_addr    ),
-        .rd_wr_val       (csr_rd_val     ),
-        .ro_trap         (csr_ro_trap    ),
-        .ctrl_mepc_wr    (ctrl_mepc_wr   ),
-        .ctrl_mepc       (ctrl_mepc      ),
-        .ctrl_mstatus_wr (ctrl_mstatus_wr),
-        .ctrl_mstatus    (ctrl_mstatus   ),
-        .csr_sb          (csr_sb         )
-    );
 
 endmodule
 `resetall

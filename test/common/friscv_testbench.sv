@@ -9,23 +9,30 @@ module tb();
 
     `SVUT_SETUP
 
+    // Maximum cycle of a simulation run, after that break it
+    `ifndef TIMEOUT
+    `define TIMEOUT 10000
+    `endif
+
+    // Instruction RAM boot address
     `ifndef BOOT_ADDR
     `define BOOT_ADDR 0
     `endif
 
+    // Cache line width in bits
     `ifndef CACHE_LINE_W
     `define CACHE_LINE_W 128
     `endif
 
+    // Architecture selection: 32 or 64 bits
     `ifndef XLEN
     `define XLEN 32
     `endif
 
+    // Testcase name to print before execution
     `ifndef TCNAME
     `define TCNAME "program"
     `endif
-
-    string tcname;
 
     // Instruction length
     parameter ILEN               = 32;
@@ -46,7 +53,7 @@ module tb();
     // AXI4 data width, independant of control unit width
     parameter AXI_DATA_W         = `CACHE_LINE_W;
     // Address buses width
-    parameter DATA_ADDRW         = 16;
+    parameter DATA_ADDRW         = 24;
     // Define the address of GPIO peripheral in APB interconnect
     parameter GPIO_SLV0_ADDR     = 0;
     parameter GPIO_SLV0_SIZE     = 2;
@@ -56,7 +63,7 @@ module tb();
     // in the global memory space
     parameter GPIO_BASE_ADDR     = 0;
     parameter GPIO_BASE_SIZE     = 2048;
-    parameter DATA_MEM_BASE_ADDR = 2048;
+    parameter DATA_MEM_BASE_ADDR = 73728;
     parameter DATA_MEM_BASE_SIZE = 16384;
     // UART FIFO Depth
     parameter UART_FIFO_DEPTH    = 4;
@@ -69,16 +76,15 @@ module tb();
     parameter CACHE_DEPTH        = 512;
 
     // timeout used in the testbench to break the simulation
-    parameter TIMEOUT = 10000;
+    parameter TIMEOUT            = `TIMEOUT;
     // Variable latency setup the AXI4-lite RAM model
-    parameter VARIABLE_LATENCY = 0;
+    parameter VARIABLE_LATENCY   = 0;
 
     logic                      aclk;
     logic                      aresetn;
     logic                      srst;
     logic [8             -1:0] status;
     logic                      enable;
-
     logic                      inst_arvalid;
     logic                      inst_arready;
     logic [AXI_ADDR_W    -1:0] inst_araddr;
@@ -101,7 +107,6 @@ module tb();
     logic [2             -1:0] inst_bresp;
     logic                      inst_bvalid;
     logic                      inst_bready;
-
     logic                      mem_en;
     logic                      mem_wr;
     logic [DATA_ADDRW    -1:0] mem_addr;
@@ -115,8 +120,9 @@ module tb();
     logic                      uart_rx;
     logic                      uart_rts;
     logic                      uart_cts;
-    integer                    inst_counter;
     integer                    timer;
+    string                     tcname;
+
 
     friscv_rv32i
     #(
@@ -219,7 +225,7 @@ module tb();
 
     apb_ram
     #(
-        .INIT  ("zero.v"),
+        .INIT  ("data.v"),
         .LATENCY (1),
         .ADDRW (DATA_ADDRW),
         .DATAW (XLEN)
@@ -269,7 +275,6 @@ module tb();
         inst_wvalid = 1'b0;
         inst_bready = 1'b0;
         enable = 0;
-        inst_counter = 0;
         aresetn = 1'b0;
         srst = 1'b0;
         timer = 0;
@@ -289,17 +294,26 @@ module tb();
 
     `UNIT_TEST(tcname)
 
-        @(posedge aclk);
-        while (status==8'b0 && timer<TIMEOUT) begin
+        // status[1] = EBREAK
+        // status[4] = CSR write in read-only register
+        while (status[1]==1'b0 && status[4]==1'b0 && timer<TIMEOUT) begin
             timer = timer + 1;
             @(posedge aclk);
         end
-        repeat(5) @(posedge aclk);
+
+        `ASSERT((dut.isa_registers.regs[31]==0), "TEST FAILED, X31 != 0");
+
         if (timer<TIMEOUT) begin
-            `ASSERT((dut.isa_registers.regs[31]==0), "TEST FAILED");
-            $display("Testcase errors: %0d", dut.isa_registers.regs[31]);
+            if (status[0])
+                `INFO("Testbench: Halt on ECALL");
+            if (status[1])
+                `INFO("Testbench: Halt on EBREAK");
+            if (status[3])
+                `INFO("Testbench: Halt on an unsupported instruction");
+            if (status[4])
+                `INFO("Testbench: Halt on a read-only write register event");
         end else begin
-            `CRITICAL("Reached timeout");
+            `INFO("Testbench: Halt on timeout");
         end
 
     `UNIT_TEST_END

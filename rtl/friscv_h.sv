@@ -108,7 +108,7 @@
 `define IMM12_W     12
 `define IMM20_W     20
 `define CSR_W       12
-`define SHAMT_W     6
+`define SHAMT_W     5
 `define PRED_W      4
 `define SUCC_W      4
 
@@ -152,7 +152,7 @@
 `ifndef LOGGER
 `define LOGGER
     `ifndef ICACHE_VERBOSITY
-        `define ICACHE_VERBOSITY `SVL_VERBOSE_DEBUG
+        `define ICACHE_VERBOSITY `SVL_VERBOSE_WARNING
         `define ICACHE_ROUTE `SVL_ROUTE_ALL
     `endif
     `ifndef CONTROL_VERBOSITY
@@ -171,6 +171,8 @@
 //////////////////////////////////////////////////////////////////
 
 function automatic string get_inst_desc(
+    input string            instruction,
+    input string            pc,
     input logic [7    -1:0] opcode,
     input logic [3    -1:0] funct3,
     input logic [7    -1:0] funct7,
@@ -187,122 +189,123 @@ function automatic string get_inst_desc(
 
     if (opcode==`LUI) begin
         text = "LUI / U-type";
-        $sformat(temp, "rd: %x ", rd);
-        text = {temp, text};
-        $sformat(temp, "Imm20: %x ", imm20);
-        text = {temp, text};
+        $sformat(temp, "Rd: %x", rd);
+        text = {temp, " / ", text};
+        $sformat(temp, "Imm20: %x", imm20);
+        text = {temp, " / ", text};
     end
     if (opcode==`AUIPC) begin
         text = "AUIPC / U-type";
-        $sformat(temp, "rd: %x ", rd);
-        text = {temp, text};
-        $sformat(temp, "Imm20: %x ", imm20);
-        text = {temp, text};
+        $sformat(temp, "Rd: %x", rd);
+        text = {temp, " / ", text};
+        $sformat(temp, "Imm20: %x", imm20);
+        text = {temp, " / ", text};
     end
     if (opcode==`JALR) begin
         text = "JALR / I-type";
-        $sformat(temp, "rd: %x ", rd);
-        text = {temp, text};
-        $sformat(temp, "funct3: %x ", funct3);
-        text = {temp, text};
-        $sformat(temp, "rs1: %x ", rs1);
-        text = {temp, text};
-        $sformat(temp, "Imm12: %x ", imm12);
-        text = {temp, text};
+        $sformat(temp, "Rd: %x", rd);
+        text = {temp, " / ", text};
+        $sformat(temp, "Funct3: %x", funct3);
+        text = {temp, " / ", text};
+        $sformat(temp, "Rs1: %x", rs1);
+        text = {temp, " / ", text};
+        $sformat(temp, "Imm12: %x", imm12);
+        text = {temp, " / ", text};
     end
     if (opcode==`LOAD) begin
         text = "LOAD / I-type";
-        $sformat(temp, "rd: %x ", rd);
-        text = {temp, text};
-        $sformat(temp, "funct3: %x ", funct3);
-        text = {temp, text};
-        $sformat(temp, "rs1: %x ", rs1);
-        text = {temp, text};
-        $sformat(temp, "Imm12: %x ", imm12);
-        text = {temp, text};
+        $sformat(temp, "rd: %x", rd);
+        text = {temp, " / ", text};
+        $sformat(temp, "Funct3: %x", funct3);
+        text = {temp, " / ", text};
+        $sformat(temp, "Rs1: %x", rs1);
+        text = {temp, " / ", text};
+        $sformat(temp, "Imm12: %x", imm12);
+        text = {temp, " / ", text};
     end
     if (opcode==`I_ARITH) begin
         text = "ARITH / I-type";
-        $sformat(temp, "rd: %x ", rd);
-        text = {temp, text};
-        $sformat(temp, "funct3: %x ", funct3);
-        text = {temp, text};
-        $sformat(temp, "rs1: %x ", rs1);
-        text = {temp, text};
-        $sformat(temp, "Imm12: %x ", imm12);
-        text = {temp, text};
+        $sformat(temp, "Rd: %x", rd);
+        text = {temp, " / ", text};
+        $sformat(temp, "Funct3: %x", funct3);
+        text = {temp, " / ", text};
+        $sformat(temp, "Rs1: %x", rs1);
+        text = {temp, " / ", text};
+        $sformat(temp, "Imm12: %x", imm12);
+        text = {temp, " / ", text};
     end
     if (opcode==`FENCEX) begin
         if (funct3==`FENCE) text = "FENCE / I-type";
-        else  text = "FENCE.i / I-type";
-        $sformat(temp, "rd: %x ", rd);
-        text = {temp, text};
-        $sformat(temp, "funct3: %x ", funct3);
-        text = {temp, text};
-        $sformat(temp, "rs1: %x ", rs1);
-        text = {temp, text};
-        $sformat(temp, "Imm12: %x ", imm12);
-        text = {temp, text};
+        else text = "FENCE.i / I-type";
+        $sformat(temp, "Rd: %x", rd);
+        text = {temp, " / ", text};
+        $sformat(temp, "Funct3: %x", funct3);
+        text = {temp, " / ", text};
+        $sformat(temp, "Rs1: %x", rs1);
+        text = {temp, " / ", text};
+        $sformat(temp, "Imm12: %x", imm12);
+        text = {temp, " / ", text};
     end
     if (opcode==`SYS) begin
         if (funct3==3'b000 && funct7==7'b0000000) text = "ECALL - I-type";
         else if (funct3==3'b000 && funct7==7'b0000001) text = "EBREAK - I-type";
-        else if (funct3==3'b000 && imm20==20'h105) text = "WFI - I-type";
-        else if (funct3==3'b000 && imm20==20'h102) text = "SRET - I-type";
-        else if (funct3==3'b000 && imm20==20'h302) text = "MRET - I-type";
+        else if (funct3==3'b000 && csr==12'h105) text = "WFI - I-type";
+        else if (funct3==3'b000 && csr==12'h102) text = "SRET - I-type";
+        else if (funct3==3'b000 && csr==12'h302) text = "MRET - I-type";
         else text = "CSR / I-type";
-        $sformat(temp, "rd: %x ", rd);
-        text = {temp, text};
-        $sformat(temp, "funct3: %x ", funct3);
-        text = {temp, text};
-        $sformat(temp, "rs1: %x ", rs1);
-        text = {temp, text};
-        $sformat(temp, "csr: %x ", csr);
-        text = {temp, text};
+        $sformat(temp, "Rd: %x", rd);
+        text = {temp, " / ", text};
+        $sformat(temp, "Funct3: %x", funct3);
+        text = {temp, " / ", text};
+        $sformat(temp, "Rs1: %x", rs1);
+        text = {temp, " / ", text};
+        $sformat(temp, "Csr: %x", csr);
+        text = {temp, " / ", text};
     end
     if (opcode==`JAL) begin
         text = "JAL / J-type";
         $sformat(temp, "rd: %x ", rd);
-        text = {temp, text};
-        $sformat(temp, "Imm20: %x ", imm20);
-        text = {temp, text};
+        text = {temp, " / ", text};
+        $sformat(temp, "Imm20: %x", imm20);
+        text = {temp, " / ", text};
     end
     if (opcode==`BRANCH) begin
         text = "BRANCH / B-type";
-        $sformat(temp, "funct3: %x ", funct3);
-        text = {temp, text};
-        $sformat(temp, "rs1: %x ", rs1);
-        text = {temp, text};
-        $sformat(temp, "rs2: %x ", rs2);
-        text = {temp, text};
-        $sformat(temp, "Imm12: %x ", imm12);
-        text = {temp, text};
+        $sformat(temp, "Funct3: %x", funct3);
+        text = {temp, " / ", text};
+        $sformat(temp, "Rs1: %x", rs1);
+        text = {temp, " / ", text};
+        $sformat(temp, "Rs2: %x", rs2);
+        text = {temp, " / ", text};
+        $sformat(temp, "Imm12: %x", imm12);
+        text = {temp, " / ", text};
     end
     if (opcode==`STORE) begin
         text = "STORE / S-type";
-        $sformat(temp, "funct3: %x ", funct3);
-        text = {temp, text};
-        $sformat(temp, "rs1: %x ", rs1);
-        text = {temp, text};
-        $sformat(temp, "rs2: %x ", rs2);
-        text = {temp, text};
-        $sformat(temp, "Imm12: %x ", imm12);
-        text = {temp, text};
+        $sformat(temp, "Funct3: %x", funct3);
+        text = {temp, " / ", text};
+        $sformat(temp, "Rs1: %x", rs1);
+        text = {temp, " / ", text};
+        $sformat(temp, "Rs2: %x", rs2);
+        text = {temp, " / ", text};
+        $sformat(temp, "Imm12: %x", imm12);
+        text = {temp, " / ", text};
     end
     if (opcode==`R_ARITH) begin
         text = "ARITH / R-type";
-        $sformat(temp, "rd: %x ", rd);
-        text = {temp, text};
-        $sformat(temp, "funct3: %x ", funct3);
-        text = {temp, text};
-        $sformat(temp, "rs1: %x ", rs1);
-        text = {temp, text};
-        $sformat(temp, "rs2: %x ", rs2);
-        text = {temp, text};
-        $sformat(temp, "funct7: %x ", funct7);
-        text = {temp, text};
+        $sformat(temp, "Rd: %x", rd);
+        text = {temp, " / ", text};
+        $sformat(temp, "Funct3: %x", funct3);
+        text = {temp, " / ", text};
+        $sformat(temp, "Rs1: %x", rs1);
+        text = {temp, " / ", text};
+        $sformat(temp, "Rs2: %x", rs2);
+        text = {temp, " / ", text};
+        $sformat(temp, "Funct7: %x", funct7);
+        text = {temp, " / ", text};
     end
 
+    text = {"PC=", pc, " - ", instruction, " / ", text};
     get_inst_desc = text;
 
 endfunction

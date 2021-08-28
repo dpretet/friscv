@@ -188,17 +188,17 @@ module friscv_memfy
         input logic            phase
     );
         if (funct3==`LB || funct3==`LBU) begin
-            get_rd_strb = {{(XLEN/8-1){1'b0}},1'b1};
+            get_rd_strb = {(XLEN/8){1'b1}};
         end
         if (funct3==`LH || funct3==`LHU)  begin
             if (offset==2'h3) begin
                 if (~phase) begin
                     get_rd_strb = {{(XLEN/8-1){1'b0}},1'b1};
                 end else begin
-                    get_rd_strb = {{(XLEN/8-2){1'b0}},2'b10};
+                    get_rd_strb = {{(XLEN/8-1){1'b1}},1'b0};
                 end
             end else begin
-                get_rd_strb = {{(XLEN/8-2){1'b0}},2'b11};
+                get_rd_strb = {(XLEN/8){1'b1}};
             end
         end
         if (funct3==`LW) begin
@@ -254,7 +254,7 @@ module friscv_memfy
     logic [`FUNCT3_W   -1:0] funct3_r;
     logic [`RD_W       -1:0] rd_r;
     logic [XLEN/8      -1:0] mem_strb_w;
-    logic                    is_unaligned;
+    logic                    cross_boundary;
     logic [XLEN/8      -1:0] next_strb;
     logic                    two_phases;
     logic [2           -1:0] offset;
@@ -354,12 +354,12 @@ module friscv_memfy
 
                 // request will be executed in two phases because unaligned
                 // and targets two memory addresses
-                if (is_unaligned) two_phases <= 1'b1;
+                if (cross_boundary) two_phases <= 1'b1;
                 else two_phases <= 1'b0;
 
                 // Memory setup
                 mem_en <= 1'b1;
-                mem_addr <= {2'b0, addr[ADDRW-1:2]};
+                mem_addr <= {addr[ADDRW-1:2], 2'b0};
                 offset <= addr[1:0];
 
                 // STORE
@@ -405,7 +405,7 @@ module friscv_memfy
     // The address to access during a LOAD or a STORE
     assign addr = $signed({{(XLEN-12){imm12[11]}}, imm12}) + $signed(memfy_rs1_val);
 
-    assign is_unaligned = (funct3==`SH  && addr[1:0]==2'h3) ? 1'b1 :
+    assign cross_boundary = (funct3==`SH  && addr[1:0]==2'h3) ? 1'b1 :
                           (funct3==`SW  && addr[1:0]!=2'b0) ? 1'b1 :
                           (funct3==`LH  && addr[1:0]==2'h3) ? 1'b1 :
                           (funct3==`LHU && addr[1:0]==2'h3) ? 1'b1 :

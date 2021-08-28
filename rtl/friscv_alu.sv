@@ -151,7 +151,7 @@ module friscv_alu
     assign _slti = ($signed(alu_rs1_val) < $signed({{(XLEN-12){imm12[11]}}, imm12})) ? {{XLEN-1{1'b0}}, 1'b1} :
                                                                                        {XLEN{1'b0}};
 
-    assign _sltiu = ({{(XLEN-12){imm12[11]}}, imm12} < alu_rs1_val) ? {{XLEN-1{1'b0}}, 1'b1} :
+    assign _sltiu = (alu_rs1_val < {{(XLEN-12){imm12[11]}}, imm12}) ? {{XLEN-1{1'b0}}, 1'b1} :
                                                                       {XLEN{1'b0}};
 
     assign _xori = {{(XLEN-12){imm12[11]}}, imm12} ^ alu_rs1_val;
@@ -160,103 +160,103 @@ module friscv_alu
 
     assign _andi = {{(XLEN-12){imm12[11]}}, imm12} & alu_rs1_val;
 
-    assign _slli = (shamt == 6'd01) ? {alu_rs1_val[XLEN-1-01:0],  1'b0} :
-                   (shamt == 6'd02) ? {alu_rs1_val[XLEN-1-02:0],  2'b0} :
-                   (shamt == 6'd03) ? {alu_rs1_val[XLEN-1-03:0],  3'b0} :
-                   (shamt == 6'd04) ? {alu_rs1_val[XLEN-1-04:0],  4'b0} :
-                   (shamt == 6'd05) ? {alu_rs1_val[XLEN-1-05:0],  5'b0} :
-                   (shamt == 6'd06) ? {alu_rs1_val[XLEN-1-06:0],  6'b0} :
-                   (shamt == 6'd07) ? {alu_rs1_val[XLEN-1-07:0],  7'b0} :
-                   (shamt == 6'd08) ? {alu_rs1_val[XLEN-1-08:0],  8'b0} :
-                   (shamt == 6'd09) ? {alu_rs1_val[XLEN-1-09:0],  9'b0} :
-                   (shamt == 6'd10) ? {alu_rs1_val[XLEN-1-10:0], 10'b0} :
-                   (shamt == 6'd11) ? {alu_rs1_val[XLEN-1-11:0], 11'b0} :
-                   (shamt == 6'd12) ? {alu_rs1_val[XLEN-1-12:0], 12'b0} :
-                   (shamt == 6'd13) ? {alu_rs1_val[XLEN-1-13:0], 13'b0} :
-                   (shamt == 6'd14) ? {alu_rs1_val[XLEN-1-14:0], 14'b0} :
-                   (shamt == 6'd15) ? {alu_rs1_val[XLEN-1-15:0], 15'b0} :
-                   (shamt == 6'd16) ? {alu_rs1_val[XLEN-1-16:0], 16'b0} :
-                   (shamt == 6'd17) ? {alu_rs1_val[XLEN-1-17:0], 17'b0} :
-                   (shamt == 6'd18) ? {alu_rs1_val[XLEN-1-18:0], 18'b0} :
-                   (shamt == 6'd19) ? {alu_rs1_val[XLEN-1-19:0], 19'b0} :
-                   (shamt == 6'd20) ? {alu_rs1_val[XLEN-1-20:0], 20'b0} :
-                   (shamt == 6'd21) ? {alu_rs1_val[XLEN-1-21:0], 21'b0} :
-                   (shamt == 6'd22) ? {alu_rs1_val[XLEN-1-22:0], 22'b0} :
-                   (shamt == 6'd23) ? {alu_rs1_val[XLEN-1-23:0], 23'b0} :
-                   (shamt == 6'd24) ? {alu_rs1_val[XLEN-1-24:0], 24'b0} :
-                   (shamt == 6'd25) ? {alu_rs1_val[XLEN-1-25:0], 25'b0} :
-                   (shamt == 6'd26) ? {alu_rs1_val[XLEN-1-26:0], 26'b0} :
-                   (shamt == 6'd27) ? {alu_rs1_val[XLEN-1-27:0], 27'b0} :
-                   (shamt == 6'd28) ? {alu_rs1_val[XLEN-1-28:0], 28'b0} :
-                   (shamt == 6'd29) ? {alu_rs1_val[XLEN-1-29:0], 29'b0} :
-                   (shamt == 6'd30) ? {alu_rs1_val[XLEN-1-30:0], 30'b0} :
-                   (shamt == 6'd31) ? {alu_rs1_val[XLEN-1-31:0], 31'b0} :
+    assign _slli = (shamt == 5'd01) ? {alu_rs1_val[XLEN-1-01:0],  1'b0} :
+                   (shamt == 5'd02) ? {alu_rs1_val[XLEN-1-02:0],  2'b0} :
+                   (shamt == 5'd03) ? {alu_rs1_val[XLEN-1-03:0],  3'b0} :
+                   (shamt == 5'd04) ? {alu_rs1_val[XLEN-1-04:0],  4'b0} :
+                   (shamt == 5'd05) ? {alu_rs1_val[XLEN-1-05:0],  5'b0} :
+                   (shamt == 5'd06) ? {alu_rs1_val[XLEN-1-06:0],  6'b0} :
+                   (shamt == 5'd07) ? {alu_rs1_val[XLEN-1-07:0],  7'b0} :
+                   (shamt == 5'd08) ? {alu_rs1_val[XLEN-1-08:0],  8'b0} :
+                   (shamt == 5'd09) ? {alu_rs1_val[XLEN-1-09:0],  9'b0} :
+                   (shamt == 5'd10) ? {alu_rs1_val[XLEN-1-10:0], 10'b0} :
+                   (shamt == 5'd11) ? {alu_rs1_val[XLEN-1-11:0], 11'b0} :
+                   (shamt == 5'd12) ? {alu_rs1_val[XLEN-1-12:0], 12'b0} :
+                   (shamt == 5'd13) ? {alu_rs1_val[XLEN-1-13:0], 13'b0} :
+                   (shamt == 5'd14) ? {alu_rs1_val[XLEN-1-14:0], 14'b0} :
+                   (shamt == 5'd15) ? {alu_rs1_val[XLEN-1-15:0], 15'b0} :
+                   (shamt == 5'd16) ? {alu_rs1_val[XLEN-1-16:0], 16'b0} :
+                   (shamt == 5'd17) ? {alu_rs1_val[XLEN-1-17:0], 17'b0} :
+                   (shamt == 5'd18) ? {alu_rs1_val[XLEN-1-18:0], 18'b0} :
+                   (shamt == 5'd19) ? {alu_rs1_val[XLEN-1-19:0], 19'b0} :
+                   (shamt == 5'd20) ? {alu_rs1_val[XLEN-1-20:0], 20'b0} :
+                   (shamt == 5'd21) ? {alu_rs1_val[XLEN-1-21:0], 21'b0} :
+                   (shamt == 5'd22) ? {alu_rs1_val[XLEN-1-22:0], 22'b0} :
+                   (shamt == 5'd23) ? {alu_rs1_val[XLEN-1-23:0], 23'b0} :
+                   (shamt == 5'd24) ? {alu_rs1_val[XLEN-1-24:0], 24'b0} :
+                   (shamt == 5'd25) ? {alu_rs1_val[XLEN-1-25:0], 25'b0} :
+                   (shamt == 5'd26) ? {alu_rs1_val[XLEN-1-26:0], 26'b0} :
+                   (shamt == 5'd27) ? {alu_rs1_val[XLEN-1-27:0], 27'b0} :
+                   (shamt == 5'd28) ? {alu_rs1_val[XLEN-1-28:0], 28'b0} :
+                   (shamt == 5'd29) ? {alu_rs1_val[XLEN-1-29:0], 29'b0} :
+                   (shamt == 5'd30) ? {alu_rs1_val[XLEN-1-30:0], 30'b0} :
+                   (shamt == 5'd31) ? {alu_rs1_val[XLEN-1-31:0], 31'b0} :
                                       {alu_rs1_val[XLEN-1:0]} ;
 
-    assign _srli = (shamt == 6'd01) ? {01'b0, alu_rs1_val[XLEN-1:01]} :
-                   (shamt == 6'd02) ? {02'b0, alu_rs1_val[XLEN-1:02]} :
-                   (shamt == 6'd03) ? {03'b0, alu_rs1_val[XLEN-1:03]} :
-                   (shamt == 6'd04) ? {04'b0, alu_rs1_val[XLEN-1:04]} :
-                   (shamt == 6'd05) ? {05'b0, alu_rs1_val[XLEN-1:05]} :
-                   (shamt == 6'd06) ? {06'b0, alu_rs1_val[XLEN-1:06]} :
-                   (shamt == 6'd07) ? {07'b0, alu_rs1_val[XLEN-1:07]} :
-                   (shamt == 6'd08) ? {08'b0, alu_rs1_val[XLEN-1:08]} :
-                   (shamt == 6'd09) ? {09'b0, alu_rs1_val[XLEN-1:09]} :
-                   (shamt == 6'd10) ? {10'b0, alu_rs1_val[XLEN-1:10]} :
-                   (shamt == 6'd11) ? {11'b0, alu_rs1_val[XLEN-1:11]} :
-                   (shamt == 6'd12) ? {12'b0, alu_rs1_val[XLEN-1:12]} :
-                   (shamt == 6'd13) ? {13'b0, alu_rs1_val[XLEN-1:13]} :
-                   (shamt == 6'd14) ? {14'b0, alu_rs1_val[XLEN-1:14]} :
-                   (shamt == 6'd15) ? {15'b0, alu_rs1_val[XLEN-1:15]} :
-                   (shamt == 6'd16) ? {16'b0, alu_rs1_val[XLEN-1:16]} :
-                   (shamt == 6'd17) ? {17'b0, alu_rs1_val[XLEN-1:17]} :
-                   (shamt == 6'd18) ? {18'b0, alu_rs1_val[XLEN-1:18]} :
-                   (shamt == 6'd19) ? {19'b0, alu_rs1_val[XLEN-1:19]} :
-                   (shamt == 6'd20) ? {20'b0, alu_rs1_val[XLEN-1:20]} :
-                   (shamt == 6'd21) ? {21'b0, alu_rs1_val[XLEN-1:21]} :
-                   (shamt == 6'd22) ? {22'b0, alu_rs1_val[XLEN-1:22]} :
-                   (shamt == 6'd23) ? {23'b0, alu_rs1_val[XLEN-1:23]} :
-                   (shamt == 6'd24) ? {24'b0, alu_rs1_val[XLEN-1:24]} :
-                   (shamt == 6'd25) ? {25'b0, alu_rs1_val[XLEN-1:25]} :
-                   (shamt == 6'd26) ? {26'b0, alu_rs1_val[XLEN-1:26]} :
-                   (shamt == 6'd27) ? {27'b0, alu_rs1_val[XLEN-1:27]} :
-                   (shamt == 6'd28) ? {28'b0, alu_rs1_val[XLEN-1:28]} :
-                   (shamt == 6'd29) ? {29'b0, alu_rs1_val[XLEN-1:29]} :
-                   (shamt == 6'd30) ? {30'b0, alu_rs1_val[XLEN-1:30]} :
-                   (shamt == 6'd31) ? {31'b0, alu_rs1_val[XLEN-1:31]} :
+    assign _srli = (shamt == 5'd01) ? {01'b0, alu_rs1_val[XLEN-1:01]} :
+                   (shamt == 5'd02) ? {02'b0, alu_rs1_val[XLEN-1:02]} :
+                   (shamt == 5'd03) ? {03'b0, alu_rs1_val[XLEN-1:03]} :
+                   (shamt == 5'd04) ? {04'b0, alu_rs1_val[XLEN-1:04]} :
+                   (shamt == 5'd05) ? {05'b0, alu_rs1_val[XLEN-1:05]} :
+                   (shamt == 5'd06) ? {06'b0, alu_rs1_val[XLEN-1:06]} :
+                   (shamt == 5'd07) ? {07'b0, alu_rs1_val[XLEN-1:07]} :
+                   (shamt == 5'd08) ? {08'b0, alu_rs1_val[XLEN-1:08]} :
+                   (shamt == 5'd09) ? {09'b0, alu_rs1_val[XLEN-1:09]} :
+                   (shamt == 5'd10) ? {10'b0, alu_rs1_val[XLEN-1:10]} :
+                   (shamt == 5'd11) ? {11'b0, alu_rs1_val[XLEN-1:11]} :
+                   (shamt == 5'd12) ? {12'b0, alu_rs1_val[XLEN-1:12]} :
+                   (shamt == 5'd13) ? {13'b0, alu_rs1_val[XLEN-1:13]} :
+                   (shamt == 5'd14) ? {14'b0, alu_rs1_val[XLEN-1:14]} :
+                   (shamt == 5'd15) ? {15'b0, alu_rs1_val[XLEN-1:15]} :
+                   (shamt == 5'd16) ? {16'b0, alu_rs1_val[XLEN-1:16]} :
+                   (shamt == 5'd17) ? {17'b0, alu_rs1_val[XLEN-1:17]} :
+                   (shamt == 5'd18) ? {18'b0, alu_rs1_val[XLEN-1:18]} :
+                   (shamt == 5'd19) ? {19'b0, alu_rs1_val[XLEN-1:19]} :
+                   (shamt == 5'd20) ? {20'b0, alu_rs1_val[XLEN-1:20]} :
+                   (shamt == 5'd21) ? {21'b0, alu_rs1_val[XLEN-1:21]} :
+                   (shamt == 5'd22) ? {22'b0, alu_rs1_val[XLEN-1:22]} :
+                   (shamt == 5'd23) ? {23'b0, alu_rs1_val[XLEN-1:23]} :
+                   (shamt == 5'd24) ? {24'b0, alu_rs1_val[XLEN-1:24]} :
+                   (shamt == 5'd25) ? {25'b0, alu_rs1_val[XLEN-1:25]} :
+                   (shamt == 5'd26) ? {26'b0, alu_rs1_val[XLEN-1:26]} :
+                   (shamt == 5'd27) ? {27'b0, alu_rs1_val[XLEN-1:27]} :
+                   (shamt == 5'd28) ? {28'b0, alu_rs1_val[XLEN-1:28]} :
+                   (shamt == 5'd29) ? {29'b0, alu_rs1_val[XLEN-1:29]} :
+                   (shamt == 5'd30) ? {30'b0, alu_rs1_val[XLEN-1:30]} :
+                   (shamt == 5'd31) ? {31'b0, alu_rs1_val[XLEN-1:31]} :
                                       {alu_rs1_val[XLEN-1:0]} ;
 
-    assign _srai = (shamt == 6'd01) ? {{01{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:01]} :
-                   (shamt == 6'd02) ? {{02{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:02]} :
-                   (shamt == 6'd03) ? {{03{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:03]} :
-                   (shamt == 6'd04) ? {{04{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:04]} :
-                   (shamt == 6'd05) ? {{05{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:05]} :
-                   (shamt == 6'd06) ? {{06{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:06]} :
-                   (shamt == 6'd07) ? {{07{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:07]} :
-                   (shamt == 6'd08) ? {{08{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:08]} :
-                   (shamt == 6'd09) ? {{09{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:09]} :
-                   (shamt == 6'd10) ? {{10{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:10]} :
-                   (shamt == 6'd11) ? {{11{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:11]} :
-                   (shamt == 6'd12) ? {{12{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:12]} :
-                   (shamt == 6'd13) ? {{13{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:13]} :
-                   (shamt == 6'd14) ? {{14{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:14]} :
-                   (shamt == 6'd15) ? {{15{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:15]} :
-                   (shamt == 6'd16) ? {{16{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:16]} :
-                   (shamt == 6'd17) ? {{17{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:17]} :
-                   (shamt == 6'd18) ? {{18{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:18]} :
-                   (shamt == 6'd19) ? {{19{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:19]} :
-                   (shamt == 6'd20) ? {{20{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:20]} :
-                   (shamt == 6'd21) ? {{21{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:21]} :
-                   (shamt == 6'd22) ? {{22{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:22]} :
-                   (shamt == 6'd23) ? {{23{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:23]} :
-                   (shamt == 6'd24) ? {{24{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:24]} :
-                   (shamt == 6'd25) ? {{25{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:25]} :
-                   (shamt == 6'd26) ? {{26{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:26]} :
-                   (shamt == 6'd27) ? {{27{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:27]} :
-                   (shamt == 6'd28) ? {{28{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:28]} :
-                   (shamt == 6'd29) ? {{29{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:29]} :
-                   (shamt == 6'd30) ? {{30{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:30]} :
-                   (shamt == 6'd31) ? {{31{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:31]} :
+    assign _srai = (shamt == 5'd01) ? {{01{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:01]} :
+                   (shamt == 5'd02) ? {{02{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:02]} :
+                   (shamt == 5'd03) ? {{03{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:03]} :
+                   (shamt == 5'd04) ? {{04{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:04]} :
+                   (shamt == 5'd05) ? {{05{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:05]} :
+                   (shamt == 5'd06) ? {{06{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:06]} :
+                   (shamt == 5'd07) ? {{07{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:07]} :
+                   (shamt == 5'd08) ? {{08{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:08]} :
+                   (shamt == 5'd09) ? {{09{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:09]} :
+                   (shamt == 5'd10) ? {{10{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:10]} :
+                   (shamt == 5'd11) ? {{11{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:11]} :
+                   (shamt == 5'd12) ? {{12{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:12]} :
+                   (shamt == 5'd13) ? {{13{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:13]} :
+                   (shamt == 5'd14) ? {{14{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:14]} :
+                   (shamt == 5'd15) ? {{15{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:15]} :
+                   (shamt == 5'd16) ? {{16{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:16]} :
+                   (shamt == 5'd17) ? {{17{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:17]} :
+                   (shamt == 5'd18) ? {{18{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:18]} :
+                   (shamt == 5'd19) ? {{19{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:19]} :
+                   (shamt == 5'd20) ? {{20{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:20]} :
+                   (shamt == 5'd21) ? {{21{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:21]} :
+                   (shamt == 5'd22) ? {{22{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:22]} :
+                   (shamt == 5'd23) ? {{23{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:23]} :
+                   (shamt == 5'd24) ? {{24{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:24]} :
+                   (shamt == 5'd25) ? {{25{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:25]} :
+                   (shamt == 5'd26) ? {{26{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:26]} :
+                   (shamt == 5'd27) ? {{27{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:27]} :
+                   (shamt == 5'd28) ? {{28{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:28]} :
+                   (shamt == 5'd29) ? {{29{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:29]} :
+                   (shamt == 5'd30) ? {{30{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:30]} :
+                   (shamt == 5'd31) ? {{31{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:31]} :
                                       {alu_rs1_val[XLEN-1:0]} ;
 
     ///////////////////////////////////////////////////////////////////////////
@@ -279,103 +279,103 @@ module friscv_alu
 
     assign _and = alu_rs1_val & alu_rs2_val;
 
-    assign _sll = (alu_rs2_val[5:0] == 6'd01) ? {alu_rs1_val[XLEN-1-01:0], 01'b0} :
-                  (alu_rs2_val[5:0] == 6'd02) ? {alu_rs1_val[XLEN-1-02:0], 02'b0} :
-                  (alu_rs2_val[5:0] == 6'd03) ? {alu_rs1_val[XLEN-1-03:0], 03'b0} :
-                  (alu_rs2_val[5:0] == 6'd04) ? {alu_rs1_val[XLEN-1-04:0], 04'b0} :
-                  (alu_rs2_val[5:0] == 6'd05) ? {alu_rs1_val[XLEN-1-05:0], 05'b0} :
-                  (alu_rs2_val[5:0] == 6'd06) ? {alu_rs1_val[XLEN-1-06:0], 06'b0} :
-                  (alu_rs2_val[5:0] == 6'd07) ? {alu_rs1_val[XLEN-1-07:0], 07'b0} :
-                  (alu_rs2_val[5:0] == 6'd08) ? {alu_rs1_val[XLEN-1-08:0], 08'b0} :
-                  (alu_rs2_val[5:0] == 6'd09) ? {alu_rs1_val[XLEN-1-09:0], 09'b0} :
-                  (alu_rs2_val[5:0] == 6'd10) ? {alu_rs1_val[XLEN-1-10:0], 10'b0} :
-                  (alu_rs2_val[5:0] == 6'd11) ? {alu_rs1_val[XLEN-1-11:0], 11'b0} :
-                  (alu_rs2_val[5:0] == 6'd12) ? {alu_rs1_val[XLEN-1-12:0], 12'b0} :
-                  (alu_rs2_val[5:0] == 6'd13) ? {alu_rs1_val[XLEN-1-13:0], 13'b0} :
-                  (alu_rs2_val[5:0] == 6'd14) ? {alu_rs1_val[XLEN-1-14:0], 14'b0} :
-                  (alu_rs2_val[5:0] == 6'd15) ? {alu_rs1_val[XLEN-1-15:0], 15'b0} :
-                  (alu_rs2_val[5:0] == 6'd16) ? {alu_rs1_val[XLEN-1-16:0], 16'b0} :
-                  (alu_rs2_val[5:0] == 6'd17) ? {alu_rs1_val[XLEN-1-17:0], 17'b0} :
-                  (alu_rs2_val[5:0] == 6'd18) ? {alu_rs1_val[XLEN-1-18:0], 18'b0} :
-                  (alu_rs2_val[5:0] == 6'd19) ? {alu_rs1_val[XLEN-1-19:0], 19'b0} :
-                  (alu_rs2_val[5:0] == 6'd20) ? {alu_rs1_val[XLEN-1-20:0], 20'b0} :
-                  (alu_rs2_val[5:0] == 6'd21) ? {alu_rs1_val[XLEN-1-21:0], 21'b0} :
-                  (alu_rs2_val[5:0] == 6'd22) ? {alu_rs1_val[XLEN-1-22:0], 22'b0} :
-                  (alu_rs2_val[5:0] == 6'd23) ? {alu_rs1_val[XLEN-1-23:0], 23'b0} :
-                  (alu_rs2_val[5:0] == 6'd24) ? {alu_rs1_val[XLEN-1-24:0], 24'b0} :
-                  (alu_rs2_val[5:0] == 6'd25) ? {alu_rs1_val[XLEN-1-25:0], 25'b0} :
-                  (alu_rs2_val[5:0] == 6'd26) ? {alu_rs1_val[XLEN-1-26:0], 26'b0} :
-                  (alu_rs2_val[5:0] == 6'd27) ? {alu_rs1_val[XLEN-1-27:0], 27'b0} :
-                  (alu_rs2_val[5:0] == 6'd28) ? {alu_rs1_val[XLEN-1-28:0], 28'b0} :
-                  (alu_rs2_val[5:0] == 6'd29) ? {alu_rs1_val[XLEN-1-29:0], 29'b0} :
-                  (alu_rs2_val[5:0] == 6'd30) ? {alu_rs1_val[XLEN-1-30:0], 30'b0} :
-                  (alu_rs2_val[5:0] == 6'd31) ? {alu_rs1_val[XLEN-1-31:0], 31'b0} :
+    assign _sll = (alu_rs2_val[4:0] == 5'd01) ? {alu_rs1_val[XLEN-1-01:0], 01'b0} :
+                  (alu_rs2_val[4:0] == 5'd02) ? {alu_rs1_val[XLEN-1-02:0], 02'b0} :
+                  (alu_rs2_val[4:0] == 5'd03) ? {alu_rs1_val[XLEN-1-03:0], 03'b0} :
+                  (alu_rs2_val[4:0] == 5'd04) ? {alu_rs1_val[XLEN-1-04:0], 04'b0} :
+                  (alu_rs2_val[4:0] == 5'd05) ? {alu_rs1_val[XLEN-1-05:0], 05'b0} :
+                  (alu_rs2_val[4:0] == 5'd06) ? {alu_rs1_val[XLEN-1-06:0], 06'b0} :
+                  (alu_rs2_val[4:0] == 5'd07) ? {alu_rs1_val[XLEN-1-07:0], 07'b0} :
+                  (alu_rs2_val[4:0] == 5'd08) ? {alu_rs1_val[XLEN-1-08:0], 08'b0} :
+                  (alu_rs2_val[4:0] == 5'd09) ? {alu_rs1_val[XLEN-1-09:0], 09'b0} :
+                  (alu_rs2_val[4:0] == 5'd10) ? {alu_rs1_val[XLEN-1-10:0], 10'b0} :
+                  (alu_rs2_val[4:0] == 5'd11) ? {alu_rs1_val[XLEN-1-11:0], 11'b0} :
+                  (alu_rs2_val[4:0] == 5'd12) ? {alu_rs1_val[XLEN-1-12:0], 12'b0} :
+                  (alu_rs2_val[4:0] == 5'd13) ? {alu_rs1_val[XLEN-1-13:0], 13'b0} :
+                  (alu_rs2_val[4:0] == 5'd14) ? {alu_rs1_val[XLEN-1-14:0], 14'b0} :
+                  (alu_rs2_val[4:0] == 5'd15) ? {alu_rs1_val[XLEN-1-15:0], 15'b0} :
+                  (alu_rs2_val[4:0] == 5'd16) ? {alu_rs1_val[XLEN-1-16:0], 16'b0} :
+                  (alu_rs2_val[4:0] == 5'd17) ? {alu_rs1_val[XLEN-1-17:0], 17'b0} :
+                  (alu_rs2_val[4:0] == 5'd18) ? {alu_rs1_val[XLEN-1-18:0], 18'b0} :
+                  (alu_rs2_val[4:0] == 5'd19) ? {alu_rs1_val[XLEN-1-19:0], 19'b0} :
+                  (alu_rs2_val[4:0] == 5'd20) ? {alu_rs1_val[XLEN-1-20:0], 20'b0} :
+                  (alu_rs2_val[4:0] == 5'd21) ? {alu_rs1_val[XLEN-1-21:0], 21'b0} :
+                  (alu_rs2_val[4:0] == 5'd22) ? {alu_rs1_val[XLEN-1-22:0], 22'b0} :
+                  (alu_rs2_val[4:0] == 5'd23) ? {alu_rs1_val[XLEN-1-23:0], 23'b0} :
+                  (alu_rs2_val[4:0] == 5'd24) ? {alu_rs1_val[XLEN-1-24:0], 24'b0} :
+                  (alu_rs2_val[4:0] == 5'd25) ? {alu_rs1_val[XLEN-1-25:0], 25'b0} :
+                  (alu_rs2_val[4:0] == 5'd26) ? {alu_rs1_val[XLEN-1-26:0], 26'b0} :
+                  (alu_rs2_val[4:0] == 5'd27) ? {alu_rs1_val[XLEN-1-27:0], 27'b0} :
+                  (alu_rs2_val[4:0] == 5'd28) ? {alu_rs1_val[XLEN-1-28:0], 28'b0} :
+                  (alu_rs2_val[4:0] == 5'd29) ? {alu_rs1_val[XLEN-1-29:0], 29'b0} :
+                  (alu_rs2_val[4:0] == 5'd30) ? {alu_rs1_val[XLEN-1-30:0], 30'b0} :
+                  (alu_rs2_val[4:0] == 5'd31) ? {alu_rs1_val[XLEN-1-31:0], 31'b0} :
                                                 {alu_rs1_val[XLEN-1:0]} ;
 
-    assign _srl = (alu_rs2_val[5:0] == 6'd01) ? {01'b0, alu_rs1_val[XLEN-1:01]} :
-                  (alu_rs2_val[5:0] == 6'd02) ? {02'b0, alu_rs1_val[XLEN-1:02]} :
-                  (alu_rs2_val[5:0] == 6'd03) ? {03'b0, alu_rs1_val[XLEN-1:03]} :
-                  (alu_rs2_val[5:0] == 6'd04) ? {04'b0, alu_rs1_val[XLEN-1:04]} :
-                  (alu_rs2_val[5:0] == 6'd05) ? {05'b0, alu_rs1_val[XLEN-1:05]} :
-                  (alu_rs2_val[5:0] == 6'd06) ? {06'b0, alu_rs1_val[XLEN-1:06]} :
-                  (alu_rs2_val[5:0] == 6'd07) ? {07'b0, alu_rs1_val[XLEN-1:07]} :
-                  (alu_rs2_val[5:0] == 6'd08) ? {08'b0, alu_rs1_val[XLEN-1:08]} :
-                  (alu_rs2_val[5:0] == 6'd09) ? {09'b0, alu_rs1_val[XLEN-1:09]} :
-                  (alu_rs2_val[5:0] == 6'd10) ? {10'b0, alu_rs1_val[XLEN-1:10]} :
-                  (alu_rs2_val[5:0] == 6'd11) ? {11'b0, alu_rs1_val[XLEN-1:11]} :
-                  (alu_rs2_val[5:0] == 6'd12) ? {12'b0, alu_rs1_val[XLEN-1:12]} :
-                  (alu_rs2_val[5:0] == 6'd13) ? {13'b0, alu_rs1_val[XLEN-1:13]} :
-                  (alu_rs2_val[5:0] == 6'd14) ? {14'b0, alu_rs1_val[XLEN-1:14]} :
-                  (alu_rs2_val[5:0] == 6'd15) ? {15'b0, alu_rs1_val[XLEN-1:15]} :
-                  (alu_rs2_val[5:0] == 6'd16) ? {16'b0, alu_rs1_val[XLEN-1:16]} :
-                  (alu_rs2_val[5:0] == 6'd17) ? {17'b0, alu_rs1_val[XLEN-1:17]} :
-                  (alu_rs2_val[5:0] == 6'd18) ? {18'b0, alu_rs1_val[XLEN-1:18]} :
-                  (alu_rs2_val[5:0] == 6'd19) ? {19'b0, alu_rs1_val[XLEN-1:19]} :
-                  (alu_rs2_val[5:0] == 6'd20) ? {20'b0, alu_rs1_val[XLEN-1:20]} :
-                  (alu_rs2_val[5:0] == 6'd21) ? {21'b0, alu_rs1_val[XLEN-1:21]} :
-                  (alu_rs2_val[5:0] == 6'd22) ? {22'b0, alu_rs1_val[XLEN-1:22]} :
-                  (alu_rs2_val[5:0] == 6'd23) ? {23'b0, alu_rs1_val[XLEN-1:23]} :
-                  (alu_rs2_val[5:0] == 6'd24) ? {24'b0, alu_rs1_val[XLEN-1:24]} :
-                  (alu_rs2_val[5:0] == 6'd25) ? {25'b0, alu_rs1_val[XLEN-1:25]} :
-                  (alu_rs2_val[5:0] == 6'd26) ? {26'b0, alu_rs1_val[XLEN-1:26]} :
-                  (alu_rs2_val[5:0] == 6'd27) ? {27'b0, alu_rs1_val[XLEN-1:27]} :
-                  (alu_rs2_val[5:0] == 6'd28) ? {28'b0, alu_rs1_val[XLEN-1:28]} :
-                  (alu_rs2_val[5:0] == 6'd29) ? {29'b0, alu_rs1_val[XLEN-1:29]} :
-                  (alu_rs2_val[5:0] == 6'd30) ? {30'b0, alu_rs1_val[XLEN-1:30]} :
-                  (alu_rs2_val[5:0] == 6'd31) ? {31'b0, alu_rs1_val[XLEN-1:31]} :
+    assign _srl = (alu_rs2_val[4:0] == 5'd01) ? {01'b0, alu_rs1_val[XLEN-1:01]} :
+                  (alu_rs2_val[4:0] == 5'd02) ? {02'b0, alu_rs1_val[XLEN-1:02]} :
+                  (alu_rs2_val[4:0] == 5'd03) ? {03'b0, alu_rs1_val[XLEN-1:03]} :
+                  (alu_rs2_val[4:0] == 5'd04) ? {04'b0, alu_rs1_val[XLEN-1:04]} :
+                  (alu_rs2_val[4:0] == 5'd05) ? {05'b0, alu_rs1_val[XLEN-1:05]} :
+                  (alu_rs2_val[4:0] == 5'd06) ? {06'b0, alu_rs1_val[XLEN-1:06]} :
+                  (alu_rs2_val[4:0] == 5'd07) ? {07'b0, alu_rs1_val[XLEN-1:07]} :
+                  (alu_rs2_val[4:0] == 5'd08) ? {08'b0, alu_rs1_val[XLEN-1:08]} :
+                  (alu_rs2_val[4:0] == 5'd09) ? {09'b0, alu_rs1_val[XLEN-1:09]} :
+                  (alu_rs2_val[4:0] == 5'd10) ? {10'b0, alu_rs1_val[XLEN-1:10]} :
+                  (alu_rs2_val[4:0] == 5'd11) ? {11'b0, alu_rs1_val[XLEN-1:11]} :
+                  (alu_rs2_val[4:0] == 5'd12) ? {12'b0, alu_rs1_val[XLEN-1:12]} :
+                  (alu_rs2_val[4:0] == 5'd13) ? {13'b0, alu_rs1_val[XLEN-1:13]} :
+                  (alu_rs2_val[4:0] == 5'd14) ? {14'b0, alu_rs1_val[XLEN-1:14]} :
+                  (alu_rs2_val[4:0] == 5'd15) ? {15'b0, alu_rs1_val[XLEN-1:15]} :
+                  (alu_rs2_val[4:0] == 5'd16) ? {16'b0, alu_rs1_val[XLEN-1:16]} :
+                  (alu_rs2_val[4:0] == 5'd17) ? {17'b0, alu_rs1_val[XLEN-1:17]} :
+                  (alu_rs2_val[4:0] == 5'd18) ? {18'b0, alu_rs1_val[XLEN-1:18]} :
+                  (alu_rs2_val[4:0] == 5'd19) ? {19'b0, alu_rs1_val[XLEN-1:19]} :
+                  (alu_rs2_val[4:0] == 5'd20) ? {20'b0, alu_rs1_val[XLEN-1:20]} :
+                  (alu_rs2_val[4:0] == 5'd21) ? {21'b0, alu_rs1_val[XLEN-1:21]} :
+                  (alu_rs2_val[4:0] == 5'd22) ? {22'b0, alu_rs1_val[XLEN-1:22]} :
+                  (alu_rs2_val[4:0] == 5'd23) ? {23'b0, alu_rs1_val[XLEN-1:23]} :
+                  (alu_rs2_val[4:0] == 5'd24) ? {24'b0, alu_rs1_val[XLEN-1:24]} :
+                  (alu_rs2_val[4:0] == 5'd25) ? {25'b0, alu_rs1_val[XLEN-1:25]} :
+                  (alu_rs2_val[4:0] == 5'd26) ? {26'b0, alu_rs1_val[XLEN-1:26]} :
+                  (alu_rs2_val[4:0] == 5'd27) ? {27'b0, alu_rs1_val[XLEN-1:27]} :
+                  (alu_rs2_val[4:0] == 5'd28) ? {28'b0, alu_rs1_val[XLEN-1:28]} :
+                  (alu_rs2_val[4:0] == 5'd29) ? {29'b0, alu_rs1_val[XLEN-1:29]} :
+                  (alu_rs2_val[4:0] == 5'd30) ? {30'b0, alu_rs1_val[XLEN-1:30]} :
+                  (alu_rs2_val[4:0] == 5'd31) ? {31'b0, alu_rs1_val[XLEN-1:31]} :
                                                 {alu_rs1_val[XLEN-1:0]} ;
 
-    assign _sra = (alu_rs2_val[5:0] == 6'd01) ? {{01{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:01]} :
-                  (alu_rs2_val[5:0] == 6'd02) ? {{02{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:02]} :
-                  (alu_rs2_val[5:0] == 6'd03) ? {{03{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:03]} :
-                  (alu_rs2_val[5:0] == 6'd04) ? {{04{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:04]} :
-                  (alu_rs2_val[5:0] == 6'd05) ? {{05{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:05]} :
-                  (alu_rs2_val[5:0] == 6'd06) ? {{06{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:06]} :
-                  (alu_rs2_val[5:0] == 6'd07) ? {{07{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:07]} :
-                  (alu_rs2_val[5:0] == 6'd08) ? {{08{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:08]} :
-                  (alu_rs2_val[5:0] == 6'd09) ? {{09{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:09]} :
-                  (alu_rs2_val[5:0] == 6'd10) ? {{10{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:10]} :
-                  (alu_rs2_val[5:0] == 6'd11) ? {{11{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:11]} :
-                  (alu_rs2_val[5:0] == 6'd12) ? {{12{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:12]} :
-                  (alu_rs2_val[5:0] == 6'd13) ? {{13{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:13]} :
-                  (alu_rs2_val[5:0] == 6'd14) ? {{14{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:14]} :
-                  (alu_rs2_val[5:0] == 6'd15) ? {{15{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:15]} :
-                  (alu_rs2_val[5:0] == 6'd16) ? {{16{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:16]} :
-                  (alu_rs2_val[5:0] == 6'd17) ? {{17{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:17]} :
-                  (alu_rs2_val[5:0] == 6'd18) ? {{18{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:18]} :
-                  (alu_rs2_val[5:0] == 6'd19) ? {{19{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:19]} :
-                  (alu_rs2_val[5:0] == 6'd20) ? {{20{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:20]} :
-                  (alu_rs2_val[5:0] == 6'd21) ? {{21{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:21]} :
-                  (alu_rs2_val[5:0] == 6'd22) ? {{22{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:22]} :
-                  (alu_rs2_val[5:0] == 6'd23) ? {{23{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:23]} :
-                  (alu_rs2_val[5:0] == 6'd24) ? {{24{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:24]} :
-                  (alu_rs2_val[5:0] == 6'd25) ? {{25{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:25]} :
-                  (alu_rs2_val[5:0] == 6'd26) ? {{26{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:26]} :
-                  (alu_rs2_val[5:0] == 6'd27) ? {{27{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:27]} :
-                  (alu_rs2_val[5:0] == 6'd28) ? {{28{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:28]} :
-                  (alu_rs2_val[5:0] == 6'd29) ? {{29{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:29]} :
-                  (alu_rs2_val[5:0] == 6'd30) ? {{30{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:30]} :
-                  (alu_rs2_val[5:0] == 6'd31) ? {{31{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:31]} :
+    assign _sra = (alu_rs2_val[4:0] == 5'd01) ? {{01{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:01]} :
+                  (alu_rs2_val[4:0] == 5'd02) ? {{02{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:02]} :
+                  (alu_rs2_val[4:0] == 5'd03) ? {{03{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:03]} :
+                  (alu_rs2_val[4:0] == 5'd04) ? {{04{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:04]} :
+                  (alu_rs2_val[4:0] == 5'd05) ? {{05{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:05]} :
+                  (alu_rs2_val[4:0] == 5'd06) ? {{06{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:06]} :
+                  (alu_rs2_val[4:0] == 5'd07) ? {{07{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:07]} :
+                  (alu_rs2_val[4:0] == 5'd08) ? {{08{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:08]} :
+                  (alu_rs2_val[4:0] == 5'd09) ? {{09{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:09]} :
+                  (alu_rs2_val[4:0] == 5'd10) ? {{10{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:10]} :
+                  (alu_rs2_val[4:0] == 5'd11) ? {{11{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:11]} :
+                  (alu_rs2_val[4:0] == 5'd12) ? {{12{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:12]} :
+                  (alu_rs2_val[4:0] == 5'd13) ? {{13{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:13]} :
+                  (alu_rs2_val[4:0] == 5'd14) ? {{14{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:14]} :
+                  (alu_rs2_val[4:0] == 5'd15) ? {{15{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:15]} :
+                  (alu_rs2_val[4:0] == 5'd16) ? {{16{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:16]} :
+                  (alu_rs2_val[4:0] == 5'd17) ? {{17{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:17]} :
+                  (alu_rs2_val[4:0] == 5'd18) ? {{18{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:18]} :
+                  (alu_rs2_val[4:0] == 5'd19) ? {{19{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:19]} :
+                  (alu_rs2_val[4:0] == 5'd20) ? {{20{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:20]} :
+                  (alu_rs2_val[4:0] == 5'd21) ? {{21{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:21]} :
+                  (alu_rs2_val[4:0] == 5'd22) ? {{22{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:22]} :
+                  (alu_rs2_val[4:0] == 5'd23) ? {{23{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:23]} :
+                  (alu_rs2_val[4:0] == 5'd24) ? {{24{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:24]} :
+                  (alu_rs2_val[4:0] == 5'd25) ? {{25{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:25]} :
+                  (alu_rs2_val[4:0] == 5'd26) ? {{26{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:26]} :
+                  (alu_rs2_val[4:0] == 5'd27) ? {{27{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:27]} :
+                  (alu_rs2_val[4:0] == 5'd28) ? {{28{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:28]} :
+                  (alu_rs2_val[4:0] == 5'd29) ? {{29{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:29]} :
+                  (alu_rs2_val[4:0] == 5'd30) ? {{30{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:30]} :
+                  (alu_rs2_val[4:0] == 5'd31) ? {{31{alu_rs1_val[XLEN-1]}}, alu_rs1_val[XLEN-1:31]} :
                                                 {alu_rs1_val[XLEN-1:0]} ;
 
 

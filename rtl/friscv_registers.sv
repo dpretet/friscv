@@ -82,9 +82,7 @@ module friscv_registers
             // register 0 is alwyas 0, can't be overwritten
             ///////////////////////////////////////////////
 
-            if ((alu_rd_wr && alu_rd_addr == 5'h0 ||
-                memfy_rd_wr && memfy_rd_addr == 5'h0 ||
-                ctrl_rd_wr && ctrl_rd_addr == 5'h0) && i==0) begin
+            if (i==0) begin
                 regs[i] <= {XLEN{1'b0}};
 
             ///////////////////////////////////////////////

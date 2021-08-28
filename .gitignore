@@ -143,3 +143,4 @@ obj_dir
 .DS_Store
 tags
 test/*/*.txt
+data.v

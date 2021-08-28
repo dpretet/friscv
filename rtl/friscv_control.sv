@@ -34,7 +34,7 @@ module friscv_control
         input  logic                      aclk,
         input  logic                      aresetn,
         input  logic                      srst,
-        output logic [2             -1:0] traps,
+        output logic [4             -1:0] traps,
         // Flush control
         output logic                      flush_req,
         input  logic                      flush_ack,
@@ -74,6 +74,8 @@ module friscv_control
         output logic [XLEN          -1:0] mepc,
         output logic                      mstatus_wr,
         output logic [XLEN          -1:0] mstatus,
+        output logic                      mcause_wr,
+        output logic [XLEN          -1:0] mcause,
         // CSR shared bus
         input  logic [`CSR_SB_W     -1:0] csr_sb
     );
@@ -118,10 +120,9 @@ module friscv_control
         BOOT = 0,
         FETCH = 1,
         RELOAD = 2,
-        TRAP = 3,
-        FENCE = 4,
-        FENCE_I = 5,
-        EBREAK = 6
+        FENCE = 3,
+        FENCE_I = 4,
+        EBREAK = 5
     } pc_fsm;
 
     pc_fsm cfsm;
@@ -176,6 +177,7 @@ module friscv_control
 
     task print_instruction(
         input logic [XLEN -1:0] instruction,
+        input logic [XLEN -1:0] pc,
         input logic [7    -1:0] opcode,
         input logic [3    -1:0] funct3,
         input logic [7    -1:0] funct7,
@@ -187,9 +189,12 @@ module friscv_control
         input logic [12   -1:0] csr
     );
         string inst_str;
+        string pc_str;
         $sformat(inst_str, "%x", instruction);
-        log.debug({"Execute ", inst_str});
+        $sformat(pc_str, "%x", pc);
         log.debug(get_inst_desc(
+                    inst_str,
+                    pc_str,
                     opcode,
                     funct3,
                     funct7,
@@ -259,7 +264,7 @@ module friscv_control
     //   - jal
     //   - jalr
     //   - fence: FENCE (0) / FENCE.I (1)
-    //   - sys: CSR (0) / EBREAK (1) / ECALL (2)
+    //   - sys: CSR (0) / ECALL (1) / EBREAK (2)
     //          MRET (4) / SRET (5) / WFI (6)
     //   - processing: alll others
     //
@@ -421,7 +426,7 @@ module friscv_control
             pc_reg <= {(XLEN){1'b0}};
             pc_jal_saved <= {(XLEN){1'b0}};
             pc_auipc_saved <= {(XLEN){1'b0}};
-            traps <= 2'b0;
+            traps <= 4'b0;
             flush_fifo <= 1'b0;
             arid <= {AXI_ID_W{1'b0}};
             flush_req <= 1'b0;
@@ -429,6 +434,8 @@ module friscv_control
             mepc <= {XLEN{1'b0}};
             mstatus_wr <= 1'b0;
             mstatus <= {XLEN{1'b0}};
+            mcause_wr <= 1'b0;
+            mcause <= {XLEN{1'b0}};
         end else if (srst == 1'b1) begin
             cfsm <= BOOT;
             arvalid <= 1'b0;
@@ -436,7 +443,7 @@ module friscv_control
             pc_reg <= {(XLEN){1'b0}};
             pc_jal_saved <= {(XLEN){1'b0}};
             pc_auipc_saved <= {(XLEN){1'b0}};
-            traps <= 2'b0;
+            traps <= 4'b0;
             flush_fifo <= 1'b0;
             arid <= {AXI_ID_W{1'b0}};
             flush_req <= 1'b0;
@@ -444,6 +451,8 @@ module friscv_control
             mepc <= {XLEN{1'b0}};
             mstatus_wr <= 1'b0;
             mstatus <= {XLEN{1'b0}};
+            mcause_wr <= 1'b0;
+            mcause <= {XLEN{1'b0}};
         end else begin
 
             case (cfsm)
@@ -471,7 +480,8 @@ module friscv_control
                     //     and can branch and CSR are ready, stop the addr
                     //     issuer and load it with correct address to use
                     //
-                    if (~fifo_empty && (jump_branch || sys[`IS_ECALL] || sys[`IS_MRET]) &&
+                    if (~fifo_empty && 
+                        (jump_branch || sys[`IS_ECALL] || sys[`IS_MRET] || fence[`IS_FENCEI]) &&
                         ~cant_branch_now && csr_ready) begin
                         // ECALL
                         if (sys[`IS_ECALL]) araddr <= sb_mtvec;
@@ -493,14 +503,27 @@ module friscv_control
                         // a decoding error has been issued
                         if (inst_error) begin
                             log.error("Decoding error, received an unsupported instruction");
-                            cfsm <= TRAP;
+                            print_instruction(instruction, pc_reg, opcode, funct3,
+                                              funct7, rs1, rs2, rd, imm12, imm20, csr);
+                            traps[3] <= 1'b1;
+                            flush_fifo <= 1'b1;
+                            arvalid <= 1'b0;
+                            arid <= arid + 1;
+                            pc_reg <= sb_mtvec;
+                            mepc_wr <= 1'b1;
+                            mepc <= pc_reg;
+                            mcause_wr <= 1'b1;
+                            mcause <= {{XLEN-2{1'b0}}, 2'h2};
+                            cfsm <= RELOAD;
                         end
 
                         // Needs to jump or branch thus stop the pipeline
                         // and reload new instructions
                         else if (jump_branch && ~cant_branch_now && csr_ready) begin
 
-                            log.debug("Received Jump/Branch");
+                            log.info("Execute Jump/Branch");
+                            print_instruction(instruction, pc_reg, opcode, funct3,
+                                              funct7, rs1, rs2, rd, imm12, imm20, csr);
                             flush_fifo <= 1'b1;
                             arvalid <= 1'b0;
                             arid <= arid + 1;
@@ -510,7 +533,10 @@ module friscv_control
                         // Reach an ECALL instruction, jump to trap handler
                         end else if (sys[`IS_ECALL] && ~cant_branch_now && csr_ready) begin
 
-                            log.critical("Received ECALL -> Jump to trap handler");
+                            log.info("Execute ECALL -> Jump to trap handler");
+                            print_instruction(instruction, pc_reg, opcode, funct3,
+                                              funct7, rs1, rs2, rd, imm12, imm20, csr);
+                            traps[0] <= 1'b1;
                             flush_fifo <= 1'b1;
                             arvalid <= 1'b0;
                             arid <= arid + 1;
@@ -522,20 +548,24 @@ module friscv_control
                         // Reach an EBREAK instruction, need to stall the core
                         end else if (sys[`IS_EBREAK]) begin
 
-                            log.critical("Received EBREAK -> Stop the processor");
+                            log.info("Execute EBREAK -> Stop the processor");
+                            print_instruction(instruction, pc_reg, opcode, funct3,
+                                              funct7, rs1, rs2, rd, imm12, imm20, csr);
                             flush_fifo <= 1'b1;
-                            traps[0] <= 1'b1;
+                            traps[1] <= 1'b1;
                             cfsm <= EBREAK;
 
                         // Reach a MRET instruction, jump to exception return
                         end else if (sys[`IS_MRET] && ~cant_branch_now && csr_ready) begin
 
-                            log.critical("Received MRET -> Jump to return handler");
+                            log.info("Execute MRET -> Return from trap");
+                            print_instruction(instruction, pc_reg, opcode, funct3,
+                                              funct7, rs1, rs2, rd, imm12, imm20, csr);
                             flush_fifo <= 1'b1;
-                            traps[1] <= 1'b1;
+                            traps[2] <= 1'b1;
                             arvalid <= 1'b0;
                             arid <= arid + 1;
-                            pc_reg <= sb_mtvec;
+                            pc_reg <= sb_mepc;
                             mstatus_wr <= 1'b1;
                             mstatus <= mstatus_for_mret;
                             cfsm <= RELOAD;
@@ -544,10 +574,14 @@ module friscv_control
                         // the instruction pipeline
                         end else if (fence[`IS_FENCEI]) begin
 
-                            log.critical("Received FENCE.i -> Start iCache flush");
+                            log.info("Execute FENCE.i -> Start iCache flushing");
+                            print_instruction(instruction, pc_reg, opcode, funct3,
+                                              funct7, rs1, rs2, rd, imm12, imm20, csr);
                             flush_fifo <= 1'b1;
                             pc_reg <= pc;
                             arvalid <= 1'b0;
+                            arid <= arid + 1;
+                            pc_reg <= pc;
                             cfsm <= FENCE_I;
                         end
 
@@ -561,8 +595,7 @@ module friscv_control
                         // Process as long instructions are available
                         end else if (csr_ready &&
                                      ~cant_branch_now && ~cant_process_now) begin
-
-                            print_instruction(instruction, opcode, funct3,
+                            print_instruction(instruction, pc_reg, opcode, funct3,
                                               funct7, rs1, rs2, rd, imm12, imm20, csr);
                             pc_reg <= pc;
                         end
@@ -573,8 +606,10 @@ module friscv_control
                 // reboot the cache and continue to fetch the addresses from
                 // a new origin
                 RELOAD: begin
+                    traps <= 2'b0;
                     mepc_wr <= 1'b0;
                     mstatus_wr <= 1'b0;
+                    mcause_wr <= 1'b0;
                     arvalid <= 1'b1;
                     flush_fifo <= 1'b0;
                     cfsm <= FETCH;
@@ -587,11 +622,11 @@ module friscv_control
                 FENCE_I: begin
                     flush_req <= 1'b1;
                     if (flush_ack) begin
-                        log.critical("FENCE.i finished");
+                        log.info("FENCE.i execution done");
                         flush_req <= 1'b0;
                         flush_fifo <= 1'b0;
                         arvalid <= 1'b1;
-                        cfsm <= FETCH;
+                        cfsm <= RELOAD;
                     end
                 end
 
@@ -602,16 +637,6 @@ module friscv_control
                     arvalid <= 1'b0;
                     flush_fifo <= 1'b0;
                     cfsm <= EBREAK;
-                end
-
-                // TODO: REMOVE TO HANDLE CORRECTLY SUCH EXCEPTIONS
-                // TRAP reached when:
-                // - received an undefined instruction
-                // - received an unsupported instruction
-                // - received a XXXXXXXX instruction (undefined signal in sim)
-                TRAP: begin
-                    arvalid <= 1'b0;
-                    cfsm <= TRAP;
                 end
 
             endcase

@@ -28,10 +28,12 @@ module friscv_csr
         output logic [5          -1:0] rd_wr_addr,
         output logic [XLEN       -1:0] rd_wr_val,
         // External source of CSRs
-        input logic                    ctrl_mepc_wr,
-        input logic [XLEN        -1:0] ctrl_mepc,
-        input logic                    ctrl_mstatus_wr,
-        input logic [XLEN        -1:0] ctrl_mstatus,
+        input  logic                   ctrl_mepc_wr,
+        input  logic [XLEN       -1:0] ctrl_mepc,
+        input  logic                   ctrl_mstatus_wr,
+        input  logic [XLEN       -1:0] ctrl_mstatus,
+        input  logic                   ctrl_mcause_wr,
+        input  logic [XLEN       -1:0] ctrl_mcause,
         // status of the processor
         output logic                   ro_trap,
         // CSR shared bus
@@ -255,7 +257,7 @@ module friscv_csr
                         csr_wren <= 1'b1;
                         rd_wr_en <= 1'b1;
                         rd_wr_val <= oldval;
-                        newval <= {{XLEN-5{1'b0}}, zimm};
+                        newval <= {{XLEN-5{1'b0}}, zimm_r};
 
                     // Save CSR in RS1 and apply a set mask with Zimm
                     end else if (funct3_r==`CSRRSI) begin
@@ -347,6 +349,29 @@ module friscv_csr
     // TODO: take in account current privilege mode check if rw is applicable
 
     // MSTATUS (WPRI - Reserved Writes Preserve Values, Reads Ignore Values)
+    
+    // 31       SD related to XS FS, 0 for the moment
+    // 30-23    WPRI
+    // 22       TSR Supervisor mode, 0 for the moment
+    // 21       TW Timeout Wait, 0 for the moment
+    // 20       TVM Virtualization, 0 N/A
+    // 19       MXR Virtual Mem, 0 N/A
+    // 18       SUM Virtual Mem, 0 N/A
+    // 17       MPRV Virtual Mem, 0 N/A
+    // 16:15    XS FP, 0 N/A
+    // 14:13    FS FP, 0 N/A
+    // 12:11    MPP
+    // 10:9     WPRI
+    // 8        SPP Supervisor mode, 0 for the moment
+    // 7        MPIE
+    // 6        WPRI
+    // 5        SPIE Supervisor mode, 0 for the moment
+    // 4        UPIE User mode, 0 for the moment
+    // 3        MIE
+    // 2        WPRI
+    // 1        SIE Supervisor mode, 0 for the moment
+    // 0        UIE User mode,  0 for the moment
+
     always @ (posedge aclk or negedge aresetn) begin
         if (~aresetn) begin
             mstatus <= {XLEN{1'b0}};
@@ -421,7 +446,9 @@ module friscv_csr
         end else if (srst) begin
             mcause <= {XLEN{1'b0}};
         end else begin
-            if (csr_wren) begin
+            if (ctrl_mcause_wr) begin
+                mcause <= ctrl_mcause;
+            end else if (csr_wren) begin
                 if (csr_r==12'h342) begin
                     mcause <= newval;
                 end
@@ -445,7 +472,10 @@ module friscv_csr
     end 
 
 
+    //////////////////////////////////////////////////////////////////////////
     // Read circuit
+    //////////////////////////////////////////////////////////////////////////
+
     always @ (posedge aclk or negedge aresetn) begin
         if (~aresetn) begin
             oldval <= {XLEN{1'b0}};
@@ -453,26 +483,29 @@ module friscv_csr
             oldval <= {XLEN{1'b0}};
         end else begin
             if (cfsm==IDLE && valid) begin
-                if (csr_r==12'h300) begin
+                if (csr==12'h300) begin
                     oldval <= mstatus;
-                end else if (csr_r==12'h301) begin
+                end else if (csr==12'h301) begin
                     oldval <= misa;
-                end else if (csr_r==12'h305) begin
+                end else if (csr==12'h305) begin
                     oldval <= mtvec;
-                end else if (csr_r==12'h340) begin
+                end else if (csr==12'h340) begin
                     oldval <= mscratch;
-                end else if (csr_r==12'h341) begin
+                end else if (csr==12'h341) begin
                     oldval <= mepc;
-                end else if (csr_r==12'h342) begin
+                end else if (csr==12'h342) begin
                     oldval <= mcause;
-                end else if (csr_r==12'h343) begin
+                end else if (csr==12'h343) begin
                     oldval <= mtval;
+                end else if (csr==12'hF14) begin
+                    oldval <= mhartid;
                 end else begin
                     oldval <= {XLEN{1'b0}};
                 end
             end
         end
     end
+
 
     //////////////////////////////////////////////////////////////////////////
     // CSR Shared bus, for registers used across the processor

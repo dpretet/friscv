@@ -22,35 +22,38 @@ def main(argv0, in_name, out_name, inst_per_line=4):
 
         # If just empty pass to the next
         if not strings:
-            pass
+            continue
 
         # If boot address not found yet, store it
-        elif "@" in strings and bootaddr=='':
+        if "@" in strings and bootaddr=='':
             bootaddr = int(strings[1:], base=16)
             # print("Boot address: ", str(bootaddr))
             opcodes = bootaddr * ["00"]
             bytecount = bootaddr
+            continue
+
+        linedata = strings.split(" ")
+
+        # Grab the line byte count right after the first address
+        if bootaddr!='' and linebytecount==0:
+            linebytecount = len(linedata)
+            # print("Line byte count: ", linebytecount)
+            # print(strings)
+
+        # Store new bytes until a new address section
+        if "@" not in strings:
+            opcodes.extend(linedata)
+            opcodes.extend((linebytecount-len(linedata))*["00"])
+            bytecount += linebytecount
+            # print("Byte count (cntd): ", bytecount)
+
+        # Reached a new address section, fills the gap with 0
         else:
-
-            linedata = strings.split(" ")
-
-            # Grab the line byte count right after the first address
-            if bootaddr!='' and linebytecount==0:
-                linebytecount = len(linedata)
-                # print("Line byte count: ", linebytecount)
-                # print(strings)
-
-            # Store new bytes until a new address section
-            if "@" not in strings:
-                opcodes.extend(linedata)
-                opcodes.extend((linebytecount-len(linedata))*["00"])
-                bytecount += len(linedata)
-
-            # Reached a new address section, fills the gap with 0
-            else:
-                newaddr = int(strings[1:], base=16)
-                opcodes.extend((newaddr-bytecount)*["00"])
-                # print("Reach new address section: ", newaddr)
+            newaddr = int(strings[1:], base=16)
+            # print("Reach new address section: ", newaddr)
+            opcodes.extend((newaddr-bytecount)*["00"])
+            # print("Bytecount to append: ", newaddr-bytecount)
+            bytecount += (newaddr-bytecount)
 
     instrs = []
     instr = ""

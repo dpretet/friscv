@@ -36,7 +36,7 @@ module friscv_mem_router
         output logic [XLEN/8          -1:0] gpio_strb,
         input  logic [XLEN            -1:0] gpio_rdata,
         input  logic                        gpio_ready,
-        // data memory interface
+        // Data memory interface
         output logic                        data_mem_en,
         output logic                        data_mem_wr,
         output logic [ADDRW           -1:0] data_mem_addr,
@@ -50,7 +50,7 @@ module friscv_mem_router
     always @ (*) begin
 
 
-        if (mst_addr >= GPIO_BASE_ADDR && mst_addr < (GPIO_BASE_SIZE+GPIO_BASE_SIZE)) begin
+        if (mst_addr >= GPIO_BASE_ADDR && mst_addr < (GPIO_BASE_ADDR+GPIO_BASE_SIZE)) begin
 
             gpio_en = mst_en;
             gpio_wr = mst_wr;
@@ -66,7 +66,7 @@ module friscv_mem_router
             data_mem_wdata = {XLEN{1'b0}};
             data_mem_strb = {XLEN/8{1'b0}};
 
-        end else if (mst_addr >= DATA_MEM_BASE_ADDR && mst_addr < (DATA_MEM_BASE_SIZE+DATA_MEM_BASE_SIZE)) begin
+        end else if (mst_addr >= DATA_MEM_BASE_ADDR && mst_addr < (DATA_MEM_BASE_ADDR+DATA_MEM_BASE_SIZE)) begin
 
             gpio_en = 1'b0;
             gpio_wr = 1'b0;

@@ -2,7 +2,7 @@
 [*] GTKWave Analyzer v3.3.107 (w)1999-2020 BSI
 [*] Tue Aug 31 12:08:58 2021
 [*]
-[dumpfile] __TMPL__
+[dumpfile] "/Users/damien/workspace/hdl/friscv/test/riscv-tests/tests/rv32ui-p-fence_i.vcd"
 [dumpfile_mtime] "Tue Aug 31 10:28:55 2021"
 [dumpfile_size] 516693
 [savefile] "/Users/damien/workspace/hdl/friscv/test/riscv-tests/friscv_testbench.gtkw"
