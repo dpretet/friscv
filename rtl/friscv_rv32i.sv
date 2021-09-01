@@ -41,44 +41,21 @@ module friscv_rv32i
         parameter AXI_ADDR_W         = XLEN,
         // AXI ID width, setup by default to 8 and unused
         parameter AXI_ID_W           = 8,
-        // AXI4 data width, independant of control unit width
-        parameter AXI_DATA_W         = XLEN,
+        // AXI4 data width, for instruction and a data bus
+        parameter AXI_IMEM_W         = XLEN,
+        parameter AXI_DMEM_W         = XLEN,
 
         ///////////////////////////////////////////////////////////////////////////
-        // Data interface and GPIO / peripherals setup
+        // Cache setup
         ///////////////////////////////////////////////////////////////////////////
 
-        // Data address bus width
-        parameter DATA_ADDRW         = 16,
-
-        // Define the address of GPIO peripheral in APB interconnect
-        parameter GPIO_SLV0_ADDR     = 0,
-        parameter GPIO_SLV0_SIZE     = 8,
-        parameter GPIO_SLV1_ADDR     = 8,
-        parameter GPIO_SLV1_SIZE     = 16,
-
-        // Define the memory map of GPIO and data memory
-        // in the global memory space. Used to route the requests between
-        // data controller and GPIOs
-        parameter GPIO_BASE_ADDR     = 0,
-        parameter GPIO_BASE_SIZE     = 2048,
-        parameter DATA_MEM_BASE_ADDR = 2048,
-        parameter DATA_MEM_BASE_SIZE = 16384,
-
-        // UART FIFO Depth
-        parameter UART_FIFO_DEPTH    = 4,
-
-        ///////////////////////////////////////////////////////////////////////////
-        // Instruction cache setup
-        ///////////////////////////////////////////////////////////////////////////
-
-        // Enable Instruction cache
+        // Enable instruction cache
         parameter ICACHE_EN          = 0,
         // Line width defining only the data payload, in bits, must an
         // integer multiple of XLEN
-        parameter CACHE_LINE_W       = XLEN*4,
+        parameter ICACHE_LINE_W       = XLEN*4,
         // Number of lines in the cache
-        parameter CACHE_DEPTH        = 512
+        parameter ICACHE_DEPTH        = 512
 
     )(
         // clock/reset interface
@@ -90,32 +67,40 @@ module friscv_rv32i
         // Internal core status
         output logic [8             -1:0] status,
         // instruction memory interface
-        output logic                      inst_arvalid,
-        input  logic                      inst_arready,
-        output logic [AXI_ADDR_W    -1:0] inst_araddr,
-        output logic [3             -1:0] inst_arprot,
-        output logic [AXI_ID_W      -1:0] inst_arid,
-        input  logic                      inst_rvalid,
-        output logic                      inst_rready,
-        input  logic [AXI_ID_W      -1:0] inst_rid,
-        input  logic [2             -1:0] inst_rresp,
-        input  logic [AXI_DATA_W    -1:0] inst_rdata,
+        output logic                      imem_arvalid,
+        input  logic                      imem_arready,
+        output logic [AXI_ADDR_W    -1:0] imem_araddr,
+        output logic [3             -1:0] imem_arprot,
+        output logic [AXI_ID_W      -1:0] imem_arid,
+        input  logic                      imem_rvalid,
+        output logic                      imem_rready,
+        input  logic [AXI_ID_W      -1:0] imem_rid,
+        input  logic [2             -1:0] imem_rresp,
+        input  logic [AXI_IMEM_W    -1:0] imem_rdata,
         // data memory interface
-        output logic                      mem_en,
-        output logic                      mem_wr,
-        output logic [DATA_ADDRW    -1:0] mem_addr,
-        output logic [XLEN          -1:0] mem_wdata,
-        output logic [XLEN/8        -1:0] mem_strb,
-        input  logic [XLEN          -1:0] mem_rdata,
-        input  logic                      mem_ready,
-        // GPIO interface
-        input  logic [XLEN          -1:0] gpio_in,
-        output logic [XLEN          -1:0] gpio_out,
-        // UART interface
-        input  logic                      uart_rx,
-        output logic                      uart_tx,
-        output logic                      uart_rts,
-        input  logic                      uart_cts
+        output logic                      dmem_awvalid,
+        input  logic                      dmem_awready,
+        output logic [AXI_ADDR_W    -1:0] dmem_awaddr,
+        output logic [3             -1:0] dmem_awprot,
+        output logic [AXI_ID_W      -1:0] dmem_awid,
+        output logic                      dmem_wvalid,
+        input  logic                      dmem_wready,
+        output logic [AXI_DMEM_W    -1:0] dmem_wdata,
+        output logic [AXI_DMEM_W/8  -1:0] dmem_wstrb,
+        input  logic                      dmem_bvalid,
+        output logic                      dmem_bready,
+        input  logic [AXI_ID_W      -1:0] dmem_bid,
+        input  logic [2             -1:0] dmem_bresp,
+        output logic                      dmem_arvalid,
+        input  logic                      dmem_arready,
+        output logic [AXI_ADDR_W    -1:0] dmem_araddr,
+        output logic [3             -1:0] dmem_arprot,
+        output logic [AXI_ID_W      -1:0] dmem_arid,
+        input  logic                      dmem_rvalid,
+        output logic                      dmem_rready,
+        input  logic [AXI_ID_W      -1:0] dmem_rid,
+        input  logic [2             -1:0] dmem_rresp,
+        input  logic [AXI_DMEM_W    -1:0] dmem_rdata
     );
 
 
@@ -167,22 +152,6 @@ module friscv_rv32i
     logic [`INST_BUS_W     -1:0] csr_instbus;
     logic                        csr_ready;
 
-    logic                        mst_en;
-    logic                        mst_wr;
-    logic [DATA_ADDRW      -1:0] mst_addr;
-    logic [XLEN            -1:0] mst_wdata;
-    logic [XLEN/8          -1:0] mst_strb;
-    logic [XLEN            -1:0] mst_rdata;
-    logic                        mst_ready;
-
-    logic                        gpio_en;
-    logic                        gpio_wr;
-    logic [DATA_ADDRW      -1:0] gpio_addr;
-    logic [XLEN            -1:0] gpio_wdata;
-    logic [XLEN/8          -1:0] gpio_strb;
-    logic [XLEN            -1:0] gpio_rdata;
-    logic                        gpio_ready;
-
     logic                        inst_arvalid_s;
     logic                        inst_arready_s;
     logic [AXI_ADDR_W      -1:0] inst_araddr_s;
@@ -224,12 +193,6 @@ module friscv_rv32i
 
         `CHECKER((RV32E!=0 && RV32E!=1),
             "RV32E can be only equal to 0 or 1");
-
-        `CHECKER((GPIO_SLV1_ADDR<(GPIO_BASE_ADDR+GPIO_SLV0_SIZE)),
-            "GPIO_SLV1_ADDR spans over SLV0 address space");
-
-        `CHECKER((DATA_MEM_BASE_ADDR<(GPIO_BASE_ADDR+GPIO_BASE_SIZE)),
-            "DATA memory space spans over GPIO address space");
     end
 
     //////////////////////////////////////////////////////////////////////////
@@ -248,25 +211,6 @@ module friscv_rv32i
     assign status[4] = csr_ro_trap;
     // RESERVED
     assign status[7:5] = 3'b0;
-
-    //////////////////////////////////////////////////////////////////////////
-    // Module logging internal statistics of the core
-    //////////////////////////////////////////////////////////////////////////
-
-    friscv_stats
-    #(
-        .XLEN (XLEN)
-    )
-    statistic
-    (
-        .aclk       (aclk        ),
-        .aresetn    (aresetn     ),
-        .srst       (srst        ),
-        .enable     (enable      ),
-        .inst_en    (inst_arvalid),
-        .inst_ready (inst_arready),
-        .debug      (            )
-    );
 
 
     //////////////////////////////////////////////////////////////////////////
@@ -330,44 +274,44 @@ module friscv_rv32i
     )
     control
     (
-        .aclk           (aclk           ),
-        .aresetn        (aresetn        ),
-        .srst           (srst           ),
-        .traps          (traps          ),
-        .flush_req      (flush_req      ),
-        .flush_ack      (flush_ack      ),
-        .arvalid        (inst_arvalid_s ),
-        .arready        (inst_arready_s ),
-        .araddr         (inst_araddr_s  ),
-        .arprot         (inst_arprot_s  ),
-        .arid           (inst_arid_s    ),
-        .rvalid         (inst_rvalid_s  ),
-        .rready         (inst_rready_s  ),
-        .rid            (inst_rid_s     ),
-        .rresp          (inst_rresp_s   ),
-        .rdata          (inst_rdata_s   ),
-        .proc_en        (proc_en        ),
-        .proc_ready     (proc_ready     ),
-        .proc_empty     (proc_empty     ),
-        .proc_fenceinfo (proc_fenceinfo ),
-        .proc_instbus   (proc_instbus   ),
-        .csr_en         (csr_en         ),
-        .csr_ready      (csr_ready      ),
-        .csr_instbus    (csr_instbus    ),
-        .ctrl_rs1_addr  (ctrl_rs1_addr  ),
-        .ctrl_rs1_val   (ctrl_rs1_val   ),
-        .ctrl_rs2_addr  (ctrl_rs2_addr  ),
-        .ctrl_rs2_val   (ctrl_rs2_val   ),
-        .ctrl_rd_wr     (ctrl_rd_wr     ),
-        .ctrl_rd_addr   (ctrl_rd_addr   ),
-        .ctrl_rd_val    (ctrl_rd_val    ),
-        .mepc_wr        (ctrl_mepc_wr   ),
-        .mepc           (ctrl_mepc      ),
+        .aclk           (aclk),
+        .aresetn        (aresetn),
+        .srst           (srst),
+        .traps          (traps ),
+        .flush_req      (flush_req),
+        .flush_ack      (flush_ack),
+        .arvalid        (inst_arvalid_s),
+        .arready        (inst_arready_s),
+        .araddr         (inst_araddr_s),
+        .arprot         (inst_arprot_s),
+        .arid           (inst_arid_s),
+        .rvalid         (inst_rvalid_s),
+        .rready         (inst_rready_s),
+        .rid            (inst_rid_s),
+        .rresp          (inst_rresp_s),
+        .rdata          (inst_rdata_s),
+        .proc_en        (proc_en),
+        .proc_ready     (proc_ready),
+        .proc_empty     (proc_empty),
+        .proc_fenceinfo (proc_fenceinfo),
+        .proc_instbus   (proc_instbus),
+        .csr_en         (csr_en),
+        .csr_ready      (csr_ready),
+        .csr_instbus    (csr_instbus),
+        .ctrl_rs1_addr  (ctrl_rs1_addr),
+        .ctrl_rs1_val   (ctrl_rs1_val),
+        .ctrl_rs2_addr  (ctrl_rs2_addr),
+        .ctrl_rs2_val   (ctrl_rs2_val),
+        .ctrl_rd_wr     (ctrl_rd_wr),
+        .ctrl_rd_addr   (ctrl_rd_addr),
+        .ctrl_rd_val    (ctrl_rd_val),
+        .mepc_wr        (ctrl_mepc_wr),
+        .mepc           (ctrl_mepc),
         .mstatus_wr     (ctrl_mstatus_wr),
-        .mstatus        (ctrl_mstatus   ),
-        .mcause_wr      (ctrl_mcause_wr ),
-        .mcause         (ctrl_mcause    ),
-        .csr_sb         (csr_sb         )
+        .mstatus        (ctrl_mstatus),
+        .mcause_wr      (ctrl_mcause_wr),
+        .mcause         (ctrl_mcause),
+        .csr_sb         (csr_sb)
     );
 
 
@@ -381,61 +325,61 @@ module friscv_rv32i
         .OSTDREQ_NUM  (INST_OSTDREQ_NUM),
         .AXI_ADDR_W   (AXI_ADDR_W),
         .AXI_ID_W     (AXI_ID_W),
-        .AXI_DATA_W   (AXI_DATA_W),
-        .CACHE_LINE_W (CACHE_LINE_W),
-        .CACHE_DEPTH  (CACHE_DEPTH)
+        .AXI_DATA_W   (AXI_IMEM_W),
+        .CACHE_LINE_W (ICACHE_LINE_W),
+        .CACHE_DEPTH  (ICACHE_DEPTH)
     )
     icache
     (
-        .aclk              (aclk             ),
-        .aresetn           (aresetn          ),
-        .srst              (srst             ),
-        .flush_req         (flush_req        ),
-        .flush_ack         (flush_ack        ),
-        .ctrl_arvalid      (inst_arvalid_s   ),
-        .ctrl_arready      (inst_arready_s   ),
-        .ctrl_araddr       (inst_araddr_s    ),
-        .ctrl_arprot       (inst_arprot_s    ),
-        .ctrl_arid         (inst_arid_s      ),
-        .ctrl_rvalid       (inst_rvalid_s    ),
-        .ctrl_rready       (inst_rready_s    ),
-        .ctrl_rid          (inst_rid_s       ),
-        .ctrl_rresp        (inst_rresp_s     ),
-        .ctrl_rdata        (inst_rdata_s     ),
-        .icache_arvalid    (inst_arvalid     ),
-        .icache_arready    (inst_arready     ),
-        .icache_araddr     (inst_araddr      ),
-        .icache_arlen      (                 ),
-        .icache_arsize     (                 ),
-        .icache_arburst    (                 ),
-        .icache_arlock     (                 ),
-        .icache_arcache    (                 ),
-        .icache_arprot     (                 ),
-        .icache_arqos      (                 ),
-        .icache_arregion   (                 ),
-        .icache_arid       (inst_arid        ),
-        .icache_arprot     (inst_arprot      ),
-        .icache_rvalid     (inst_rvalid      ),
-        .icache_rready     (inst_rready      ),
-        .icache_rid        (inst_rid         ),
-        .icache_rresp      (inst_rresp       ),
-        .icache_rdata      (inst_rdata       ),
-        .icache_rlast      (1'b1             )
+        .aclk              (aclk),
+        .aresetn           (aresetn),
+        .srst              (srst),
+        .flush_req         (flush_req),
+        .flush_ack         (flush_ack),
+        .ctrl_arvalid      (inst_arvalid_s),
+        .ctrl_arready      (inst_arready_s),
+        .ctrl_araddr       (inst_araddr_s),
+        .ctrl_arprot       (inst_arprot_s),
+        .ctrl_arid         (inst_arid_s),
+        .ctrl_rvalid       (inst_rvalid_s),
+        .ctrl_rready       (inst_rready_s),
+        .ctrl_rid          (inst_rid_s),
+        .ctrl_rresp        (inst_rresp_s),
+        .ctrl_rdata        (inst_rdata_s),
+        .icache_arvalid    (imem_arvalid),
+        .icache_arready    (imem_arready),
+        .icache_araddr     (imem_araddr),
+        .icache_arlen      (),
+        .icache_arsize     (),
+        .icache_arburst    (),
+        .icache_arlock     (),
+        .icache_arcache    (),
+        .icache_arprot     (),
+        .icache_arqos      (),
+        .icache_arregion   (),
+        .icache_arid       (imem_arid),
+        .icache_arprot     (imem_arprot),
+        .icache_rvalid     (imem_rvalid),
+        .icache_rready     (imem_rready),
+        .icache_rid        (imem_rid),
+        .icache_rresp      (imem_rresp),
+        .icache_rdata      (imem_rdata),
+        .icache_rlast      (1'b1)
     );
 
     end else begin : NO_ICACHE
 
     // Connect controller directly to top interface
-    assign inst_arvalid = inst_arvalid_s;
-    assign inst_arready_s = inst_arready;
-    assign inst_araddr = inst_araddr_s;
-    assign inst_arprot = inst_arprot_s;
-    assign inst_arid = inst_arid_s;
-    assign inst_rvalid_s = inst_rvalid;
-    assign inst_rready = inst_rready_s;
-    assign inst_rid_s = inst_rid;
-    assign inst_rresp_s = inst_rresp;
-    assign inst_rdata_s = inst_rdata;
+    assign imem_arvalid = inst_arvalid_s;
+    assign inst_arready_s = imem_arready;
+    assign imem_araddr = inst_araddr_s;
+    assign imem_arprot = inst_arprot_s;
+    assign imem_arid = inst_arid_s;
+    assign inst_rvalid_s = imem_rvalid;
+    assign imem_rready = inst_rready_s;
+    assign inst_rid_s = imem_rid;
+    assign inst_rresp_s = imem_rresp;
+    assign inst_rdata_s = imem_rdata;
 
     // Always assert ack if requesting cache flush to avoid deadlock
     assign flush_ack = 1'b1;
@@ -456,25 +400,25 @@ module friscv_rv32i
     )
     csrs
     (
-        .aclk            (aclk           ),
-        .aresetn         (aresetn        ),
-        .srst            (srst           ),
-        .valid           (csr_en         ),
-        .ready           (csr_ready      ),
-        .instbus         (csr_instbus    ),
-        .rs1_addr        (csr_rs1_addr   ),
-        .rs1_val         (csr_rs1_val    ),
-        .rd_wr_en        (csr_rd_wr      ),
-        .rd_wr_addr      (csr_rd_addr    ),
-        .rd_wr_val       (csr_rd_val     ),
-        .ro_trap         (csr_ro_trap    ),
-        .ctrl_mepc_wr    (ctrl_mepc_wr   ),
-        .ctrl_mepc       (ctrl_mepc      ),
+        .aclk            (aclk),
+        .aresetn         (aresetn),
+        .srst            (srst),
+        .valid           (csr_en),
+        .ready           (csr_ready),
+        .instbus         (csr_instbus),
+        .rs1_addr        (csr_rs1_addr),
+        .rs1_val         (csr_rs1_val),
+        .rd_wr_en        (csr_rd_wr),
+        .rd_wr_addr      (csr_rd_addr),
+        .rd_wr_val       (csr_rd_val),
+        .ro_trap         (csr_ro_trap),
+        .ctrl_mepc_wr    (ctrl_mepc_wr),
+        .ctrl_mepc       (ctrl_mepc),
         .ctrl_mstatus_wr (ctrl_mstatus_wr),
-        .ctrl_mstatus    (ctrl_mstatus   ),
-        .ctrl_mcause_wr  (ctrl_mcause_wr ),
-        .ctrl_mcause     (ctrl_mcause    ),
-        .csr_sb          (csr_sb         )
+        .ctrl_mstatus    (ctrl_mstatus),
+        .ctrl_mcause_wr  (ctrl_mcause_wr),
+        .ctrl_mcause     (ctrl_mcause),
+        .csr_sb          (csr_sb)
     );
 
 
@@ -484,123 +428,60 @@ module friscv_rv32i
 
     friscv_processing
     #(
-        .ADDRW              (DATA_ADDRW),
-        .XLEN               (XLEN),
-        .GPIO_BASE_ADDR     (GPIO_BASE_ADDR),
-        .GPIO_BASE_SIZE     (GPIO_BASE_SIZE),
-        .DATA_MEM_BASE_ADDR (DATA_MEM_BASE_ADDR),
-        .DATA_MEM_BASE_SIZE (DATA_MEM_BASE_SIZE)
+        .XLEN         (XLEN),
+        .AXI_ADDR_W   (AXI_ADDR_W),
+        .AXI_ID_W     (AXI_ID_W),
+        .AXI_DATA_W   (AXI_DMEM_W)
     )
     processing
     (
-        .aclk           (aclk          ),
-        .aresetn        (aresetn       ),
-        .srst           (srst          ),
-        .proc_en        (proc_en       ),
-        .proc_ready     (proc_ready    ),
-        .proc_empty     (proc_empty    ),
+        .aclk           (aclk),
+        .aresetn        (aresetn),
+        .srst           (srst),
+        .proc_en        (proc_en),
+        .proc_ready     (proc_ready),
+        .proc_empty     (proc_empty),
         .proc_fenceinfo (proc_fenceinfo),
-        .proc_instbus   (proc_instbus  ),
-        .alu_rs1_addr   (alu_rs1_addr  ),
-        .alu_rs1_val    (alu_rs1_val   ),
-        .alu_rs2_addr   (alu_rs2_addr  ),
-        .alu_rs2_val    (alu_rs2_val   ),
-        .alu_rd_wr      (alu_rd_wr     ),
-        .alu_rd_addr    (alu_rd_addr   ),
-        .alu_rd_val     (alu_rd_val    ),
-        .alu_rd_strb    (alu_rd_strb   ),
+        .proc_instbus   (proc_instbus),
+        .alu_rs1_addr   (alu_rs1_addr),
+        .alu_rs1_val    (alu_rs1_val),
+        .alu_rs2_addr   (alu_rs2_addr),
+        .alu_rs2_val    (alu_rs2_val),
+        .alu_rd_wr      (alu_rd_wr),
+        .alu_rd_addr    (alu_rd_addr),
+        .alu_rd_val     (alu_rd_val),
+        .alu_rd_strb    (alu_rd_strb),
         .memfy_rs1_addr (memfy_rs1_addr),
-        .memfy_rs1_val  (memfy_rs1_val ),
+        .memfy_rs1_val  (memfy_rs1_val),
         .memfy_rs2_addr (memfy_rs2_addr),
-        .memfy_rs2_val  (memfy_rs2_val ),
-        .memfy_rd_wr    (memfy_rd_wr   ),
-        .memfy_rd_addr  (memfy_rd_addr ),
-        .memfy_rd_val   (memfy_rd_val  ),
-        .memfy_rd_strb  (memfy_rd_strb ),
-        .mem_en         (mst_en        ),
-        .mem_wr         (mst_wr        ),
-        .mem_addr       (mst_addr      ),
-        .mem_wdata      (mst_wdata     ),
-        .mem_strb       (mst_strb      ),
-        .mem_rdata      (mst_rdata     ),
-        .mem_ready      (mst_ready     )
-    );
-
-
-    //////////////////////////////////////////////////////////////////////////
-    // Switching logic to dispatch the IO and data memory accesses
-    //////////////////////////////////////////////////////////////////////////
-
-    friscv_mem_router
-    #(
-        .ADDRW              (DATA_ADDRW),
-        .XLEN               (XLEN),
-        .GPIO_BASE_ADDR     (GPIO_BASE_ADDR),
-        .GPIO_BASE_SIZE     (GPIO_BASE_SIZE),
-        .DATA_MEM_BASE_ADDR (DATA_MEM_BASE_ADDR),
-        .DATA_MEM_BASE_SIZE (DATA_MEM_BASE_SIZE)
-    )
-    mem_router
-    (
-        .aclk           (aclk          ),
-        .aresetn        (aresetn       ),
-        .srst           (srst          ),
-        .mst_en         (mst_en        ),
-        .mst_wr         (mst_wr        ),
-        .mst_addr       (mst_addr      ),
-        .mst_wdata      (mst_wdata     ),
-        .mst_strb       (mst_strb      ),
-        .mst_rdata      (mst_rdata     ),
-        .mst_ready      (mst_ready     ),
-        .gpio_en        (gpio_en       ),
-        .gpio_wr        (gpio_wr       ),
-        .gpio_addr      (gpio_addr     ),
-        .gpio_wdata     (gpio_wdata    ),
-        .gpio_strb      (gpio_strb     ),
-        .gpio_rdata     (gpio_rdata    ),
-        .gpio_ready     (gpio_ready    ),
-        .data_mem_en    (mem_en        ),
-        .data_mem_wr    (mem_wr        ),
-        .data_mem_addr  (mem_addr      ),
-        .data_mem_wdata (mem_wdata     ),
-        .data_mem_strb  (mem_strb      ),
-        .data_mem_rdata (mem_rdata     ),
-        .data_mem_ready (mem_ready     )
-    );
-
-
-    //////////////////////////////////////////////////////////////////////////
-    // All the IO peripherals: GPIO, UART, ...
-    //////////////////////////////////////////////////////////////////////////
-
-    friscv_io_interfaces
-    #(
-        .ADDRW           (DATA_ADDRW),
-        .XLEN            (XLEN),
-        .SLV0_ADDR       (GPIO_SLV0_ADDR),
-        .SLV0_SIZE       (GPIO_SLV0_SIZE),
-        .SLV1_ADDR       (GPIO_SLV1_ADDR),
-        .SLV1_SIZE       (GPIO_SLV1_SIZE),
-        .UART_FIFO_DEPTH (UART_FIFO_DEPTH)
-    )
-    ios
-    (
-        .aclk      (aclk      ),
-        .aresetn   (aresetn   ),
-        .srst      (srst      ),
-        .mst_en    (gpio_en   ),
-        .mst_wr    (gpio_wr   ),
-        .mst_addr  (gpio_addr ),
-        .mst_wdata (gpio_wdata),
-        .mst_strb  (gpio_strb ),
-        .mst_rdata (gpio_rdata),
-        .mst_ready (gpio_ready),
-        .gpio_in   (gpio_in   ),
-        .gpio_out  (gpio_out  ),
-        .uart_rx   (uart_rx   ),
-        .uart_tx   (uart_tx   ),
-        .uart_rts  (uart_rts  ),
-        .uart_cts  (uart_cts  )
+        .memfy_rs2_val  (memfy_rs2_val),
+        .memfy_rd_wr    (memfy_rd_wr),
+        .memfy_rd_addr  (memfy_rd_addr),
+        .memfy_rd_val   (memfy_rd_val),
+        .memfy_rd_strb  (memfy_rd_strb),
+        .awvalid        (dmem_awvalid),
+        .awready        (dmem_awready),
+        .awaddr         (dmem_awaddr),
+        .awprot         (dmem_awprot),
+        .awid           (dmem_awid),
+        .wvalid         (dmem_wvalid),
+        .wready         (dmem_wready),
+        .wdata          (dmem_wdata),
+        .wstrb          (dmem_wstrb),
+        .bvalid         (dmem_bvalid),
+        .bready         (dmem_bready),
+        .bid            (dmem_bid),
+        .bresp          (dmem_bresp),
+        .arvalid        (dmem_arvalid),
+        .arready        (dmem_arready),
+        .araddr         (dmem_araddr),
+        .arprot         (dmem_arprot),
+        .arid           (dmem_arid),
+        .rvalid         (dmem_rvalid),
+        .rready         (dmem_rready),
+        .rid            (dmem_rid),
+        .rresp          (dmem_rresp),
+        .rdata          (dmem_rdata)
     );
 
 

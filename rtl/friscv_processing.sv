@@ -9,12 +9,14 @@
 module friscv_processing
 
     #(
-        parameter ADDRW = 16,
-        parameter XLEN  = 32,
-        parameter GPIO_BASE_ADDR = 0,
-        parameter GPIO_BASE_SIZE = 2048,
-        parameter DATA_MEM_BASE_ADDR = 2048,
-        parameter DATA_MEM_BASE_SIZE = 16384
+        // Architecture selection
+        parameter XLEN              = 32,
+        // Address bus width defined for both control and AXI4 address signals
+        parameter AXI_ADDR_W        = XLEN,
+        // AXI ID width, setup by default to 8 and unused
+        parameter AXI_ID_W          = 8,
+        // AXI4 data width, for instruction and a data bus
+        parameter AXI_DATA_W        = XLEN
     )(
         // clock & reset
         input  logic                        aclk,
@@ -49,13 +51,29 @@ module friscv_processing
         output logic [XLEN            -1:0] memfy_rd_val,
         output logic [XLEN/8          -1:0] memfy_rd_strb,
         // data memory interface
-        output logic                        mem_en,
-        output logic                        mem_wr,
-        output logic [ADDRW           -1:0] mem_addr,
-        output logic [XLEN            -1:0] mem_wdata,
-        output logic [XLEN/8          -1:0] mem_strb,
-        input  logic [XLEN            -1:0] mem_rdata,
-        input  logic                        mem_ready
+        output logic                        awvalid,
+        input  logic                        awready,
+        output logic [AXI_ADDR_W      -1:0] awaddr,
+        output logic [3               -1:0] awprot,
+        output logic [AXI_ID_W        -1:0] awid,
+        output logic                        wvalid,
+        input  logic                        wready,
+        output logic [AXI_DATA_W      -1:0] wdata,
+        output logic [AXI_DATA_W/8    -1:0] wstrb,
+        input  logic                        bvalid,
+        output logic                        bready,
+        input  logic [AXI_ID_W        -1:0] bid,
+        input  logic [2               -1:0] bresp,
+        output logic                        arvalid,
+        input  logic                        arready,
+        output logic [AXI_ADDR_W      -1:0] araddr,
+        output logic [3               -1:0] arprot,
+        output logic [AXI_ID_W        -1:0] arid,
+        input  logic                        rvalid,
+        output logic                        rready,
+        input  logic [AXI_ID_W        -1:0] rid,
+        input  logic [2               -1:0] rresp,
+        input  logic [AXI_DATA_W      -1:0] rdata
     );
 
     logic memfy_en;
@@ -69,63 +87,77 @@ module friscv_processing
 
     friscv_alu
     #(
-        .XLEN      (XLEN)
+        .XLEN (XLEN)
     )
     alu
     (
-        .aclk          (aclk        ),
-        .aresetn       (aresetn     ),
-        .srst          (srst        ),
-        .alu_en        (alu_en      ),
-        .alu_ready     (alu_ready   ),
-        .alu_empty     (alu_empty   ),
+        .aclk          (aclk),
+        .aresetn       (aresetn),
+        .srst          (srst),
+        .alu_en        (alu_en),
+        .alu_ready     (alu_ready),
+        .alu_empty     (alu_empty),
         .alu_instbus   (proc_instbus),
         .alu_rs1_addr  (alu_rs1_addr),
-        .alu_rs1_val   (alu_rs1_val ),
+        .alu_rs1_val   (alu_rs1_val),
         .alu_rs2_addr  (alu_rs2_addr),
-        .alu_rs2_val   (alu_rs2_val ),
-        .alu_rd_wr     (alu_rd_wr   ),
-        .alu_rd_addr   (alu_rd_addr ),
-        .alu_rd_val    (alu_rd_val  ),
-        .alu_rd_strb   (alu_rd_strb )
+        .alu_rs2_val   (alu_rs2_val),
+        .alu_rd_wr     (alu_rd_wr),
+        .alu_rd_addr   (alu_rd_addr),
+        .alu_rd_val    (alu_rd_val),
+        .alu_rd_strb   (alu_rd_strb)
     );
 
     assign memfy_en = proc_en & alu_ready;
 
     friscv_memfy
     #(
-        .ADDRW              (ADDRW),
-        .XLEN               (XLEN),
-        .GPIO_BASE_ADDR     (GPIO_BASE_ADDR),
-        .GPIO_BASE_SIZE     (GPIO_BASE_SIZE),
-        .DATA_MEM_BASE_ADDR (DATA_MEM_BASE_ADDR),
-        .DATA_MEM_BASE_SIZE (DATA_MEM_BASE_SIZE)
+        .XLEN         (XLEN),
+        .AXI_ADDR_W   (AXI_ADDR_W),
+        .AXI_ID_W     (AXI_ID_W),
+        .AXI_DATA_W   (AXI_DATA_W)
     )
     memfy
     (
-        .aclk            (aclk          ),
-        .aresetn         (aresetn       ),
-        .srst            (srst          ),
-        .memfy_en        (memfy_en      ),
-        .memfy_ready     (memfy_ready   ),
-        .memfy_empty     (memfy_empty   ),
+        .aclk            (aclk),
+        .aresetn         (aresetn),
+        .srst            (srst),
+        .memfy_en        (memfy_en),
+        .memfy_ready     (memfy_ready),
+        .memfy_empty     (memfy_empty),
         .memfy_fenceinfo (proc_fenceinfo),
-        .memfy_instbus   (proc_instbus  ),
+        .memfy_instbus   (proc_instbus),
         .memfy_rs1_addr  (memfy_rs1_addr),
-        .memfy_rs1_val   (memfy_rs1_val ),
+        .memfy_rs1_val   (memfy_rs1_val),
         .memfy_rs2_addr  (memfy_rs2_addr),
-        .memfy_rs2_val   (memfy_rs2_val ),
-        .memfy_rd_wr     (memfy_rd_wr   ),
-        .memfy_rd_addr   (memfy_rd_addr ),
-        .memfy_rd_val    (memfy_rd_val  ),
-        .memfy_rd_strb   (memfy_rd_strb ),
-        .mem_en          (mem_en        ),
-        .mem_wr          (mem_wr        ),
-        .mem_addr        (mem_addr      ),
-        .mem_wdata       (mem_wdata     ),
-        .mem_strb        (mem_strb      ),
-        .mem_rdata       (mem_rdata     ),
-        .mem_ready       (mem_ready     )
+        .memfy_rs2_val   (memfy_rs2_val),
+        .memfy_rd_wr     (memfy_rd_wr),
+        .memfy_rd_addr   (memfy_rd_addr),
+        .memfy_rd_val    (memfy_rd_val),
+        .memfy_rd_strb   (memfy_rd_strb),
+        .awvalid         (awvalid),
+        .awready         (awready),
+        .awaddr          (awaddr),
+        .awprot          (awprot),
+        .awid            (awid),
+        .wvalid          (wvalid),
+        .wready          (wready),
+        .wdata           (wdata),
+        .wstrb           (wstrb),
+        .bvalid          (bvalid),
+        .bready          (bready),
+        .bid             (bid),
+        .bresp           (bresp),
+        .arvalid         (arvalid),
+        .arready         (arready),
+        .araddr          (araddr),
+        .arprot          (arprot),
+        .arid            (arid),
+        .rvalid          (rvalid),
+        .rready          (rready),
+        .rid             (rid),
+        .rresp           (rresp),
+        .rdata           (rdata)
     );
 
 
@@ -136,3 +168,4 @@ module friscv_processing
 endmodule
 
 `resetall
+

@@ -76,7 +76,6 @@ run_tests() {
 
         # Convert the verilog content to a file to init the RAM
         BOOT_ADDR=$(../common/bin2hex.py "$test" test.v $INST_PER_LINE)
-        ../common/bin2hex.py "$test" data.v 1
 
         # Get test name by removing the extension
         test_file=$(basename $test)

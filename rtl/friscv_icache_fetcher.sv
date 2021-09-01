@@ -253,7 +253,15 @@ module friscv_icache_fetcher
                 default: begin
                     pull_addr_if <= 1'b1;
                     pull_addr_mf <= 1'b0;
-                    if (~fifo_empty_if) begin
+                    // If flush command is received, clear the FIFO content
+                    // and wait for req deassertion
+                    if (flush_req) begin
+                        log.debug("Start flush procedure");
+                        pull_addr_if <= 1'b0;
+                        pull_addr_mf <= 1'b0;
+                        flush_fifo <= 1'b1;
+                        seq <= FLUSH;
+                    end else if (~fifo_empty_if) begin
                         log.debug("Start to serve");
                         seq <= SERVE;
                     end
@@ -288,7 +296,7 @@ module friscv_icache_fetcher
                 end
                 // Fetch a new instruction in external memory
                 LOAD: begin
-                    if (memctrl_arvalid &&memctrl_arready) begin
+                    if (memctrl_arvalid && memctrl_arready) begin
                         log.debug("Read memory");
                     end
                     if (memctrl_arready) begin

@@ -6,15 +6,27 @@
 
 `include "friscv_h.sv"
 
+///////////////////////////////////////////////////////////////////////////////
+// Memory controller dedicated to data transfer for LOAD / STORE instructions.
+// This module doesn't handle unaligned transfer, which are detected by the
+// central controller raising an exception in these situations. the memory
+// accesses are handled by an AXI4-lite interface.
+//
+// TODO: handle 4 KB boundary crossing
+//
+///////////////////////////////////////////////////////////////////////////////
+
 module friscv_memfy
 
     #(
-        parameter ADDRW = 16,
-        parameter XLEN  = 32,
-        parameter GPIO_BASE_ADDR = 0,
-        parameter GPIO_BASE_SIZE = 2048,
-        parameter DATA_MEM_BASE_ADDR = 2048,
-        parameter DATA_MEM_BASE_SIZE = 16384
+        // Architecture selection
+        parameter XLEN              = 32,
+        // Address bus width defined for both control and AXI4 address signals
+        parameter AXI_ADDR_W        = XLEN,
+        // AXI ID width, setup by default to 8 and unused
+        parameter AXI_ID_W          = 8,
+        // AXI4 data width, for instruction and a data bus
+        parameter AXI_DATA_W        = XLEN
     )(
         // clock & reset
         input  logic                        aclk,
@@ -38,13 +50,29 @@ module friscv_memfy
         output logic [XLEN            -1:0] memfy_rd_val,
         output logic [XLEN/8          -1:0] memfy_rd_strb,
         // data memory interface
-        output logic                        mem_en,
-        output logic                        mem_wr,
-        output logic [ADDRW           -1:0] mem_addr,
-        output logic [XLEN            -1:0] mem_wdata,
-        output logic [XLEN/8          -1:0] mem_strb,
-        input  logic [XLEN            -1:0] mem_rdata,
-        input  logic                        mem_ready
+        output logic                        awvalid,
+        input  logic                        awready,
+        output logic [AXI_ADDR_W      -1:0] awaddr,
+        output logic [3               -1:0] awprot,
+        output logic [AXI_ID_W        -1:0] awid,
+        output logic                        wvalid,
+        input  logic                        wready,
+        output logic [AXI_DATA_W      -1:0] wdata,
+        output logic [AXI_DATA_W/8    -1:0] wstrb,
+        input  logic                        bvalid,
+        output logic                        bready,
+        input  logic [AXI_ID_W        -1:0] bid,
+        input  logic [2               -1:0] bresp,
+        output logic                        arvalid,
+        input  logic                        arready,
+        output logic [AXI_ADDR_W      -1:0] araddr,
+        output logic [3               -1:0] arprot,
+        output logic [AXI_ID_W        -1:0] arid,
+        input  logic                        rvalid,
+        output logic                        rready,
+        input  logic [AXI_ID_W        -1:0] rid,
+        input  logic [2               -1:0] rresp,
+        input  logic [AXI_DATA_W      -1:0] rdata
     );
 
 
@@ -237,15 +265,10 @@ module friscv_memfy
     // instructions fields
     logic [`OPCODE_W   -1:0] opcode;
     logic [`FUNCT3_W   -1:0] funct3;
-    logic [`FUNCT7_W   -1:0] funct7;
     logic [`RS1_W      -1:0] rs1;
     logic [`RS2_W      -1:0] rs2;
     logic [`RD_W       -1:0] rd;
-    logic [`ZIMM_W     -1:0] zimm;
     logic [`IMM12_W    -1:0] imm12;
-    logic [`IMM20_W    -1:0] imm20;
-    logic [`CSR_W      -1:0] csr;
-    logic [`SHAMT_W    -1:0] shamt;
 
     logic                    mem_access;
     logic signed [XLEN -1:0] addr;
@@ -268,15 +291,10 @@ module friscv_memfy
 
     assign opcode = memfy_instbus[`OPCODE +: `OPCODE_W];
     assign funct3 = memfy_instbus[`FUNCT3 +: `FUNCT3_W];
-    assign funct7 = memfy_instbus[`FUNCT7 +: `FUNCT7_W];
     assign rs1    = memfy_instbus[`RS1    +: `RS1_W   ];
     assign rs2    = memfy_instbus[`RS2    +: `RS2_W   ];
     assign rd     = memfy_instbus[`RD     +: `RD_W    ];
-    assign zimm   = memfy_instbus[`ZIMM   +: `ZIMM_W  ];
     assign imm12  = memfy_instbus[`IMM12  +: `IMM12_W ];
-    assign imm20  = memfy_instbus[`IMM20  +: `IMM20_W ];
-    assign csr    = memfy_instbus[`CSR    +: `CSR_W   ];
-    assign shamt  = memfy_instbus[`SHAMT  +: `SHAMT_W ];
 
 
     ///////////////////////////////////////////////////////////////////////////
@@ -291,11 +309,15 @@ module friscv_memfy
             memfy_ready <= 1'b0;
             opcode_r <= 7'b0;
             funct3_r <= 3'b0;
-            mem_en <= 1'b0;
-            mem_wr <= 1'b0;
-            mem_addr <= {ADDRW{1'b0}};
-            mem_wdata <= {XLEN{1'b0}};
-            mem_strb <= {XLEN/8{1'b0}};
+            awaddr <= {AXI_ADDR_W{1'b0}};
+            araddr <= {AXI_ADDR_W{1'b0}};
+            wdata <= {XLEN{1'b0}};
+            wstrb <= {XLEN/8{1'b0}};
+            awvalid <= 1'b0;
+            wvalid <= 1'b0;
+            arvalid <= 1'b0;
+            arvalid <= 1'b0;
+            rready <= 1'b0;
             next_strb <= {XLEN/8{1'b0}};
             rd_r <= 5'b0;
             two_phases <= 1'b0;
@@ -304,11 +326,15 @@ module friscv_memfy
             memfy_ready <= 1'b0;
             opcode_r <= 7'b0;
             funct3_r <= 3'b0;
-            mem_en <= 1'b0;
-            mem_wr <= 1'b0;
-            mem_addr <= {ADDRW{1'b0}};
-            mem_wdata <= {XLEN{1'b0}};
-            mem_strb <= {XLEN/8{1'b0}};
+            awaddr <= {AXI_ADDR_W{1'b0}};
+            araddr <= {AXI_ADDR_W{1'b0}};
+            wdata <= {XLEN{1'b0}};
+            wstrb <= {XLEN/8{1'b0}};
+            awvalid <= 1'b0;
+            wvalid <= 1'b0;
+            arvalid <= 1'b0;
+            arvalid <= 1'b0;
+            rready <= 1'b0;
             next_strb <= {XLEN/8{1'b0}};
             rd_r <= 5'b0;
             two_phases <= 1'b0;
@@ -316,31 +342,23 @@ module friscv_memfy
         end else begin
 
             // LOAD or STORE completion: memory accesses span over multiple
-            // cycles, thus oblige to pause the pipeline
-            // Accepts a new instruction once memory completes the request
-            if (mem_en) begin
-                if (mem_ready) begin
-                    // LOAD
-                    if (opcode_r==`LOAD) begin
-                        if (two_phases) begin
-                            two_phases <= 1'b0;
-                            mem_en <= 1'b1;
-                            mem_addr <= mem_addr + 1;
-                        end else begin
-                            mem_en <= 1'b0;
-                            memfy_ready <= 1'b1;
-                        end
-                    // STORE
-                    end else begin
-                        if (two_phases) begin
-                            two_phases <= 1'b0;
-                            mem_addr <= mem_addr + 1;
-                            mem_strb <= next_strb;
-                        end else begin
-                            mem_en <= 1'b0;
-                            mem_wr <= 1'b0;
-                            memfy_ready <= 1'b1;
-                        end
+            if (memfy_ready==1'b0) begin
+                // LOAD
+                if (opcode_r==`LOAD) begin
+                    // Stop the request once accepted
+                    if (arready) arvalid <= 1'b0;
+                    if (rvalid) rready <= 1'b0;
+                    if (rvalid && arready || rvalid && ~arvalid) begin
+                        memfy_ready <= 1'b1;
+                    end
+                // STORE
+                end else begin
+                    // Stop the request once accepted
+                    if (awready) awvalid <= 1'b0;
+                    if (wready) wvalid <= 1'b0;
+                    // Wait until the data has been received
+                    if (awready && wready || ~awvalid && wready || awready && ~wvalid) begin
+                        memfy_ready <= 1'b1;
                     end
                 end
 
@@ -351,6 +369,7 @@ module friscv_memfy
                 memfy_ready <= 1'b0;
                 opcode_r <= opcode;
                 funct3_r <= funct3;
+                rd_r <= rd;
 
                 // request will be executed in two phases because unaligned
                 // and targets two memory addresses
@@ -358,40 +377,41 @@ module friscv_memfy
                 else two_phases <= 1'b0;
 
                 // Memory setup
-                mem_en <= 1'b1;
-                mem_addr <= {addr[ADDRW-1:2], 2'b0};
+                awaddr <= addr;
+                araddr <= addr;
                 offset <= addr[1:0];
 
                 // STORE
                 if (opcode==`STORE) begin
-                    mem_wr <= 1'b1;
-                    mem_wdata <= get_aligned_mem_data(memfy_rs2_val, addr[1:0]);
-                    mem_strb <= get_mem_strb(funct3, addr[1:0], 0);
+                    awvalid <= 1'b1;
+                    wvalid <= 1'b1;
+                    wdata <= get_aligned_mem_data(memfy_rs2_val, addr[1:0]);
+                    wstrb <= get_mem_strb(funct3, addr[1:0], 0);
                     next_strb <= get_mem_strb(funct3, addr[1:0], 1);
                 // LOAD
                 end else begin
-                    mem_wr <= 1'b0;
-                    mem_wdata <= {XLEN{1'b0}};
-                    mem_strb <= {XLEN/8{1'b0}};
+                    arvalid <= 1'b1;
+                    rready <= 1'b1;
                 end
-
-                // rd register setup
-                rd_r <= rd;
 
             // Wait for an instruction
             end else begin
                 memfy_ready <= 1'b1;
-                two_phases <= 1'b0;
-                mem_en <= 1'b0;
-                mem_wr <= 1'b0;
+                awvalid <= 1'b0;
+                arvalid <= 1'b0;
+                arvalid <= 1'b0;
+                rready <= 1'b0;
             end
         end
 
     end
 
-    assign memfy_rd_wr = (mem_en && mem_ready && (opcode_r==`LOAD)) ? 1'b1 : 1'b0;
+    // Write into RD once the read data channel handshakes
+    assign memfy_rd_wr = (~memfy_ready && (opcode_r==`LOAD) &&
+                            rvalid && rready 
+                         ) ? 1'b1 : 1'b0;
     assign memfy_rd_addr = rd_r;
-    assign memfy_rd_val = get_rd_val(funct3_r, mem_rdata, offset);
+    assign memfy_rd_val = get_rd_val(funct3_r, rdata, offset);
     assign memfy_rd_strb = get_rd_strb(funct3_r, offset, ~two_phases);
 
     assign memfy_rs1_addr = rs1;
@@ -406,11 +426,11 @@ module friscv_memfy
     assign addr = $signed({{(XLEN-12){imm12[11]}}, imm12}) + $signed(memfy_rs1_val);
 
     assign cross_boundary = (funct3==`SH  && addr[1:0]==2'h3) ? 1'b1 :
-                          (funct3==`SW  && addr[1:0]!=2'b0) ? 1'b1 :
-                          (funct3==`LH  && addr[1:0]==2'h3) ? 1'b1 :
-                          (funct3==`LHU && addr[1:0]==2'h3) ? 1'b1 :
-                          (funct3==`LW  && addr[1:0]!=2'b0) ? 1'b1 :
-                                                              1'b0 ;
+                            (funct3==`SW  && addr[1:0]!=2'b0) ? 1'b1 :
+                            (funct3==`LH  && addr[1:0]==2'h3) ? 1'b1 :
+                            (funct3==`LHU && addr[1:0]==2'h3) ? 1'b1 :
+                            (funct3==`LW  && addr[1:0]!=2'b0) ? 1'b1 :
+                                                                1'b0 ;
 
     // Unused: may be used later to indicate a buffer is
     // empty or not, needed for outstanding request support
@@ -423,6 +443,16 @@ module friscv_memfy
     // bit 3: device input
     assign memfy_fenceinfo = 4'b0;
 
+    //////////////////////////////////////////////////////////////////////////
+    // Unsupported AXI4-lite signals
+    //////////////////////////////////////////////////////////////////////////
+
+    assign awid = {AXI_ID_W{1'b0}};
+    assign awprot = 3'b0;
+    assign bready = 1'b1;
+
+    assign arid = {AXI_ID_W{1'b0}};
+    assign arprot = 3'b0;
 
 endmodule
 

@@ -7,10 +7,10 @@
 `include "friscv_h.sv"
 
 ///////////////////////////////////////////////////////////////////////////////
-// 
-// Memory controller managing AXI4-lite read request from Fetcher to read 
+//
+// Memory controller managing AXI4-lite read request from Fetcher to read
 // central memory to fill caches lines.
-// 
+//
 // TODO: support AXI4 transfer with different width than the cache line width
 // TODO: support outstanding requests
 // TODO: Manage RRESP
