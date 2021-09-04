@@ -155,22 +155,22 @@ module friscv_icache_fetcher
     // FIFO buffering the instruction to fetch from the controller
     friscv_scfifo
     #(
-    .PASS_THRU (PASS_THRU_MODE),
-    .ADDR_WIDTH ($clog2(OSTDREQ_NUM)),
-    .DATA_WIDTH (AXI_ADDR_W+AXI_ID_W)
+        .PASS_THRU (PASS_THRU_MODE),
+        .ADDR_WIDTH ($clog2(OSTDREQ_NUM)),
+        .DATA_WIDTH (AXI_ADDR_W+AXI_ID_W)
     )
     if_fifo
     (
-    .aclk     (aclk),
-    .aresetn  (aresetn),
-    .srst     (srst),
-    .flush    (flush_fifo | reboot),
-    .data_in  ({ctrl_arid, ctrl_araddr}),
-    .push     (ctrl_arvalid),
-    .full     (fifo_full_if),
-    .data_out ({arid_if, araddr_if}),
-    .pull     (pull_addr_if),
-    .empty    (fifo_empty_if)
+        .aclk     (aclk),
+        .aresetn  (aresetn),
+        .srst     (srst),
+        .flush    (flush_fifo | reboot),
+        .data_in  ({ctrl_arid, ctrl_araddr}),
+        .push     (ctrl_arvalid),
+        .full     (fifo_full_if),
+        .data_out ({arid_if, araddr_if}),
+        .pull     (pull_addr_if),
+        .empty    (fifo_empty_if)
     );
 
     // FFD stage to propagate potential addr/id to fetch
@@ -192,29 +192,29 @@ module friscv_icache_fetcher
     // depth can store up to 2 missed instruction
     friscv_scfifo
     #(
-    .PASS_THRU (PASS_THRU_MODE),
-    .ADDR_WIDTH ($clog2(MF_FIFO_DEPTH)),
-    .DATA_WIDTH (AXI_ADDR_W+AXI_ID_W)
+        .PASS_THRU (PASS_THRU_MODE),
+        .ADDR_WIDTH ($clog2(MF_FIFO_DEPTH)),
+        .DATA_WIDTH (AXI_ADDR_W+AXI_ID_W)
     )
     mf_fifo
     (
-    .aclk     (aclk),
-    .aresetn  (aresetn),
-    .srst     (srst),
-    .flush    (flush_fifo | reboot),
-    .data_in  ({arid_ffd, araddr_ffd}),
-    .push     (cache_miss),
-    .full     (fifo_full_mf),
-    .data_out ({arid_mf, araddr_mf}),
-    .pull     (pull_addr_mf),
-    .empty    (fifo_empty_mf)
+        .aclk     (aclk),
+        .aresetn  (aresetn),
+        .srst     (srst),
+        .flush    (flush_fifo | reboot),
+        .data_in  ({arid_ffd, araddr_ffd}),
+        .push     (cache_miss),
+        .full     (fifo_full_mf),
+        .data_out ({arid_mf, araddr_mf}),
+        .pull     (pull_addr_mf),
+        .empty    (fifo_empty_mf)
     );
 
     // Read cache when the FIFO is filled or when missed-fetch instruction
-    // occured
+    // occured, but never if the cache is rebooting.
     assign cache_ren = ((~fifo_empty_if && (seq==IDLE || seq==SERVE)) ||
                         (~fifo_empty_mf && (seq==MISSED))
-                       ) ? 1'b1 : 1'b0;
+                       ) ? ~reboot : 1'b0;
 
     // Multiplexer stage to drive missed-fetch or to-fetch requests
     assign cache_raddr = (~fifo_empty_mf) ? araddr_mf : araddr_if;
@@ -269,10 +269,16 @@ module friscv_icache_fetcher
                 // State to serve the instruction read request from the
                 // core controller
                 SERVE: begin
+
                     pull_addr_if <= 1'b1;
+
+                    if (reboot) begin
+                        pull_addr_if <= 1'b0;
+                        pull_addr_mf <= 1'b0;
+                        seq <= IDLE;
                     // If flush command is received, clear the FIFO content
                     // and wait for req deassertion
-                    if (flush_req) begin
+                    end else if (flush_req) begin
                         log.debug("Start flush procedure");
                         pull_addr_if <= 1'b0;
                         pull_addr_mf <= 1'b0;
@@ -292,28 +298,6 @@ module friscv_icache_fetcher
                     end else if (fifo_empty_if) begin
                         log.debug("Go back to IDLE");
                         seq <= IDLE;
-                    end
-                end
-                // Fetch a new instruction in external memory
-                LOAD: begin
-                    if (memctrl_arvalid && memctrl_arready) begin
-                        log.debug("Read memory");
-                    end
-                    if (memctrl_arready) begin
-                        memctrl_arvalid <= 1'b0;
-                    end
-
-                    // If a reboot has been initiated, move back to IDLE
-                    // to avoid a race condition which will fetch twice 
-                    // the next first instruction
-                    if (reboot) begin
-                        seq <= IDLE;
-                    // Go to read the cache lines once the memory controller
-                    // wrote a new cache line, the read completion
-                    end else if (cache_writing) begin
-                        log.debug("Go to missed-fetch state");
-                        pull_addr_mf <= 1'b1;
-                        seq <= MISSED;
                     end
                 end
                 // State to fetch the missed-fetch instruction in the
@@ -350,6 +334,29 @@ module friscv_icache_fetcher
                         log.debug("Go back to IDLE");
                         pull_addr_mf <= 1'b0;
                         seq <= IDLE;
+                    end
+                end
+                // Fetch a new instruction in external memory
+                LOAD: begin
+
+                    // Handshaked with memory controller, now
+                    // wait for the write stage to restart
+                    if (memctrl_arvalid && memctrl_arready) begin
+                        log.debug("Read memory");
+                        memctrl_arvalid <= 1'b0;
+                    end
+
+                    // If a reboot has been initiated, move back to IDLE
+                    // to avoid a race condition which will fetch twice 
+                    // the next first instruction
+                    if (reboot) begin
+                        seq <= IDLE;
+                    // Go to read the cache lines once the memory controller
+                    // wrote a new cache line, the read completion
+                    end else if (cache_writing) begin
+                        log.debug("Go to missed-fetch state");
+                        pull_addr_mf <= 1'b1;
+                        seq <= MISSED;
                     end
                 end
                 // Clear the current context of the cache execution. Applied

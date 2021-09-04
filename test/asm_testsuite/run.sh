@@ -15,9 +15,18 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 NC='\033[0m' # No Color
 
-# Number of bits per cache line
+# Architecture choice
+XLEN=32
+# Instruction width
+ILEN=32
+# Cache line width in bits
 CACHE_LINE_W=128
-INST_PER_LINE=$(($CACHE_LINE_W/32))
+# Number of instruction per cache line
+INST_PER_LINE=$(($CACHE_LINE_W/$ILEN))
+# Boot address
+BOOT_ADDR=0
+# Timeout upon which the simulation is ran
+TIMEOUT=10000
 
 #------------------------------------------------------------------------------
 # Clean compiled programs
@@ -79,8 +88,16 @@ run_tests() {
         echo "-------------------------------------------------------------------------------------"
         echo ""
 
+        # Defines passed to the testbench
+        DEFINES=""
+        DEFINES="${DEFINES}CACHE_LINE_W=$CACHE_LINE_W;"
+        DEFINES="${DEFINES}BOOT_ADDR=$BOOT_ADDR;"
+        DEFINES="${DEFINES}XLEN=$XLEN;"
+        DEFINES="${DEFINES}TIMEOUT=$TIMEOUT;"
+        DEFINES="${DEFINES}TCNAME=${test_name}"
+
         # Execute the testcase with SVUT. Will stop once it reaches a EBREAK instruction
-        svutRun -t ./friscv_testbench.sv -define "CACHE_LINE_W=$CACHE_LINE_W" | tee -a simulation.log
+        svutRun -t ./friscv_testbench.sv -define $DEFINES | tee -a simulation.log
         test_ret=$((test_ret+$?))
 
         # Copy the VCD generated, create a GTKWave file from the template then

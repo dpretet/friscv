@@ -92,19 +92,28 @@ main() {
 
     if [[ $1 == "lint" ]]; then
 
-        printinfo "Start lint flow"
-        verilator --lint-only +1800-2017ext+sv -Wall -cdc \
+        printinfo "Start Verilator lint"
+        verilator --lint-only +1800-2017ext+sv \
+            -Wall -Wpedantic -cdc \
+            -Wno-VARHIDDEN \
+            -Wno-PINCONNECTEMPTY \
             -I./rtl\
+            -I./dep/svlogger\
             ./rtl/friscv_h.sv\
-            ./rtl/friscv_registers.sv\
             ./rtl/friscv_rv32i.sv\
-            ./rtl/friscv_rv32i_processing.sv\
-            ./rtl/friscv_rv32i_memfy.sv\
-            ./rtl/friscv_rv32i_alu.sv\
-            ./rtl/friscv_rv32i_control.sv\
-            ./rtl/friscv_rv32i_decoder.sv\
+            ./rtl/friscv_control.sv\
+            ./rtl/friscv_decoder.sv\
+            ./rtl/friscv_alu.sv\
+            ./rtl/friscv_processing.sv\
+            ./rtl/friscv_memfy.sv\
+            ./rtl/friscv_registers.sv\
+            ./rtl/friscv_csr.sv\
             ./rtl/friscv_scfifo.sv\
             ./rtl/friscv_scfifo_ram.sv\
+            ./rtl/friscv_icache.sv\
+            ./rtl/friscv_icache_fetcher.sv\
+            ./rtl/friscv_icache_lines.sv\
+            ./rtl/friscv_icache_memctrl.sv\
             --top-module friscv_rv32i
     fi
     if [[ $1 == "sim" ]]; then
@@ -136,10 +145,7 @@ main() {
         ret=$((ret+$?))
 
         if [ $ret != 0 ] ; then
-            printerror "Execution failed"
             return $ret
-        else
-            printsuccess "Execution passed"
         fi
 
         cd "${FRISCVDIR}/test/riscv-tests"
@@ -148,10 +154,7 @@ main() {
         ret=$((ret+$?))
 
         if [ $ret != 0 ] ; then
-            printerror "Execution failed"
             return $ret
-        else
-            printsuccess "Execution passed"
         fi
         exit 0
     fi

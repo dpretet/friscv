@@ -354,7 +354,6 @@ module friscv_rv32i
         .icache_arburst    (),
         .icache_arlock     (),
         .icache_arcache    (),
-        .icache_arprot     (),
         .icache_arqos      (),
         .icache_arregion   (),
         .icache_arid       (imem_arid),

@@ -38,6 +38,7 @@ clean() {
     rm -f ./rv*.*v
     rm -f ./*.vcd
     rm -f ./*.txt
+    rm -f data.v
     exit 0
 }
 #------------------------------------------------------------------------------
@@ -193,7 +194,6 @@ main() {
 
     # Clean-up before exiting
     rm -f *.vcd
-    rm -f test.v
     rm -f *.out
 
     # Check status of the execution
