@@ -121,21 +121,6 @@ main() {
         source script/setup.sh
         iverilog -V
 
-        # echo ""
-        # printinfo "Start RTL simulation flow"
-
-        # cd "$FRISCVDIR/test/rtl_unit_tests"
-
-        # for test in *_testbench.sv; do
-        #     ./run.sh "$test"
-        #     ret=$((ret+$?))
-        # done
-        # if [ $ret != 0 ] ; then
-        #     printerror "Execution failed"
-        # else
-        #     printsuccess "Execution passed"
-        # fi
-
         echo ""
         printinfo "Start ASM simulation flow"
 
