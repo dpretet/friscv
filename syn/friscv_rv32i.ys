@@ -1,20 +1,17 @@
 # read design modules
-read -sv -I../rtl/ ../rtl/friscv_apb_interconnect.sv
-read -sv -I../rtl/ ../rtl/friscv_csr.sv
-read -sv -I../rtl/ ../rtl/friscv_gpios.sv
-read -sv -I../rtl/ ../rtl/friscv_io_interfaces.sv
-read -sv -I../rtl/ ../rtl/friscv_mem_router.sv
-read -sv -I../rtl/ ../rtl/friscv_registers.sv
-read -sv -I../rtl/ ../rtl/friscv_rv32i_alu.sv
-read -sv -I../rtl/ ../rtl/friscv_rv32i_control.sv
-read -sv -I../rtl/ ../rtl/friscv_rv32i_decoder.sv
-read -sv -I../rtl/ ../rtl/friscv_rv32i_memfy.sv
-read -sv -I../rtl/ ../rtl/friscv_rv32i_processing.sv
-read -sv -I../rtl/ ../rtl/friscv_scfifo.sv
-read -sv -I../rtl/ ../rtl/friscv_scfifo_ram.sv
-read -sv -I../rtl/ ../rtl/friscv_stats.sv
-read -sv -I../rtl/ ../rtl/friscv_uart.sv
-read -sv -I../rtl/ ../rtl/friscv_rv32i.sv
+read -sv -I../rtl/ -I../dep/svlogger ../rtl/friscv_csr.sv
+read -sv -I../rtl/ -I../dep/svlogger ../rtl/friscv_registers.sv
+read -sv -I../rtl/ -I../dep/svlogger ../rtl/friscv_rv32i_alu.sv
+read -sv -I../rtl/ -I../dep/svlogger ../rtl/friscv_rv32i_control.sv
+read -sv -I../rtl/ -I../dep/svlogger ../rtl/friscv_rv32i_decoder.sv
+read -sv -I../rtl/ -I../dep/svlogger ../rtl/friscv_rv32i_memfy.sv
+read -sv -I../rtl/ -I../dep/svlogger ../rtl/friscv_rv32i_processing.sv
+read -sv -I../rtl/ -I../dep/svlogger ../rtl/friscv_scfifo.sv
+read -sv -I../rtl/ -I../dep/svlogger ../rtl/friscv_scfifo_ram.sv
+read -sv -I../rtl/ -I../dep/svlogger ../rtl/friscv_rv32i.sv
+read -sv -I../rtl/ -I../dep/svlogger ../rtl/friscv_icache.sv\
+read -sv -I../rtl/ -I../dep/svlogger ../rtl/friscv_icache_fetcher.sv\
+read -sv -I../rtl/ -I../dep/svlogger ../rtl/friscv_icache_lines.sv\
 
 # elaborate design hierarchy
 hierarchy -check -top friscv_rv32i
