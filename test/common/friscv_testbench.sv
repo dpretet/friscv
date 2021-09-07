@@ -72,7 +72,7 @@ module tb();
     logic                      aclk;
     logic                      aresetn;
     logic                      srst;
-    logic                      enable;
+    logic                      irq;
     logic [8             -1:0] status;
     logic                      imem_awvalid;
     logic                      imem_awready;
@@ -143,7 +143,7 @@ module tb();
         .aclk         (aclk        ),
         .aresetn      (aresetn     ),
         .srst         (srst        ),
-        .enable       (enable      ),
+        .irq          (irq         ),
         .status       (status      ),
         .imem_arvalid (imem_arvalid),
         .imem_arready (imem_arready),
@@ -268,7 +268,7 @@ module tb();
         imem_awvalid = 1'b0;
         imem_wvalid = 1'b0;
         imem_bready = 1'b0;
-        enable = 0;
+        irq = 0;
         aresetn = 1'b0;
         srst = 1'b0;
         timer = 0;

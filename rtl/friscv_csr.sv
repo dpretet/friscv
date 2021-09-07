@@ -34,8 +34,6 @@ module friscv_csr
         input  logic [XLEN       -1:0] ctrl_mstatus,
         input  logic                   ctrl_mcause_wr,
         input  logic [XLEN       -1:0] ctrl_mcause,
-        // status of the processor
-        output logic                   ro_trap,
         // CSR shared bus
         output logic [`CSR_SB_W  -1:0] csr_sb
     );
@@ -66,11 +64,10 @@ module friscv_csr
     logic [`ZIMM_W     -1:0] zimm;
     logic [`CSR_W      -1:0] csr;
 
-    logic csr_wren;
-    logic csr_rden;
-    logic [XLEN-1:0] oldval;
-    logic [XLEN-1:0] newval;
-    logic [XLEN-1:0] csrs [2**12-1:0];
+    logic                  csr_wren;
+    logic                  csr_rden;
+    logic [XLEN      -1:0] oldval;
+    logic [XLEN      -1:0] newval;
 
     logic [`FUNCT3_W -1:0] funct3_r;
     logic [`CSR_W    -1:0] csr_r;
@@ -78,7 +75,6 @@ module friscv_csr
     logic [5         -1:0] rs1_addr_r;
     logic [XLEN      -1:0] rs1_val_r;
 
-    logic                  ro_write_access;
 
     // -------------------
     // Machine-level CSRs:
@@ -149,15 +145,6 @@ module friscv_csr
 
     assign rs1_addr = rs1;
 
-    // Flags an access which will try to modify a read-only register
-    assign ro_write_access = (csr[11:10]==2'b11 && 
-                                // only rs1=x0 and these opcodes will be legal
-                                ((rs1!=5'b0 &&
-                                    (funct3==`CSRRS || funct3==`CSRRC ||
-                                    funct3==`CSRRSI || funct3==`CSRRCI)) && 
-                                // Any RW opcode is illegal
-                                (funct3==`CSRRW && funct3==`CSRRWI))
-                             ) ? 1'b1 : 1'b0;
 
     // ------------------------------------------------------------------------
     // CSR execution machine
@@ -176,7 +163,6 @@ module friscv_csr
             rs1_addr_r <= 5'b0;
             rs1_val_r <= {XLEN{1'b0}};
             rd_wr_addr <= 5'b0;
-            ro_trap <= 1'b0;
             cfsm <= IDLE;
         end else if (srst) begin
             rd_wr_en <= 1'b0;
@@ -190,7 +176,6 @@ module friscv_csr
             rs1_addr_r <= 5'b0;
             rs1_val_r <= {XLEN{1'b0}};
             rd_wr_addr <= 5'b0;
-            ro_trap <= 1'b0;
             cfsm <= IDLE;
         end else begin
 
@@ -204,20 +189,14 @@ module friscv_csr
                     ready <= 1'b1;
 
                     if (valid) begin
-                        if (~ro_write_access) begin
-                            ready <= 1'b0;
-                            funct3_r <= funct3;
-                            csr_r <= csr;
-                            zimm_r <= zimm;
-                            rs1_addr_r <= rs1;
-                            rs1_val_r <= rs1_val;
-                            rd_wr_addr <= rd;
-                            ro_trap <= 1'b0;
-                            cfsm <= COMPUTE;
-                        end else begin
-                            log.error("Try to write into read-only register");
-                            ro_trap <= 1'b1;
-                        end
+                        ready <= 1'b0;
+                        funct3_r <= funct3;
+                        csr_r <= csr;
+                        zimm_r <= zimm;
+                        rs1_addr_r <= rs1;
+                        rs1_val_r <= rs1_val;
+                        rd_wr_addr <= rd;
+                        cfsm <= COMPUTE;
                     end
                 end
 

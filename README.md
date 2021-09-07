@@ -6,11 +6,14 @@
 FRISCV is a SystemVerilog implementation of  [RISCV ISA](https://riscv.org):
 
 - Support RV32I & RV32E instruction sets
-- 2-stage pipeline
+- 3-stage pipeline
 - In-order execution
 - Instruction cache
 - AXI4-lite instruction and data interfaces
 - Machine-mode only
+- Interrupt (CLIC)
+- Timer
+- [RISCV compliant](./test/riscv-tests/README.md)
 
 <p align="center">
   <!--img width="100" height="100" src=""-->
@@ -20,16 +23,15 @@ FRISCV is a SystemVerilog implementation of  [RISCV ISA](https://riscv.org):
 
 To be implemented next:
 
+- Supervisor & user mode
 - New ISA extensions (mult/div, FP, ...)
-- Interrupt
-- Timer
-- Privileged instruction
 - Data cache stage
 - 64 bits architecture
+- JTAG interface for debugging purpose
 - ... and many more :)
 
-The core is verified with SystemVerilog and Assembler, two testsuites are
-present in [test](./test) folder:
+The core is verified with Assembler, two testsuites are present in
+[test](./test) folder:
 - [In-house Assembler Testsuite](./test/asm_testsuite/README.md)
 - [RISCV Compliance Testsuite](./test/riscv-tests/README.md)
 

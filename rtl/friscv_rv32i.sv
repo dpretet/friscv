@@ -62,8 +62,8 @@ module friscv_rv32i
         input  logic                      aclk,
         input  logic                      aresetn,
         input  logic                      srst,
-        // enable signal to activate the core
-        input  logic                      enable,
+        // External interrupt
+        input  logic                      irq,
         // Internal core status
         output logic [8             -1:0] status,
         // instruction memory interface
@@ -166,8 +166,7 @@ module friscv_rv32i
     logic                        flush_req;
     logic                        flush_ack;
 
-    logic [4               -1:0] traps;
-    logic                        csr_ro_trap;
+    logic [5               -1:0] traps;
 
     logic                        ctrl_mepc_wr;
     logic [XLEN            -1:0] ctrl_mepc;
@@ -207,8 +206,8 @@ module friscv_rv32i
     assign status[2] = traps[2];
     // Received a unsupported instruction
     assign status[3] = traps[3];
-    // CSR circuit received a command to write into a read-only register
-    assign status[4] = csr_ro_trap;
+    // Received a command to write into a read-only CSR
+    assign status[4] = traps[4];
     // RESERVED
     assign status[7:5] = 3'b0;
 
@@ -277,7 +276,8 @@ module friscv_rv32i
         .aclk           (aclk),
         .aresetn        (aresetn),
         .srst           (srst),
-        .traps          (traps ),
+        .irq            (irq),
+        .traps          (traps),
         .flush_req      (flush_req),
         .flush_ack      (flush_ack),
         .arvalid        (inst_arvalid_s),
@@ -314,6 +314,10 @@ module friscv_rv32i
         .csr_sb         (csr_sb)
     );
 
+
+    //////////////////////////////////////////////////////////////////////////
+    // Instruction cache stage
+    //////////////////////////////////////////////////////////////////////////
 
     generate
     if (ICACHE_EN) begin : USE_ICACHE
@@ -410,7 +414,6 @@ module friscv_rv32i
         .rd_wr_en        (csr_rd_wr),
         .rd_wr_addr      (csr_rd_addr),
         .rd_wr_val       (csr_rd_val),
-        .ro_trap         (csr_ro_trap),
         .ctrl_mepc_wr    (ctrl_mepc_wr),
         .ctrl_mepc       (ctrl_mepc),
         .ctrl_mstatus_wr (ctrl_mstatus_wr),
