@@ -34,7 +34,6 @@ module friscv_control
         input  logic                      aclk,
         input  logic                      aresetn,
         input  logic                      srst,
-        input  logic                      irq,
         output logic [5             -1:0] traps,
         // Flush control
         output logic                      flush_req,
@@ -77,6 +76,8 @@ module friscv_control
         output logic [XLEN          -1:0] mstatus,
         output logic                      mcause_wr,
         output logic [XLEN          -1:0] mcause,
+        output logic                      mtval_wr,
+        output logic [XLEN          -1:0] mtval,
         // CSR shared bus
         input  logic [`CSR_SB_W     -1:0] csr_sb
     );
@@ -114,7 +115,7 @@ module friscv_control
     logic [6    -1:0] sys;
 
     // Flag raised when receiving an unsupported/undefined instruction
-    logic inst_error;
+    logic dec_error;
 
     // Control fsm
     typedef enum logic[3:0] {
@@ -158,6 +159,7 @@ module friscv_control
     logic                   fifo_full;
     logic                   pull_inst;
     logic                   fifo_empty;
+    logic [XLEN       -1:0] mtvec;
 
     logic [XLEN       -1:0] sb_mepc;
     logic [XLEN       -1:0] sb_mtvec;
@@ -167,10 +169,13 @@ module friscv_control
     logic                   csr_ro_wr;
     logic                   inst_addr_misaligned;
     logic [XLEN       -1:0] mcause_code;
+    logic [XLEN       -1:0] mtval_info;
     logic [XLEN       -1:0] data_addr;
     logic                   load_misaligned;
     logic                   store_misaligned;
     logic                   trap_occuring;
+    logic                   sync_trap_occuring;
+    logic                   async_trap_occuring;
 
     // Logger setup
     svlogger log;
@@ -214,6 +219,14 @@ module friscv_control
                     csr));
     endtask
 
+    task print_mcause(
+        input string           msg,
+        input logic [XLEN-1:0] mcause
+    );
+        string mcause_str;
+        $sformat(mcause_str, "%x", mcause);
+        log.debug({msg, mcause_str});
+    endtask
 
     ///////////////////////////////////////////////////////////////////////////
     // CSR Shared bus extraction
@@ -256,7 +269,7 @@ module friscv_control
     );
 
     assign pull_inst = (csr_ready && ~cant_branch_now && ~cant_process_now &&
-                        cfsm==FETCH && ~fifo_empty) ? 1'b1 : 1'b0;
+                        cfsm==FETCH && ~fifo_empty && ~trap_occuring) ? 1'b1 : 1'b0;
 
     ///////////////////////////////////////////////////////////////////////////
     //
@@ -310,7 +323,7 @@ module friscv_control
         .branching   (branching),
         .sys         (sys),
         .processing  (processing),
-        .inst_error  (inst_error),
+        .dec_error   (dec_error),
         .pred        (pred),
         .succ        (succ)
     );
@@ -420,8 +433,8 @@ module friscv_control
 
     ///////////////////////////////////////////////////////////////////////////
     //
-    // Control flow FSM: the FSM updating the program counter, managing the
-    // incoming instructions and the processing unit
+    // Control flow: the FSM updating the program counter, managing the
+    // incoming instructions, the CSR & processing unit and all traps
     //
     ///////////////////////////////////////////////////////////////////////////
 
@@ -444,6 +457,8 @@ module friscv_control
             mstatus <= {XLEN{1'b0}};
             mcause_wr <= 1'b0;
             mcause <= {XLEN{1'b0}};
+            mtval_wr <= 1'b0;
+            mtval <= {XLEN{1'b0}};
         end else if (srst == 1'b1) begin
             cfsm <= BOOT;
             arvalid <= 1'b0;
@@ -461,11 +476,15 @@ module friscv_control
             mstatus <= {XLEN{1'b0}};
             mcause_wr <= 1'b0;
             mcause <= {XLEN{1'b0}};
+            mtval_wr <= 1'b0;
+            mtval <= {XLEN{1'b0}};
         end else begin
 
             case (cfsm)
 
+                ///////////////////////////////////////////////////////////////
                 // Start to boot the RAM after reset.
+                ///////////////////////////////////////////////////////////////
                 default: begin
 
                     arvalid <= 1'b1;
@@ -478,50 +497,64 @@ module friscv_control
                     end
                 end
 
+                ///////////////////////////////////////////////////////////////
                 // Fetch instructions from the cache (or the memory)
+                ///////////////////////////////////////////////////////////////
                 FETCH: begin
 
+                    ///////////////////////////////////////////////////////////
                     // Manages read outstanding requests to fetch
                     // new instruction from memory:
                     //
-                    //   - if fifo is filled with instruction, need a jump
-                    //     and can branch and CSR are ready, stop the addr
-                    //     issuer and load it with correct address to use
+                    //   - if fifo is filled with instruction, need a jump or
+                    //   manage a trap, stop the addr issuer and load the
+                    //   right branch
                     //
                     if (~fifo_empty &&
-                        (jump_branch || sys[`IS_ECALL] || sys[`IS_MRET] || fence[`IS_FENCEI]) &&
+                        (jump_branch || sys[`IS_ECALL] || sys[`IS_MRET] ||
+                         fence[`IS_FENCEI] || trap_occuring) &&
                         ~cant_branch_now && csr_ready) begin
-                        // ECALL
-                        if (sys[`IS_ECALL]) araddr <= sb_mtvec;
+
+                        // ECALL / Trap handling
+                        if (sys[`IS_ECALL] || trap_occuring) araddr <= mtvec;
+                        // MRET
                         else if (sys[`IS_MRET]) araddr <= sb_mepc;
                         // All other jumps
                         else araddr <= pc;
                     //
-                    //   - else continue to simply increment by instruction width
-                    //   TODO: don't continue to increment if need to jump?
+                    //   - else continue to simply increment by ILEN
                     //
                     end else if (arready) begin
                         araddr <= araddr + ILEN/8;
                     end
+                    ///////////////////////////////////////////////////////////
 
+                    ///////////////////////////////////////////////////////////
                     // Manages the PC vs the different instructions to execute
                     if (~fifo_empty) begin
 
-                        // Stop the execution when a unsupported instruction or
-                        // a decoding error has been issued
-                        if (inst_error) begin
-                            log.error("Decoding error, received an unsupported instruction");
-                            print_instruction(instruction, pc_reg, opcode, funct3,
-                                              funct7, rs1, rs2, rd, imm12, imm20, csr);
+                        // Need to branch/process but ALU/memfy/CSR didn't finish
+                        // to execute last instruction, so store it.
+                        if (~csr_ready || cant_branch_now || cant_process_now) begin
+                            pc_jal_saved <= pc_plus4;
+                            pc_auipc_saved <= pc_reg;
+                        end
+
+                        // Move to the trap handling when received an
+                        // interrupt, a wrong instruction, ...
+                        if (trap_occuring) begin
+                            print_mcause("Handling a trap: ", mcause_code);
                             traps[3] <= 1'b1;
                             flush_fifo <= 1'b1;
                             arvalid <= 1'b0;
                             arid <= arid + 1;
-                            pc_reg <= sb_mtvec;
+                            pc_reg <= mtvec;
                             mepc_wr <= 1'b1;
                             mepc <= pc_reg;
                             mcause_wr <= 1'b1;
                             mcause <= mcause_code;
+                            mtval_wr <= 1'b1;
+                            mtval <= mtval_info;
                             cfsm <= RELOAD;
                         end
 
@@ -548,9 +581,11 @@ module friscv_control
                             flush_fifo <= 1'b1;
                             arvalid <= 1'b0;
                             arid <= arid + 1;
-                            pc_reg <= sb_mtvec;
+                            pc_reg <= mtvec;
                             mepc_wr <= 1'b1;
                             mepc <= pc_reg;
+                            mtval_wr <= 1'b1;
+                            mtval <= mtval_info;
                             cfsm <= RELOAD;
 
                         // Reach an EBREAK instruction, need to stall the core
@@ -591,16 +626,8 @@ module friscv_control
                             arid <= arid + 1;
                             pc_reg <= pc;
                             cfsm <= FENCE_I;
-                        end
 
-                        // Need to branch/process but ALU/memfy/CSR didn't finish
-                        // to execute last instruction, so store it.
-                        else if (~csr_ready || cant_branch_now || cant_process_now) begin
-
-                            pc_jal_saved <= pc_plus4;
-                            pc_auipc_saved <= pc_reg;
-
-                        // Process as long instructions are available
+                        // All other instructions
                         end else if (csr_ready &&
                                      ~cant_branch_now && ~cant_process_now) begin
                             print_instruction(instruction, pc_reg, opcode, funct3,
@@ -608,25 +635,31 @@ module friscv_control
                             pc_reg <= pc;
                         end
                     end
+                    ///////////////////////////////////////////////////////////
                 end
 
+
+                ///////////////////////////////////////////////////////////////
                 // Stop operations to reload new oustanding requests. Used to
                 // reboot the cache and continue to fetch the addresses from
                 // a new origin
+                ///////////////////////////////////////////////////////////////
                 RELOAD: begin
                     traps <= 5'b0;
                     mepc_wr <= 1'b0;
                     mstatus_wr <= 1'b0;
                     mcause_wr <= 1'b0;
+                    mtval_wr <= 1'b0;
                     arvalid <= 1'b1;
                     flush_fifo <= 1'b0;
                     cfsm <= FETCH;
                 end
 
+
+                ///////////////////////////////////////////////////////////////
                 // Launch a cache flush, req starts the flush and is kept
                 // high as long ack is not asserted.
-                // TODO: ensure the instruction pipeline is empty before
-                //       moving back to execution
+                ///////////////////////////////////////////////////////////////
                 FENCE_I: begin
                     flush_req <= 1'b1;
                     if (flush_ack) begin
@@ -638,8 +671,10 @@ module friscv_control
                     end
                 end
 
-                // EBREAK completly stops the processor and wait for a reboot
-                // TODO: Understand how to manage EBREAK when software needs
+
+                ///////////////////////////////////////////////////////////////
+                // EBREAK completely stops the processor and wait for a reboot
+                ///////////////////////////////////////////////////////////////
                 EBREAK: begin
                     traps <= 5'b0;
                     arvalid <= 1'b0;
@@ -662,7 +697,7 @@ module friscv_control
 
     assign cant_branch_now = ((jal || jalr || branching) &&
                                ~proc_ready) ? 1'b1 :
-                                              1'b0;
+                                              1'b0 ;
 
     assign cant_process_now = (processing && ~proc_ready) ? 1'b1 : 1'b0;
 
@@ -687,13 +722,13 @@ module friscv_control
                          ((jal || jalr) && pull_inst)  ? pc_plus4 :
                          (lui)                         ? {imm20, 12'b0} :
                          (auipc && ~pull_inst)         ? pc_auipc_saved :
-                         (auipc && pull_inst)          ? pc_auipc       :
+                         (auipc && pull_inst)          ? pc_auipc :
                                                          pc;
 
 
     ///////////////////////////////////////////////////////////////////////////
     //
-    // Prepare CSR registers content to store during exceptions and traps
+    // Prepare CSR registers content to use or modify
     //
     ///////////////////////////////////////////////////////////////////////////
 
@@ -711,12 +746,19 @@ module friscv_control
                                1'b0,                   // SIE
                                1'b0};                  // UIE
 
+    // MTVEC computation: on async exception occurence, pc uses mtvec + 4*cause
+    // else set it up to mtvec.
+    assign mtvec = (async_trap_occuring && sb_mtvec[1:0]!=2'b0) ? // Vectored mode
+                        {sb_mtvec[XLEN-1:2], 2'b0} + (mcause_code << 2) :
+                        {sb_mtvec[XLEN-1:2], 2'b0} ;              // Direct mode
+
+
     ///////////////////////////////////////////////////////////////////////////
-    // Mause Register management, indicating to software the trap in
+    // Mcause CSR management, indicating to software the trap in
     // machine-mode
     ///////////////////////////////////////////////////////////////////////////
 
-    // The access tries to modify a read-only register
+    // The instruction tries to modify a read-only register
     assign csr_ro_wr = (csr[11:10]==2'b11 &&
                            // only rs1=x0 and these opcodes can be legal, else
                            // it modifies the targeted CSR
@@ -728,60 +770,110 @@ module friscv_control
                        ) ? 1'b1 : 1'b0;
 
     // PC is not aligned with 32 bits
-    assign inst_addr_misaligned = (pc[1:0] != 2'b0) ? 1'b1 : 1'b0;
+    assign inst_addr_misaligned = (pc[1:0]!=2'b0) ? 1'b1 : 1'b0;
 
-    // The address to access during a LOAD or a STORE
+    // The address used to access during a LOAD or a STORE
     assign data_addr = $signed({{(XLEN-12){imm12[11]}}, imm12}) + $signed(ctrl_rs1_val);
 
-    // LOAD is not boundary aligned
-    assign load_misaligned = (opcode==`LOAD && funct3==`LH  && data_addr[1:0]==2'h3) ? 1'b1 :
-                             (opcode==`LOAD && funct3==`LHU && data_addr[1:0]==2'h3) ? 1'b1 :
+    // LOAD is not boundary aligned, must be aligned on data type
+    assign load_misaligned = (opcode==`LOAD && (funct3==`LH || funct3==`LHU) &&
+                                (data_addr[1:0]==2'h3 || data_addr[1:0]==2'h1))      ? 1'b1 :
                              (opcode==`LOAD && funct3==`LW  && data_addr[1:0]!=2'b0) ? 1'b1 :
                                                                                        1'b0 ;
 
     // STORE is not boundary aligned
-    assign store_misaligned = (opcode==`STORE && funct3==`SH  && ^data_addr[1:0]==2'h3) ? 1'b1 :
-                                                                                          1'b0 ;
+    assign store_misaligned = (opcode==`STORE && funct3==`SH &&
+                                (data_addr[1:0]==2'h3 || data_addr[1:0]==2'h1))       ? 1'b1 :
+                              (opcode==`STORE && funct3==`SW && data_addr[1:0]!=2'b0) ? 1'b1 :
+                                                                                        1'b0 ;
 
     ///////////////////////////////////////////////////////////////////////////
     //
+    // Asynchronous exceptions code:
+    // ---------------------------
+    //
+    // Exception Code  |   Description
+    // ----------------|------------------------------------------
+    // 0               |   User software interrupt
+    // 1               |   Supervisor software interrupt
+    // 2               |   Reserved for future standard use
+    // 3               |   Machine software interrupt
+    // -----------------------------------------------------------
+    // 4               |   User timer interrupt
+    // 5               |   Supervisor timer interrupt
+    // 6               |   Reserved for future standard use
+    // 7               |   Machine timer interrupt
+    // -----------------------------------------------------------
+    // 8               |   User external interrupt
+    // 9               |   Supervisor external interrupt
+    // 10              |   Reserved for future standard use
+    // 11              |   Machine external interrupt
+    // -----------------------------------------------------------
+    // 12-15           |   Reserved for future standard use
+    // ≥16             |   Reserved for platform use
+    // -----------------------------------------------------------
+    //
+    //
     // Synchronous exception priority in decreasing priority order:
+    // -----------------------------------------------------------
+    //
     //
     // Priority  |  Exception Code  |   Description
     // ----------|------------------|------------------------------------------
     // Highest   |  3               |   Instruction address breakpoint
+    // ------------------------------------------------------------------------
     //           |  12              |   Instruction page fault
+    // ------------------------------------------------------------------------
     //           |  1               |   Instruction access fault
+    // ------------------------------------------------------------------------
     //           |  2               |   Illegal instruction
     //           |  0               |   Instruction address misaligned
     //           |  8,9,11          |   Environment call (U/S/M modes)
     //           |  3               |   Environment break
     //           |  3               |   Load/Store/AMO address breakpoint
+    // ------------------------------------------------------------------------
     //           |  6               |   Store/AMO address misaligned
     //           |  4               |   Load address misaligned
+    // ------------------------------------------------------------------------
     //           |  15              |   Store/AMO page fault
     //           |  13              |   Load page fault
-    //           |  7               |   Store/AMO access fault
-    // Lowest    |  5               |   Load access fault
+    // ------------------------------------------------------------------------
+    // Lowest    |  7               |   Store/AMO access fault
+    //           |  5               |   Load access fault
+    // ------------------------------------------------------------------------
     //
     ///////////////////////////////////////////////////////////////////////////
 
-    // MCAUSE switching logic based on priority
-    assign mcause_code = (inst_addr_misaligned) ? {XLEN{1'b0}} :
+    // MCAUSE switching logic based on above listed priorities
+    assign mcause_code = // aync exceptions have highest priority
+                         (csr_sb[`MEIRQ])       ? {1'b1, {XLEN-5{1'b0}}, 4'hB} :
+                         // then follow sync exceptions
+                         (inst_addr_misaligned) ? {XLEN{1'b0}} :
                          (csr_ro_wr)            ? {{XLEN-4{1'b0}}, 4'h1} :
-                         (inst_error)           ? {{XLEN-4{1'b0}}, 4'h2} :
+                         (dec_error)            ? {{XLEN-4{1'b0}}, 4'h2} :
                          (sys[`IS_ECALL])       ? {{XLEN-4{1'b0}}, 4'hB} :
                          (sys[`IS_EBREAK])      ? {{XLEN-4{1'b0}}, 4'h3} :
                          (store_misaligned)     ? {{XLEN-4{1'b0}}, 4'h6} :
                          (load_misaligned)      ? {{XLEN-4{1'b0}}, 4'h4} :
                                                   {XLEN{1'b0}};
 
-    // Triggers the trap execution
-    assign trap_occuring = csr_ro_wr |
-                           inst_addr_misaligned |
-                           load_misaligned |
-                           store_misaligned |
-                           inst_error;
+    // Exception-specific information
+    assign mtval_info = (dec_error)            ? instruction :
+                        (inst_addr_misaligned) ? data_addr   :
+                        (sys[`IS_ECALL])       ? pc_reg      :
+                        (sys[`IS_EBREAK])      ? pc_reg      :
+                                                 {XLEN{1'b0}};
+
+    // Trigger the trap handling execution in main FSM
+    assign async_trap_occuring = csr_sb[`MEIRQ];
+
+    assign sync_trap_occuring = csr_ro_wr |
+                                inst_addr_misaligned |
+                                load_misaligned |
+                                store_misaligned |
+                                dec_error;
+
+    assign trap_occuring = async_trap_occuring | sync_trap_occuring;
 
 
 endmodule

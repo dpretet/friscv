@@ -29,7 +29,7 @@ module friscv_decoder
         output logic             branching,
         output logic [6    -1:0] sys,
         output logic             processing,
-        output logic             inst_error,
+        output logic             dec_error,
         output logic [4    -1:0] pred,
         output logic [4    -1:0] succ
     );
@@ -49,7 +49,7 @@ module friscv_decoder
                 sys = 6'b0;
                 fence = 2'b0;
                 processing = 1'b0;
-                inst_error = 1'b0;
+                dec_error = 1'b0;
                 imm12 = 12'b0;
                 imm20 = instruction[31:12];
             end
@@ -64,7 +64,7 @@ module friscv_decoder
                 sys = 6'b0;
                 fence = 2'b0;
                 processing = 1'b0;
-                inst_error = 1'b0;
+                dec_error = 1'b0;
                 imm12 = 12'b0;
                 imm20 = instruction[31:12];
             end
@@ -79,7 +79,7 @@ module friscv_decoder
                 sys = 6'b0;
                 fence = 2'b0;
                 processing = 1'b0;
-                inst_error = 1'b0;
+                dec_error = 1'b0;
                 imm12 = 12'b0;
                 imm20 = {instruction[31],
                          instruction[19:12],
@@ -97,7 +97,7 @@ module friscv_decoder
                 sys = 6'b0;
                 fence = 2'b0;
                 processing = 1'b0;
-                inst_error = 1'b0;
+                dec_error = 1'b0;
                 imm12 = instruction[20+:12];
                 imm20 = 20'b0;
             end
@@ -112,7 +112,7 @@ module friscv_decoder
                 sys = 6'b0;
                 fence = 2'b0;
                 processing = 1'b0;
-                inst_error = 1'b0;
+                dec_error = 1'b0;
                 imm12 = {instruction[31],
                          instruction[7],
                          instruction[25+:6],
@@ -156,7 +156,7 @@ module friscv_decoder
                 end
                 fence = 2'b0;
                 processing = 1'b0;
-                inst_error = 1'b0;
+                dec_error = 1'b0;
                 imm12 = 12'b0;
                 imm20 = 20'b0;
             end
@@ -177,7 +177,7 @@ module friscv_decoder
                     fence = 2'b01;
                 end
                 processing = 1'b0;
-                inst_error = 1'b0;
+                dec_error = 1'b0;
                 imm12 = 12'b0;
                 imm20 = 20'b0;
             end
@@ -192,7 +192,7 @@ module friscv_decoder
                 sys = 6'b0;
                 fence = 2'b0;
                 processing = 1'b1;
-                inst_error = 1'b0;
+                dec_error = 1'b0;
                 imm12 = instruction[20+:12];
                 imm20 = 20'b0;
             end
@@ -207,7 +207,7 @@ module friscv_decoder
                 sys = 6'b0;
                 fence = 2'b0;
                 processing = 1'b1;
-                inst_error = 1'b0;
+                dec_error = 1'b0;
                 imm12 = {instruction[25+:7], instruction[7+:5]};
                 imm20 = 20'b0;
             end
@@ -222,7 +222,7 @@ module friscv_decoder
                 sys = 6'b0;
                 fence = 2'b0;
                 processing = 1'b1;
-                inst_error = 1'b0;
+                dec_error = 1'b0;
                 imm12 = instruction[20+:12];
                 imm20 = 20'b0;
             end
@@ -237,7 +237,7 @@ module friscv_decoder
                 sys = 6'b0;
                 fence = 2'b0;
                 processing = 1'b1;
-                inst_error = 1'b0;
+                dec_error = 1'b0;
                 imm12 = 12'b0;
                 imm20 = 20'b0;
             end
@@ -252,7 +252,7 @@ module friscv_decoder
                 sys = 6'b0;
                 fence = 2'b0;
                 processing = 1'b0;
-                inst_error = 1'b1;
+                dec_error = 1'b1;
                 imm12 = 12'b0;
                 imm20 = 20'b0;
             end

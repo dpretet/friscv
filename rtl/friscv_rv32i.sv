@@ -58,7 +58,7 @@ module friscv_rv32i
         parameter ICACHE_DEPTH        = 512
 
     )(
-        // clock/reset interface
+        // Clock/reset interface
         input  logic                      aclk,
         input  logic                      aresetn,
         input  logic                      srst,
@@ -66,7 +66,7 @@ module friscv_rv32i
         input  logic                      irq,
         // Internal core status
         output logic [8             -1:0] status,
-        // instruction memory interface
+        // Instruction memory interface
         output logic                      imem_arvalid,
         input  logic                      imem_arready,
         output logic [AXI_ADDR_W    -1:0] imem_araddr,
@@ -77,7 +77,7 @@ module friscv_rv32i
         input  logic [AXI_ID_W      -1:0] imem_rid,
         input  logic [2             -1:0] imem_rresp,
         input  logic [AXI_IMEM_W    -1:0] imem_rdata,
-        // data memory interface
+        // Data memory interface
         output logic                      dmem_awvalid,
         input  logic                      dmem_awready,
         output logic [AXI_ADDR_W    -1:0] dmem_awaddr,
@@ -174,6 +174,8 @@ module friscv_rv32i
     logic [XLEN            -1:0] ctrl_mstatus;
     logic                        ctrl_mcause_wr;
     logic [XLEN            -1:0] ctrl_mcause;
+    logic                        ctrl_mtval_wr;
+    logic [XLEN            -1:0] ctrl_mtval;
     logic [`CSR_SB_W       -1:0] csr_sb;
 
     //////////////////////////////////////////////////////////////////////////
@@ -276,7 +278,6 @@ module friscv_rv32i
         .aclk           (aclk),
         .aresetn        (aresetn),
         .srst           (srst),
-        .irq            (irq),
         .traps          (traps),
         .flush_req      (flush_req),
         .flush_ack      (flush_ack),
@@ -311,6 +312,8 @@ module friscv_rv32i
         .mstatus        (ctrl_mstatus),
         .mcause_wr      (ctrl_mcause_wr),
         .mcause         (ctrl_mcause),
+        .mtval_wr       (ctrl_mtval_wr),
+        .mtval          (ctrl_mtval),
         .csr_sb         (csr_sb)
     );
 
@@ -406,6 +409,7 @@ module friscv_rv32i
         .aclk            (aclk),
         .aresetn         (aresetn),
         .srst            (srst),
+        .eirq            (irq),
         .valid           (csr_en),
         .ready           (csr_ready),
         .instbus         (csr_instbus),
@@ -420,6 +424,8 @@ module friscv_rv32i
         .ctrl_mstatus    (ctrl_mstatus),
         .ctrl_mcause_wr  (ctrl_mcause_wr),
         .ctrl_mcause     (ctrl_mcause),
+        .ctrl_mtval_wr   (ctrl_mtval_wr),
+        .ctrl_mtval      (ctrl_mtval),
         .csr_sb          (csr_sb)
     );
 

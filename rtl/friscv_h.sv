@@ -138,9 +138,10 @@
 `define MTVEC    0
 `define MEPC    `MTVEC + `XLEN
 `define MSTATUS `MEPC + `XLEN
+`define MEIRQ   `MSTATUS + `XLEN
 
 // CSR shared bus width
-`define CSR_SB_W `MSTATUS + `XLEN
+`define CSR_SB_W `MEIRQ + 1
 
 
 //////////////////////////////////////////////////////////////////

@@ -13,15 +13,17 @@ module friscv_csr
         parameter MHART_ID = 0,
         parameter XLEN = 32
     )(
-        // clock/reset interface
+        // Clock/reset interface
         input  logic                   aclk,
         input  logic                   aresetn,
         input  logic                   srst,
+        // External interrupt pin
+        input  logic                   eirq,
         // Instruction bus
         input  logic                   valid,
         output logic                   ready,
         input  logic [`INST_BUS_W-1:0] instbus,
-        // register source 1 query interface
+        // Register source 1 query interface
         output logic [5          -1:0] rs1_addr,
         input  logic [XLEN       -1:0] rs1_val,
         output logic                   rd_wr_en,
@@ -34,6 +36,8 @@ module friscv_csr
         input  logic [XLEN       -1:0] ctrl_mstatus,
         input  logic                   ctrl_mcause_wr,
         input  logic [XLEN       -1:0] ctrl_mcause,
+        input  logic                   ctrl_mtval_wr,
+        input  logic [XLEN       -1:0] ctrl_mtval,
         // CSR shared bus
         output logic [`CSR_SB_W  -1:0] csr_sb
     );
@@ -75,10 +79,11 @@ module friscv_csr
     logic [5         -1:0] rs1_addr_r;
     logic [XLEN      -1:0] rs1_val_r;
 
+    logic [2         -1:0] eirq_cdc;
 
-    // -------------------
+    //////////////////////////////////////////////////////////////////////////
     // Machine-level CSRs:
-    // -------------------
+    //////////////////////////////////////////////////////////////////////////
 
     // Machine Information Status
     // logic [XLEN-1:0] mvendorid;  // 0xF11    MRO (not implemented)
@@ -110,17 +115,17 @@ module friscv_csr
     logic [XLEN-1:0] pmpaddr0;      // 0x3B0    MRW
 
 
-    // ----------------------
+    //////////////////////////////////////////////////////////////////////////
     // Supervisor-level CSRs:
-    // ----------------------
+    //////////////////////////////////////////////////////////////////////////
 
     // Supervisor Protection and Translation
     logic [XLEN-1:0] satp;          // 0x180
 
 
-    // ----------------
+    //////////////////////////////////////////////////////////////////////////
     // User-level CSRs:
-    // ----------------
+    //////////////////////////////////////////////////////////////////////////
 
     // User Counter/Timers
     logic [XLEN-1:0] cycle;         // 0xC00
@@ -132,9 +137,9 @@ module friscv_csr
                       `CSR_VERBOSITY,
                       `CSR_ROUTE);
 
-    // ------------------------------------------------------------------------
+    //////////////////////////////////////////////////////////////////////////
     // Decompose the instruction bus
-    // ------------------------------------------------------------------------
+    //////////////////////////////////////////////////////////////////////////
 
     assign opcode = instbus[`OPCODE +: `OPCODE_W];
     assign funct3 = instbus[`FUNCT3 +: `FUNCT3_W];
@@ -146,9 +151,9 @@ module friscv_csr
     assign rs1_addr = rs1;
 
 
-    // ------------------------------------------------------------------------
+    //////////////////////////////////////////////////////////////////////////
     // CSR execution machine
-    // ------------------------------------------------------------------------
+    //////////////////////////////////////////////////////////////////////////
 
     always @ (posedge aclk or negedge aresetn) begin
         if (aresetn==1'b0) begin
@@ -276,14 +281,23 @@ module friscv_csr
     end
 
 
-    // ------------------------------------------------------------------------
+    //////////////////////////////////////////////////////////////////////////
     // CSRs description
-    // ------------------------------------------------------------------------
+    //
+    // WPRI: Reserved Writes Preserve Values, Reads Ignore Values
+    // WARL: Write Any, Read legal
+    //
+    //////////////////////////////////////////////////////////////////////////
 
-    // HARTID - Read-only
+
+    ///////////////////////////////////////////////////////////////////////////
+    // HARTID - 0xF14 (RO)
+    ///////////////////////////////////////////////////////////////////////////
     assign mhartid = MHART_ID;
 
-    // ISA Description: supposed to be RW, is RO in this implementation
+    ///////////////////////////////////////////////////////////////////////////
+    // MISA - 0x301 (RO)
+    ///////////////////////////////////////////////////////////////////////////
 
     // Supported extensions
     assign misa[0]  = 1'b0;                     // A Atomic extension
@@ -313,7 +327,6 @@ module friscv_csr
     assign misa[24] = 1'b0;                     // Y Reserved
     assign misa[25] = 1'b0;                     // Z Reserved
 
-
     // MXLEN field encoding
     generate
     if (XLEN==32) begin : MXLEN_32
@@ -325,32 +338,32 @@ module friscv_csr
     end
     endgenerate
 
-    // TODO: take in account current privilege mode check if rw is applicable
-
-    // MSTATUS (WPRI - Reserved Writes Preserve Values, Reads Ignore Values)
-    
-    // 31       SD related to XS FS, 0 for the moment
-    // 30-23    WPRI
-    // 22       TSR Supervisor mode, 0 for the moment
-    // 21       TW Timeout Wait, 0 for the moment
-    // 20       TVM Virtualization, 0 N/A
-    // 19       MXR Virtual Mem, 0 N/A
-    // 18       SUM Virtual Mem, 0 N/A
-    // 17       MPRV Virtual Mem, 0 N/A
-    // 16:15    XS FP, 0 N/A
-    // 14:13    FS FP, 0 N/A
-    // 12:11    MPP
-    // 10:9     WPRI
-    // 8        SPP Supervisor mode, 0 for the moment
-    // 7        MPIE
-    // 6        WPRI
-    // 5        SPIE Supervisor mode, 0 for the moment
-    // 4        UPIE User mode, 0 for the moment
-    // 3        MIE
-    // 2        WPRI
-    // 1        SIE Supervisor mode, 0 for the moment
-    // 0        UIE User mode,  0 for the moment
-
+    ///////////////////////////////////////////////////////////////////////////
+    // MSTATUS - 0x300
+    // 
+    // 31:      SD related to XS FS, 0 for the moment
+    // 30:23:   (WPRI)
+    // 22:      TSR Supervisor mode, 0 N/A
+    // 21:      TW Timeout Wait, 0 N/A
+    // 20:      TVM Virtualization, 0 N/A
+    // 19:      MXR Virtual Mem, 0 N/A
+    // 18:      SUM Virtual Mem, 0 N/A
+    // 17:      MPRV Virtual Mem, 0 N/A
+    // 16:15:   XS FP, 0 N/A
+    // 14:13:   FS FP, 0 N/A
+    // 12:11:   MPP: Machine-mode, previous priviledge mode, 0 N/A
+    // 10:9:    (WPRI)
+    // 8:       SPP Supervisor mode, 0 N/A
+    // 7:       MPIE: Machine-mode, Interrupt enable (prior to the trap)
+    // 6:       (WPRI)
+    // 5:       SPIE Supervisor mode, 0 N/A
+    // 4:       UPIE User mode, 0 N/A
+    // 3:       MIE: Machine-mode, Interrupt enable
+    // 2:       (WPRI)
+    // 1:       SIE Supervisor mode, 0 N/A
+    // 0:       UIE User mode, 0 N/A
+    //
+    ///////////////////////////////////////////////////////////////////////////
     always @ (posedge aclk or negedge aresetn) begin
         if (~aresetn) begin
             mstatus <= {XLEN{1'b0}};
@@ -371,7 +384,26 @@ module friscv_csr
         end
     end 
 
-    // MTVEC (WARL - Write Any Values, Reads Legal Values) 
+    ///////////////////////////////////////////////////////////////////////////
+    // MIE - 0x304
+    ///////////////////////////////////////////////////////////////////////////
+    always @ (posedge aclk or negedge aresetn) begin
+        if (~aresetn) begin
+            mie <= {XLEN{1'b0}};
+        end else if (srst) begin
+            mie <= {XLEN{1'b0}};
+        end else begin
+            if (csr_wren) begin
+                if (csr_r==12'h304) begin
+                    mie <= newval;
+                end
+            end
+        end
+    end 
+
+    ///////////////////////////////////////////////////////////////////////////
+    // MTVEC - 0x305
+    ///////////////////////////////////////////////////////////////////////////
     always @ (posedge aclk or negedge aresetn) begin
         if (~aresetn) begin
             mtvec <= {XLEN{1'b0}};
@@ -386,7 +418,9 @@ module friscv_csr
         end
     end 
 
-    // MSCRATCH
+    ///////////////////////////////////////////////////////////////////////////
+    // MSCRATCH - 0x340
+    ///////////////////////////////////////////////////////////////////////////
     always @ (posedge aclk or negedge aresetn) begin
         if (~aresetn) begin
             mscratch <= {XLEN{1'b0}};
@@ -401,7 +435,9 @@ module friscv_csr
         end
     end 
 
-    // MEPC, only support IALIGN=32
+    ///////////////////////////////////////////////////////////////////////////
+    // MEPC, only support IALIGN=32 - 0x341
+    ///////////////////////////////////////////////////////////////////////////
     always @ (posedge aclk or negedge aresetn) begin
         if (~aresetn) begin
             mepc <= {XLEN{1'b0}};
@@ -418,7 +454,9 @@ module friscv_csr
         end
     end 
 
-    // MCAUSE
+    ///////////////////////////////////////////////////////////////////////////
+    // MCAUSE - 0x342
+    ///////////////////////////////////////////////////////////////////////////
     always @ (posedge aclk or negedge aresetn) begin
         if (~aresetn) begin
             mcause <= {XLEN{1'b0}};
@@ -435,14 +473,18 @@ module friscv_csr
         end
     end 
 
-    // MTVAL
+    ///////////////////////////////////////////////////////////////////////////
+    // MTVAL - 0x343
+    ///////////////////////////////////////////////////////////////////////////
     always @ (posedge aclk or negedge aresetn) begin
         if (~aresetn) begin
             mtval <= {XLEN{1'b0}};
         end else if (srst) begin
             mtval <= {XLEN{1'b0}};
         end else begin
-            if (csr_wren) begin
+            if (ctrl_mtval_wr) begin
+                mtval <= ctrl_mtval;
+            end else if (csr_wren) begin
                 if (csr_r==12'h343) begin
                     mtval <= newval;
                 end
@@ -450,6 +492,22 @@ module friscv_csr
         end
     end 
 
+    ///////////////////////////////////////////////////////////////////////////
+    // MIP - 0x344
+    ///////////////////////////////////////////////////////////////////////////
+    always @ (posedge aclk or negedge aresetn) begin
+        if (~aresetn) begin
+            mip <= {XLEN{1'b0}};
+        end else if (srst) begin
+            mip <= {XLEN{1'b0}};
+        end else begin
+            if (csr_wren) begin
+                if (csr_r==12'h344) begin
+                    mip <= newval;
+                end
+            end
+        end
+    end 
 
     //////////////////////////////////////////////////////////////////////////
     // Read circuit
@@ -466,6 +524,8 @@ module friscv_csr
                     oldval <= mstatus;
                 end else if (csr==12'h301) begin
                     oldval <= misa;
+                end else if (csr==12'h304) begin
+                    oldval <= mie;
                 end else if (csr==12'h305) begin
                     oldval <= mtvec;
                 end else if (csr==12'h340) begin
@@ -476,6 +536,8 @@ module friscv_csr
                     oldval <= mcause;
                 end else if (csr==12'h343) begin
                     oldval <= mtval;
+                end else if (csr==12'h344) begin
+                    oldval <= mip;
                 end else if (csr==12'hF14) begin
                     oldval <= mhartid;
                 end else begin
@@ -493,6 +555,17 @@ module friscv_csr
     assign csr_sb[`MTVEC+:XLEN] = mtvec;
     assign csr_sb[`MEPC+:XLEN] = mepc;
     assign csr_sb[`MSTATUS+:XLEN] = mstatus;
+
+    // Synchronize the external IRQ in the core's clock domain
+    always @ (posedge aclk or negedge aresetn) begin
+        if (aresetn) eirq_cdc <= 2'b0;
+        else if (srst) eirq_cdc <= 2'b0;
+        else eirq_cdc <= {eirq_cdc[0], eirq};
+    end
+
+    assign csr_sb[`MEIRQ] = mstatus[3] &    // global interrupt enable
+                            mie[11] &       // external interrupt enable
+                            eirq_cdc[1];    // external interrupt pin
 
 
 endmodule
