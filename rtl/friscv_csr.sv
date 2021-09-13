@@ -152,6 +152,16 @@ module friscv_csr
 
 
     //////////////////////////////////////////////////////////////////////////
+    // Synchronize the external IRQ in the core's clock domain
+    //////////////////////////////////////////////////////////////////////////
+    always @ (posedge aclk or negedge aresetn) begin
+        if (aresetn) eirq_cdc <= 2'b0;
+        else if (srst) eirq_cdc <= 2'b0;
+        else eirq_cdc <= {eirq_cdc[0], eirq};
+    end
+
+
+    //////////////////////////////////////////////////////////////////////////
     // CSR execution machine
     //////////////////////////////////////////////////////////////////////////
 
@@ -501,7 +511,14 @@ module friscv_csr
         end else if (srst) begin
             mip <= {XLEN{1'b0}};
         end else begin
-            if (csr_wren) begin
+            
+            if (mstatus[3] &&    // global interrupt enable
+                mie[11] &&       // external interrupt enable
+                eirq_cdc[1])     // external interrupt pin
+            begin
+                mip[11] <= 1'b1;
+
+            end else if (csr_wren) begin
                 if (csr_r==12'h344) begin
                     mip <= newval;
                 end
@@ -556,17 +573,9 @@ module friscv_csr
     assign csr_sb[`MEPC+:XLEN] = mepc;
     assign csr_sb[`MSTATUS+:XLEN] = mstatus;
 
-    // Synchronize the external IRQ in the core's clock domain
-    always @ (posedge aclk or negedge aresetn) begin
-        if (aresetn) eirq_cdc <= 2'b0;
-        else if (srst) eirq_cdc <= 2'b0;
-        else eirq_cdc <= {eirq_cdc[0], eirq};
-    end
-
-    assign csr_sb[`MEIRQ] = mstatus[3] &    // global interrupt enable
-                            mie[11] &       // external interrupt enable
-                            eirq_cdc[1];    // external interrupt pin
-
+    assign csr_sb[`MEIP] = mip[11];
+    assign csr_sb[`MTIP] = 1'b0;
+    assign csr_sb[`MSIP] = 1'b0;
 
 endmodule
 

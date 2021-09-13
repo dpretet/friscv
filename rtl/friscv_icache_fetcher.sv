@@ -365,10 +365,10 @@ module friscv_icache_fetcher
                     // flush is done in 1 cycle in fetcher, wait req
                     // deassertion then go back to IDLE to reboot
                     flush_ack <= 1'b1;
+                    flush_fifo <= 1'b0;
                     if (flush_req==1'b0) begin
                         log.debug("Finished flush procedure");
-                        flush_ack <= 1'b0;
-                        flush_fifo <= 1'b0;
+                        pull_addr_if <= 1'b1;
                         seq <= IDLE;
                     end
                 end

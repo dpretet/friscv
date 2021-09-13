@@ -16,11 +16,12 @@
 module friscv_rv32i
 
     #(
-        ///////////////////////////////////////////////////////////////////////////
+        ////////////////////////////////////////////////////////////////////////
         // Global setup
-        ///////////////////////////////////////////////////////////////////////////
+        ////////////////////////////////////////////////////////////////////////
 
-        // Instruction length (always 32, whatever the architecture)
+        // Instruction length (always 32, whatever the architecture,
+        // compressed ISA is not supported)
         parameter ILEN               = 32,
         // RISCV Architecture
         parameter XLEN               = 32,
@@ -30,12 +31,12 @@ module friscv_rv32i
         parameter INST_OSTDREQ_NUM   = 8,
         // Core Hart ID
         parameter MHART_ID           = 0,
-        // RV32E architecture, limits integer registers to 16, else 32
+        // RV32E architecture, limits integer registers to 16, else 32 available
         parameter RV32E              = 0,
 
-        ///////////////////////////////////////////////////////////////////////////
+        ////////////////////////////////////////////////////////////////////////
         // AXI4 / AXI4-lite interface setup
-        ///////////////////////////////////////////////////////////////////////////
+        ////////////////////////////////////////////////////////////////////////
 
         // Address bus width defined for both control and AXI4 address signals
         parameter AXI_ADDR_W         = XLEN,
@@ -45,17 +46,17 @@ module friscv_rv32i
         parameter AXI_IMEM_W         = XLEN,
         parameter AXI_DMEM_W         = XLEN,
 
-        ///////////////////////////////////////////////////////////////////////////
+        ////////////////////////////////////////////////////////////////////////
         // Cache setup
-        ///////////////////////////////////////////////////////////////////////////
+        ////////////////////////////////////////////////////////////////////////
 
         // Enable instruction cache
         parameter ICACHE_EN          = 0,
         // Line width defining only the data payload, in bits, must an
         // integer multiple of XLEN
-        parameter ICACHE_LINE_W       = XLEN*4,
+        parameter ICACHE_LINE_W      = XLEN*4,
         // Number of lines in the cache
-        parameter ICACHE_DEPTH        = 512
+        parameter ICACHE_DEPTH       = 512
 
     )(
         // Clock/reset interface

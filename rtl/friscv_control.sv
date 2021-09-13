@@ -113,9 +113,7 @@ module friscv_control
     logic             processing;
     logic [2    -1:0] fence;
     logic [6    -1:0] sys;
-
-    // Flag raised when receiving an unsupported/undefined instruction
-    logic dec_error;
+    logic             dec_error;
 
     // Control fsm
     typedef enum logic[3:0] {
@@ -124,7 +122,8 @@ module friscv_control
         RELOAD = 2,
         FENCE = 3,
         FENCE_I = 4,
-        EBREAK = 5
+        WFI = 5,
+        EBREAK = 6
     } pc_fsm;
 
     pc_fsm cfsm;
@@ -285,12 +284,13 @@ module friscv_control
     //   - jal
     //   - jalr
     //   - fence: FENCE (0) / FENCE.I (1)
-    //   - sys: CSR (0) / ECALL (1) / EBREAK (2)
-    //          MRET (4) / SRET (5) / WFI (6)
-    //   - processing: alll others
+    //   - sys: ECALL (0) / EBREAK (1) / CSR (2) / MRET (3) / SRET (4) / WFI (5)
+    //   - processing: all others
     //
     // Processing is handled by ALU & Memfy, responsible of data memory access,
-    // registers management and arithmetic/logic operations.
+    // registers management and arithmetic/logic operations
+    //
+    // CSR is handled by the CSR dedicated module
     //
     // All the other flags are handled in this module.
     //
@@ -627,6 +627,22 @@ module friscv_control
                             pc_reg <= pc;
                             cfsm <= FENCE_I;
 
+                        // Reach an ECALL instruction, jump to trap handler
+                        end else if (sys[`IS_WFI] && ~cant_branch_now && csr_ready) begin
+
+                            log.info("Execute WFI -> Stall and wait for interrupt");
+                            print_instruction(instruction, pc_reg, opcode, funct3,
+                                              funct7, rs1, rs2, rd, imm12, imm20, csr);
+                            traps[0] <= 1'b1;
+                            flush_fifo <= 1'b1;
+                            arvalid <= 1'b0;
+                            pc_reg <= mtvec;
+                            mepc_wr <= 1'b1;
+                            mepc <= pc_reg;
+                            mtval_wr <= 1'b1;
+                            mtval <= mtval_info;
+                            cfsm <= WFI;
+
                         // All other instructions
                         end else if (csr_ready &&
                                      ~cant_branch_now && ~cant_process_now) begin
@@ -667,7 +683,18 @@ module friscv_control
                         flush_req <= 1'b0;
                         flush_fifo <= 1'b0;
                         arvalid <= 1'b1;
-                        cfsm <= RELOAD;
+                        cfsm <= FETCH;
+                    end
+                end
+
+
+                ///////////////////////////////////////////////////////////////
+                // Wait for Interrupt (software, timer, external)
+                ///////////////////////////////////////////////////////////////
+                WFI: begin
+                    if (csr_sb[`MSIP] || csr_sb[`MTIP] || csr_sb[`MEIP]) begin
+                        arvalid <= 1'b1;
+                        cfsm <= FETCH;
                     end
                 end
 
@@ -817,7 +844,6 @@ module friscv_control
     // Synchronous exception priority in decreasing priority order:
     // -----------------------------------------------------------
     //
-    //
     // Priority  |  Exception Code  |   Description
     // ----------|------------------|------------------------------------------
     // Highest   |  3               |   Instruction address breakpoint
@@ -846,7 +872,9 @@ module friscv_control
 
     // MCAUSE switching logic based on above listed priorities
     assign mcause_code = // aync exceptions have highest priority
-                         (csr_sb[`MEIRQ])       ? {1'b1, {XLEN-5{1'b0}}, 4'hB} :
+                         (csr_sb[`MSIP])        ? {1'b1, {XLEN-5{1'b0}}, 4'h3} :
+                         (csr_sb[`MTIP])        ? {1'b1, {XLEN-5{1'b0}}, 4'h7} :
+                         (csr_sb[`MEIP])        ? {1'b1, {XLEN-5{1'b0}}, 4'hB} :
                          // then follow sync exceptions
                          (inst_addr_misaligned) ? {XLEN{1'b0}} :
                          (csr_ro_wr)            ? {{XLEN-4{1'b0}}, 4'h1} :
@@ -865,9 +893,11 @@ module friscv_control
                                                  {XLEN{1'b0}};
 
     // Trigger the trap handling execution in main FSM
-    assign async_trap_occuring = csr_sb[`MEIRQ];
+    assign async_trap_occuring = csr_sb[`MEIP];
 
-    assign sync_trap_occuring = csr_ro_wr |
+    assign sync_trap_occuring = csr_sb[`MSIP] |
+                                csr_sb[`MTIP] |
+                                csr_ro_wr |
                                 inst_addr_misaligned |
                                 load_misaligned |
                                 store_misaligned |
