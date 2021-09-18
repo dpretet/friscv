@@ -335,5 +335,5 @@ section address are zero, you could do something like this:
 ```
 
 This works because ALIGN returns the current location counter aligned upward to
-the spec- ified value.  Specifying address for a section will change the value
+the specified value. Specifying address for a section will change the value
 of the location counter, provided that the section is non-empty.

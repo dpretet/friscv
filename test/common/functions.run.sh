@@ -20,10 +20,10 @@ NC='\033[0m' # No Color
 XLEN=32
 # Instruction width
 ILEN=32
-# Cache line width in bits
-CACHE_LINE_W=128
-# Number of instruction per cache line
-INST_PER_LINE=$(($CACHE_LINE_W/$ILEN))
+# Cache block width in bits
+CACHE_BLOCK_W=128
+# Number of instruction per cache block
+INST_PER_BLOCK=$(($CACHE_BLOCK_W/$ILEN))
 # Boot address
 BOOT_ADDR=0
 # Timeout upon which the simulation is ran
@@ -51,7 +51,7 @@ usage()
 {
 cat << EOF
 usage: bash ./run.sh ...
--l    | --cache_line        (optional)            cache line width in bits (128 by default)
+-l    | --cache_block       (optional)            cache line width in bits (128 by default)
 -x    | --xlen              (optional)            XLEN, 32 or 64 bits (32 by default)
 -t    | --timeout           (optional)            Timeout in number of cycles (10000 by default)
 -c    | --clean                                   Clean-up and exit
@@ -87,14 +87,14 @@ run_tests() {
         echo ""
         echo -e "${BLUE}INFO: Execute ${test}${NC}"
         echo ""
-        echo "  - XLEN:         $XLEN"
-        echo "  - BOOT_ADDR:    $BOOT_ADDR"
-        echo "  - CACHE_LINE_W: $CACHE_LINE_W"
-        echo "  - TIMEOUT:      $TIMEOUT"
+        echo "  - XLEN:          $XLEN"
+        echo "  - BOOT_ADDR:     $BOOT_ADDR"
+        echo "  - CACHE_BLOCK_W: $CACHE_BLOCK_W"
+        echo "  - TIMEOUT:       $TIMEOUT"
 
         # Defines passed to the testbench
         DEFINES=""
-        DEFINES="${DEFINES}CACHE_LINE_W=$CACHE_LINE_W;"
+        DEFINES="${DEFINES}CACHE_BLOCK_W=$CACHE_BLOCK_W;"
         DEFINES="${DEFINES}BOOT_ADDR=$BOOT_ADDR;"
         DEFINES="${DEFINES}XLEN=$XLEN;"
         DEFINES="${DEFINES}TIMEOUT=$TIMEOUT;"
@@ -145,9 +145,9 @@ get_args() {
     # First handle the arguments
     while [ "$1" != "" ]; do
         case $1 in
-            -l | --cache_line )
+            -l | --cache_block )
                 shift
-                CACHE_LINE_W=$1
+                CACHE_BLOCK_W=$1
             ;;
             -x | --xlen )
                 XLEN=$1

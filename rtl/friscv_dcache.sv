@@ -47,9 +47,9 @@ module friscv_dcache
     // Cache Setup
     ///////////////////////////////////////////////////////////////////////////
 
-    // Line width defining only the data payload, in bits
-    parameter CACHE_LINE_W = 128,
-    // Number of lines in the cache
+    // Block width defining only the data payload, in bits
+    parameter CACHE_BLOCK_W = 128,
+    // Number of blocks in the cache
     parameter CACHE_DEPTH = 512
 
     )(

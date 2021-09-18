@@ -52,10 +52,10 @@ module friscv_rv32i
 
         // Enable instruction cache
         parameter ICACHE_EN          = 0,
-        // Line width defining only the data payload, in bits, must an
-        // integer multiple of XLEN
-        parameter ICACHE_LINE_W      = XLEN*4,
-        // Number of lines in the cache
+        // Block width defining only the data payload, in bits, must an
+        // integer multiple of XLEN (power of two)
+        parameter ICACHE_BLOCK_W     = XLEN*4,
+        // Number of blocks in the cache
         parameter ICACHE_DEPTH       = 512
 
     )(
@@ -328,14 +328,14 @@ module friscv_rv32i
 
     friscv_icache
     #(
-        .ILEN         (ILEN),
-        .XLEN         (XLEN),
-        .OSTDREQ_NUM  (INST_OSTDREQ_NUM),
-        .AXI_ADDR_W   (AXI_ADDR_W),
-        .AXI_ID_W     (AXI_ID_W),
-        .AXI_DATA_W   (AXI_IMEM_W),
-        .CACHE_LINE_W (ICACHE_LINE_W),
-        .CACHE_DEPTH  (ICACHE_DEPTH)
+        .ILEN          (ILEN),
+        .XLEN          (XLEN),
+        .OSTDREQ_NUM   (INST_OSTDREQ_NUM),
+        .AXI_ADDR_W    (AXI_ADDR_W),
+        .AXI_ID_W      (AXI_ID_W),
+        .AXI_DATA_W    (AXI_IMEM_W),
+        .CACHE_BLOCK_W (ICACHE_BLOCK_W),
+        .CACHE_DEPTH   (ICACHE_DEPTH)
     )
     icache
     (

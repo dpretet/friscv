@@ -22,10 +22,10 @@ NC='\033[0m' # No Color
 XLEN=32
 # Instruction width
 ILEN=32
-# Cache line width in bits
-CACHE_LINE_W=128
-# Number of instruction per cache line
-INST_PER_LINE=$(($CACHE_LINE_W/$ILEN))
+# Cache block width in bits
+CACHE_BLOCK_W=128
+# Number of instruction per cache block
+INST_PER_BLOCK=$(($CACHE_BLOCK_W/$ILEN))
 # Boot address
 BOOT_ADDR=0
 # Timeout upon which the simulation is ran

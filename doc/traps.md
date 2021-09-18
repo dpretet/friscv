@@ -3,10 +3,10 @@
 Exceptions, Traps, and Interrupts (specs v1.6) :
 
 - We use the term exception to refer to an unusual condition occurring at run
-  time associated with an instruction in the current RISC-V hart. 
+  time associated with an instruction in the current RISC-V hart.
 
 - We use the term interrupt to refer to an external asynchronous event that may
-  cause a RISC-V hart to experience an unexpected transfer of control. 
+  cause a RISC-V hart to experience an unexpected transfer of control.
 
 - We use the term trap to refer to the transfer of control to a trap handler
   caused by either an exception or an interrupt.
@@ -202,12 +202,15 @@ Stackoverflow thread about software interrupts:
 
 https://stackoverflow.com/questions/64863737/risc-v-software-interrupts
 
+Stackoverflow about RISC-V Interrupt Handling Flow
+
+https://stackoverflow.com/questions/61913210/risc-v-interrupt-handling-flow/61916199#61916199
 
 # RISCV Esperanto slides
 
 https://riscv.org/wp-content/uploads/2018/05/riscv-privileged-BCN.v7-2.pdf
 
-PLIC: 
+PLIC:
 - gathers external interrupt and route them to the different harts
 - Interrupts can target multiple harts simultaneously
 

@@ -9,9 +9,9 @@ FRISCV is a SystemVerilog implementation of  [RISCV ISA](https://riscv.org):
 - 3-stage pipeline
 - In-order execution
 - Instruction cache
-- AXI4-lite instruction and data interfaces
+- AXI4-lite interface for instruction and data bus
 - Machine-mode only
-- Interrupt (CLIC)
+- Interrupt (CLINT)
 - Timer
 - [RISCV compliant](./test/riscv-tests/README.md)
 

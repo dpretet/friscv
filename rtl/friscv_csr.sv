@@ -90,6 +90,7 @@ module friscv_csr
     // logic [XLEN-1:0] marchid;    // 0xF12    MRO (not implemented)
     // logic [XLEN-1:0] mimpid;     // 0xF13    MRO (not implemented)
     logic [XLEN-1:0] mhartid;       // 0xF14    MRO
+    // logic [XLEN-1:0] mconfigptr; // 0xF15    MRO (not implemented)
 
     // Machine Trap Status
     logic [XLEN-1:0] mstatus;       // 0x300    MRW
@@ -108,11 +109,11 @@ module friscv_csr
     logic [XLEN-1:0] mip;           // 0x344    MRW
 
     // Machine Memory Protection
-    logic [XLEN-1:0] pmpcfg0;       // 0x3A0    MRW
-    logic [XLEN-1:0] pmpcfg1;       // 0x3A1    MRW
-    logic [XLEN-1:0] pmpcfg2;       // 0x3A2    MRW
-    logic [XLEN-1:0] pmpcfg3;       // 0x3A3    MRW
-    logic [XLEN-1:0] pmpaddr0;      // 0x3B0    MRW
+    // logic [XLEN-1:0] pmpcfg0;       // 0x3A0    MRW (not implemented)
+    // logic [XLEN-1:0] pmpcfg1;       // 0x3A1    MRW (not implemented)
+    // logic [XLEN-1:0] pmpcfg2;       // 0x3A2    MRW (not implemented)
+    // logic [XLEN-1:0] pmpcfg3;       // 0x3A3    MRW (not implemented)
+    // logic [XLEN-1:0] pmpaddr0;      // 0x3B0    MRW (not implemented)
 
 
     //////////////////////////////////////////////////////////////////////////
@@ -120,7 +121,7 @@ module friscv_csr
     //////////////////////////////////////////////////////////////////////////
 
     // Supervisor Protection and Translation
-    logic [XLEN-1:0] satp;          // 0x180
+    // logic [XLEN-1:0] satp;          // 0x180
 
 
     //////////////////////////////////////////////////////////////////////////
@@ -128,7 +129,7 @@ module friscv_csr
     //////////////////////////////////////////////////////////////////////////
 
     // User Counter/Timers
-    logic [XLEN-1:0] cycle;         // 0xC00
+    // logic [XLEN-1:0] ucycle;         // 0xC00
 
 
     // Logger setup

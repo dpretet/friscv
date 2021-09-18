@@ -36,7 +36,7 @@ module friscv_icache_memctrl
         ///////////////////////////////////////////////////////////////////////
 
         // Line width defining only the data payload, in bits
-        parameter CACHE_LINE_W = 128,
+        parameter CACHE_BLOCK_W = 128,
         // Number of lines in the cache
         parameter CACHE_DEPTH = 512
 
@@ -75,7 +75,7 @@ module friscv_icache_memctrl
         // Cache lines write interface
         output logic                      cache_wen,
         output logic [AXI_ADDR_W    -1:0] cache_waddr,
-        output logic [CACHE_LINE_W  -1:0] cache_wdata
+        output logic [CACHE_BLOCK_W -1:0] cache_wdata
     );
 
 
@@ -188,7 +188,7 @@ module friscv_icache_memctrl
                 FLUSH: begin
                     flush <= 1'b1;
                     erase_wen <= 1'b1;
-                    erase_addr <= erase_addr + CACHE_LINE_W/8;
+                    erase_addr <= erase_addr + CACHE_BLOCK_W/8;
                     if (erase_addr==CACHE_DEPTH) begin
                         erase_wen <= 1'b0;
                         erase_addr <= {AXI_ADDR_W+1{1'b0}};

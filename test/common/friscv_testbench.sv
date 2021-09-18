@@ -19,9 +19,9 @@ module tb();
     `define BOOT_ADDR 0
     `endif
 
-    // Cache line width in bits
-    `ifndef CACHE_LINE_W
-    `define CACHE_LINE_W 128
+    // Cache block width in bits
+    `ifndef CACHE_BLOCK_W
+    `define CACHE_BLOCK_W 128
     `endif
 
     // Architecture selection: 32 or 64 bits
@@ -51,14 +51,14 @@ module tb();
     // AXI ID width, setup by default to 8 and unused
     parameter AXI_ID_W           = 8;
     // AXI4 data width, independant of control unit width
-    parameter AXI_IMEM_W         = `CACHE_LINE_W;
+    parameter AXI_IMEM_W         = `CACHE_BLOCK_W;
     parameter AXI_DMEM_W         = XLEN;
     // Enable Instruction cache
     parameter ICACHE_EN          = 1;
-    // Line width defining only the data payload, in bits, must an
+    // Block width defining only the data payload, in bits, must an
     // integer multiple of XLEN
-    parameter ICACHE_LINE_W      = `CACHE_LINE_W;
-    // Number of lines in the cache
+    parameter ICACHE_BLOCK_W     = `CACHE_BLOCK_W;
+    // Number of blocks in the cache
     parameter ICACHE_DEPTH       = 512;
 
     // timeout used in the testbench to break the simulation
@@ -135,7 +135,7 @@ module tb();
         .AXI_IMEM_W (AXI_IMEM_W),
         .AXI_DMEM_W (AXI_DMEM_W),
         .ICACHE_EN (ICACHE_EN),
-        .ICACHE_LINE_W (ICACHE_LINE_W),
+        .ICACHE_BLOCK_W (ICACHE_BLOCK_W),
         .ICACHE_DEPTH (ICACHE_DEPTH)
     )
     dut

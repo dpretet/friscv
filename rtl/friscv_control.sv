@@ -172,9 +172,12 @@ module friscv_control
     logic [XLEN       -1:0] data_addr;
     logic                   load_misaligned;
     logic                   store_misaligned;
+    logic                   wfi_not_allowed;
     logic                   trap_occuring;
     logic                   sync_trap_occuring;
     logic                   async_trap_occuring;
+
+    logic [2         -1:0] priv_mode;
 
     // Logger setup
     svlogger log;
@@ -459,6 +462,7 @@ module friscv_control
             mcause <= {XLEN{1'b0}};
             mtval_wr <= 1'b0;
             mtval <= {XLEN{1'b0}};
+            priv_mode <= 2'b11;
         end else if (srst == 1'b1) begin
             cfsm <= BOOT;
             arvalid <= 1'b0;
@@ -478,6 +482,7 @@ module friscv_control
             mcause <= {XLEN{1'b0}};
             mtval_wr <= 1'b0;
             mtval <= {XLEN{1'b0}};
+            priv_mode <= 2'b11;
         end else begin
 
             case (cfsm)
@@ -487,9 +492,12 @@ module friscv_control
                 ///////////////////////////////////////////////////////////////
                 default: begin
 
+                    // Load boot address
                     arvalid <= 1'b1;
                     araddr <= BOOT_ADDR;
                     pc_reg <= BOOT_ADDR;
+                    // Machine-mode by default after a reset
+                    priv_mode <= 2'b11;
 
                     if (arready) begin
                         log.info("Boot the processor");
@@ -501,6 +509,11 @@ module friscv_control
                 // Fetch instructions from the cache (or the memory)
                 ///////////////////////////////////////////////////////////////
                 FETCH: begin
+
+                    mepc_wr <= 1'b0;
+                    mstatus_wr <= 1'b0;
+                    mcause_wr <= 1'b0;
+                    mtval_wr <= 1'b0;
 
                     ///////////////////////////////////////////////////////////
                     // Manages read outstanding requests to fetch
@@ -562,7 +575,7 @@ module friscv_control
                         // and reload new instructions
                         else if (jump_branch && ~cant_branch_now && csr_ready) begin
 
-                            log.info("Execute Jump/Branch");
+                            log.info("Jump/Branch");
                             print_instruction(instruction, pc_reg, opcode, funct3,
                                               funct7, rs1, rs2, rd, imm12, imm20, csr);
                             flush_fifo <= 1'b1;
@@ -574,7 +587,7 @@ module friscv_control
                         // Reach an ECALL instruction, jump to trap handler
                         end else if (sys[`IS_ECALL] && ~cant_branch_now && csr_ready) begin
 
-                            log.info("Execute ECALL -> Jump to trap handler");
+                            log.info("ECALL -> Jump to trap handler");
                             print_instruction(instruction, pc_reg, opcode, funct3,
                                               funct7, rs1, rs2, rd, imm12, imm20, csr);
                             traps[0] <= 1'b1;
@@ -601,7 +614,7 @@ module friscv_control
                         // Reach a MRET instruction, jump to exception return
                         end else if (sys[`IS_MRET] && ~cant_branch_now && csr_ready) begin
 
-                            log.info("Execute MRET -> Return from trap");
+                            log.info("MRET -> Return from trap");
                             print_instruction(instruction, pc_reg, opcode, funct3,
                                               funct7, rs1, rs2, rd, imm12, imm20, csr);
                             flush_fifo <= 1'b1;
@@ -617,7 +630,7 @@ module friscv_control
                         // the instruction pipeline
                         end else if (fence[`IS_FENCEI]) begin
 
-                            log.info("Execute FENCE.i -> Start iCache flushing");
+                            log.info("FENCE.i -> Start iCache flushing");
                             print_instruction(instruction, pc_reg, opcode, funct3,
                                               funct7, rs1, rs2, rd, imm12, imm20, csr);
                             flush_fifo <= 1'b1;
@@ -630,7 +643,7 @@ module friscv_control
                         // Reach an ECALL instruction, jump to trap handler
                         end else if (sys[`IS_WFI] && ~cant_branch_now && csr_ready) begin
 
-                            log.info("Execute WFI -> Stall and wait for interrupt");
+                            log.info("WFI -> Stall and wait for interrupt");
                             print_instruction(instruction, pc_reg, opcode, funct3,
                                               funct7, rs1, rs2, rd, imm12, imm20, csr);
                             traps[0] <= 1'b1;
@@ -693,7 +706,14 @@ module friscv_control
                 ///////////////////////////////////////////////////////////////
                 WFI: begin
                     if (csr_sb[`MSIP] || csr_sb[`MTIP] || csr_sb[`MEIP]) begin
+                        log.info("WFI -> received an interrupt");
                         arvalid <= 1'b1;
+                        mepc_wr <= 1'b1;
+                        mepc <= pc_reg;
+                        mcause_wr <= 1'b1;
+                        mcause <= mcause_code;
+                        mtval_wr <= 1'b1;
+                        mtval <= mtval_info;
                         cfsm <= FETCH;
                     end
                 end
@@ -761,7 +781,7 @@ module friscv_control
 
     // MSTATUS CSR to write when executing MRET
     assign mstatus_for_mret = {sb_mstatus[XLEN-1:12],  // WPRI
-                               2'b11,                  // MPP
+                               priv_mode,              // MPP
                                sb_mstatus[10:9],       // WPRI
                                1'b0,                   // SPP
                                1'b1,                   // MPIE
@@ -796,23 +816,30 @@ module friscv_control
                            (funct3==`CSRRW && funct3==`CSRRWI))
                        ) ? 1'b1 : 1'b0;
 
-    // PC is not aligned with 32 bits
+    // PC is not aligned with XLEN bits
     assign inst_addr_misaligned = (pc[1:0]!=2'b0) ? 1'b1 : 1'b0;
 
     // The address used to access during a LOAD or a STORE
     assign data_addr = $signed({{(XLEN-12){imm12[11]}}, imm12}) + $signed(ctrl_rs1_val);
 
-    // LOAD is not boundary aligned, must be aligned on data type
+    // LOAD is not XLEN boundary aligned, must be aligned on data type
     assign load_misaligned = (opcode==`LOAD && (funct3==`LH || funct3==`LHU) &&
                                 (data_addr[1:0]==2'h3 || data_addr[1:0]==2'h1))      ? 1'b1 :
                              (opcode==`LOAD && funct3==`LW  && data_addr[1:0]!=2'b0) ? 1'b1 :
                                                                                        1'b0 ;
 
-    // STORE is not boundary aligned
+    // STORE is not XLEN boundary aligned
     assign store_misaligned = (opcode==`STORE && funct3==`SH &&
                                 (data_addr[1:0]==2'h3 || data_addr[1:0]==2'h1))       ? 1'b1 :
                               (opcode==`STORE && funct3==`SW && data_addr[1:0]!=2'b0) ? 1'b1 :
                                                                                         1'b0 ;
+    // TODO:
+    // When TW=1, then if WFI is executed in any less-privileged mode, and it
+    // does not complete within an implementation-specific, bounded time
+    // limit, the WFI instruction causes an illegal instruction exception
+    assign wfi_not_allowed = 1'b0;
+    // assign wfi_not_allowed = (sys[`IS_WFI] && sb_mstatus[21]) ? 1'b1 : 1'b0;
+
 
     ///////////////////////////////////////////////////////////////////////////
     //
@@ -887,6 +914,7 @@ module friscv_control
 
     // Exception-specific information
     assign mtval_info = (dec_error)            ? instruction :
+                        (wfi_not_allowed)      ? instruction :
                         (inst_addr_misaligned) ? data_addr   :
                         (sys[`IS_ECALL])       ? pc_reg      :
                         (sys[`IS_EBREAK])      ? pc_reg      :

@@ -54,7 +54,7 @@ module friscv_icache
         // Enable automatic prefetch in memory controller
         parameter PREFETCH_EN = 0,
         // Line width defining only the data payload, in bits
-        parameter CACHE_LINE_W = 128,
+        parameter CACHE_BLOCK_W = 128,
         // Number of lines in the cache
         parameter CACHE_DEPTH = 512,
         // Enable pipeline on cache
@@ -105,7 +105,7 @@ module friscv_icache
     // Signals driving the cache lines pool
     logic                     cache_wen;
     logic [AXI_ADDR_W   -1:0] cache_waddr;
-    logic [CACHE_LINE_W -1:0] cache_wdata;
+    logic [CACHE_BLOCK_W-1:0] cache_wdata;
     logic                     cache_ren;
     logic [AXI_ADDR_W   -1:0] cache_raddr;
     logic [ILEN         -1:0] cache_rdata;
@@ -170,18 +170,18 @@ module friscv_icache
     );
 
     ///////////////////////////////////////////////////////////////////////////
-    // Cache lines Storage
+    // Cache blocks Storage
     ///////////////////////////////////////////////////////////////////////////
 
-    friscv_icache_lines
+    friscv_icache_blocks
     #(
-    .ILEN         (ILEN),
-    .XLEN         (XLEN),
-    .ADDR_W       (AXI_ADDR_W),
-    .CACHE_LINE_W (CACHE_LINE_W),
-    .CACHE_DEPTH  (CACHE_DEPTH)
+    .ILEN          (ILEN),
+    .XLEN          (XLEN),
+    .ADDR_W        (AXI_ADDR_W),
+    .CACHE_BLOCK_W (CACHE_BLOCK_W),
+    .CACHE_DEPTH   (CACHE_DEPTH)
     )
-    cache_lines
+    cache_blocks
     (
     .aclk    (aclk),
     .aresetn (aresetn),
@@ -204,11 +204,11 @@ module friscv_icache
 
     friscv_icache_memctrl
     #(
-    .AXI_ADDR_W   (AXI_ADDR_W),
-    .AXI_ID_W     (AXI_ID_W),
-    .AXI_DATA_W   (AXI_DATA_W),
-    .CACHE_LINE_W (CACHE_LINE_W),
-    .CACHE_DEPTH  (CACHE_DEPTH)
+    .AXI_ADDR_W    (AXI_ADDR_W),
+    .AXI_ID_W      (AXI_ID_W),
+    .AXI_DATA_W    (AXI_DATA_W),
+    .CACHE_BLOCK_W (CACHE_BLOCK_W),
+    .CACHE_DEPTH   (CACHE_DEPTH)
     )
     mem_ctrl
     (
