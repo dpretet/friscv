@@ -28,6 +28,8 @@ INST_PER_BLOCK=$(($CACHE_BLOCK_W/$ILEN))
 BOOT_ADDR=0
 # Timeout upon which the simulation is ran
 TIMEOUT=10000
+# Testbench configuration
+TB_CHOICE='CORE'
 
 
 #------------------------------------------------------------------------------
@@ -55,6 +57,7 @@ usage: bash ./run.sh ...
 -x    | --xlen              (optional)            XLEN, 32 or 64 bits (32 by default)
 -t    | --timeout           (optional)            Timeout in number of cycles (10000 by default)
 -c    | --clean                                   Clean-up and exit
+        --tb                                      Choose the testbench configuration (CORE or PLATFORM)
 -h    | --help                                    Brings up this menu
 EOF
 }
@@ -98,6 +101,7 @@ run_tests() {
         DEFINES="${DEFINES}BOOT_ADDR=$BOOT_ADDR;"
         DEFINES="${DEFINES}XLEN=$XLEN;"
         DEFINES="${DEFINES}TIMEOUT=$TIMEOUT;"
+        DEFINES="${DEFINES}TB_CHOICE=$TB_CHOICE;"
         DEFINES="${DEFINES}TCNAME=${test_name}"
 
         # Execute the testcase with SVUT. Will stop once it reaches a EBREAK
@@ -150,12 +154,25 @@ get_args() {
                 CACHE_BLOCK_W=$1
             ;;
             -x | --xlen )
+                shift
                 XLEN=$1
             ;;
             -c | --clean )
                 do_clean=1
             ;;
+            --tb )
+                shift
+                if [ $1=="CORE" ]; then
+                    TB_CHOICE=$1
+                elif [ $1=="PLATFORM" ]; then
+                    TB_CHOICE=$1
+                else
+                    usage
+                    exit 1
+                fi
+            ;;
             -t | --timeout )
+                shift
                 TIMEOUT=$1
             ;;
             -h | --help )

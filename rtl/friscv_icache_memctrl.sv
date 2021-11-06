@@ -30,6 +30,9 @@ module friscv_icache_memctrl
         parameter AXI_ID_W = 8,
         // AXI4 data width, independant of control unit width
         parameter AXI_DATA_W = 128,
+        // ID Mask to apply to identify the instruction cache in the AXI4
+        // infrastructure
+        parameter AXI_ID_MASK = 'h10,
 
         ///////////////////////////////////////////////////////////////////////
         // Cache Setup
@@ -136,7 +139,7 @@ module friscv_icache_memctrl
     assign ctrl_arready = mem_arready;
     assign mem_araddr = ctrl_araddr;
     assign mem_arprot = ctrl_arprot;
-    assign mem_arid = ctrl_arid;
+    assign mem_arid = ctrl_arid | AXI_ID_MASK;
 
     // TODO: Drive properly
     assign mem_rready = 1'b1;

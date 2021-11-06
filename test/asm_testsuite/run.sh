@@ -30,6 +30,8 @@ INST_PER_BLOCK=$(($CACHE_BLOCK_W/$ILEN))
 BOOT_ADDR=0
 # Timeout upon which the simulation is ran
 TIMEOUT=10000
+# Testbench configuration
+TB_CHOICE='CORE'
 
 
 

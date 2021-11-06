@@ -17,13 +17,13 @@ module friscv_gpios
         input  logic                        aresetn,
         input  logic                        srst,
         // APB Master
-        input  logic                        mst_en,
-        input  logic                        mst_wr,
-        input  logic [ADDRW           -1:0] mst_addr,
-        input  logic [XLEN            -1:0] mst_wdata,
-        input  logic [XLEN/8          -1:0] mst_strb,
-        output logic [XLEN            -1:0] mst_rdata,
-        output logic                        mst_ready,
+        input  logic                        slv_en,
+        input  logic                        slv_wr,
+        input  logic [ADDRW           -1:0] slv_addr,
+        input  logic [XLEN            -1:0] slv_wdata,
+        input  logic [XLEN/8          -1:0] slv_strb,
+        output logic [XLEN            -1:0] slv_rdata,
+        output logic                        slv_ready,
         // GPIO interface
         input  logic [XLEN            -1:0] gpio_in,
         output logic [XLEN            -1:0] gpio_out
@@ -42,32 +42,32 @@ module friscv_gpios
 
         if (~aresetn) begin
             register0 <= {XLEN{1'b0}};
-            mst_rdata <= {XLEN{1'b0}};
-            mst_ready <= 1'b0;
+            slv_rdata <= {XLEN{1'b0}};
+            slv_ready <= 1'b0;
         end else if (srst) begin
             register0 <= {XLEN{1'b0}};
-            mst_rdata <= {XLEN{1'b0}};
-            mst_ready <= 1'b0;
+            slv_rdata <= {XLEN{1'b0}};
+            slv_ready <= 1'b0;
         end else begin
             // READY assertion
-            if (mst_en && ~mst_ready) begin
-                mst_ready <= 1'b1;
+            if (slv_en && ~slv_ready) begin
+                slv_ready <= 1'b1;
             end else begin
-                mst_ready <= 1'b0;
+                slv_ready <= 1'b0;
             end
             // Register operation
-            if (mst_en) begin
-                if (mst_addr=={ADDRW{1'b0}}) begin
-                    if (mst_wr) begin
-                        if (mst_strb[0]) register0[ 0+:8] <= mst_wdata[ 0+:8];
-                        if (mst_strb[1]) register0[ 8+:8] <= mst_wdata[ 8+:8];
-                        if (mst_strb[2]) register0[16+:8] <= mst_wdata[16+:8];
-                        if (mst_strb[3]) register0[24+:8] <= mst_wdata[24+:8];
+            if (slv_en) begin
+                if (slv_addr=={ADDRW{1'b0}}) begin
+                    if (slv_wr) begin
+                        if (slv_strb[0]) register0[ 0+:8] <= slv_wdata[ 0+:8];
+                        if (slv_strb[1]) register0[ 8+:8] <= slv_wdata[ 8+:8];
+                        if (slv_strb[2]) register0[16+:8] <= slv_wdata[16+:8];
+                        if (slv_strb[3]) register0[24+:8] <= slv_wdata[24+:8];
                     end else begin
-                        mst_rdata <= register0;
+                        slv_rdata <= register0;
                     end
-                end else if (mst_addr=={{ADDRW-1{1'b0}}, 1'b1}) begin
-                    mst_rdata <= register1;
+                end else if (slv_addr=={{ADDRW-1{1'b0}}, 1'b1}) begin
+                    slv_rdata <= register1;
                 end
             end
         end

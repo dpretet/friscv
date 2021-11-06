@@ -16,7 +16,9 @@ module friscv_processing
         // AXI ID width, setup by default to 8 and unused
         parameter AXI_ID_W          = 8,
         // AXI4 data width, for instruction and a data bus
-        parameter AXI_DATA_W        = XLEN
+        parameter AXI_DATA_W        = XLEN,
+        // ID used to identify the dta abus in the infrastructure
+        parameter AXI_ID_MASK       = 'h20
     )(
         // clock & reset
         input  logic                        aclk,
@@ -115,7 +117,8 @@ module friscv_processing
         .XLEN         (XLEN),
         .AXI_ADDR_W   (AXI_ADDR_W),
         .AXI_ID_W     (AXI_ID_W),
-        .AXI_DATA_W   (AXI_DATA_W)
+        .AXI_DATA_W   (AXI_DATA_W),
+        .AXI_ID_MASK  (AXI_ID_MASK)
     )
     memfy
     (

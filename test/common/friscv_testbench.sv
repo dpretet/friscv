@@ -34,11 +34,16 @@ module tb();
     `define TCNAME "program"
     `endif
 
+    // Architecture selection: 32 or 64 bits
+    `ifndef TB_CHOICE
+    `define TB_CHOICE "CORE"
+    `endif
+
     // Instruction length
     parameter ILEN               = 32;
     // 32 bits architecture
     parameter XLEN               = `XLEN;
-    // RV32E architecture, limites integer registers to 16, else 32
+    // RV32E architecture, limits integer registers to 16, else 32
     parameter RV32E              = 0;
     // Boot address used by the control unit
     parameter BOOT_ADDR          = `BOOT_ADDR;
@@ -47,12 +52,15 @@ module tb();
     // MHART ID CSR register
     parameter MHART_ID           = 0;
     // Address buses width
-    parameter AXI_ADDR_W         = 24;
+    parameter AXI_ADDR_W         = XLEN;
     // AXI ID width, setup by default to 8 and unused
     parameter AXI_ID_W           = 8;
     // AXI4 data width, independant of control unit width
     parameter AXI_IMEM_W         = `CACHE_BLOCK_W;
     parameter AXI_DMEM_W         = XLEN;
+    // ID used by instruction and data buses
+    parameter AXI_IMEM_MASK     = 'h10;
+    parameter AXI_DMEM_MASK     = 'h20;
     // Enable Instruction cache
     parameter ICACHE_EN          = 1;
     // Block width defining only the data payload, in bits, must an
@@ -65,6 +73,8 @@ module tb();
     parameter TIMEOUT            = `TIMEOUT;
     // Variable latency setup the AXI4-lite RAM model
     parameter VARIABLE_LATENCY   = 0;
+
+    parameter TB_CHOICE = ``TB_CHOICE;
 
     integer                    timer;
     string                     tcname;
@@ -121,8 +131,43 @@ module tb();
     logic [2             -1:0] dmem_rresp;
     logic [AXI_DMEM_W    -1:0] dmem_rdata;
 
+    logic                      mem_awvalid;
+    logic                      mem_awready;
+    logic [AXI_ADDR_W    -1:0] mem_awaddr;
+    logic [3             -1:0] mem_awprot;
+    logic [AXI_ID_W      -1:0] mem_awid;
+    logic                      mem_wvalid;
+    logic                      mem_wready;
+    logic [AXI_DMEM_W    -1:0] mem_wdata;
+    logic [AXI_DMEM_W/8  -1:0] mem_wstrb;
+    logic                      mem_bvalid;
+    logic                      mem_bready;
+    logic [AXI_ID_W      -1:0] mem_bid;
+    logic [2             -1:0] mem_bresp;
+    logic                      mem_arvalid;
+    logic                      mem_arready;
+    logic [AXI_ADDR_W    -1:0] mem_araddr;
+    logic [3             -1:0] mem_arprot;
+    logic [AXI_ID_W      -1:0] mem_arid;
+    logic                      mem_rvalid;
+    logic                      mem_rready;
+    logic [AXI_ID_W      -1:0] mem_rid;
+    logic [2             -1:0] mem_rresp;
+    logic [AXI_DMEM_W    -1:0] mem_rdata;
+    logic [XLEN          -1:0] gpio_in;
+    logic [XLEN          -1:0] gpio_out;
+    logic                      uart_rx;
+    logic                      uart_tx;
+    logic                      uart_rts;
+    logic                      uart_cts;
 
-    friscv_rv32i
+    initial $display("%s", TB_CHOICE);
+
+    // Run the testbench by using only the CPU core
+    generate
+    if (TB_CHOICE=="CORE") begin
+
+    friscv_rv32i_core
     #(
         .ILEN (ILEN),
         .XLEN (XLEN),
@@ -244,7 +289,128 @@ module tb();
         .p2_rdata   (dmem_rdata  )
     );
 
+    end else if (TB_CHOICE=="PLATFORM") begin
 
+    friscv_rv32i_platform 
+    #(
+    .ILEN (ILEN),
+    .XLEN (XLEN),
+    .BOOT_ADDR (BOOT_ADDR),
+    .INST_OSTDREQ_NUM (INST_OSTDREQ_NUM),
+    .MHART_ID (MHART_ID),
+    .RV32E (RV32E),
+    .AXI_ADDR_W (AXI_ADDR_W),
+    .AXI_ID_W (AXI_ID_W),
+    .AXI_IMEM_W (AXI_IMEM_W),
+    .AXI_DMEM_W (AXI_DMEM_W),
+    .AXI_IMEM_MASK (AXI_IMEM_MASK),
+    .AXI_DMEM_MASK (AXI_DMEM_MASK),
+    .ICACHE_EN (ICACHE_EN),
+    .ICACHE_BLOCK_W (ICACHE_BLOCK_W),
+    .ICACHE_DEPTH (ICACHE_DEPTH)
+    )
+    dut 
+    (
+    .aclk        (aclk),
+    .aresetn     (aresetn),
+    .srst        (srst),
+    .irq         (irq),
+    .status      (status),
+    .mem_awvalid (mem_awvalid),
+    .mem_awready (mem_awready),
+    .mem_awaddr  (mem_awaddr),
+    .mem_awprot  (mem_awprot),
+    .mem_awid    (mem_awid),
+    .mem_wvalid  (mem_wvalid),
+    .mem_wready  (mem_wready),
+    .mem_wdata   (mem_wdata),
+    .mem_wstrb   (mem_wstrb),
+    .mem_bvalid  (mem_bvalid),
+    .mem_bready  (mem_bready),
+    .mem_bid     (mem_bid),
+    .mem_bresp   (mem_bresp),
+    .mem_arvalid (mem_arvalid),
+    .mem_arready (mem_arready),
+    .mem_araddr  (mem_araddr),
+    .mem_arprot  (mem_arprot),
+    .mem_arid    (mem_arid),
+    .mem_rvalid  (mem_rvalid),
+    .mem_rready  (mem_rready),
+    .mem_rid     (mem_rid),
+    .mem_rresp   (mem_rresp),
+    .mem_rdata   (mem_rdata),
+    .gpio_in     (gpio_in),
+    .gpio_out    (gpio_out),
+    .uart_rx     (uart_rx),
+    .uart_tx     (uart_tx),
+    .uart_rts    (uart_rts),
+    .uart_cts    (uart_cts)
+    );
+
+    axi4l_ram
+    #(
+        .INIT             ("test.v"),
+        .VARIABLE_LATENCY (VARIABLE_LATENCY),
+        .AXI_ADDR_W       (AXI_ADDR_W),
+        .AXI_ID_W         (AXI_ID_W),
+        .AXI1_DATA_W      (AXI_IMEM_W),
+        .AXI2_DATA_W      (AXI_DMEM_W),
+        .OSTDREQ_NUM      (INST_OSTDREQ_NUM)
+    )
+    axi4l_ram
+    (
+        .aclk       (aclk       ),
+        .aresetn    (aresetn    ),
+        .srst       (srst       ),
+        .p1_awvalid (mem_awvalid),
+        .p1_awready (mem_awready),
+        .p1_awaddr  (mem_awaddr ),
+        .p1_awprot  (mem_awprot ),
+        .p1_awid    (mem_awid   ),
+        .p1_wvalid  (mem_wvalid ),
+        .p1_wready  (mem_wready ),
+        .p1_wdata   (mem_wdata  ),
+        .p1_wstrb   (mem_wstrb  ),
+        .p1_bid     (mem_bid    ),
+        .p1_bresp   (mem_bresp  ),
+        .p1_bvalid  (mem_bvalid ),
+        .p1_bready  (mem_bready ),
+        .p1_arvalid (mem_arvalid),
+        .p1_arready (mem_arready),
+        .p1_araddr  (mem_araddr ),
+        .p1_arprot  (mem_arprot ),
+        .p1_arid    (mem_arid   ),
+        .p1_rvalid  (mem_rvalid ),
+        .p1_rready  (mem_rready ),
+        .p1_rid     (mem_rid    ),
+        .p1_rresp   (mem_rresp  ),
+        .p1_rdata   (mem_rdata  ),
+        .p2_awvalid (),
+        .p2_awready (),
+        .p2_awaddr  (),
+        .p2_awprot  (),
+        .p2_awid    (),
+        .p2_wvalid  (),
+        .p2_wready  (),
+        .p2_wdata   (),
+        .p2_wstrb   (),
+        .p2_bid     (),
+        .p2_bresp   (),
+        .p2_bvalid  (),
+        .p2_bready  (),
+        .p2_arvalid (),
+        .p2_arready (),
+        .p2_araddr  (),
+        .p2_arprot  (),
+        .p2_arid    (),
+        .p2_rvalid  (),
+        .p2_rready  (),
+        .p2_rid     (),
+        .p2_rresp   (),
+        .p2_rdata   ()
+    );
+    end 
+    endgenerate
 
     initial aclk = 0;
     always #1 aclk = ~aclk;
@@ -295,7 +461,13 @@ module tb();
             @(posedge aclk);
         end
 
-        `ASSERT((dut.isa_registers.regs[31]==0), "TEST FAILED, X31 != 0");
+        // if (TB_CHOICE=="CORE") begin
+            // `ASSERT((dut.isa_registers.regs[31]==0), "TEST FAILED, X31 != 0");
+        // end
+// 
+        // if (TB_CHOICE=="PLATFORM") begin
+            // `ASSERT((dut.cpu0.isa_registers.regs[31]==0), "TEST FAILED, X31 != 0");
+        // end
 
         if (timer<TIMEOUT) begin
             if (status[0])

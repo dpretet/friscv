@@ -5,6 +5,7 @@
 `default_nettype none
 
 `include "friscv_h.sv"
+`include "svlogger.sv"
 
 module friscv_csr
 

@@ -26,7 +26,7 @@ module friscv_rv32i_verilator();
     logic                   mem_ready;
     integer                 time_counter;
 
-    friscv_rv32i
+    friscv_rv32i_core
     #(
     INST_ADDRW,
     DATA_ADDRW,

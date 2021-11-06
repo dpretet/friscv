@@ -1,3 +1,6 @@
 [submodule "dep/svlogger"]
-	path = dep/svlogger
-	url = https://github.com/dpretet/svlogger.git
+    path = dep/svlogger
+    url = https://github.com/dpretet/svlogger.git
+[submodule "dep/axi-crossbar"]
+    path = dep/axi-crossbar
+    url = https://github.com/dpretet/axi-crossbar.git

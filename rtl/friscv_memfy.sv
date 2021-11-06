@@ -26,7 +26,9 @@ module friscv_memfy
         // AXI ID width, setup by default to 8 and unused
         parameter AXI_ID_W          = 8,
         // AXI4 data width, for instruction and a data bus
-        parameter AXI_DATA_W        = XLEN
+        parameter AXI_DATA_W        = XLEN,
+        // ID used to identify the dta abus in the infrastructure
+        parameter AXI_ID_MASK       = 'h20
     )(
         // clock & reset
         input  logic                        aclk,
@@ -447,11 +449,11 @@ module friscv_memfy
     // Unsupported AXI4-lite signals
     //////////////////////////////////////////////////////////////////////////
 
-    assign awid = {AXI_ID_W{1'b0}};
+    assign awid = {AXI_ID_W{1'b0}} | AXI_ID_MASK;
     assign awprot = 3'b0;
     assign bready = 1'b1;
 
-    assign arid = {AXI_ID_W{1'b0}};
+    assign arid = {AXI_ID_W{1'b0}} | AXI_ID_MASK;
     assign arprot = 3'b0;
 
 endmodule

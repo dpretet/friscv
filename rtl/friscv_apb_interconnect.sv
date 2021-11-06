@@ -21,30 +21,31 @@ module friscv_apb_interconnect
         input  logic                        aresetn,
         input  logic                        srst,
         // APB Master
-        input  logic                        mst_en,
-        input  logic                        mst_wr,
-        input  logic [ADDRW           -1:0] mst_addr,
-        input  logic [XLEN            -1:0] mst_wdata,
-        input  logic [XLEN/8          -1:0] mst_strb,
-        output logic [XLEN            -1:0] mst_rdata,
-        output logic                        mst_ready,
+        input  logic                        slv_en,
+        input  logic                        slv_wr,
+        input  logic [ADDRW           -1:0] slv_addr,
+        input  logic [XLEN            -1:0] slv_wdata,
+        input  logic [XLEN/8          -1:0] slv_strb,
+        output logic [XLEN            -1:0] slv_rdata,
+        output logic                        slv_ready,
         // APB Slave 0
-        output logic                        slv0_en,
-        output logic                        slv0_wr,
-        output logic [ADDRW           -1:0] slv0_addr,
-        output logic [XLEN            -1:0] slv0_wdata,
-        output logic [XLEN/8          -1:0] slv0_strb,
-        input  logic [XLEN            -1:0] slv0_rdata,
-        input  logic                        slv0_ready,
+        output logic                        mst0_en,
+        output logic                        mst0_wr,
+        output logic [ADDRW           -1:0] mst0_addr,
+        output logic [XLEN            -1:0] mst0_wdata,
+        output logic [XLEN/8          -1:0] mst0_strb,
+        input  logic [XLEN            -1:0] mst0_rdata,
+        input  logic                        mst0_ready,
         // APB Slave 1
-        output logic                        slv1_en,
-        output logic                        slv1_wr,
-        output logic [ADDRW           -1:0] slv1_addr,
-        output logic [XLEN            -1:0] slv1_wdata,
-        output logic [XLEN/8          -1:0] slv1_strb,
-        input  logic [XLEN            -1:0] slv1_rdata,
-        input  logic                        slv1_ready
+        output logic                        mst1_en,
+        output logic                        mst1_wr,
+        output logic [ADDRW           -1:0] mst1_addr,
+        output logic [XLEN            -1:0] mst1_wdata,
+        output logic [XLEN/8          -1:0] mst1_strb,
+        input  logic [XLEN            -1:0] mst1_rdata,
+        input  logic                        mst1_ready
     );
+
 
     localparam SLV0_RANGE = SLV0_ADDR + SLV0_SIZE;
     localparam SLV1_RANGE = SLV1_ADDR + SLV1_SIZE;
@@ -53,88 +54,88 @@ module friscv_apb_interconnect
     always @ (posedge aclk or negedge aresetn) begin
 
         if (~aresetn) begin
-            slv0_en <= 1'b0;
-            slv0_wr <= 1'b0;
-            slv0_addr <= {ADDRW{1'b0}};
-            slv0_wdata <= {XLEN{1'b0}};
-            slv0_strb <= {XLEN/8{1'b0}};
-            slv1_en <= 1'b0;
-            slv1_wr <= 1'b0;
-            slv1_addr <= {ADDRW{1'b0}};
-            slv1_wdata <= {XLEN{1'b0}};
-            slv1_strb <= {XLEN/8{1'b0}};
-            mst_ready <= 1'b0;
-            mst_rdata <= {XLEN{1'b0}};
+            mst0_en <= 1'b0;
+            mst0_wr <= 1'b0;
+            mst0_addr <= {ADDRW{1'b0}};
+            mst0_wdata <= {XLEN{1'b0}};
+            mst0_strb <= {XLEN/8{1'b0}};
+            mst1_en <= 1'b0;
+            mst1_wr <= 1'b0;
+            mst1_addr <= {ADDRW{1'b0}};
+            mst1_wdata <= {XLEN{1'b0}};
+            mst1_strb <= {XLEN/8{1'b0}};
+            slv_ready <= 1'b0;
+            slv_rdata <= {XLEN{1'b0}};
         end else if (srst) begin
-            slv0_en <= 1'b0;
-            slv0_wr <= 1'b0;
-            slv0_addr <= {ADDRW{1'b0}};
-            slv0_wdata <= {XLEN{1'b0}};
-            slv0_strb <= {XLEN/8{1'b0}};
-            slv1_en <= 1'b0;
-            slv1_wr <= 1'b0;
-            slv1_addr <= {ADDRW{1'b0}};
-            slv1_wdata <= {XLEN{1'b0}};
-            slv1_strb <= {XLEN/8{1'b0}};
-            mst_ready <= 1'b0;
-            mst_rdata <= {XLEN{1'b0}};
+            mst0_en <= 1'b0;
+            mst0_wr <= 1'b0;
+            mst0_addr <= {ADDRW{1'b0}};
+            mst0_wdata <= {XLEN{1'b0}};
+            mst0_strb <= {XLEN/8{1'b0}};
+            mst1_en <= 1'b0;
+            mst1_wr <= 1'b0;
+            mst1_addr <= {ADDRW{1'b0}};
+            mst1_wdata <= {XLEN{1'b0}};
+            mst1_strb <= {XLEN/8{1'b0}};
+            slv_ready <= 1'b0;
+            slv_rdata <= {XLEN{1'b0}};
         end else begin
 
-            if (mst_en && ~mst_ready) begin
+            if (slv_en && !slv_ready) begin
 
                 // Slave 0 access
-                if (mst_addr >= SLV0_ADDR && mst_addr < SLV0_RANGE) begin
+                if (slv_addr >= SLV0_ADDR && slv_addr < SLV0_RANGE) begin
 
-                    slv0_addr <= mst_addr - SLV0_ADDR;
-                    slv0_en <= mst_en;
-                    slv0_wr <= mst_wr;
-                    slv0_wdata <= mst_wdata;
-                    slv0_strb <= mst_strb;
-                    mst_rdata <= slv0_rdata;
-                    mst_ready <= slv0_ready;
+                    mst0_addr <= slv_addr - SLV0_ADDR;
+                    mst0_en <= slv_en;
+                    mst0_wr <= slv_wr;
+                    mst0_wdata <= slv_wdata;
+                    mst0_strb <= slv_strb;
+                    slv_rdata <= mst0_rdata;
+                    slv_ready <= mst0_ready;
 
-                    if (slv0_ready) begin
-                        slv0_en <= 1'b0;
+                    if (mst0_ready) begin
+                        mst0_en <= 1'b0;
                     end
 
                 // Slave 1 access
-                end else if (mst_addr >= SLV1_ADDR && mst_addr < SLV1_RANGE) begin
+                end else if (slv_addr >= SLV1_ADDR && slv_addr < SLV1_RANGE) begin
 
-                    slv1_addr <= mst_addr - SLV1_ADDR;
-                    slv1_en <= mst_en;
-                    slv1_wr <= mst_wr;
-                    slv1_wdata <= mst_wdata;
-                    slv1_strb <= mst_strb;
-                    mst_rdata <= slv1_rdata;
-                    mst_ready <= slv1_ready;
+                    mst1_addr <= slv_addr - SLV1_ADDR;
+                    mst1_en <= slv_en;
+                    mst1_wr <= slv_wr;
+                    mst1_wdata <= slv_wdata;
+                    mst1_strb <= slv_strb;
+                    slv_rdata <= mst1_rdata;
+                    slv_ready <= mst1_ready;
 
-                    if (slv1_ready) begin
-                        slv1_en <= 1'b0;
+                    if (mst1_ready) begin
+                        mst1_en <= 1'b0;
                     end
 
                 // Any other address accessed will be completed, whatever
                 // it targets.
                 end else begin
-                    mst_ready <= 1'b1;
+                    slv_ready <= 1'b1;
                 end
 
             // go back to IDLE to wait for the next access
             end else begin
 
-                slv0_en <= 1'b0;
-                slv0_wr <= 1'b0;
-                slv0_addr <= {ADDRW{1'b0}};
-                slv0_wdata <= {XLEN{1'b0}};
-                slv0_strb <= {XLEN/8{1'b0}};
+                mst0_en <= 1'b0;
+                mst0_wr <= 1'b0;
+                mst0_addr <= {ADDRW{1'b0}};
+                mst0_wdata <= {XLEN{1'b0}};
+                mst0_strb <= {XLEN/8{1'b0}};
 
-                slv1_en <= 1'b0;
-                slv1_wr <= 1'b0;
-                slv1_addr <= {ADDRW{1'b0}};
-                slv1_wdata <= {XLEN{1'b0}};
-                slv1_strb <= {XLEN/8{1'b0}};
+                mst1_en <= 1'b0;
+                mst1_wr <= 1'b0;
+                mst1_addr <= {ADDRW{1'b0}};
+                mst1_wdata <= {XLEN{1'b0}};
+                mst1_strb <= {XLEN/8{1'b0}};
 
-                mst_ready <= 1'b0;
-                mst_rdata <= {XLEN{1'b0}};
+                slv_ready <= 1'b0;
+                slv_rdata <= {XLEN{1'b0}};
             end
         end
 

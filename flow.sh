@@ -68,7 +68,7 @@ help() {
     echo ""
     echo "      Launch all available testsuites"
     echo ""
-    echo -e "${Color_Off}"
+    echo -e "${NC}"
 }
 
 main() {

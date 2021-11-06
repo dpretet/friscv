@@ -1,0 +1,331 @@
+// distributed under the mit license
+// https://opensource.org/licenses/mit-license.php
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// The module enclosing all the low-speed IO cores. It connects through an
+// AXI4-lite interface all the modules, usually using an APB interface.
+//
+///////////////////////////////////////////////////////////////////////////////
+
+`timescale 1 ns / 1 ps
+`default_nettype none
+
+`include "friscv_h.sv"
+
+module friscv_io_subsystem
+
+    #(
+        parameter ADDRW           = 16,
+        parameter DATAW           = 16,
+        parameter IDW             = 16,
+        parameter XLEN            = 32,
+        parameter SLV0_ADDR       = 0,
+        parameter SLV0_SIZE       = 8,
+        parameter SLV1_ADDR       = 8,
+        parameter SLV1_SIZE       = 16,
+        parameter UART_FIFO_DEPTH = 4
+    )(
+        // clock & reset
+        input  logic                      aclk,
+        input  logic                      aresetn,
+        input  logic                      srst,
+        // AXI4-lite slave interface
+        input  logic                      slv_awvalid,
+        output logic                      slv_awready,
+        input  logic [ADDRW         -1:0] slv_awaddr,
+        input  logic [3             -1:0] slv_awprot,
+        input  logic [IDW           -1:0] slv_awid,
+        input  logic                      slv_wvalid,
+        output logic                      slv_wready,
+        input  logic [DATAW         -1:0] slv_wdata,
+        input  logic [DATAW/8       -1:0] slv_wstrb,
+        output logic                      slv_bvalid,
+        input  logic                      slv_bready,
+        output logic [2             -1:0] slv_bresp,
+        output logic [IDW           -1:0] slv_bid,
+        input  logic                      slv_arvalid,
+        output logic                      slv_arready,
+        input  logic [ADDRW         -1:0] slv_araddr,
+        input  logic [3             -1:0] slv_arprot,
+        input  logic [IDW           -1:0] slv_arid,
+        output logic                      slv_rvalid,
+        input  logic                      slv_rready,
+        output logic [2             -1:0] slv_rresp,
+        output logic [DATAW         -1:0] slv_rdata,
+        output logic [IDW           -1:0] slv_rid,
+        // GPIOs interface
+        input  logic [XLEN          -1:0] gpio_in,
+        output logic [XLEN          -1:0] gpio_out,
+        // UART interface
+        input  logic                      uart_rx,
+        output logic                      uart_tx,
+        output logic                      uart_rts,
+        input  logic                      uart_cts
+    );
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Logic declaration
+    ///////////////////////////////////////////////////////////////////////////
+
+    logic              mst_en;
+    logic              mst_wr;
+    logic [ADDRW -1:0] mst_addr;
+    logic [XLEN  -1:0] mst_wdata;
+    logic [XLEN/8-1:0] mst_strb;
+    logic [XLEN  -1:0] mst_rdata;
+    logic              mst_ready;
+
+    logic              slv0_en;
+    logic              slv0_wr;
+    logic [ADDRW -1:0] slv0_addr;
+    logic [XLEN  -1:0] slv0_wdata;
+    logic [XLEN/8-1:0] slv0_strb;
+    logic [XLEN  -1:0] slv0_rdata;
+    logic              slv0_ready;
+
+    logic              slv1_en;
+    logic              slv1_wr;
+    logic [ADDRW -1:0] slv1_addr;
+    logic [XLEN  -1:0] slv1_wdata;
+    logic [XLEN/8-1:0] slv1_strb;
+    logic [XLEN  -1:0] slv1_rdata;
+    logic              slv1_ready;
+
+    logic              misroute;
+
+    // Control fsm
+    typedef enum logic[1:0] {
+        IDLE = 0,
+        WAIT_WDATA = 1,
+        WAIT_BRESP = 2,
+        WAIT_RRESP = 3
+    } axi4l_fsm;
+
+    axi4l_fsm cfsm;
+
+
+    ///////////////////////////////////////////////////////////////////////////
+    // FSM converting AXI4-lite to APB
+    ///////////////////////////////////////////////////////////////////////////
+
+    always @ (*) 
+    begin
+        if (mst_addr>=SLV0_ADDR && mst_addr<(SLV0_ADDR+SLV0_SIZE)) begin
+            misroute = 1'b0;
+        end else if (mst_addr>=SLV1_ADDR && mst_addr<(SLV1_ADDR+SLV1_SIZE)) begin
+            misroute = 1'b0;
+        end else begin
+            misroute = 1'b1;
+        end
+    end
+
+    assign slv_rresp = (misroute) ? 2'h3 : 2'b0;
+    assign slv_bresp = (misroute) ? 2'h3 : 2'b0;
+
+    always @ (posedge aclk or negedge aresetn) begin
+
+        if (~aresetn) begin
+            cfsm <= IDLE;
+            slv_awready <= 1'b0;
+            slv_arready <= 1'b0;
+            slv_wready <= 1'b0;
+            slv_rdata <= {DATAW{1'b0}};
+            slv_rid <= {IDW{1'b0}};
+            slv_bid <= {IDW{1'b0}};
+            slv_rvalid <= 1'b0;
+            slv_bvalid <= 1'b0;
+            mst_en <= 1'b0;
+            mst_addr <= {ADDRW{1'b0}};
+            mst_wdata <= {XLEN{1'b0}};
+            mst_strb <= {XLEN/8{1'b0}};
+        end else if (srst) begin
+            cfsm <= IDLE;
+            slv_awready <= 1'b0;
+            slv_arready <= 1'b0;
+            slv_wready <= 1'b0;
+            slv_rdata <= {DATAW{1'b0}};
+            slv_rid <= {IDW{1'b0}};
+            slv_bid <= {IDW{1'b0}};
+            slv_rvalid <= 1'b0;
+            slv_bvalid <= 1'b0;
+            mst_en <= 1'b0;
+            mst_addr <= {ADDRW{1'b0}};
+            mst_wdata <= {XLEN{1'b0}};
+            mst_strb <= {XLEN/8{1'b0}};
+        end else begin
+
+            case (cfsm)
+
+                // Wait for a read or write request
+                IDLE: begin
+
+                    if (slv_awvalid) begin
+
+                        slv_awready <= 1'b1;
+                        slv_wready <= 1'b1;
+                        mst_addr <= slv_awaddr;
+                        slv_bid <= slv_awid;
+
+                        if (!slv_wvalid) begin
+                            cfsm <= WAIT_WDATA;
+                        end else begin
+                            mst_en <= 1'b1;
+                            mst_wdata <= slv_wdata;
+                            mst_strb <= slv_wstrb;
+                            cfsm <= WAIT_BRESP;
+                        end
+
+                    end else if (slv_arready) begin
+                        slv_arready <= 1'b1;
+                        slv_rid <= slv_arid;
+                        cfsm <= WAIT_RRESP;
+                    end
+                end
+
+                // In case write data wasn't synchro with aw channel, wait
+                // for its assertion, then assert APB request and wait for
+                // the handshake
+                WAIT_WDATA: begin
+
+                    slv_awready <= 1'b0;
+
+                    if (slv_wvalid) begin
+                        slv_wready <= 1'b0;
+                        mst_en <= 1'b1;
+                        mst_wdata <= slv_wdata;
+                        mst_strb <= slv_wstrb;
+                    end
+
+                    if (mst_en && mst_ready) begin
+                        slv_bvalid <= 1'b1;
+                        mst_en <= 1'b0;
+                        cfsm <= WAIT_BRESP;
+                    end
+                end
+
+                // Handshake with BRESP channel
+                WAIT_BRESP: begin
+
+                    slv_awready <= 1'b0;
+                    slv_wready <= 1'b0;
+
+                    if (slv_bready) begin
+                        slv_bvalid <= 1'b0;
+                        cfsm <= IDLE;
+                    end
+                end
+
+                // Wait APB response to drive AXI4-lite read data channel
+                WAIT_RRESP: begin
+
+                    slv_arready <= 1'b0;
+
+                    if (mst_en && mst_ready) begin
+                        mst_en <= 1'b0;
+                        slv_rvalid <= 1'b1;
+                        slv_rdata <= mst_rdata;
+                    end
+
+                    if (slv_rvalid && slv_rready) begin
+                        slv_rvalid <= 1'b0;
+                        cfsm <= IDLE;
+                    end
+                end
+
+            endcase
+        end
+    end
+
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Modules' instances
+    ///////////////////////////////////////////////////////////////////////////
+
+    friscv_apb_interconnect
+    #(
+        .ADDRW     (ADDRW),
+        .XLEN      (XLEN),
+        .SLV0_ADDR (SLV0_ADDR),
+        .SLV0_SIZE (SLV0_SIZE),
+        .SLV1_ADDR (SLV1_ADDR),
+        .SLV1_SIZE (SLV1_SIZE)
+    )
+    apb_interconnect
+    (
+        .aclk       (aclk),
+        .aresetn    (aresetn),
+        .srst       (srst),
+        .slv_en     (mst_en),
+        .slv_wr     (mst_wr),
+        .slv_addr   (mst_addr),
+        .slv_wdata  (mst_wdata),
+        .slv_strb   (mst_strb),
+        .slv_rdata  (mst_rdata),
+        .slv_ready  (mst_ready),
+        .mst0_en    (slv0_en),
+        .mst0_wr    (slv0_wr),
+        .mst0_addr  (slv0_addr),
+        .mst0_wdata (slv0_wdata),
+        .mst0_strb  (slv0_strb),
+        .mst0_rdata (slv0_rdata),
+        .mst0_ready (slv0_ready),
+        .mst1_en    (slv1_en),
+        .mst1_wr    (slv1_wr),
+        .mst1_addr  (slv1_addr),
+        .mst1_wdata (slv1_wdata),
+        .mst1_strb  (slv1_strb),
+        .mst1_rdata (slv1_rdata),
+        .mst1_ready (slv1_ready)
+    );
+
+
+    friscv_gpios
+    #(
+        .ADDRW (ADDRW),
+        .XLEN  (XLEN)
+    )
+    gpios
+    (
+        .aclk      (aclk),
+        .aresetn   (aresetn),
+        .srst      (srst),
+        .slv_en    (slv0_en),
+        .slv_wr    (slv0_wr),
+        .slv_addr  (slv0_addr),
+        .slv_wdata (slv0_wdata),
+        .slv_strb  (slv0_strb),
+        .slv_rdata (slv0_rdata),
+        .slv_ready (slv0_ready),
+        .gpio_in   (gpio_in),
+        .gpio_out  (gpio_out)
+    );
+
+
+    friscv_uart
+    #(
+        .ADDRW           (ADDRW),
+        .XLEN            (XLEN),
+        .RXTX_FIFO_DEPTH (UART_FIFO_DEPTH)
+    )
+    uart
+    (
+        .aclk      (aclk),
+        .aresetn   (aresetn),
+        .srst      (srst),
+        .slv_en    (slv1_en),
+        .slv_wr    (slv1_wr),
+        .slv_addr  (slv1_addr),
+        .slv_wdata (slv1_wdata),
+        .slv_strb  (slv1_strb),
+        .slv_rdata (slv1_rdata),
+        .slv_ready (slv1_ready),
+        .uart_rx   (uart_rx),
+        .uart_tx   (uart_tx),
+        .uart_rts  (uart_rts),
+        .uart_cts  (uart_cts)
+    );
+
+endmodule
+
+`resetall

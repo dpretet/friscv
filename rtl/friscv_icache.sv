@@ -46,6 +46,9 @@ module friscv_icache
         parameter AXI_ID_W = 8,
         // AXI4 data width, independant of control unit width
         parameter AXI_DATA_W = 8,
+        // ID Mask to apply to identify the instruction cache in the AXI4
+        // infrastructure
+        parameter AXI_ID_MASK = 'h10,
 
         ///////////////////////////////////////////////////////////////////////
         // Cache Setup

@@ -19,13 +19,13 @@ module friscv_uart
         input  logic                        aresetn,
         input  logic                        srst,
         // APB Master
-        input  logic                        mst_en,
-        input  logic                        mst_wr,
-        input  logic [ADDRW           -1:0] mst_addr,
-        input  logic [XLEN            -1:0] mst_wdata,
-        input  logic [XLEN/8          -1:0] mst_strb,
-        output logic [XLEN            -1:0] mst_rdata,
-        output logic                        mst_ready,
+        input  logic                        slv_en,
+        input  logic                        slv_wr,
+        input  logic [ADDRW           -1:0] slv_addr,
+        input  logic [XLEN            -1:0] slv_wdata,
+        input  logic [XLEN/8          -1:0] slv_strb,
+        output logic [XLEN            -1:0] slv_rdata,
+        output logic                        slv_ready,
         // UART interface
         input  logic                        uart_rx,
         output logic                        uart_tx,
@@ -83,7 +83,7 @@ module friscv_uart
     //
     // # Register Map Description
     //
-    // ## Register 0: Control and Status [RW] - Address 0 - 16 bits
+    // ## Register 0: Control and Status [RW] - Address 0 - 16 bits wide
     //
     // - bit 0     : Enable the UART engine (both RX and TX) [RW]
     // - bit 1     : Loopback mode, every received data will be stored in RX
@@ -102,7 +102,7 @@ module friscv_uart
     // - bit 15    : Parity error of the last RX transaction [RO]
     // - bit 31:16 : Reserved
     //
-    // ## Register 1: UART Clock Divider [RW] - Address 1 - 16 bits
+    // ## Register 1: UART Clock Divider [RW] - Address 1 - 16 bits wide
     //
     // The number of CPU core cycles to divide down to get the UART data bit
     // rate (baud rate).
@@ -111,7 +111,7 @@ module friscv_uart
     // - Bit 31:16 : Reserved
     //
     //
-    // ## Register 2: TX FIFO [RW] - Address 1 - 8 bits
+    // ## Register 2: TX FIFO [RW] - Address 1 - 8 bits wide
     //
     // Push data into TX FIFO. Writing into this register will block the APB
     // write request if TX FIFO is full, until the engine transmit a new word.
@@ -120,7 +120,7 @@ module friscv_uart
     // - Bit 31:8 : Reserved
     //
     //
-    // ## Register 3: RX FIFO [RO] - Address 1 - 8 bits
+    // ## Register 3: RX FIFO [RO] - Address 1 - 8 bits wide
     //
     // Pull data from RX FIFO. Reading into this register will block the APB
     // read request if FIFO is empty, until the engine receives a new word.
@@ -178,8 +178,8 @@ module friscv_uart
             rx_pull <= 1'b0;
             clock_divider <= CLK_DIVIDER;
             register2 <= {8{1'b0}};
-            mst_rdata <= {XLEN{1'b0}};
-            mst_ready <= 1'b0;
+            slv_rdata <= {XLEN{1'b0}};
+            slv_ready <= 1'b0;
         end else if (srst) begin
             enable <= 1'b0;
             loopback_mode <= 1'b0;
@@ -190,67 +190,67 @@ module friscv_uart
             rx_pull <= 1'b0;
             clock_divider <= CLK_DIVIDER;
             register2 <= {8{1'b0}};
-            mst_rdata <= {XLEN{1'b0}};
-            mst_ready <= 1'b0;
+            slv_rdata <= {XLEN{1'b0}};
+            slv_ready <= 1'b0;
         end else begin
 
             // If previously requested, go back to IDLE to serve a new request
-            if (mst_ready) begin
+            if (slv_ready) begin
                 tx_push <= 1'b0;
                 rx_pull <= 1'b0;
-                mst_ready <= 1'b0;
+                slv_ready <= 1'b0;
 
             // Serve a new request
-            end else if (mst_en) begin
+            end else if (slv_en) begin
 
                 // Register 0: Control and Status
-                if (mst_addr=={ADDRW{1'b0}}) begin
-                    if (mst_wr) begin
-                        if (mst_strb[0]) begin
-                            enable <= mst_wdata[0];
-                            loopback_mode <= mst_wdata[1];
-                            parity_en <= mst_wdata[2];
-                            parity_mode <= mst_wdata[3];
-                            stop_mode <= mst_wdata[4];
+                if (slv_addr=={ADDRW{1'b0}}) begin
+                    if (slv_wr) begin
+                        if (slv_strb[0]) begin
+                            enable <= slv_wdata[0];
+                            loopback_mode <= slv_wdata[1];
+                            parity_en <= slv_wdata[2];
+                            parity_mode <= slv_wdata[3];
+                            stop_mode <= slv_wdata[4];
                         end
-                        mst_ready <= 1'b1;
+                        slv_ready <= 1'b1;
                     end else begin
-                        mst_rdata <= register0;
-                        mst_ready <= 1'b1;
+                        slv_rdata <= register0;
+                        slv_ready <= 1'b1;
                     end
 
                 // Register 1: baud rate
-                end else if (mst_addr=={{ADDRW-1{1'b0}}, 1'b1}) begin
-                    if (mst_wr) begin
-                        if (mst_strb[0]) clock_divider[0+:8] <= mst_wdata[0+:8];
-                        if (mst_strb[1]) clock_divider[8+:8] <= mst_wdata[8+:8];
-                        mst_ready <= 1'b1;
+                end else if (slv_addr=={{ADDRW-1{1'b0}}, 1'b1}) begin
+                    if (slv_wr) begin
+                        if (slv_strb[0]) clock_divider[0+:8] <= slv_wdata[0+:8];
+                        if (slv_strb[1]) clock_divider[8+:8] <= slv_wdata[8+:8];
+                        slv_ready <= 1'b1;
                     end else begin
-                        mst_rdata <= {16'b0, clock_divider};
-                        mst_ready <= 1'b1;
+                        slv_rdata <= {16'b0, clock_divider};
+                        slv_ready <= 1'b1;
                     end
 
                 // Register 2: TX FIFO
-                end else if (mst_addr=={{ADDRW-2{1'b0}}, 2'b10}) begin
-                    if (mst_wr) begin
+                end else if (slv_addr=={{ADDRW-2{1'b0}}, 2'b10}) begin
+                    if (slv_wr) begin
                         // Wait until the FIFO can store a new word
                         if (~tx_full) begin
-                            if (mst_strb[0]) register2[0+:8] <= mst_wdata[0+:8];
+                            if (slv_strb[0]) register2[0+:8] <= slv_wdata[0+:8];
                             tx_push <= 1'b1;
-                            mst_ready <= 1'b1;
+                            slv_ready <= 1'b1;
                         end
                     end else begin
-                        mst_rdata <= {24'b0, register2};
-                        mst_ready <= 1'b1;
+                        slv_rdata <= {24'b0, register2};
+                        slv_ready <= 1'b1;
                     end
 
                 // Register 3: RX FIFO
-                end else if (mst_addr=={{ADDRW-2{1'b0}}, 2'b11}) begin
+                end else if (slv_addr=={{ADDRW-2{1'b0}}, 2'b11}) begin
                     // Wait until the FIFO is filled
                     if (~rx_empty) begin
                         rx_pull <= 1'b1;
-                        mst_rdata <= {24'b0, register3};
-                        mst_ready <= 1'b1;
+                        slv_rdata <= {24'b0, register3};
+                        slv_ready <= 1'b1;
                     end
                 end
 
@@ -258,7 +258,7 @@ module friscv_uart
             end else begin
                 tx_push <= 1'b0;
                 rx_pull <= 1'b0;
-                mst_ready <= 1'b0;
+                slv_ready <= 1'b0;
             end
         end
     end

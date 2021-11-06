@@ -13,7 +13,7 @@
 `include "friscv_h.sv"
 `include "friscv_checkers.sv"
 
-module friscv_rv32i
+module friscv_rv32i_core
 
     #(
         ////////////////////////////////////////////////////////////////////////
@@ -45,6 +45,9 @@ module friscv_rv32i
         // AXI4 data width, for instruction and a data bus
         parameter AXI_IMEM_W         = XLEN,
         parameter AXI_DMEM_W         = XLEN,
+        // ID used by instruction and data buses
+        parameter AXI_IMEM_MASK     = 'h10,
+        parameter AXI_DMEM_MASK     = 'h20,
 
         ////////////////////////////////////////////////////////////////////////
         // Cache setup
@@ -333,6 +336,7 @@ module friscv_rv32i
         .OSTDREQ_NUM   (INST_OSTDREQ_NUM),
         .AXI_ADDR_W    (AXI_ADDR_W),
         .AXI_ID_W      (AXI_ID_W),
+        .AXI_ID_MASK   (AXI_IMEM_MASK),
         .AXI_DATA_W    (AXI_IMEM_W),
         .CACHE_BLOCK_W (ICACHE_BLOCK_W),
         .CACHE_DEPTH   (ICACHE_DEPTH)
@@ -381,14 +385,14 @@ module friscv_rv32i
     assign inst_arready_s = imem_arready;
     assign imem_araddr = inst_araddr_s;
     assign imem_arprot = inst_arprot_s;
-    assign imem_arid = inst_arid_s;
+    assign imem_arid = inst_arid_s | AXI_IMEM_MASK;
     assign inst_rvalid_s = imem_rvalid;
     assign imem_rready = inst_rready_s;
     assign inst_rid_s = imem_rid;
     assign inst_rresp_s = imem_rresp;
     assign inst_rdata_s = imem_rdata;
 
-    // Always assert ack if requesting cache flush to avoid deadlock
+    // Always assert ack if requesting a cache flush to avoid deadlock
     assign flush_ack = 1'b1;
 
     end
@@ -440,7 +444,8 @@ module friscv_rv32i
         .XLEN         (XLEN),
         .AXI_ADDR_W   (AXI_ADDR_W),
         .AXI_ID_W     (AXI_ID_W),
-        .AXI_DATA_W   (AXI_DMEM_W)
+        .AXI_DATA_W   (AXI_DMEM_W),
+        .AXI_ID_MASK  (AXI_DMEM_MASK)
     )
     processing
     (
