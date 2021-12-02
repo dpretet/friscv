@@ -58,6 +58,7 @@ module tb();
     // AXI4 data width, independant of control unit width
     parameter AXI_IMEM_W         = `CACHE_BLOCK_W;
     parameter AXI_DMEM_W         = XLEN;
+    parameter AXI_DATA_W         = `CACHE_BLOCK_W;
     // ID used by instruction and data buses
     parameter AXI_IMEM_MASK     = 'h10;
     parameter AXI_DMEM_MASK     = 'h20;
@@ -138,8 +139,8 @@ module tb();
     logic [AXI_ID_W      -1:0] mem_awid;
     logic                      mem_wvalid;
     logic                      mem_wready;
-    logic [AXI_DMEM_W    -1:0] mem_wdata;
-    logic [AXI_DMEM_W/8  -1:0] mem_wstrb;
+    logic [AXI_DATA_W    -1:0] mem_wdata;
+    logic [AXI_DATA_W/8  -1:0] mem_wstrb;
     logic                      mem_bvalid;
     logic                      mem_bready;
     logic [AXI_ID_W      -1:0] mem_bid;
@@ -153,7 +154,7 @@ module tb();
     logic                      mem_rready;
     logic [AXI_ID_W      -1:0] mem_rid;
     logic [2             -1:0] mem_rresp;
-    logic [AXI_DMEM_W    -1:0] mem_rdata;
+    logic [AXI_DATA_W    -1:0] mem_rdata;
     logic [XLEN          -1:0] gpio_in;
     logic [XLEN          -1:0] gpio_out;
     logic                      uart_rx;
@@ -301,8 +302,7 @@ module tb();
     .RV32E (RV32E),
     .AXI_ADDR_W (AXI_ADDR_W),
     .AXI_ID_W (AXI_ID_W),
-    .AXI_IMEM_W (AXI_IMEM_W),
-    .AXI_DMEM_W (AXI_DMEM_W),
+    .AXI_DATA_W (AXI_DATA_W),
     .AXI_IMEM_MASK (AXI_IMEM_MASK),
     .AXI_DMEM_MASK (AXI_DMEM_MASK),
     .ICACHE_EN (ICACHE_EN),
@@ -353,8 +353,8 @@ module tb();
         .VARIABLE_LATENCY (VARIABLE_LATENCY),
         .AXI_ADDR_W       (AXI_ADDR_W),
         .AXI_ID_W         (AXI_ID_W),
-        .AXI1_DATA_W      (AXI_IMEM_W),
-        .AXI2_DATA_W      (AXI_DMEM_W),
+        .AXI1_DATA_W      (AXI_DATA_W),
+        .AXI2_DATA_W      (AXI_DATA_W),
         .OSTDREQ_NUM      (INST_OSTDREQ_NUM)
     )
     axi4l_ram
@@ -385,12 +385,12 @@ module tb();
         .p1_rid     (mem_rid    ),
         .p1_rresp   (mem_rresp  ),
         .p1_rdata   (mem_rdata  ),
-        .p2_awvalid (),
+        .p2_awvalid (1'b0),
         .p2_awready (),
         .p2_awaddr  (),
         .p2_awprot  (),
         .p2_awid    (),
-        .p2_wvalid  (),
+        .p2_wvalid  (1'b0),
         .p2_wready  (),
         .p2_wdata   (),
         .p2_wstrb   (),
@@ -398,7 +398,7 @@ module tb();
         .p2_bresp   (),
         .p2_bvalid  (),
         .p2_bready  (),
-        .p2_arvalid (),
+        .p2_arvalid (1'b0),
         .p2_arready (),
         .p2_araddr  (),
         .p2_arprot  (),

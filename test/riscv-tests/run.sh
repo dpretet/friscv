@@ -29,6 +29,8 @@ INST_PER_LINE=$(($CACHE_LINE_W/$ILEN))
 BOOT_ADDR=0
 # Timeout upon which the simulation is ran
 TIMEOUT=10000
+# Select between CORE and PLATFORM
+TB_CHOICE="CORE"
 
 
 
