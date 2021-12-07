@@ -5,12 +5,11 @@
 `default_nettype none
 
 ///////////////////////////////////////////////////////////////////////////////
-// A simple AXI$-lite RAM model, simulation only. Dual port which can be with
+// A simple AXI4-lite RAM model, simulation only. Dual port which can be with
 // different widths.
 //
 // Limitations:
 // - assume only a power of two ratio between ports' data width
-// - BRESP is always active
 // - VARIABLE_LATENCY is not yet implemented
 //
 ///////////////////////////////////////////////////////////////////////////////
@@ -94,9 +93,6 @@ module axi4l_ram
     parameter AXI_DATA_W = (AXI1_DATA_W>AXI2_DATA_W) ? AXI1_DATA_W : AXI2_DATA_W;
     parameter ADDR_LSB_W = $clog2(AXI_DATA_W/8);
     parameter ADDRW = AXI_ADDR_W-ADDR_LSB_W;
-    parameter WIDTH_RATIO = (AXI1_DATA_W>AXI2_DATA_W) ? AXI1_DATA_W/AXI2_DATA_W : 
-                                                        AXI2_DATA_W/AXI1_DATA_W;
-    parameter OFFSET = $clog2(WIDTH_RATIO);
 
     logic [AXI_DATA_W-1:0] mem [2**ADDRW-1:0];
 
@@ -108,6 +104,7 @@ module axi4l_ram
     logic [8            -1:0] p1_wr_position;
     logic [8            -1:0] p1_rd_position;
     logic [AXI_ADDR_W   -1:0] p1_araddr_s;
+    logic [AXI_ID_W     -1:0] p1_awid_s;
     logic [AXI_ID_W     -1:0] p1_arid_s;
 
     logic                     p1_raddr_full;
@@ -120,6 +117,7 @@ module axi4l_ram
     logic [8            -1:0] p2_wr_position;
     logic [8            -1:0] p2_rd_position;
     logic [AXI_ADDR_W   -1:0] p2_araddr_s;
+    logic [AXI_ID_W  -1:0   ] p2_awid_s;
     logic [AXI_ID_W     -1:0] p2_arid_s;
 
     logic                     p2_raddr_full;
@@ -143,8 +141,9 @@ module axi4l_ram
     logic [AXI2_DATA_W-1:0  ] p2_wdata_s;
     logic [AXI2_DATA_W/8-1:0] p2_wstrb_s;
 
+
     ///////////////////////////////////////////////////////////////////////////
-    // Read Channels
+    // Read address channels, store info to perform the read accesses
     ///////////////////////////////////////////////////////////////////////////
 
     friscv_scfifo
@@ -195,7 +194,7 @@ module axi4l_ram
 
 
     ///////////////////////////////////////////////////////////////////////////
-    // Read control FSM
+    // Read data channels, complete the read requets
     ///////////////////////////////////////////////////////////////////////////
 
     always @ (posedge aclk or negedge aresetn) begin
@@ -227,11 +226,16 @@ module axi4l_ram
         end
     end
 
+    // Get the position in the RAM line in bits:
+    //  - p1_araddr_s[0+:ADDR_LSB_W] : get the start address in byte
+    //  - /4 : convert it in instruction index (if 4 instructions per line, can be 0-1-2-3)
+    //         divide by 4 because XLEN = 32 bits = 4 bytes
+    //  - *32 : convert the instruction index in bits
     assign p1_rd_position = (p1_araddr_s[0+:ADDR_LSB_W]/4)*32;
 
-    generate if (AXI1_DATA_W<AXI_DATA_W) begin
+    generate if (AXI1_DATA_W<AXI_DATA_W) begin: P1_RD_DOWSIZE
         assign p1_rdata = mem[p1_araddr_s[ADDR_LSB_W+:ADDRW]][p1_rd_position+:AXI1_DATA_W];
-    end else begin
+    end else begin: P1_RD_NO_CONVERSION
         assign p1_rdata = mem[p1_araddr_s[ADDR_LSB_W+:ADDRW]][0+:AXI1_DATA_W];
     end
     endgenerate
@@ -267,12 +271,17 @@ module axi4l_ram
             end
         end
     end
-    
+
+    // Get the position in the RAM line in bits:
+    //  - p2_araddr_s[0+:ADDR_LSB_W] : get the start address in byte
+    //  - /4 : convert it in instruction index (if 4 instructions per line, can be 0-1-2-3)
+    //         divide by 4 because XLEN = 32 bits = 4 bytes
+    //  - *32 : convert the instruction index in bits
     assign p2_rd_position = (p2_araddr_s[0+:ADDR_LSB_W]/4)*32;
 
-    generate if (AXI2_DATA_W<AXI_DATA_W) begin
+    generate if (AXI2_DATA_W<AXI_DATA_W) begin: P2_RD_DOWSIZE
         assign p2_rdata = mem[p2_araddr_s[ADDR_LSB_W+:ADDRW]][p2_rd_position+:AXI2_DATA_W];
-    end else begin
+    end else begin: P2_RD_NO_CONVERSION
         assign p2_rdata = mem[p2_araddr_s[ADDR_LSB_W+:ADDRW]][0+:AXI2_DATA_W];
     end
     endgenerate
@@ -282,13 +291,13 @@ module axi4l_ram
 
 
     ///////////////////////////////////////////////////////////////////////////
-    // Write channels
+    // Write address channels, store info to perform the write accesses
     ///////////////////////////////////////////////////////////////////////////
 
     friscv_scfifo
     #(
         .ADDR_WIDTH ($clog2(OSTDREQ_NUM)),
-        .DATA_WIDTH (AXI_ADDR_W)
+        .DATA_WIDTH (AXI_ADDR_W+AXI_ID_W)
     )
     p1_awchannel_fifo
     (
@@ -296,10 +305,10 @@ module axi4l_ram
         .aresetn  (aresetn),
         .srst     (srst),
         .flush    (1'b0),
-        .data_in  (p1_awaddr),
+        .data_in  ({p1_awid, p1_awaddr}),
         .push     (p1_awvalid),
         .full     (p1_awaddr_full),
-        .data_out (p1_awaddr_s),
+        .data_out ({p1_awid_s, p1_awaddr_s}),
         .pull     (p1_wpull),
         .empty    (p1_awaddr_empty)
     );
@@ -310,7 +319,7 @@ module axi4l_ram
     friscv_scfifo
     #(
         .ADDR_WIDTH ($clog2(OSTDREQ_NUM)),
-        .DATA_WIDTH (AXI_ADDR_W)
+        .DATA_WIDTH (AXI_ADDR_W+AXI_ID_W)
     )
     p2_awchannel_fifo
     (
@@ -318,10 +327,10 @@ module axi4l_ram
         .aresetn  (aresetn),
         .srst     (srst),
         .flush    (1'b0),
-        .data_in  (p2_awaddr),
+        .data_in  ({p2_awid, p2_awaddr}),
         .push     (p2_awvalid),
         .full     (p2_awaddr_full),
-        .data_out (p2_awaddr_s),
+        .data_out ({p2_awid_s, p2_awaddr_s}),
         .pull     (p2_wpull),
         .empty    (p2_awaddr_empty)
     );
@@ -372,34 +381,91 @@ module axi4l_ram
 
     assign p2_wready = ~p2_wdata_full;
 
-    assign p1_wr_position = p1_awaddr_s[0+:ADDR_LSB_W];
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Write data chennels, perform write operations
+    ///////////////////////////////////////////////////////////////////////////
+
+    // Get the position in the RAM line in bits:
+    //  - p1_awaddr_s[0+:ADDR_LSB_W] : get the start address in byte
+    //  - /4 : convert it in instruction index (if 4 instructions per line, can be 0-1-2-3)
+    //         divide by 4 because XLEN = 32 bits = 4 bytes
+    //  - *32 : convert the instruction index in bits
+    assign p1_wr_position = (p1_awaddr_s[0+:ADDR_LSB_W]/4)*32;
 
     always @ (posedge aclk or negedge aresetn) begin
 
         if (~aresetn) begin
             p1_wpull <= 1'b0;
+            p1_bvalid <= 1'b0;
+            p1_bid <= {AXI_ID_W{1'b0}};
         end else if (srst) begin
             p1_wpull <= 1'b0;
+            p1_bvalid <= 1'b0;
+            p1_bid <= {AXI_ID_W{1'b0}};
         end else begin
-            if (~p1_awaddr_empty && ~p1_wdata_empty && ~p1_wpull) begin
+
+            if (p1_bvalid) begin
+
+                p1_wpull <= 1'b0;
+                if (p1_bready) p1_bvalid <= 1'b0;
+
+            end else if (~p1_awaddr_empty && ~p1_wdata_empty) begin
+
                 p1_wpull <= 1'b1;
+                p1_bvalid <= 1'b1;
+                p1_bid <= p1_awid_s;
+
+                if (AXI2_DATA_W<AXI_DATA_W) begin
+                    for (int i=0;i<AXI2_DATA_W/8;i++) begin
+                        if (p1_wstrb_s[i]) begin
+                            mem[p1_awaddr_s[ADDR_LSB_W+:ADDRW]][(p1_wr_position+i*8)+:8] <= p1_wdata_s[8*i+:8];
+                        end
+                    end
+                end else begin
+                    for (int i=0;i<AXI_DATA_W/8;i++) begin
+                        if (p1_wstrb_s[i]) begin
+                            mem[p1_awaddr_s[ADDR_LSB_W+:ADDRW]][8*i+:8] <= p1_wdata[8*i+:8];
+                        end
+                    end
+                end
             end else begin
                 p1_wpull <= 1'b0;
+                p1_bvalid <= 1'b0;
             end
         end
     end
 
+    // Get the position in the RAM line in bits:
+    //  - p2_awaddr_s[0+:ADDR_LSB_W] : get the start address in byte
+    //  - /4 : convert it in instruction index (if 4 instructions per line, can be 0-1-2-3)
+    //         divide by 4 because XLEN = 32 bits = 4 bytes
+    //  - *32 : convert the instruction index in bits
     assign p2_wr_position = (p2_awaddr_s[0+:ADDR_LSB_W]/4)*32;
 
     always @ (posedge aclk or negedge aresetn) begin
 
         if (~aresetn) begin
             p2_wpull <= 1'b0;
+            p2_bvalid <= 1'b0;
+            p2_bid <= {AXI_ID_W{1'b0}};
         end else if (srst) begin
             p2_wpull <= 1'b0;
+            p2_bvalid <= 1'b0;
+            p2_bid <= {AXI_ID_W{1'b0}};
         end else begin
-            if (~p2_awaddr_empty && ~p2_wdata_empty && ~p2_wpull) begin
+
+            if (p2_bvalid) begin
+
+                p2_wpull <= 1'b0;
+                if (p2_bready) p2_bvalid <= 1'b0;
+
+            end else if (~p2_awaddr_empty && ~p2_wdata_empty) begin
+
                 p2_wpull <= 1'b1;
+                p2_bvalid <= 1'b1;
+                p2_bid <= p2_awid_s;
+
                 if (AXI2_DATA_W<AXI_DATA_W) begin
                     for (int i=0;i<AXI2_DATA_W/8;i++) begin
                         if (p2_wstrb_s[i]) begin
@@ -415,17 +481,18 @@ module axi4l_ram
                 end
             end else begin
                 p2_wpull <= 1'b0;
+                p2_bvalid <= 1'b0;
             end
         end
     end
 
-    // Unsupported
-    assign p1_bvalid = 1'b1;
-    assign p2_bvalid = 1'b1;
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Write reponse chennels, complete the write requests
+    ///////////////////////////////////////////////////////////////////////////
+
     assign p1_bresp = 2'b0;
     assign p2_bresp = 2'b0;
-    assign p1_bid = 0;
-    assign p2_bid = 0;
 
 endmodule
 

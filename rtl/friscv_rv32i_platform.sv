@@ -54,11 +54,23 @@ module friscv_rv32i_platform
 
         // Enable instruction cache
         parameter ICACHE_EN          = 0,
+        // Enable cache block prefetch
+        parameter ICACHE_PREFETCH_EN = 0,
         // Block width defining only the data payload, in bits, must be an
         // integer multiple of XLEN (power of two)
         parameter ICACHE_BLOCK_W     = AXI_DATA_W,
         // Number of blocks in the cache
-        parameter ICACHE_DEPTH       = 512
+        parameter ICACHE_DEPTH       = 512,
+
+        // Enable data cache
+        parameter DCACHE_EN          = 0,
+        // Enable cache block prefetch
+        parameter DCACHE_PREFETCH_EN = 0,
+        // Block width defining only the data payload, in bits, must an
+        // integer multiple of XLEN (power of two)
+        parameter DCACHE_BLOCK_W     = AXI_DATA_W,
+        // Number of blocks in the cache
+        parameter DCACHE_DEPTH       = 512
 
     )(
         // Clock/reset interface
@@ -69,6 +81,9 @@ module friscv_rv32i_platform
         input  logic                      irq,
         // Internal core status
         output logic [8             -1:0] status,
+        `ifdef FRISCV_SIM
+        output logic                      error,
+        `endif
         // Central Memeory interface
         output logic                      mem_awvalid,
         input  logic                      mem_awready,
@@ -108,7 +123,7 @@ module friscv_rv32i_platform
     ///////////////////////////////////////////////////////////////////////////
 
     localparam AXI_IMEM_W = AXI_DATA_W;
-    localparam AXI_DMEM_W = XLEN;
+    localparam AXI_DMEM_W = AXI_DATA_W;
 
 
     logic                      imem_arvalid;
@@ -274,8 +289,13 @@ module friscv_rv32i_platform
     .AXI_IMEM_MASK (AXI_IMEM_MASK),
     .AXI_DMEM_MASK (AXI_DMEM_MASK),
     .ICACHE_EN (ICACHE_EN),
+    .ICACHE_PREFETCH_EN (ICACHE_PREFETCH_EN),
     .ICACHE_BLOCK_W (ICACHE_BLOCK_W),
-    .ICACHE_DEPTH (ICACHE_DEPTH)
+    .ICACHE_DEPTH (ICACHE_DEPTH),
+    .DCACHE_EN (DCACHE_EN),
+    .DCACHE_PREFETCH_EN (DCACHE_PREFETCH_EN),
+    .DCACHE_BLOCK_W (DCACHE_BLOCK_W),
+    .DCACHE_DEPTH (DCACHE_DEPTH)
     )
     cpu0 
     (
@@ -284,6 +304,9 @@ module friscv_rv32i_platform
     .srst         (srst),
     .irq          (irq),
     .status       (status),
+    `ifdef FRISCV_SIM
+    .error        (error),
+    `endif
     .imem_arvalid (imem_arvalid),
     .imem_arready (imem_arready),
     .imem_araddr  (imem_araddr),

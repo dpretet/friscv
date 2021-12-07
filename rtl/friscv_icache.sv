@@ -55,7 +55,7 @@ module friscv_icache
         ///////////////////////////////////////////////////////////////////////
 
         // Enable automatic prefetch in memory controller
-        parameter PREFETCH_EN = 0,
+        parameter CACHE_PREFETCH_EN = 0,
         // Line width defining only the data payload, in bits
         parameter CACHE_BLOCK_W = 128,
         // Number of lines in the cache

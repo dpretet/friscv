@@ -14,6 +14,9 @@ module friscv_registers
         input  logic              aclk,
         input  logic              aresetn,
         input  logic              srst,
+        `ifdef FRISCV_SIM
+        output logic                      error,
+        `endif
         // register source 1 for control unit
         input  logic [5     -1:0] ctrl_rs1_addr,
         output logic [XLEN  -1:0] ctrl_rs1_val,
@@ -208,6 +211,10 @@ module friscv_registers
     assign x30 = regs[30];
     assign x31 = regs[31];
 
+    `endif
+
+    `ifdef FRISCV_SIM
+    assign error = (regs[31]>0) ? 1'b1 :1'b0;
     `endif
 
 endmodule

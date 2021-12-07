@@ -11,6 +11,7 @@
 ../../rtl/friscv_csr.sv
 ../../rtl/friscv_scfifo.sv
 ../../rtl/friscv_scfifo_ram.sv
+../../rtl/friscv_dcache.sv
 ../../rtl/friscv_icache.sv
 ../../rtl/friscv_icache_fetcher.sv
 ../../rtl/friscv_icache_blocks.sv

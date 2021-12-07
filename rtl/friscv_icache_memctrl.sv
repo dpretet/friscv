@@ -95,6 +95,8 @@ module friscv_icache_memctrl
 
     ctrl_fsm cfsm;
 
+    parameter ADDR_LSB_W = $clog2(AXI_DATA_W/8);
+
     // Used on flush request to erase the cache content
     logic                erase_wen;
     logic [AXI_ADDR_W:0] erase_addr;
@@ -137,11 +139,12 @@ module friscv_icache_memctrl
 
     assign mem_arvalid = ctrl_arvalid;
     assign ctrl_arready = mem_arready;
-    assign mem_araddr = ctrl_araddr;
+    // TODO: Fetch the address rounded to cache line boundary
+    assign mem_araddr = {ctrl_araddr[AXI_ADDR_W-1:ADDR_LSB_W],{ADDR_LSB_W{1'b0}}};
     assign mem_arprot = ctrl_arprot;
     assign mem_arid = ctrl_arid | AXI_ID_MASK;
 
-    // TODO: Drive properly
+    // TODO: To drive
     assign mem_rready = 1'b1;
 
 

@@ -10,31 +10,6 @@
 
 source ../common/functions.run.sh
 
-test_ret=0
-do_clean=0
-
-RED='\033[0;31m'
-BLUE='\033[0;34m'
-GREEN='\033[0;32m'
-NC='\033[0m' # No Color
-
-# Architecture choice
-XLEN=32
-# Instruction width
-ILEN=32
-# Cache block width in bits
-CACHE_BLOCK_W=128
-# Number of instruction per cache block
-INST_PER_BLOCK=$(($CACHE_BLOCK_W/$ILEN))
-# Boot address
-BOOT_ADDR=0
-# Timeout upon which the simulation is ran
-TIMEOUT=10000
-# Testbench configuration
-TB_CHOICE='CORE'
-
-
-
 #------------------------------------------------------------------------------
 # Main
 #------------------------------------------------------------------------------

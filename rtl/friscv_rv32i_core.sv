@@ -50,17 +50,28 @@ module friscv_rv32i_core
         parameter AXI_DMEM_MASK     = 'h20,
 
         ////////////////////////////////////////////////////////////////////////
-        // Cache setup
+        // Caches setup
         ////////////////////////////////////////////////////////////////////////
 
         // Enable instruction cache
         parameter ICACHE_EN          = 0,
+        // Enable cache block prefetch
+        parameter ICACHE_PREFETCH_EN = 0,
         // Block width defining only the data payload, in bits, must an
         // integer multiple of XLEN (power of two)
         parameter ICACHE_BLOCK_W     = XLEN*4,
         // Number of blocks in the cache
-        parameter ICACHE_DEPTH       = 512
+        parameter ICACHE_DEPTH       = 512,
 
+        // Enable data cache
+        parameter DCACHE_EN          = 0,
+        // Enable cache block prefetch
+        parameter DCACHE_PREFETCH_EN = 0,
+        // Block width defining only the data payload, in bits, must an
+        // integer multiple of XLEN (power of two)
+        parameter DCACHE_BLOCK_W     = XLEN*4,
+        // Number of blocks in the cache
+        parameter DCACHE_DEPTH       = 512
     )(
         // Clock/reset interface
         input  logic                      aclk,
@@ -70,6 +81,9 @@ module friscv_rv32i_core
         input  logic                      irq,
         // Internal core status
         output logic [8             -1:0] status,
+        `ifdef FRISCV_SIM
+        output logic                      error,
+        `endif
         // Instruction memory interface
         output logic                      imem_arvalid,
         input  logic                      imem_arready,
@@ -167,6 +181,30 @@ module friscv_rv32i_core
     logic [2               -1:0] inst_rresp_s;
     logic [ILEN            -1:0] inst_rdata_s;
 
+    logic                        memfy_awvalid;
+    logic                        memfy_awready;
+    logic [AXI_ADDR_W      -1:0] memfy_awaddr;
+    logic [3               -1:0] memfy_awprot;
+    logic [AXI_ID_W        -1:0] memfy_awid;
+    logic                        memfy_wvalid;
+    logic                        memfy_wready;
+    logic [XLEN            -1:0] memfy_wdata;
+    logic [XLEN/8          -1:0] memfy_wstrb;
+    logic                        memfy_bvalid;
+    logic                        memfy_bready;
+    logic [AXI_ID_W        -1:0] memfy_bid;
+    logic [2               -1:0] memfy_bresp;
+    logic                        memfy_arvalid;
+    logic                        memfy_arready;
+    logic [AXI_ADDR_W      -1:0] memfy_araddr;
+    logic [3               -1:0] memfy_arprot;
+    logic [AXI_ID_W        -1:0] memfy_arid;
+    logic                        memfy_rvalid;
+    logic                        memfy_rready;
+    logic [AXI_ID_W        -1:0] memfy_rid;
+    logic [2               -1:0] memfy_rresp;
+    logic [XLEN            -1:0] memfy_rdata;
+
     logic                        flush_req;
     logic                        flush_ack;
 
@@ -232,6 +270,9 @@ module friscv_rv32i_core
         .aclk            (aclk           ),
         .aresetn         (aresetn        ),
         .srst            (srst           ),
+        `ifdef FRISCV_SIM
+        .error           (error          ),
+        `endif
         .ctrl_rs1_addr   (ctrl_rs1_addr  ),
         .ctrl_rs1_val    (ctrl_rs1_val   ),
         .ctrl_rs2_addr   (ctrl_rs2_addr  ),
@@ -331,15 +372,16 @@ module friscv_rv32i_core
 
     friscv_icache
     #(
-        .ILEN          (ILEN),
-        .XLEN          (XLEN),
-        .OSTDREQ_NUM   (INST_OSTDREQ_NUM),
-        .AXI_ADDR_W    (AXI_ADDR_W),
-        .AXI_ID_W      (AXI_ID_W),
-        .AXI_ID_MASK   (AXI_IMEM_MASK),
-        .AXI_DATA_W    (AXI_IMEM_W),
-        .CACHE_BLOCK_W (ICACHE_BLOCK_W),
-        .CACHE_DEPTH   (ICACHE_DEPTH)
+        .ILEN              (ILEN),
+        .XLEN              (XLEN),
+        .OSTDREQ_NUM       (INST_OSTDREQ_NUM),
+        .AXI_ADDR_W        (AXI_ADDR_W),
+        .AXI_ID_W          (AXI_ID_W),
+        .AXI_ID_MASK       (AXI_IMEM_MASK),
+        .AXI_DATA_W        (AXI_IMEM_W),
+        .CACHE_PREFETCH_EN (ICACHE_PREFETCH_EN),
+        .CACHE_BLOCK_W     (ICACHE_BLOCK_W),
+        .CACHE_DEPTH       (ICACHE_DEPTH)
     )
     icache
     (
@@ -444,7 +486,7 @@ module friscv_rv32i_core
         .XLEN         (XLEN),
         .AXI_ADDR_W   (AXI_ADDR_W),
         .AXI_ID_W     (AXI_ID_W),
-        .AXI_DATA_W   (AXI_DMEM_W),
+        .AXI_DATA_W   (XLEN),
         .AXI_ID_MASK  (AXI_DMEM_MASK)
     )
     processing
@@ -473,31 +515,151 @@ module friscv_rv32i_core
         .memfy_rd_addr  (memfy_rd_addr),
         .memfy_rd_val   (memfy_rd_val),
         .memfy_rd_strb  (memfy_rd_strb),
-        .awvalid        (dmem_awvalid),
-        .awready        (dmem_awready),
-        .awaddr         (dmem_awaddr),
-        .awprot         (dmem_awprot),
-        .awid           (dmem_awid),
-        .wvalid         (dmem_wvalid),
-        .wready         (dmem_wready),
-        .wdata          (dmem_wdata),
-        .wstrb          (dmem_wstrb),
-        .bvalid         (dmem_bvalid),
-        .bready         (dmem_bready),
-        .bid            (dmem_bid),
-        .bresp          (dmem_bresp),
-        .arvalid        (dmem_arvalid),
-        .arready        (dmem_arready),
-        .araddr         (dmem_araddr),
-        .arprot         (dmem_arprot),
-        .arid           (dmem_arid),
-        .rvalid         (dmem_rvalid),
-        .rready         (dmem_rready),
-        .rid            (dmem_rid),
-        .rresp          (dmem_rresp),
-        .rdata          (dmem_rdata)
+        .awvalid        (memfy_awvalid),
+        .awready        (memfy_awready),
+        .awaddr         (memfy_awaddr),
+        .awprot         (memfy_awprot),
+        .awid           (memfy_awid),
+        .wvalid         (memfy_wvalid),
+        .wready         (memfy_wready),
+        .wdata          (memfy_wdata),
+        .wstrb          (memfy_wstrb),
+        .bvalid         (memfy_bvalid),
+        .bready         (memfy_bready),
+        .bid            (memfy_bid),
+        .bresp          (memfy_bresp),
+        .arvalid        (memfy_arvalid),
+        .arready        (memfy_arready),
+        .araddr         (memfy_araddr),
+        .arprot         (memfy_arprot),
+        .arid           (memfy_arid),
+        .rvalid         (memfy_rvalid),
+        .rready         (memfy_rready),
+        .rid            (memfy_rid),
+        .rresp          (memfy_rresp),
+        .rdata          (memfy_rdata)
     );
 
+    generate
+
+    if (DCACHE_EN) begin: DCACHE_ON
+
+    friscv_dcache
+    #(
+    .ILEN              (ILEN),
+    .XLEN              (XLEN),
+    .OSTDREQ_NUM       (4),
+    .AXI_ADDR_W        (AXI_ADDR_W),
+    .AXI_ID_W          (AXI_ID_W),
+    .AXI_DATA_W        (AXI_DMEM_W),
+    .AXI_ID_MASK       (AXI_DMEM_MASK),
+    .CACHE_PREFETCH_EN (DCACHE_PREFETCH_EN),
+    .CACHE_BLOCK_W     (DCACHE_BLOCK_W),
+    .CACHE_DEPTH       (DCACHE_DEPTH)
+    )
+    dcache
+    (
+    .aclk            (aclk),
+    .aresetn         (aresetn),
+    .srst            (srst),
+    .flush_req       (1'b0),
+    .flush_ack       (),
+    .memfy_awvalid   (memfy_awvalid),
+    .memfy_awready   (memfy_awready),
+    .memfy_awaddr    (memfy_awaddr),
+    .memfy_awprot    (memfy_awprot),
+    .memfy_awid      (memfy_awid),
+    .memfy_wvalid    (memfy_wvalid),
+    .memfy_wready    (memfy_wready),
+    .memfy_wdata     (memfy_wdata),
+    .memfy_wstrb     (memfy_wstrb),
+    .memfy_bvalid    (memfy_bvalid),
+    .memfy_bready    (memfy_bready),
+    .memfy_bid       (memfy_bid),
+    .memfy_bresp     (memfy_bresp),
+    .memfy_arvalid   (memfy_arvalid),
+    .memfy_arready   (memfy_arready),
+    .memfy_araddr    (memfy_araddr),
+    .memfy_arprot    (memfy_arprot),
+    .memfy_arid      (memfy_arid),
+    .memfy_rvalid    (memfy_rvalid),
+    .memfy_rready    (memfy_rready),
+    .memfy_rid       (memfy_rid),
+    .memfy_rresp     (memfy_rresp),
+    .memfy_rdata     (memfy_rdata),
+    .dcache_awvalid  (dmem_awvalid),
+    .dcache_awready  (dmem_awready),
+    .dcache_awaddr   (dmem_awaddr),
+    .dcache_awlen    (),
+    .dcache_awsize   (),
+    .dcache_awburst  (),
+    .dcache_awlock   (),
+    .dcache_awcache  (),
+    .dcache_awprot   (dmem_awprot),
+    .dcache_awqos    (),
+    .dcache_awregion (),
+    .dcache_awid     (dmem_awid),
+    .dcache_wvalid   (dmem_wvalid),
+    .dcache_wready   (dmem_wready),
+    .dcache_wlast    (),
+    .dcache_wdata    (dmem_wdata),
+    .dcache_wstrb    (dmem_wstrb),
+    .dcache_bvalid   (dmem_bvalid),
+    .dcache_bready   (dmem_bready),
+    .dcache_bid      (dmem_bid),
+    .dcache_bresp    (dmem_bresp),
+    .dcache_arvalid  (dmem_arvalid),
+    .dcache_arready  (dmem_arready),
+    .dcache_araddr   (dmem_araddr),
+    .dcache_arlen    (),
+    .dcache_arsize   (),
+    .dcache_arburst  (),
+    .dcache_arlock   (),
+    .dcache_arcache  (),
+    .dcache_arprot   (dmem_arprot),
+    .dcache_arqos    (),
+    .dcache_arregion (),
+    .dcache_arid     (dmem_arid),
+    .dcache_rvalid   (dmem_rvalid),
+    .dcache_rready   (dmem_rready),
+    .dcache_rid      (dmem_rid),
+    .dcache_rresp    (dmem_rresp),
+    .dcache_rdata    (dmem_rdata),
+    .dcache_rlast    (1'b1)
+    );
+
+    end else begin: DCACHE_OFF
+
+    assign dmem_awvalid = memfy_awvalid;
+    assign memfy_awready = dmem_awready;
+    assign dmem_awaddr = memfy_awaddr;
+    assign dmem_awprot = memfy_awprot;
+    assign dmem_awid = memfy_awid | AXI_DMEM_MASK;
+
+    assign dmem_wvalid = memfy_wvalid;
+    assign memfy_wready = dmem_wready;
+    assign dmem_wdata = memfy_wdata;
+    assign dmem_wstrb = memfy_wstrb;
+
+    assign memfy_bvalid = dmem_bvalid;
+    assign dmem_bready = memfy_bready;
+    assign memfy_bid = dmem_bid;
+    assign memfy_bresp = dmem_bresp;
+
+    assign dmem_arvalid = memfy_arvalid;
+    assign memfy_arready = dmem_arready;
+    assign dmem_araddr = memfy_araddr;
+    assign dmem_arprot = memfy_arprot;
+    assign dmem_arid = memfy_arid | AXI_DMEM_MASK;
+
+    assign memfy_rvalid = dmem_rvalid;
+    assign dmem_rready = memfy_rready;
+    assign memfy_rid = dmem_rid;
+    assign memfy_rresp = dmem_rresp;
+    assign memfy_rdata = dmem_rdata;
+
+    end
+    endgenerate
 
 endmodule
 `resetall
