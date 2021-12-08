@@ -416,8 +416,8 @@ module axi4l_ram
                 p1_bvalid <= 1'b1;
                 p1_bid <= p1_awid_s;
 
-                if (AXI2_DATA_W<AXI_DATA_W) begin
-                    for (int i=0;i<AXI2_DATA_W/8;i++) begin
+                if (AXI1_DATA_W<AXI_DATA_W) begin
+                    for (int i=0;i<AXI1_DATA_W/8;i++) begin
                         if (p1_wstrb_s[i]) begin
                             mem[p1_awaddr_s[ADDR_LSB_W+:ADDRW]][(p1_wr_position+i*8)+:8] <= p1_wdata_s[8*i+:8];
                         end
@@ -425,7 +425,7 @@ module axi4l_ram
                 end else begin
                     for (int i=0;i<AXI_DATA_W/8;i++) begin
                         if (p1_wstrb_s[i]) begin
-                            mem[p1_awaddr_s[ADDR_LSB_W+:ADDRW]][8*i+:8] <= p1_wdata[8*i+:8];
+                            mem[p1_awaddr_s[ADDR_LSB_W+:ADDRW]][8*i+:8] <= p1_wdata_s[8*i+:8];
                         end
                     end
                 end
@@ -475,7 +475,7 @@ module axi4l_ram
                 end else begin
                     for (int i=0;i<AXI_DATA_W/8;i++) begin
                         if (p2_wstrb_s[i]) begin
-                            mem[p2_awaddr_s[ADDR_LSB_W+:ADDRW]][8*i+:8] <= p2_wdata[8*i+:8];
+                            mem[p2_awaddr_s[ADDR_LSB_W+:ADDRW]][8*i+:8] <= p2_wdata_s[8*i+:8];
                         end
                     end
                 end
