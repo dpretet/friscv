@@ -166,6 +166,8 @@ module friscv_dcache
     ///////////////////////////////////////////////////////////////////////////
 
     // This FIFO stores the address for write data alignement 
+    // NB: UNUSED
+    // TODO: Evaluate if it could be needed
     friscv_scfifo 
     #(
     .PASS_THRU  (0),
@@ -206,7 +208,7 @@ module friscv_dcache
     // Write Data channel
     ///////////////////////////////////////////////////////////////////////////
 
-    assign wr_position = awaddr_w[ADDR_LSB+:SCALE_W];
+    assign wr_position = memfy_awaddr[ADDR_LSB+:SCALE_W];
 
     always @ (*) begin: GEN_WSTRB
         for (int i=0;i<SCALE;i=i+1) begin
