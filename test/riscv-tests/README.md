@@ -9,8 +9,8 @@ To execute the flow:
 ```
 
 All the testcases rely on [SVUT](https://github.com/dpretet/svut) to and
-[Icarus Verilog](http://iverilog.icarus.com).
+[Icarus Verilog 11](http://iverilog.icarus.com).
 
-[common](./common) folder contains a Makefile and a linker setup shared between
+[Common](../common) folder contains a Makefile and a linker setup shared between
 all the testcases and symlinked into each test folder. A folder can contain
 one or more ASM/C file and a markdown file describing the testcase scenario.

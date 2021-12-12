@@ -24,12 +24,16 @@ module friscv_io_subsystem
         parameter SLV0_SIZE       = 8,
         parameter SLV1_ADDR       = 8,
         parameter SLV1_SIZE       = 16,
+        parameter SLV2_ADDR       = 32,
+        parameter SLV2_SIZE       = 16,
         parameter UART_FIFO_DEPTH = 4
     )(
         // clock & reset
         input  logic                      aclk,
         input  logic                      aresetn,
         input  logic                      srst,
+        // real-time clock, shared across the harts for timing
+        input  logic                      rtc,
         // AXI4-lite slave interface
         input  logic                      slv_awvalid,
         output logic                      slv_awready,
@@ -61,7 +65,11 @@ module friscv_io_subsystem
         input  logic                      uart_rx,
         output logic                      uart_tx,
         output logic                      uart_rts,
-        input  logic                      uart_cts
+        input  logic                      uart_cts,
+        // software interrupt 
+        output logic                      sw_irq,
+        // timer interrupt 
+        output logic                      timer_irq
     );
 
     ///////////////////////////////////////////////////////////////////////////
@@ -92,6 +100,14 @@ module friscv_io_subsystem
     logic [XLEN  -1:0] slv1_rdata;
     logic              slv1_ready;
 
+    logic              slv2_en;
+    logic              slv2_wr;
+    logic [ADDRW -1:0] slv2_addr;
+    logic [XLEN  -1:0] slv2_wdata;
+    logic [XLEN/8-1:0] slv2_strb;
+    logic [XLEN  -1:0] slv2_rdata;
+    logic              slv2_ready;
+
     logic              misroute;
 
     // Control fsm
@@ -114,6 +130,8 @@ module friscv_io_subsystem
         if (mst_addr>=SLV0_ADDR && mst_addr<(SLV0_ADDR+SLV0_SIZE)) begin
             misroute = 1'b0;
         end else if (mst_addr>=SLV1_ADDR && mst_addr<(SLV1_ADDR+SLV1_SIZE)) begin
+            misroute = 1'b0;
+        end else if (mst_addr>=SLV2_ADDR && mst_addr<(SLV2_ADDR+SLV2_SIZE)) begin
             misroute = 1'b0;
         end else begin
             misroute = 1'b1;
@@ -249,7 +267,9 @@ module friscv_io_subsystem
         .SLV0_ADDR (SLV0_ADDR),
         .SLV0_SIZE (SLV0_SIZE),
         .SLV1_ADDR (SLV1_ADDR),
-        .SLV1_SIZE (SLV1_SIZE)
+        .SLV1_SIZE (SLV1_SIZE),
+        .SLV2_ADDR (SLV2_ADDR),
+        .SLV2_SIZE (SLV2_SIZE)
     )
     apb_interconnect
     (
@@ -276,7 +296,14 @@ module friscv_io_subsystem
         .mst1_wdata (slv1_wdata),
         .mst1_strb  (slv1_strb),
         .mst1_rdata (slv1_rdata),
-        .mst1_ready (slv1_ready)
+        .mst1_ready (slv1_ready),
+        .mst2_en    (slv2_en),
+        .mst2_wr    (slv2_wr),
+        .mst2_addr  (slv2_addr),
+        .mst2_wdata (slv2_wdata),
+        .mst2_strb  (slv2_strb),
+        .mst2_rdata (slv2_rdata),
+        .mst2_ready (slv2_ready)
     );
 
 
@@ -324,6 +351,28 @@ module friscv_io_subsystem
         .uart_tx   (uart_tx),
         .uart_rts  (uart_rts),
         .uart_cts  (uart_cts)
+    );
+
+    friscv_clint 
+    #(
+        .ADDRW (ADDRW),
+        .XLEN  (XLEN)
+    )
+    clint 
+    (
+        .aclk      (aclk),
+        .aresetn   (aresetn),
+        .srst      (srst),
+        .slv_en    (slv2_en),
+        .slv_wr    (slv2_wr),
+        .slv_addr  (slv2_addr),
+        .slv_wdata (slv2_wdata),
+        .slv_strb  (slv2_strb),
+        .slv_rdata (slv2_rdata),
+        .slv_ready (slv2_ready),
+        .rtc       (rtc),
+        .sw_irq    (sw_irq),
+        .timer_irq (timer_irq)
     );
 
 endmodule

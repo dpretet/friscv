@@ -3,3 +3,4 @@ test*.v
 *.asm
 *.elf
 *.map
+log

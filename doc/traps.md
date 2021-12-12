@@ -179,15 +179,6 @@ out: software interrupt m-mode (msip)
 out: timer interrupt
 in: timer increment
 
-Hazard 3:
-
-https://github.com/Wren6991/Hazard3/blob/master/hdl/peri/hazard3_riscv_timer.v
-
-out: timer interrupt
-in: timer increment
-
-How are they connected in a SOC based on these IPs?
-
 # Notes
 
 3 interrupts:

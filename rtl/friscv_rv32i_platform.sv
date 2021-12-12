@@ -77,8 +77,10 @@ module friscv_rv32i_platform
         input  logic                      aclk,
         input  logic                      aresetn,
         input  logic                      srst,
+        // Real-time refrence clock
+        input  logic                      rtc,
         // External interrupt
-        input  logic                      irq,
+        input  logic                      eirq,
         // Internal core status
         output logic [8             -1:0] status,
         `ifdef FRISCV_SIM
@@ -115,7 +117,9 @@ module friscv_rv32i_platform
         input  logic                      uart_rx,
         output logic                      uart_tx,
         output logic                      uart_rts,
-        input  logic                      uart_cts
+        input  logic                      uart_cts,
+        // Output IRQ
+        output logic                      sw_irq
     );
 
     ///////////////////////////////////////////////////////////////////////////
@@ -169,6 +173,8 @@ module friscv_rv32i_platform
     parameter IO_SLV0_SIZE       = 8;
     parameter IO_SLV1_ADDR       = 8;
     parameter IO_SLV1_SIZE       = 16;
+    parameter IO_SLV2_ADDR       = 32;
+    parameter IO_SLV2_SIZE       = 16;
     parameter IO_UART_FIFO_DEPTH = 4;
 
     logic                      ios_awvalid;
@@ -195,8 +201,10 @@ module friscv_rv32i_platform
     logic [AXI_DATA_W    -1:0] ios_rdata;
     logic [AXI_ID_W      -1:0] ios_rid;
 
+    logic                      timer_irq;
+
     ///////////////////////////////////////////////////////////////////////////
-    // AXI4 Crossbar parameter
+    // AXI4 Crossbar parameters and signals
     ///////////////////////////////////////////////////////////////////////////
 
     parameter MST_NB = 4;
@@ -302,7 +310,8 @@ module friscv_rv32i_platform
     .aclk         (aclk),
     .aresetn      (aresetn),
     .srst         (srst),
-    .irq          (irq),
+    .eirq         (eirq),
+    .timer_irq    (timer_irq),
     .status       (status),
     `ifdef FRISCV_SIM
     .error        (error),
@@ -670,6 +679,8 @@ module friscv_rv32i_platform
     .SLV0_SIZE       (IO_SLV0_SIZE),
     .SLV1_ADDR       (IO_SLV1_ADDR),
     .SLV1_SIZE       (IO_SLV1_SIZE),
+    .SLV2_ADDR       (IO_SLV2_ADDR),
+    .SLV2_SIZE       (IO_SLV2_SIZE),
     .UART_FIFO_DEPTH (IO_UART_FIFO_DEPTH)
     )
     io_subsystem
@@ -677,6 +688,7 @@ module friscv_rv32i_platform
     .aclk        (aclk),
     .aresetn     (aresetn),
     .srst        (srst),
+    .rtc         (rtc),
     .slv_awvalid (ios_awvalid),
     .slv_awready (ios_awready),
     .slv_awaddr  (ios_awaddr),
@@ -705,7 +717,9 @@ module friscv_rv32i_platform
     .uart_rx     (uart_rx),
     .uart_tx     (uart_tx),
     .uart_rts    (uart_rts),
-    .uart_cts    (uart_cts)
+    .uart_cts    (uart_cts),
+    .sw_irq      (sw_irq),
+    .timer_irq   (timer_irq)
     );
 
 

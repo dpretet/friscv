@@ -16,7 +16,7 @@ module friscv_gpios
         input  logic                        aclk,
         input  logic                        aresetn,
         input  logic                        srst,
-        // APB Master
+        // APB slave interface
         input  logic                        slv_en,
         input  logic                        slv_wr,
         input  logic [ADDRW           -1:0] slv_addr,

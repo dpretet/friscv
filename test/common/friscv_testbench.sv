@@ -104,7 +104,8 @@ module tb();
     logic                      aclk;
     logic                      aresetn;
     logic                      srst;
-    logic                      irq;
+    logic                      eirq;
+    logic                      sw_irq;
     logic [8             -1:0] status;
     logic                      error_status_reg;
     logic                      imem_awvalid;
@@ -183,12 +184,15 @@ module tb();
     logic                      uart_tx;
     logic                      uart_rts;
     logic                      uart_cts;
+    logic                      timer_irq;
+    logic                      rtc;
 
-    initial $display("%s", TB_CHOICE);
 
     // Run the testbench by using only the CPU core
     generate
     if (TB_CHOICE=="CORE") begin
+
+    assign timer_irq = 1'b0;
 
     friscv_rv32i_core
     #(
@@ -213,45 +217,46 @@ module tb();
     )
     dut
     (
-        .aclk         (aclk        ),
-        .aresetn      (aresetn     ),
-        .srst         (srst        ),
-        .irq          (irq         ),
-        .status       (status      ),
+        .aclk         (aclk),
+        .aresetn      (aresetn),
+        .srst         (srst),
+        .timer_irq    (timer_irq),
+        .eirq         (eirq),
+        .status       (status),
         .error        (error_status_reg),
         .imem_arvalid (imem_arvalid),
         .imem_arready (imem_arready),
-        .imem_araddr  (imem_araddr ),
-        .imem_arprot  (imem_arprot ),
-        .imem_arid    (imem_arid   ),
-        .imem_rvalid  (imem_rvalid ),
-        .imem_rready  (imem_rready ),
-        .imem_rid     (imem_rid    ),
-        .imem_rresp   (imem_rresp  ),
-        .imem_rdata   (imem_rdata  ),
+        .imem_araddr  (imem_araddr),
+        .imem_arprot  (imem_arprot),
+        .imem_arid    (imem_arid),
+        .imem_rvalid  (imem_rvalid),
+        .imem_rready  (imem_rready),
+        .imem_rid     (imem_rid),
+        .imem_rresp   (imem_rresp),
+        .imem_rdata   (imem_rdata),
         .dmem_awvalid (dmem_awvalid),
         .dmem_awready (dmem_awready),
-        .dmem_awaddr  (dmem_awaddr ),
-        .dmem_awprot  (dmem_awprot ),
-        .dmem_awid    (dmem_awid   ),
-        .dmem_wvalid  (dmem_wvalid ),
-        .dmem_wready  (dmem_wready ),
-        .dmem_wdata   (dmem_wdata  ),
-        .dmem_wstrb   (dmem_wstrb  ),
-        .dmem_bvalid  (dmem_bvalid ),
-        .dmem_bready  (dmem_bready ),
-        .dmem_bid     (dmem_bid    ),
-        .dmem_bresp   (dmem_bresp  ),
+        .dmem_awaddr  (dmem_awaddr),
+        .dmem_awprot  (dmem_awprot),
+        .dmem_awid    (dmem_awid),
+        .dmem_wvalid  (dmem_wvalid),
+        .dmem_wready  (dmem_wready),
+        .dmem_wdata   (dmem_wdata),
+        .dmem_wstrb   (dmem_wstrb),
+        .dmem_bvalid  (dmem_bvalid),
+        .dmem_bready  (dmem_bready),
+        .dmem_bid     (dmem_bid),
+        .dmem_bresp   (dmem_bresp),
         .dmem_arvalid (dmem_arvalid),
         .dmem_arready (dmem_arready),
-        .dmem_araddr  (dmem_araddr ),
-        .dmem_arprot  (dmem_arprot ),
-        .dmem_arid    (dmem_arid   ),
-        .dmem_rvalid  (dmem_rvalid ),
-        .dmem_rready  (dmem_rready ),
-        .dmem_rid     (dmem_rid    ),
-        .dmem_rresp   (dmem_rresp  ),
-        .dmem_rdata   (dmem_rdata  )
+        .dmem_araddr  (dmem_araddr),
+        .dmem_arprot  (dmem_arprot),
+        .dmem_arid    (dmem_arid),
+        .dmem_rvalid  (dmem_rvalid),
+        .dmem_rready  (dmem_rready),
+        .dmem_rid     (dmem_rid),
+        .dmem_rresp   (dmem_rresp),
+        .dmem_rdata   (dmem_rdata)
     );
 
 
@@ -346,7 +351,8 @@ module tb();
         .aclk        (aclk),
         .aresetn     (aresetn),
         .srst        (srst),
-        .irq         (irq),
+        .eirq        (eirq),
+        .rtc         (rtc),
         .status      (status),
         .error       (error_status_reg),
         .mem_awvalid (mem_awvalid),
@@ -377,7 +383,8 @@ module tb();
         .uart_rx     (uart_rx),
         .uart_tx     (uart_tx),
         .uart_rts    (uart_rts),
-        .uart_cts    (uart_cts)
+        .uart_cts    (uart_cts),
+        .sw_irq      (sw_irq)
     );
 
     axi4l_ram
@@ -467,7 +474,7 @@ module tb();
         imem_awvalid = 1'b0;
         imem_wvalid = 1'b0;
         imem_bready = 1'b0;
-        irq = 0;
+        eirq = 0;
         aresetn = 1'b0;
         srst = 1'b0;
         timer = 0;

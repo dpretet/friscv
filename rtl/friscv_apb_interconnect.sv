@@ -14,11 +14,13 @@ module friscv_apb_interconnect
         parameter SLV0_ADDR = 0,
         parameter SLV0_SIZE = 8,
         parameter SLV1_ADDR = 8,
-        parameter SLV1_SIZE = 4
+        parameter SLV1_SIZE = 4,
+        parameter SLV2_ADDR = 8,
+        parameter SLV2_SIZE = 4
     )(
-        // clock & reset
-        input  logic                        aclk,
-        input  logic                        aresetn,
+        // clock & reset 
+        input  logic                        aclk, 
+        input  logic                        aresetn, 
         input  logic                        srst,
         // APB Master
         input  logic                        slv_en,
@@ -43,12 +45,21 @@ module friscv_apb_interconnect
         output logic [XLEN            -1:0] mst1_wdata,
         output logic [XLEN/8          -1:0] mst1_strb,
         input  logic [XLEN            -1:0] mst1_rdata,
-        input  logic                        mst1_ready
+        input  logic                        mst1_ready,
+        // APB Slave 2
+        output logic                        mst2_en,
+        output logic                        mst2_wr,
+        output logic [ADDRW           -1:0] mst2_addr,
+        output logic [XLEN            -1:0] mst2_wdata,
+        output logic [XLEN/8          -1:0] mst2_strb,
+        input  logic [XLEN            -1:0] mst2_rdata,
+        input  logic                        mst2_ready
     );
 
 
     localparam SLV0_RANGE = SLV0_ADDR + SLV0_SIZE;
     localparam SLV1_RANGE = SLV1_ADDR + SLV1_SIZE;
+    localparam SLV2_RANGE = SLV2_ADDR + SLV2_SIZE;
 
 
     always @ (posedge aclk or negedge aresetn) begin
@@ -64,6 +75,11 @@ module friscv_apb_interconnect
             mst1_addr <= {ADDRW{1'b0}};
             mst1_wdata <= {XLEN{1'b0}};
             mst1_strb <= {XLEN/8{1'b0}};
+            mst2_en <= 1'b0;
+            mst2_wr <= 1'b0;
+            mst2_addr <= {ADDRW{1'b0}};
+            mst2_wdata <= {XLEN{1'b0}};
+            mst2_strb <= {XLEN/8{1'b0}};
             slv_ready <= 1'b0;
             slv_rdata <= {XLEN{1'b0}};
         end else if (srst) begin
@@ -77,6 +93,11 @@ module friscv_apb_interconnect
             mst1_addr <= {ADDRW{1'b0}};
             mst1_wdata <= {XLEN{1'b0}};
             mst1_strb <= {XLEN/8{1'b0}};
+            mst2_en <= 1'b0;
+            mst2_wr <= 1'b0;
+            mst2_addr <= {ADDRW{1'b0}};
+            mst2_wdata <= {XLEN{1'b0}};
+            mst2_strb <= {XLEN/8{1'b0}};
             slv_ready <= 1'b0;
             slv_rdata <= {XLEN{1'b0}};
         end else begin
@@ -113,13 +134,29 @@ module friscv_apb_interconnect
                         mst1_en <= 1'b0;
                     end
 
+                // Slave 1 access
+                end else if (slv_addr >= SLV2_ADDR && slv_addr < SLV2_RANGE) begin
+
+                    mst2_addr <= slv_addr - SLV2_ADDR;
+                    mst2_en <= slv_en;
+                    mst2_wr <= slv_wr;
+                    mst2_wdata <= slv_wdata;
+                    mst2_strb <= slv_strb;
+                    slv_rdata <= mst2_rdata;
+                    slv_ready <= mst2_ready;
+
+                    if (mst2_ready) begin
+                        mst2_en <= 1'b0;
+                    end
+
+
                 // Any other address accessed will be completed, whatever
                 // it targets.
                 end else begin
                     slv_ready <= 1'b1;
                 end
 
-            // go back to IDLE to wait for the next access
+            // Go back to IDLE to wait for the next access
             end else begin
 
                 mst0_en <= 1'b0;
@@ -133,6 +170,12 @@ module friscv_apb_interconnect
                 mst1_addr <= {ADDRW{1'b0}};
                 mst1_wdata <= {XLEN{1'b0}};
                 mst1_strb <= {XLEN/8{1'b0}};
+
+                mst2_en <= 2'b0;
+                mst2_wr <= 2'b0;
+                mst2_addr <= {ADDRW{1'b0}};
+                mst2_wdata <= {XLEN{1'b0}};
+                mst2_strb <= {XLEN/8{1'b0}};
 
                 slv_ready <= 1'b0;
                 slv_rdata <= {XLEN{1'b0}};

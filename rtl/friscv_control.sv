@@ -793,11 +793,12 @@ module friscv_control
                                1'b0,                   // SIE
                                1'b0};                  // UIE
 
-    // MTVEC computation: on async exception occurence, pc uses mtvec + 4*cause
-    // else set it up to mtvec.
-    assign mtvec = (async_trap_occuring && sb_mtvec[1:0]!=2'b0) ? // Vectored mode
+    // MTVEC computation:
+    assign mtvec = (async_trap_occuring && sb_mtvec[1:0]!=2'b0) ?
+                        // Vectored mode
                         {sb_mtvec[XLEN-1:2], 2'b0} + (mcause_code << 2) :
-                        {sb_mtvec[XLEN-1:2], 2'b0} ;              // Direct mode
+                        // Direct mode
+                        {sb_mtvec[XLEN-1:2], 2'b0} ;              
 
 
     ///////////////////////////////////////////////////////////////////////////
@@ -834,7 +835,7 @@ module friscv_control
                               (opcode==`STORE && funct3==`SW && data_addr[1:0]!=2'b0) ? 1'b1 :
                                                                                         1'b0 ;
     // TODO:
-    // When TW=1, then if WFI is executed in any less-privileged mode, and it
+    // When TW=1, if WFI is executed in any less-privileged mode, and it
     // does not complete within an implementation-specific, bounded time
     // limit, the WFI instruction causes an illegal instruction exception
     assign wfi_not_allowed = 1'b0;
@@ -866,7 +867,6 @@ module friscv_control
     // 12-15           |   Reserved for future standard use
     // ≥16             |   Reserved for platform use
     // -----------------------------------------------------------
-    //
     //
     // Synchronous exception priority in decreasing priority order:
     // -----------------------------------------------------------
@@ -921,11 +921,12 @@ module friscv_control
                                                  {XLEN{1'b0}};
 
     // Trigger the trap handling execution in main FSM
-    assign async_trap_occuring = csr_sb[`MEIP];
 
-    assign sync_trap_occuring = csr_sb[`MSIP] |
-                                csr_sb[`MTIP] |
-                                csr_ro_wr |
+    assign async_trap_occuring = csr_sb[`MSIP] |
+                                 csr_sb[`MTIP] |
+                                 csr_sb[`MEIP] ;
+
+    assign sync_trap_occuring = csr_ro_wr |
                                 inst_addr_misaligned |
                                 load_misaligned |
                                 store_misaligned |
