@@ -101,6 +101,9 @@ module friscv_icache_memctrl
     logic                erase_wen;
     logic [AXI_ADDR_W:0] erase_addr;
 
+    logic [AXI_ADDR_W-1:0] araddr;
+    logic                  full;
+    logic                  empty;
 
     ///////////////////////////////////////////////////////////////////////////
     // Optional signals, unused and tied to recommended default values
@@ -138,22 +141,42 @@ module friscv_icache_memctrl
     ///////////////////////////////////////////////////////////////////////////
 
     assign mem_arvalid = ctrl_arvalid;
-    assign ctrl_arready = mem_arready;
+    assign ctrl_arready = !full;
+
     // TODO: Fetch the address rounded to cache line boundary
     assign mem_araddr = {ctrl_araddr[AXI_ADDR_W-1:ADDR_LSB_W],{ADDR_LSB_W{1'b0}}};
     assign mem_arprot = ctrl_arprot;
     assign mem_arid = ctrl_arid | AXI_ID_MASK;
 
-    // TODO: To drive
-    assign mem_rready = 1'b1;
 
+    friscv_scfifo 
+    #(
+        .PASS_THRU  (0),
+        .ADDR_WIDTH (3),
+        .DATA_WIDTH (AXI_ADDR_W)
+    )
+    araddr_fifo 
+    (
+        .aclk     (aclk),
+        .aresetn  (aresetn),
+        .srst     (srst),
+        .flush    (1'b0),
+        .data_in  (ctrl_araddr),
+        .push     (ctrl_arvalid),
+        .full     (full),
+        .data_out (araddr),
+        .pull     (mem_rvalid),
+        .empty    (empty)
+    );
+
+    assign mem_rready = !empty;
 
     ///////////////////////////////////////////////////////////////////////////
     // Cache write
     ///////////////////////////////////////////////////////////////////////////
 
     assign cache_wen = (cfsm==IDLE) ? mem_rvalid : erase_wen;
-    assign cache_waddr = (cfsm==IDLE) ? ctrl_araddr : erase_addr[AXI_ADDR_W-1:0];
+    assign cache_waddr = (cfsm==IDLE) ? araddr : erase_addr[AXI_ADDR_W-1:0];
     assign cache_wdata = mem_rdata;
 
 

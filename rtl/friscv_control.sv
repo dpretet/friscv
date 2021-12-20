@@ -230,6 +230,14 @@ module friscv_control
         log.debug({msg, mcause_str});
     endtask
 
+
+    function automatic logic [AXI_ID_W-1:0] next_id(
+        input logic [AXI_ID_W-1:0] id
+    );
+        if (id==OSTDREQ_NUM-1) next_id = {AXI_ID_W{1'b0}};
+        else next_id = id + 1'b1;
+    endfunction
+
     ///////////////////////////////////////////////////////////////////////////
     // CSR Shared bus extraction
     ///////////////////////////////////////////////////////////////////////////
@@ -560,7 +568,7 @@ module friscv_control
                             traps[3] <= 1'b1;
                             flush_fifo <= 1'b1;
                             arvalid <= 1'b0;
-                            arid <= arid + 1;
+                            arid <= next_id(arid);
                             pc_reg <= mtvec;
                             mepc_wr <= 1'b1;
                             mepc <= pc_reg;
@@ -580,7 +588,7 @@ module friscv_control
                                               funct7, rs1, rs2, rd, imm12, imm20, csr);
                             flush_fifo <= 1'b1;
                             arvalid <= 1'b0;
-                            arid <= arid + 1;
+                            arid <= next_id(arid);
                             pc_reg <= pc;
                             cfsm <= RELOAD;
 
@@ -593,7 +601,7 @@ module friscv_control
                             traps[0] <= 1'b1;
                             flush_fifo <= 1'b1;
                             arvalid <= 1'b0;
-                            arid <= arid + 1;
+                            arid <= next_id(arid);
                             pc_reg <= mtvec;
                             mepc_wr <= 1'b1;
                             mepc <= pc_reg;
@@ -620,7 +628,7 @@ module friscv_control
                             flush_fifo <= 1'b1;
                             traps[2] <= 1'b1;
                             arvalid <= 1'b0;
-                            arid <= arid + 1;
+                            arid <= next_id(arid);
                             pc_reg <= sb_mepc;
                             mstatus_wr <= 1'b1;
                             mstatus <= mstatus_for_mret;
@@ -636,7 +644,7 @@ module friscv_control
                             flush_fifo <= 1'b1;
                             pc_reg <= pc;
                             arvalid <= 1'b0;
-                            arid <= arid + 1;
+                            arid <= next_id(arid);
                             pc_reg <= pc;
                             cfsm <= FENCE_I;
 

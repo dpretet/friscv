@@ -77,10 +77,10 @@ module friscv_rv32i_platform
         input  logic                      aclk,
         input  logic                      aresetn,
         input  logic                      srst,
-        // Real-time refrence clock
+        // Real-time reference clock
         input  logic                      rtc,
-        // External interrupt
-        input  logic                      eirq,
+        // Interrupts
+        input  logic                      ext_irq,
         // Internal core status
         output logic [8             -1:0] status,
         `ifdef FRISCV_SIM
@@ -117,9 +117,7 @@ module friscv_rv32i_platform
         input  logic                      uart_rx,
         output logic                      uart_tx,
         output logic                      uart_rts,
-        input  logic                      uart_cts,
-        // Output IRQ
-        output logic                      sw_irq
+        input  logic                      uart_cts
     );
 
     ///////////////////////////////////////////////////////////////////////////
@@ -230,14 +228,14 @@ module friscv_rv32i_platform
     parameter MST0_OSTDREQ_NUM = 0;
     parameter MST0_PRIORITY = 0;
     parameter [SLV_NB-1:0] MST0_ROUTES = 4'b1_1_1_1;
-    parameter [AXI_ID_W-1:0] MST0_ID_MASK = 'h10;
+    parameter [AXI_ID_W-1:0] MST0_ID_MASK = AXI_IMEM_MASK;
 
     parameter MST1_RW = 0;
     parameter MST1_CDC = 0;
     parameter MST1_OSTDREQ_NUM = 0;
     parameter MST1_PRIORITY = 0;
     parameter [SLV_NB-1:0] MST1_ROUTES = 4'b1_1_1_1;
-    parameter [AXI_ID_W-1:0] MST1_ID_MASK = 'h20;
+    parameter [AXI_ID_W-1:0] MST1_ID_MASK = AXI_DMEM_MASK;
 
     parameter MST2_RW = 0;
     parameter MST2_CDC = 0;
@@ -310,7 +308,8 @@ module friscv_rv32i_platform
     .aclk         (aclk),
     .aresetn      (aresetn),
     .srst         (srst),
-    .eirq         (eirq),
+    .ext_irq      (ext_irq),
+    .sw_irq       (1'b0),
     .timer_irq    (timer_irq),
     .status       (status),
     `ifdef FRISCV_SIM
@@ -718,10 +717,9 @@ module friscv_rv32i_platform
     .uart_tx     (uart_tx),
     .uart_rts    (uart_rts),
     .uart_cts    (uart_cts),
-    .sw_irq      (sw_irq),
+    .sw_irq      (),
     .timer_irq   (timer_irq)
     );
-
 
 endmodule
 `resetall

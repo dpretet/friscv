@@ -1,6 +1,11 @@
 # Verification Plan
 
 
+Interrupt management
+
+An interrupt is arriving while the MIP register is under write. Should it be written
+by the CSR access or driven by the incoming interrupt
+
 Cache issue:
 
 Un set d’instruction est demandé:

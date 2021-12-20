@@ -18,8 +18,10 @@ module friscv_csr
         input  logic                   aclk,
         input  logic                   aresetn,
         input  logic                   srst,
-        // External interrupt pin
-        input  logic                   eirq,
+        // Interrupts
+        input  logic                   ext_irq,
+        input  logic                   sw_irq,
+        input  logic                   timer_irq,
         // Instruction bus
         input  logic                   valid,
         output logic                   ready,
@@ -80,7 +82,9 @@ module friscv_csr
     logic [5         -1:0] rs1_addr_r;
     logic [XLEN      -1:0] rs1_val_r;
 
-    logic [2         -1:0] eirq_cdc;
+    logic                  ext_irq_sync;
+    logic                  timer_irq_sync;
+    logic                  sw_irq_sync;
 
     //////////////////////////////////////////////////////////////////////////
     // Machine-level CSRs:
@@ -154,13 +158,47 @@ module friscv_csr
 
 
     //////////////////////////////////////////////////////////////////////////
-    // Synchronize the external IRQ in the core's clock domain
+    // Synchronize the IRQs in the core's clock domain
     //////////////////////////////////////////////////////////////////////////
-    always @ (posedge aclk or negedge aresetn) begin
-        if (aresetn) eirq_cdc <= 2'b0;
-        else if (srst) eirq_cdc <= 2'b0;
-        else eirq_cdc <= {eirq_cdc[0], eirq};
-    end
+
+    friscv_bit_sync 
+    #(
+        .DEPTH (2)
+    )
+    ext_irq_synchro
+    (
+        .aclk    (aclk),
+        .aresetn (aresetn),
+        .srst    (srst),
+        .bit_i   (ext_irq),
+        .bit_o   (ext_irq_sync)
+    );
+
+    friscv_bit_sync 
+    #(
+        .DEPTH (2)
+    )
+    timer_irq_synchro
+    (
+        .aclk    (aclk),
+        .aresetn (aresetn),
+        .srst    (srst),
+        .bit_i   (timer_irq),
+        .bit_o   (timer_irq_sync)
+    );
+
+    friscv_bit_sync 
+    #(
+        .DEPTH (2)
+    )
+    sw_irq_synchro
+    (
+        .aclk    (aclk),
+        .aresetn (aresetn),
+        .srst    (srst),
+        .bit_i   (sw_irq),
+        .bit_o   (sw_irq_sync)
+    );
 
 
     //////////////////////////////////////////////////////////////////////////
@@ -506,6 +544,7 @@ module friscv_csr
 
     ///////////////////////////////////////////////////////////////////////////
     // MIP - 0x344
+    // TODO: Study race condition when CSR is written and interrupt arrives
     ///////////////////////////////////////////////////////////////////////////
     always @ (posedge aclk or negedge aresetn) begin
         if (~aresetn) begin
@@ -513,13 +552,20 @@ module friscv_csr
         end else if (srst) begin
             mip <= {XLEN{1'b0}};
         end else begin
-            
-            if (mstatus[3] &&    // global interrupt enable
-                mie[11] &&       // external interrupt enable
-                eirq_cdc[1])     // external interrupt pin
-            begin
-                mip[11] <= 1'b1;
-
+            // global interrupt enable
+            if (mstatus[3]) begin    
+                // external interrupt enable && external interrupt pin asserted
+                if (mie[11] && ext_irq_sync) begin      
+                    mip[11] <= 1'b1;
+                end
+                // software interrupt enable && software interrupt pin asserted
+                if (mie[3] && sw_irq_sync) begin      
+                    mip[3] <= 1'b1;
+                end
+                // timer interrupt enable && timer interrupt pin asserted
+                if (mie[7] && timer_irq_sync) begin      
+                    mip[7] <= 1'b1;
+                end
             end else if (csr_wren) begin
                 if (csr_r==12'h344) begin
                     mip <= newval;
@@ -576,8 +622,8 @@ module friscv_csr
     assign csr_sb[`MSTATUS+:XLEN] = mstatus;
 
     assign csr_sb[`MEIP] = mip[11];
-    assign csr_sb[`MTIP] = 1'b0;
-    assign csr_sb[`MSIP] = 1'b0;
+    assign csr_sb[`MTIP] = mip[7];
+    assign csr_sb[`MSIP] = mip[3];
 
 endmodule
 

@@ -78,7 +78,8 @@ module friscv_rv32i_core
         input  logic                      aresetn,
         input  logic                      srst,
         // Interrupts
-        input  logic                      eirq,
+        input  logic                      ext_irq,
+        input  logic                      sw_irq,
         input  logic                      timer_irq,
         // Internal core status
         output logic [8             -1:0] status,
@@ -457,7 +458,9 @@ module friscv_rv32i_core
         .aclk            (aclk),
         .aresetn         (aresetn),
         .srst            (srst),
-        .eirq            (eirq),
+        .ext_irq         (ext_irq),
+        .sw_irq          (sw_irq),
+        .timer_irq       (timer_irq),
         .valid           (csr_en),
         .ready           (csr_ready),
         .instbus         (csr_instbus),

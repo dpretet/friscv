@@ -9,7 +9,7 @@
 module friscv_bit_sync
 
     #(
-        parameter DEPTH  = 32
+        parameter DEPTH  = 2
     )(
         // clock & reset
         input  logic                      aclk,
@@ -20,16 +20,27 @@ module friscv_bit_sync
         output logic                      bit_o
     );
 
-    logic [1:0] sync;
+    logic [DEPTH-1:0] sync;
 
-    always @ (posedge aclk or negedge aresetn) begin
+    generate
 
-        if (~aresetn) sync <= 2'b0;
-        else if (srst) sync <= 2'b0;
-        else sync <= {sync[0],bit_i};
+    if (DEPTH<=2) begin: DEPTH_2
+        always @ (posedge aclk or negedge aresetn) begin
+            if (~aresetn) sync <= {DEPTH{1'b0}};
+            else if (srst) sync <= {DEPTH{1'b0}};
+            else sync <= {sync[0],bit_i};
+        end
+    end else begin: DEPTH_SUP_2
+        always @ (posedge aclk or negedge aresetn) begin
+
+            if (~aresetn) sync <= {DEPTH{1'b0}};
+            else if (srst) sync <= {DEPTH{1'b0}};
+            else sync <= {sync[DEPTH-2:0],bit_i};
+        end
     end
+    endgenerate
 
-    assign bit_o = sync[1];
+    assign bit_o = sync[DEPTH-1];
 
 endmodule
 

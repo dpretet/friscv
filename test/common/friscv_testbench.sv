@@ -1,4 +1,6 @@
-/// Mandatory file to be able to launch SVUT flow
+// distributed under the mit license
+// https://opensource.org/licenses/mit-license.php
+
 `default_nettype none
 `timescale 1 ns / 100 ps
 
@@ -104,8 +106,10 @@ module tb();
     logic                      aclk;
     logic                      aresetn;
     logic                      srst;
-    logic                      eirq;
+    logic                      ext_irq;
     logic                      sw_irq;
+    logic                      timer_irq;
+    logic                      rtc;
     logic [8             -1:0] status;
     logic                      error_status_reg;
     logic                      imem_awvalid;
@@ -184,8 +188,6 @@ module tb();
     logic                      uart_tx;
     logic                      uart_rts;
     logic                      uart_cts;
-    logic                      timer_irq;
-    logic                      rtc;
 
 
     // Run the testbench by using only the CPU core
@@ -193,6 +195,8 @@ module tb();
     if (TB_CHOICE=="CORE") begin
 
     assign timer_irq = 1'b0;
+    assign sw_irq = 1'b0;
+    assign ext_irq = 1'b0;
 
     friscv_rv32i_core
     #(
@@ -206,6 +210,8 @@ module tb();
         .AXI_ID_W (AXI_ID_W),
         .AXI_IMEM_W (AXI_IMEM_W),
         .AXI_DMEM_W (AXI_DMEM_W),
+        .AXI_IMEM_MASK (AXI_IMEM_MASK),
+        .AXI_DMEM_MASK (AXI_DMEM_MASK),
         .ICACHE_EN (ICACHE_EN),
         .ICACHE_BLOCK_W (ICACHE_BLOCK_W),
         .ICACHE_PREFETCH_EN (ICACHE_PREFETCH_EN),
@@ -221,7 +227,8 @@ module tb();
         .aresetn      (aresetn),
         .srst         (srst),
         .timer_irq    (timer_irq),
-        .eirq         (eirq),
+        .ext_irq      (ext_irq),
+        .sw_irq       (sw_irq),
         .status       (status),
         .error        (error_status_reg),
         .imem_arvalid (imem_arvalid),
@@ -325,6 +332,13 @@ module tb();
 
     end else if (TB_CHOICE=="PLATFORM") begin
 
+    assign timer_irq = 1'b0;
+    assign sw_irq = 1'b0;
+    assign ext_irq = 1'b0;
+    assign rtc = 1'b0;
+    assign uart_rx = 1'b0;
+    assign uart_cts = 1'b0;
+
     friscv_rv32i_platform
         #(
         .ILEN (ILEN),
@@ -339,6 +353,7 @@ module tb();
         .AXI_IMEM_MASK (AXI_IMEM_MASK),
         .AXI_DMEM_MASK (AXI_DMEM_MASK),
         .ICACHE_EN (ICACHE_EN),
+        .ICACHE_PREFETCH_EN (ICACHE_PREFETCH_EN),
         .ICACHE_BLOCK_W (ICACHE_BLOCK_W),
         .ICACHE_DEPTH (ICACHE_DEPTH),
         .DCACHE_EN (DCACHE_EN),
@@ -351,8 +366,8 @@ module tb();
         .aclk        (aclk),
         .aresetn     (aresetn),
         .srst        (srst),
-        .eirq        (eirq),
         .rtc         (rtc),
+        .ext_irq     (ext_irq),
         .status      (status),
         .error       (error_status_reg),
         .mem_awvalid (mem_awvalid),
@@ -383,8 +398,7 @@ module tb();
         .uart_rx     (uart_rx),
         .uart_tx     (uart_tx),
         .uart_rts    (uart_rts),
-        .uart_cts    (uart_cts),
-        .sw_irq      (sw_irq)
+        .uart_cts    (uart_cts)
     );
 
     axi4l_ram
@@ -474,7 +488,6 @@ module tb();
         imem_awvalid = 1'b0;
         imem_wvalid = 1'b0;
         imem_bready = 1'b0;
-        eirq = 0;
         aresetn = 1'b0;
         srst = 1'b0;
         timer = 0;
