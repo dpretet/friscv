@@ -22,6 +22,7 @@
 ../../rtl/friscv_gpios.sv
 ../../rtl/friscv_clint.sv
 ../../rtl/friscv_bit_sync.sv
+../../rtl/friscv_pipeline.sv
 ../../rtl/friscv_uart.sv
 ../../dep/axi-crossbar/rtl/axicb_checker.sv
 ../../dep/axi-crossbar/rtl/axicb_crossbar_lite_top.sv

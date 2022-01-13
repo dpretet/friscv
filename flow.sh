@@ -100,9 +100,10 @@ main() {
             -I./rtl\
             -I./dep/svlogger\
             ./rtl/friscv_h.sv\
-            ./rtl/friscv_rv32i.sv\
+            ./rtl/friscv_rv32i_core.sv\
             ./rtl/friscv_control.sv\
             ./rtl/friscv_decoder.sv\
+            ./rtl/friscv_pipeline.sv\
             ./rtl/friscv_alu.sv\
             ./rtl/friscv_processing.sv\
             ./rtl/friscv_memfy.sv\
@@ -113,9 +114,9 @@ main() {
             ./rtl/friscv_dcache.sv\
             ./rtl/friscv_icache.sv\
             ./rtl/friscv_icache_fetcher.sv\
-            ./rtl/friscv_icache_lines.sv\
+            ./rtl/friscv_icache_blocks.sv\
             ./rtl/friscv_icache_memctrl.sv\
-            --top-module friscv_rv32i
+            --top-module friscv_rv32i_core
     fi
     if [[ $1 == "sim" ]]; then
 

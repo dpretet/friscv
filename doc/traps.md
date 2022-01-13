@@ -11,38 +11,34 @@ Exceptions, Traps, and Interrupts (specs v1.6) :
 - We use the term trap to refer to the transfer of control to a trap handler
   caused by either an exception or an interrupt.
 
-  The general behavior of most RISC-V EEIs is that a trap to some handler
-  occurs when an exception is signaled on an instruction
+The general behavior of most RISC-V EEIs is that a trap to some handler occurs when an exception is
+signaled on an instruction
 
 
-Misc. :
+Various notes taken across the specification about traps:
 
-An instruction-address-misaligned exception is generated on a taken branch or
-unconditional jump if the target address is not four-byte aligned. This
-exception is reported on the branch or jump instruction, not on the target
-instruction
+- An instruction-address-misaligned exception is generated on a taken branch or unconditional jump
+  if the target address is not four-byte aligned. This exception is reported on the branch or jump
+  instruction, not on the target instruction
 
-Ordinarily, if an instruction attempts to access memory at an inaccessible
-address, an exception is raised for the instruction.
+- Ordinarily, if an instruction attempts to access memory at an inaccessible address, an exception
+  is raised for the instruction.
 
-No integer computational instructions cause arithmetic exceptions.
+- No integer computational instructions cause arithmetic exceptions.
 
-The JAL and JALR instructions will generate an instruction-address-misaligned
-exception if the target address is not aligned to a four-byte boundary.
+- The JAL and JALR instructions will generate an instruction-address-misaligned exception if the
+  target address is not aligned to a four-byte boundary.
 
-Loads with a destination of x0 must still raise any exceptions and cause any
-other side effects even though the load value is discarded.
+- Loads with a destination of x0 must still raise any exceptions and cause any other side effects
+  even though the load value is discarded.
 
-Loads and stores where the effective address is not naturally aligned to the
-referenced datatype (i.e., on a four-byte boundary for 32-bit accesses, and a
-two-byte boundary for 16-bit accesses) have behavior dependent on the EEI. An
-EEI may not guarantee misaligned loads and stores are handled invisibly. In
-this case, loads and stores that are not naturally aligned may either complete
-execution successfully or raise an exception. The exception raised can be
-either an address-misaligned exception or an access-fault exception
+- Loads and stores where the effective address is not naturally aligned to the referenced datatype
+  (i.e., on a four-byte boundary for 32-bit accesses, and a two-byte boundary for 16-bit accesses)
+  have behavior dependent on the EEI. An EEI may not guarantee misaligned loads and stores are
+  handled invisibly. In this case, loads and stores that are not naturally aligned may either
+  complete execution successfully or raise an exception. The exception raised can be either an
+  address-misaligned exception or an access-fault exception
 
-
-No special mentions to take in account for interrupts in this volume
 
 
 # Volume 2 (Exception Occruences, to be continued... )
@@ -51,45 +47,56 @@ No special mentions to take in account for interrupts in this volume
 
 CSR Chapter:
 
-Attempts to access a non-existent CSR raise an illegal instruction exception.
-Attempts to access a CSR without appropriate privilege level or to write a
-read-only register also raise illegal instruction exceptions.
+- Attempts to access a non-existent CSR raise an illegal instruction exception.
 
-Machine-mode standard read-write CSRs 0x7A0–0x7BF are reserved for use by the
-debug system.  Implementations should raise illegal instruction exceptions on
-machine-mode access to the latter set of registers.
+- Attempts to access a CSR without appropriate privilege level or to write a read-only register also
+  raise illegal instruction exceptions.
 
-Implementations are permitted but not required to raise an illegal instruction
-exception if an instruction attempts to write a non-supported value to a WLRL
-field.
+- Machine-mode standard read-write CSRs 0x7A0–0x7BF are reserved for use by the debug system.
+  Implementations should raise illegal instruction exceptions on machine-mode access to the latter
+  set of registers.
+
+- Implementations are permitted but not required to raise an illegal instruction exception if an
+  instruction attempts to write a non-supported value to a WLRL field.
 
 MSTATUS Chapter:
 
-The mstatus register keeps track of and controls the hart’s current operating state.
+- Interrupts are globally enabled when xIE=1 and globally disabled when xIE=0
+    - Interrupts for lower-privilege modes, w < x, are always globally disabled regardless of the setting of any global wIE
+    - Interrupts for higher-privilege modes, y > x, are always globally enabled regardless of the setting of the global yIE
 
-Virtual memory, N/A
+- For lower privilege modes, any trap (synchronous or asynchronous) is usually taken at a higher
+  privilege mode with interrupts disabled upon entry.
+- The higher-level trap handler will either service the trap and return using the stacked
+  information, or, if not returning immediately to the interrupted context, will save the privilege
+  stack before re-enabling interrupts, so only one entry per stack is required.
 
-Extension Context Status in mstatus Register
+- An MRET or SRET instruction is used to return from a trap in M-mode or S-mode respectively
 
-When an extension’s status is set to off, any instruction that attempts to read
-or write the corresponding state will cause an illegal instruction exception
+- The mstatus register keeps track of and controls the hart’s current operating state.
+
+- Virtual memory, N/A for the moment
+
+- Extension Context Status in mstatus Register
+
+- When an extension’s status is set to off, any instruction that attempts to read
+  or write the corresponding state will cause an illegal instruction exception
 
 MTVEC:
 
-The mtvec register is an MXLEN-bit read/write register that holds trap vector configuration,
-consisting of a vector base address (BASE) and a vector mode (MODE).
+- The mtvec register is an MXLEN-bit read/write register that holds trap vector configuration,
+  consisting of a vector base address (BASE) and a vector mode (MODE).
 
-Vectored mode: Asynchronous interrupts set pc to BASE+4×cause, else BASE
+- Vectored mode: Asynchronous interrupts set pc to BASE+4×cause, elsepc is to set to BASE
 
 MEDELEG / MIDELEG
 
-To indicate that certain exceptions and interrupts should be processed directly by a lower privilege level
+- To indicate that certain exceptions and interrupts should be processed directly by a lower
+  privilege level
 
 
 MIP / MIE
 
-
-Synchronous exceptions are of lower priority than all interrupts.
 
 MEPC
 
@@ -98,7 +105,7 @@ the instruction that was interrupted or that encountered the exception
 
 MCAUSE
 
-Machine exception code
+- Machine exception code, store the code associated to the trap
 
 MTVAL
 
@@ -115,8 +122,8 @@ mtval is written with the faulting virtual address when:
 - an instruction-fetch, load, or store address-misaligned, access
 - a page-fault exception occurs
 
- mtval may be written with the first XLEN or ILEN bits of the faulting instruction on:
-- an illegal instruction trap
+- mtval may be written with the first XLEN or ILEN bits of the faulting instruction on:
+    - an illegal instruction trap
 
 else setup to 0
 

@@ -165,6 +165,7 @@ module friscv_control
     logic [XLEN       -1:0] sb_mstatus;
 
     logic [XLEN       -1:0] mstatus_for_mret;
+    logic [XLEN       -1:0] mstatus_for_trap;
     logic                   csr_ro_wr;
     logic                   inst_addr_misaligned;
     logic [XLEN       -1:0] mcause_code;
@@ -576,6 +577,8 @@ module friscv_control
                             mcause <= mcause_code;
                             mtval_wr <= 1'b1;
                             mtval <= mtval_info;
+                            mstatus_wr <= 1'b1;
+                            mstatus <= mstatus_for_trap;
                             cfsm <= RELOAD;
                         end
 
@@ -694,8 +697,8 @@ module friscv_control
 
 
                 ///////////////////////////////////////////////////////////////
-                // Launch a cache flush, req starts the flush and is kept
-                // high as long ack is not asserted.
+                // Launch a cache flush, REQ starts the flush and kept
+                // high as long ACK is not asserted.
                 ///////////////////////////////////////////////////////////////
                 FENCE_I: begin
                     flush_req <= 1'b1;
@@ -792,11 +795,25 @@ module friscv_control
                                priv_mode,              // MPP
                                sb_mstatus[10:9],       // WPRI
                                1'b0,                   // SPP
-                               1'b1,                   // MPIE
+                               1'b0,                   // MPIE
                                sb_mstatus[6],          // WPRI
                                1'b0,                   // SPIE
                                1'b0,                   // UPIE
                                sb_mstatus[7],          // MIE
+                               sb_mstatus[2],          // WPRI
+                               1'b0,                   // SIE
+                               1'b0};                  // UIE
+
+    // MSTATUS CSR when handling a trap
+    assign mstatus_for_trap = {sb_mstatus[XLEN-1:12],  // WPRI
+                               priv_mode,              // MPP
+                               sb_mstatus[10:9],       // WPRI
+                               1'b0,                   // SPP
+                               sb_mstatus[3],          // MPIE
+                               sb_mstatus[6],          // WPRI
+                               1'b0,                   // SPIE
+                               1'b0,                   // UPIE
+                               1'b0,                   // MIE
                                sb_mstatus[2],          // WPRI
                                1'b0,                   // SIE
                                1'b0};                  // UIE
@@ -920,7 +937,7 @@ module friscv_control
                          (load_misaligned)      ? {{XLEN-4{1'b0}}, 4'h4} :
                                                   {XLEN{1'b0}};
 
-    // Exception-specific information
+    // MTVAL: exception-specific information
     assign mtval_info = (dec_error)            ? instruction :
                         (wfi_not_allowed)      ? instruction :
                         (inst_addr_misaligned) ? data_addr   :
@@ -930,9 +947,10 @@ module friscv_control
 
     // Trigger the trap handling execution in main FSM
 
-    assign async_trap_occuring = csr_sb[`MSIP] |
-                                 csr_sb[`MTIP] |
-                                 csr_sb[`MEIP] ;
+    assign async_trap_occuring = sb_mstatus[3] & (
+                                   csr_sb[`MSIP] |
+                                   csr_sb[`MTIP] |
+                                   csr_sb[`MEIP] );
 
     assign sync_trap_occuring = csr_ro_wr |
                                 inst_addr_misaligned |

@@ -552,8 +552,7 @@ module friscv_csr
         end else if (srst) begin
             mip <= {XLEN{1'b0}};
         end else begin
-            // global interrupt enable
-            if (mstatus[3]) begin    
+            if (ext_irq_sync || timer_irq_sync || sw_irq_sync) begin    
                 // external interrupt enable && external interrupt pin asserted
                 if (mie[11] && ext_irq_sync) begin      
                     mip[11] <= 1'b1;

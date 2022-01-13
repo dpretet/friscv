@@ -7,6 +7,7 @@
 module friscv_registers
 
     #(
+        parameter SYNC_READ = 0,
         parameter RV32E = 0,
         parameter XLEN = 32
     )(
@@ -15,7 +16,7 @@ module friscv_registers
         input  logic              aresetn,
         input  logic              srst,
         `ifdef FRISCV_SIM
-        output logic                      error,
+        output logic              error,
         `endif
         // register source 1 for control unit
         input  logic [5     -1:0] ctrl_rs1_addr,
@@ -122,26 +123,50 @@ module friscv_registers
     end
     endgenerate
 
-    // register source 1 read circuit for control unit
-    assign ctrl_rs1_val = regs[ctrl_rs1_addr];
+    generate
 
-    // register source 2 read circuit for control unit
-    assign ctrl_rs2_val = regs[ctrl_rs2_addr];
+    if (SYNC_READ==0) begin: COMB_READ
+ 
+        assign ctrl_rs1_val = regs[ctrl_rs1_addr];
+        assign ctrl_rs2_val = regs[ctrl_rs2_addr];
+        assign alu_rs1_val = regs[alu_rs1_addr];
+        assign alu_rs2_val = regs[alu_rs2_addr];
+        assign memfy_rs1_val = regs[memfy_rs1_addr];
+        assign memfy_rs2_val = regs[memfy_rs2_addr];
+        assign csr_rs1_val = regs[csr_rs1_addr];
 
-    // register source 1 read circuit for ALU
-    assign alu_rs1_val = regs[alu_rs1_addr];
+    end else begin: SYNCHRO_READ
 
-    // register source 2 read circuit for ALU
-    assign alu_rs2_val = regs[alu_rs2_addr];
+        always @ (negedge aclk or negedge aresetn) begin
+            if (aresetn == 1'b0) begin
+                ctrl_rs1_val <= {XLEN{1'b0}};
+                ctrl_rs2_val <= {XLEN{1'b0}};
+                alu_rs1_val <= {XLEN{1'b0}};
+                alu_rs2_val <= {XLEN{1'b0}};
+                memfy_rs1_val <= {XLEN{1'b0}};
+                memfy_rs2_val <= {XLEN{1'b0}};
+                csr_rs1_val <= {XLEN{1'b0}};
+            end else if (srst) begin
+                ctrl_rs1_val <= {XLEN{1'b0}};
+                ctrl_rs2_val <= {XLEN{1'b0}};
+                alu_rs1_val <= {XLEN{1'b0}};
+                alu_rs2_val <= {XLEN{1'b0}};
+                memfy_rs1_val <= {XLEN{1'b0}};
+                memfy_rs2_val <= {XLEN{1'b0}};
+                csr_rs1_val <= {XLEN{1'b0}};
+            end else begin
+                ctrl_rs1_val <= regs[ctrl_rs1_addr];
+                ctrl_rs2_val <= regs[ctrl_rs2_addr];
+                alu_rs1_val <= regs[alu_rs1_addr];
+                alu_rs2_val <= regs[alu_rs2_addr];
+                memfy_rs1_val <= regs[memfy_rs1_addr];
+                memfy_rs2_val <= regs[memfy_rs2_addr];
+                csr_rs1_val <= regs[csr_rs1_addr];
+            end
+        end
 
-    // register source 1 read circuit for memfy
-    assign memfy_rs1_val = regs[memfy_rs1_addr];
-
-    // register source 2 read circuit for memfy
-    assign memfy_rs2_val = regs[memfy_rs2_addr];
-
-    // register source 1 read circuit for CSR
-    assign csr_rs1_val = regs[csr_rs1_addr];
+    end
+    endgenerate
 
     `ifdef FRISCV_SIM
 

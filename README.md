@@ -32,7 +32,7 @@ testsuite.
 
 The IP is decribed in two layers:
 - the core, a RISCV hart to execute an assembler program
-- the platform, instantiating a hart, a AXI4 crossbar and the peripherals
+- the platform, instantiating a hart, an AXI4 crossbar and the peripherals
 
 The core is compact and composed by:
 - the control unit, fetching and sequencing the instructions
