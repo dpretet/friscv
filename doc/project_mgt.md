@@ -1,7 +1,12 @@
 # DOING
 
 - [ ] Review WARL CSR implementation
-- [ ] Simplifier les r/w de CSR
+- [ ] enhance processing unit
+    - control asserts registers under use in an instruction
+    - processing clear the tickets once instruction is finished
+    - processing knows if a ALU can be used based register targeted
+    - control knows if it can branch
+    - could speed up the execution and could branch even if ALUs are running
 
 # BACKLOG
 
@@ -9,19 +14,19 @@ Any new feature and ISA should be carefully study to ensure a proper
 exception and interrupt handling
 
 Misc.
-- [ ] Support privileged instructions, supervisor mode & user mode
-- [ ] 64 bits support
-- [ ] Support MMU extension
 - [ ] Add counters
+- [ ] 64 bits support
+- [ ] Support privileged instructions, supervisor mode & user mode
+- [ ] Support MMU extension
 - [ ] JTAG interface / GDB Usage
-- [ ] Support PLIC (Only for multi-core)
-- [ ] Support CLIC controller
 - [ ] Removed the 2 LSBs in instruction cache while always 2'b11 (6.25% saving)
 - [ ] AXI4 Infrastructure
     - [ ] Check des IDs de control sent. Should be incremented in memory
           controller and not used directly
     - [ ] Write completion usage in memfy or dcache? Could raise an exception?
     - [ ] Support different clock for AXI4 memory interface, cache and internal core
+- [ ] Support PLIC (Only for multi-core)
+- [ ] Support CLIC controller
 
 Control:
 - [ ] Optimize control unit by removing dead cycles on jump
@@ -124,6 +129,7 @@ Verification/Validation:
 
 # DONE
 
+- [X] Simplifier les r/w de CSR, save one cycle to execute an op
 - [X] Option to read ISA registers on falling edge, not combinatorial read
 - [X] Design a generic pipeline stage for processing front-end
 - [X] Support trap and interupts

@@ -149,8 +149,8 @@ module friscv_control
     logic                   jump_branch;
     // Two flags used intot the FSM to stall the process and control
     // the instruction storage
-    logic                   cant_branch_now;
-    logic                   cant_process_now;
+    logic                   cant_jump;
+    logic                   cant_process;
     // FIFO signals
     logic [ILEN       -1:0] instruction;
     logic                   flush_fifo;
@@ -279,8 +279,10 @@ module friscv_control
         .empty    (fifo_empty)
     );
 
-    assign pull_inst = (csr_ready && ~cant_branch_now && ~cant_process_now &&
-                        cfsm==FETCH && ~fifo_empty && ~trap_occuring) ? 1'b1 : 1'b0;
+    assign pull_inst = (!((jump_branch | sys[`IS_WFI] | sys[`IS_MRET] | sys[`IS_ECALL]) & !cant_jump) &&
+                        ~cant_process &&
+                        ~trap_occuring &&
+                        cfsm==FETCH && ~fifo_empty) ? 1'b1 : 1'b0;
 
     ///////////////////////////////////////////////////////////////////////////
     //
@@ -391,10 +393,16 @@ module friscv_control
 
     // Program counter switching logic
     assign pc = (cfsm==BOOT)                ? pc_reg :
+                // Trap occuring
+                (trap_occuring)             ? mtvec :
                 // FENCE (0) or FENCE.I (1)
                 (|fence)                    ? pc_plus4 :
-                // System calls
-                (|sys)                      ? pc_plus4 :
+                // System call
+                (sys[`IS_ECALL])            ? mtvec :
+                // Machine return
+                (sys[`IS_MRET])             ? sb_mepc :
+                // Wait for interrupt
+                (sys[`IS_WFI])              ? mtvec :
                 // Load immediate
                 (lui)                       ? pc_plus4 :
                 // Add upper immediate in PC
@@ -532,13 +540,13 @@ module friscv_control
                     //   manage a trap, stop the addr issuer and load the
                     //   right branch
                     //
-                    if (~fifo_empty &&
+                    if (~fifo_empty && ~cant_jump &&
                         (jump_branch || sys[`IS_ECALL] || sys[`IS_MRET] ||
-                         fence[`IS_FENCEI] || trap_occuring) &&
-                        ~cant_branch_now && csr_ready) begin
+                         fence[`IS_FENCEI] || trap_occuring))
+                    begin
 
                         // ECALL / Trap handling
-                        if (sys[`IS_ECALL] || trap_occuring) araddr <= mtvec;
+                        if (sys[`IS_ECALL] || trap_occuring || sys[`IS_WFI]) araddr <= mtvec;
                         // MRET
                         else if (sys[`IS_MRET]) araddr <= sb_mepc;
                         // All other jumps
@@ -557,20 +565,21 @@ module friscv_control
 
                         // Need to branch/process but ALU/memfy/CSR didn't finish
                         // to execute last instruction, so store it.
-                        if (~csr_ready || cant_branch_now || cant_process_now) begin
+                        if (~csr_ready || (jump_branch && cant_jump) || cant_process) begin
                             pc_jal_saved <= pc_plus4;
                             pc_auipc_saved <= pc_reg;
                         end
 
                         // Move to the trap handling when received an
                         // interrupt, a wrong instruction, ...
+                        // TODO: evaluate if should wait for ready flags
                         if (trap_occuring) begin
                             print_mcause("Handling a trap: ", mcause_code);
                             traps[3] <= 1'b1;
                             flush_fifo <= 1'b1;
                             arvalid <= 1'b0;
                             arid <= next_id(arid);
-                            pc_reg <= mtvec;
+                            pc_reg <= pc;
                             mepc_wr <= 1'b1;
                             mepc <= pc_reg;
                             mcause_wr <= 1'b1;
@@ -580,11 +589,10 @@ module friscv_control
                             mstatus_wr <= 1'b1;
                             mstatus <= mstatus_for_trap;
                             cfsm <= RELOAD;
-                        end
 
                         // Needs to jump or branch thus stop the pipeline
                         // and reload new instructions
-                        else if (jump_branch && ~cant_branch_now && csr_ready) begin
+                        end else if (jump_branch && ~cant_jump) begin
 
                             log.info("Jump/Branch");
                             print_instruction(instruction, pc_reg, opcode, funct3,
@@ -595,17 +603,17 @@ module friscv_control
                             pc_reg <= pc;
                             cfsm <= RELOAD;
 
-                        // Reach an ECALL instruction, jump to trap handler
-                        end else if (sys[`IS_ECALL] && ~cant_branch_now && csr_ready) begin
+                        // Reach an ECALL instruction, jump to the system call
+                        end else if (sys[`IS_ECALL] && ~cant_jump) begin
 
-                            log.info("ECALL -> Jump to trap handler");
+                            log.info("ECALL -> Jump to system call");
                             print_instruction(instruction, pc_reg, opcode, funct3,
                                               funct7, rs1, rs2, rd, imm12, imm20, csr);
                             traps[0] <= 1'b1;
                             flush_fifo <= 1'b1;
                             arvalid <= 1'b0;
                             arid <= next_id(arid);
-                            pc_reg <= mtvec;
+                            pc_reg <= pc;
                             mepc_wr <= 1'b1;
                             mepc <= pc_reg;
                             mtval_wr <= 1'b1;
@@ -615,15 +623,15 @@ module friscv_control
                         // Reach an EBREAK instruction, need to stall the core
                         end else if (sys[`IS_EBREAK]) begin
 
-                            log.info("Execute EBREAK -> Stop the processor");
+                            log.info("EBREAK -> Stop the processor");
                             print_instruction(instruction, pc_reg, opcode, funct3,
                                               funct7, rs1, rs2, rd, imm12, imm20, csr);
                             flush_fifo <= 1'b1;
                             traps[1] <= 1'b1;
                             cfsm <= EBREAK;
 
-                        // Reach a MRET instruction, jump to exception return
-                        end else if (sys[`IS_MRET] && ~cant_branch_now && csr_ready) begin
+                        // Reach a MRET instruction, move back from a sys call or a trap
+                        end else if (sys[`IS_MRET] && ~cant_jump) begin
 
                             log.info("MRET -> Return from trap");
                             print_instruction(instruction, pc_reg, opcode, funct3,
@@ -632,35 +640,33 @@ module friscv_control
                             traps[2] <= 1'b1;
                             arvalid <= 1'b0;
                             arid <= next_id(arid);
-                            pc_reg <= sb_mepc;
+                            pc_reg <= pc;
                             mstatus_wr <= 1'b1;
                             mstatus <= mstatus_for_mret;
                             cfsm <= RELOAD;
 
-                        // Reach a FENCE.i instruction, need to flush the cache
-                        // the instruction pipeline
+                        // Reach a FENCE.i instruction, need to flush the cache instruction pipeline
                         end else if (fence[`IS_FENCEI]) begin
 
                             log.info("FENCE.i -> Start iCache flushing");
                             print_instruction(instruction, pc_reg, opcode, funct3,
                                               funct7, rs1, rs2, rd, imm12, imm20, csr);
                             flush_fifo <= 1'b1;
-                            pc_reg <= pc;
                             arvalid <= 1'b0;
                             arid <= next_id(arid);
                             pc_reg <= pc;
                             cfsm <= FENCE_I;
 
-                        // Reach an ECALL instruction, jump to trap handler
-                        end else if (sys[`IS_WFI] && ~cant_branch_now && csr_ready) begin
+                        // Reach a WFI, stall the core and wait for an interrupt
+                        end else if (sys[`IS_WFI] && ~cant_jump) begin
 
-                            log.info("WFI -> Stall and wait for interrupt");
+                            log.info("WFI -> Stop and wait for interrupt");
                             print_instruction(instruction, pc_reg, opcode, funct3,
                                               funct7, rs1, rs2, rd, imm12, imm20, csr);
                             traps[0] <= 1'b1;
                             flush_fifo <= 1'b1;
                             arvalid <= 1'b0;
-                            pc_reg <= mtvec;
+                            pc_reg <= pc;
                             mepc_wr <= 1'b1;
                             mepc <= pc_reg;
                             mtval_wr <= 1'b1;
@@ -668,8 +674,7 @@ module friscv_control
                             cfsm <= WFI;
 
                         // All other instructions
-                        end else if (csr_ready &&
-                                     ~cant_branch_now && ~cant_process_now) begin
+                        end else if (~cant_jump && ~cant_process) begin
                             print_instruction(instruction, pc_reg, opcode, funct3,
                                               funct7, rs1, rs2, rd, imm12, imm20, csr);
                             pc_reg <= pc;
@@ -751,13 +756,11 @@ module friscv_control
     // Needs to jump or branch, the request to cache/RAM needs to be restarted
     assign jump_branch = (branching & goto_branch) | jal | jalr;
 
-    // Two flags to stop the processor if ALU/memfy are computing
+    // Two flags to stop the processor if processing are computing
 
-    assign cant_branch_now = ((jal || jalr || branching) &&
-                               ~proc_ready) ? 1'b1 :
-                                              1'b0 ;
+    assign cant_jump = (~proc_ready || ~csr_ready) ? 1'b1 : 1'b0;
 
-    assign cant_process_now = (processing && ~proc_ready) ? 1'b1 : 1'b0;
+    assign cant_process = (processing && ~proc_ready) ? 1'b1 : 1'b0;
 
 
     ///////////////////////////////////////////////////////////////////////////
@@ -823,7 +826,7 @@ module friscv_control
                         // Vectored mode
                         {sb_mtvec[XLEN-1:2], 2'b0} + (mcause_code << 2) :
                         // Direct mode
-                        {sb_mtvec[XLEN-1:2], 2'b0} ;              
+                        {sb_mtvec[XLEN-1:2], 2'b0} ;
 
 
     ///////////////////////////////////////////////////////////////////////////

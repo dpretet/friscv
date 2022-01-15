@@ -57,8 +57,7 @@ module friscv_csr
 
     typedef enum logic [1:0] {
         IDLE,
-        COMPUTE,
-        STORE
+        COMPUTE
     } fsm;
 
     fsm cfsm;
@@ -235,7 +234,7 @@ module friscv_csr
         end else begin
 
             // Wait for a new instruction
-            case(cfsm)
+            case (cfsm)
 
                 default: begin
 
@@ -259,7 +258,7 @@ module friscv_csr
                 // the ISA register
                 COMPUTE: begin
 
-                    cfsm <= STORE;
+                    cfsm <= IDLE;
 
                     // Swap RS1 and CSR
                     if (funct3_r==`CSRRW) begin
@@ -314,18 +313,6 @@ module friscv_csr
                     end
                 end
 
-                // Take time to store new CSR value, handles the
-                // RAM behavior according the RAM technology which
-                // may be write first / read first. Avoid consecutive
-                // CSR instructions to fail
-                STORE: begin
-                    csr_wren <= 1'b0;
-                    rd_wr_en <= 1'b0;
-                    if (rd_wr_en==1'b0) begin
-                        ready <= 1'b1;
-                        cfsm <= IDLE;
-                    end
-                end
             endcase
         end
     end
