@@ -35,9 +35,8 @@ module friscv_memfy
         input  logic                        aresetn,
         input  logic                        srst,
         // ALU instruction bus
-        input  logic                        memfy_en,
+        input  logic                        memfy_valid,
         output logic                        memfy_ready,
-        output logic                        memfy_empty,
         output logic [4               -1:0] memfy_fenceinfo,
         input  logic [`INST_BUS_W     -1:0] memfy_instbus,
         // register source 1 query interface
@@ -278,9 +277,7 @@ module friscv_memfy
     logic [`OPCODE_W   -1:0] opcode_r;
     logic [`FUNCT3_W   -1:0] funct3_r;
     logic [`RD_W       -1:0] rd_r;
-    logic [XLEN/8      -1:0] mem_strb_w;
     logic                    cross_boundary;
-    logic [XLEN/8      -1:0] next_strb;
     logic                    two_phases;
     logic [2           -1:0] offset;
 
@@ -320,7 +317,6 @@ module friscv_memfy
             arvalid <= 1'b0;
             arvalid <= 1'b0;
             rready <= 1'b0;
-            next_strb <= {XLEN/8{1'b0}};
             rd_r <= 5'b0;
             two_phases <= 1'b0;
             offset <= 2'b0;
@@ -337,7 +333,6 @@ module friscv_memfy
             arvalid <= 1'b0;
             arvalid <= 1'b0;
             rready <= 1'b0;
-            next_strb <= {XLEN/8{1'b0}};
             rd_r <= 5'b0;
             two_phases <= 1'b0;
             offset <= 2'b0;
@@ -365,7 +360,7 @@ module friscv_memfy
                 end
 
             // LOAD or STORE instruction acknowledgment to instruction controller
-            end else if (memfy_en && mem_access) begin
+            end else if (memfy_valid && mem_access) begin
 
                 // Control flow
                 memfy_ready <= 1'b0;
@@ -389,7 +384,6 @@ module friscv_memfy
                     wvalid <= 1'b1;
                     wdata <= get_aligned_mem_data(memfy_rs2_val, addr[1:0]);
                     wstrb <= get_mem_strb(funct3, addr[1:0], 0);
-                    next_strb <= get_mem_strb(funct3, addr[1:0], 1);
                 // LOAD
                 end else begin
                     arvalid <= 1'b1;
@@ -434,9 +428,6 @@ module friscv_memfy
                             (funct3==`LW  && addr[1:0]!=2'b0) ? 1'b1 :
                                                                 1'b0 ;
 
-    // Unused: may be used later to indicate a buffer is
-    // empty or not, needed for outstanding request support
-    assign memfy_empty = 1'b1;
 
     // Unused: information forwarded to control unit for FENCE executions:
     // bit 0: memory write

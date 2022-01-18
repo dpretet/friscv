@@ -19,6 +19,8 @@
 `define R_ARITH 7'b0110011
 `define SYS     7'b1110011
 `define FENCEX  7'b0001111
+`define MULDIV  7'b0110011
+`define MULDIVW 7'b0111011
 
 
 //////////////////////////////////////////////////////////////////
@@ -67,7 +69,7 @@
 `define FENCE   3'b000
 `define FENCEI  3'b001
 
-`define IS_FENCE 0
+`define IS_FENCE  0
 `define IS_FENCEI 1
 
 `define CSRRW   3'b001
@@ -77,6 +79,20 @@
 `define CSRRSI  3'b110
 `define CSRRCI  3'b111
 
+`define MUL     3'b000
+`define MULH    3'b001
+`define MULHSU  3'b010
+`define MULHU   3'b011
+`define DIV     3'b100
+`define DIVU    3'b101
+`define REM     3'b110
+`define REMU    3'b111
+
+`define MULW    3'b000
+`define DIVW    3'b100
+`define DIVUW   3'b101
+`define REMW    3'b110
+`define REMUW   3'b111
 
 //////////////////////////////////////////////////////////////////
 // env signal driven by decoder to indicate environment instruction
@@ -94,7 +110,7 @@
 `define IS_WFI    5
 
 //////////////////////////////////////////////////////////////////
-// Instruction bus feeding ALU
+// Instruction bus feeding ALUs
 //////////////////////////////////////////////////////////////////
 
 // instruction bus fields's width

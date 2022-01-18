@@ -7,9 +7,14 @@
 module friscv_registers
 
     #(
-        parameter SYNC_READ = 0,
+        // Architecture selection:
+        // 32 or 64 bits support
+        parameter XLEN = 32,
+        // Reduced RV32 arch
         parameter RV32E = 0,
-        parameter XLEN = 32
+        parameter SYNC_READ = 0,
+        // Number of extension supported in processing unit
+        parameter NB_ALU_UNIT = 2
     )(
         // clock and resets
         input  logic              aclk,
@@ -18,45 +23,29 @@ module friscv_registers
         `ifdef FRISCV_SIM
         output logic              error,
         `endif
-        // register source 1 for control unit
-        input  logic [5     -1:0] ctrl_rs1_addr,
-        output logic [XLEN  -1:0] ctrl_rs1_val,
-        // register source 2 for control unit
-        input  logic [5     -1:0] ctrl_rs2_addr,
-        output logic [XLEN  -1:0] ctrl_rs2_val,
-        // register destination write from Control Unit
-        input  logic              ctrl_rd_wr,
-        input  logic [5     -1:0] ctrl_rd_addr,
-        input  logic [XLEN  -1:0] ctrl_rd_val,
-        // register source   1 for ALU
-        input  logic [5     -1:0] alu_rs1_addr,
-        output logic [XLEN  -1:0] alu_rs1_val,
-        // register source 2 for ALU
-        input  logic [5     -1:0] alu_rs2_addr,
-        output logic [XLEN  -1:0] alu_rs2_val,
-        // register destination write from ALU
-        input  logic              alu_rd_wr,
-        input  logic [5     -1:0] alu_rd_addr,
-        input  logic [XLEN  -1:0] alu_rd_val,
-        input  logic [XLEN/8-1:0] alu_rd_strb,
-        // register source 1 for memfy
-        input  logic [5     -1:0] memfy_rs1_addr,
-        output logic [XLEN  -1:0] memfy_rs1_val,
-        // register source 2 for memfy
-        input  logic [5     -1:0] memfy_rs2_addr,
-        output logic [XLEN  -1:0] memfy_rs2_val,
-        // register destination write from memfy
-        input  logic              memfy_rd_wr,
-        input  logic [5     -1:0] memfy_rd_addr,
-        input  logic [XLEN  -1:0] memfy_rd_val,
-        input  logic [XLEN/8-1:0] memfy_rd_strb,
-        // register source 1 for csr
-        input  logic [5     -1:0] csr_rs1_addr,
-        output logic [XLEN  -1:0] csr_rs1_val,
-        // register destination write from memfy
-        input  logic              csr_rd_wr,
-        input  logic [5     -1:0] csr_rd_addr,
-        input  logic [XLEN  -1:0] csr_rd_val
+        // Control interface
+        input  logic [5                   -1:0] ctrl_rs1_addr,
+        output logic [XLEN                -1:0] ctrl_rs1_val,
+        input  logic [5                   -1:0] ctrl_rs2_addr,
+        output logic [XLEN                -1:0] ctrl_rs2_val,
+        input  logic                            ctrl_rd_wr,
+        input  logic [5                   -1:0] ctrl_rd_addr,
+        input  logic [XLEN                -1:0] ctrl_rd_val,
+        // Processing interface
+        input  logic [NB_ALU_UNIT*5       -1:0] proc_rs1_addr,
+        output logic [NB_ALU_UNIT*XLEN    -1:0] proc_rs1_val,
+        input  logic [NB_ALU_UNIT*5       -1:0] proc_rs2_addr,
+        output logic [NB_ALU_UNIT*XLEN    -1:0] proc_rs2_val,
+        input  logic [NB_ALU_UNIT         -1:0] proc_rd_wr,
+        input  logic [NB_ALU_UNIT*5       -1:0] proc_rd_addr,
+        input  logic [NB_ALU_UNIT*XLEN    -1:0] proc_rd_val,
+        input  logic [NB_ALU_UNIT*XLEN/8  -1:0] proc_rd_strb,
+        // CSR interface
+        input  logic [5                   -1:0] csr_rs1_addr,
+        output logic [XLEN                -1:0] csr_rs1_val,
+        input  logic                            csr_rd_wr,
+        input  logic [5                   -1:0] csr_rd_addr,
+        input  logic [XLEN                -1:0] csr_rd_val
     );
 
     localparam REGNUM = (RV32E) ? 16 : 32;
@@ -64,10 +53,11 @@ module friscv_registers
     // ISA registers 0-31
     logic [XLEN-1:0] regs [REGNUM-1:0];
 
-    genvar i;
-    integer s;
 
     generate
+
+    genvar i;
+    integer u, s;
 
     for (i=0; i<REGNUM; i++) begin: RegisterGeneration
 
@@ -83,7 +73,7 @@ module friscv_registers
         end else begin
 
             ///////////////////////////////////////////////
-            // register 0 is alwyas 0, can't be overwritten
+            // register 0 is always 0, can't be overwritten
             ///////////////////////////////////////////////
 
             if (i==0) begin
@@ -102,18 +92,14 @@ module friscv_registers
                 regs[i] <= csr_rd_val;
 
             // Access from data memory controller
-            end else if (memfy_rd_wr && memfy_rd_addr==i) begin
-                for (s=0;s<(XLEN/8);s=s+1) begin
-                    if (memfy_rd_strb[s]) begin
-                        regs[i][s*8+:8] <= memfy_rd_val[s*8+:8];
-                    end
-                end
-
-            // Acess from ALU
-            end else if (alu_rd_wr && alu_rd_addr==i) begin
-                for (s=0;s<(XLEN/8);s=s+1) begin
-                    if (alu_rd_strb[s]) begin
-                        regs[i][s*8+:8] <= alu_rd_val[s*8+:8];
+            end else begin
+                for (u=0;u<NB_ALU_UNIT;u=u+1) begin
+                    if (proc_rd_wr[u] && proc_rd_addr[u*5+:5]==i) begin
+                        for (s=0;s<(XLEN/8);s=s+1) begin
+                            if (proc_rd_strb[u*XLEN/8+s]) begin
+                                regs[i][s*8+:8] <= proc_rd_val[u*XLEN+s*8+:8];
+                            end
+                        end
                     end
                 end
             end
@@ -129,11 +115,12 @@ module friscv_registers
  
         assign ctrl_rs1_val = regs[ctrl_rs1_addr];
         assign ctrl_rs2_val = regs[ctrl_rs2_addr];
-        assign alu_rs1_val = regs[alu_rs1_addr];
-        assign alu_rs2_val = regs[alu_rs2_addr];
-        assign memfy_rs1_val = regs[memfy_rs1_addr];
-        assign memfy_rs2_val = regs[memfy_rs2_addr];
         assign csr_rs1_val = regs[csr_rs1_addr];
+
+        for (genvar u=0;u<NB_ALU_UNIT;u=u+1) begin: PROCESSING_COMB_REG_IFS
+            assign proc_rs1_val[u*XLEN+:XLEN] = regs[proc_rs1_addr[u*5+:5]];
+            assign proc_rs2_val[u*XLEN+:XLEN] = regs[proc_rs2_addr[u*5+:5]];
+        end
 
     end else begin: SYNCHRO_READ
 
@@ -141,27 +128,27 @@ module friscv_registers
             if (aresetn == 1'b0) begin
                 ctrl_rs1_val <= {XLEN{1'b0}};
                 ctrl_rs2_val <= {XLEN{1'b0}};
-                alu_rs1_val <= {XLEN{1'b0}};
-                alu_rs2_val <= {XLEN{1'b0}};
-                memfy_rs1_val <= {XLEN{1'b0}};
-                memfy_rs2_val <= {XLEN{1'b0}};
                 csr_rs1_val <= {XLEN{1'b0}};
+                for (u=0;u<NB_ALU_UNIT;u=u+1) begin: PROCESING_ARESETN_REG_IFS
+                    proc_rs1_val[u*XLEN+:XLEN] <= {XLEN{1'b0}};
+                    proc_rs2_val[u*XLEN+:XLEN] <= {XLEN{1'b0}};
+                end
             end else if (srst) begin
                 ctrl_rs1_val <= {XLEN{1'b0}};
                 ctrl_rs2_val <= {XLEN{1'b0}};
-                alu_rs1_val <= {XLEN{1'b0}};
-                alu_rs2_val <= {XLEN{1'b0}};
-                memfy_rs1_val <= {XLEN{1'b0}};
-                memfy_rs2_val <= {XLEN{1'b0}};
                 csr_rs1_val <= {XLEN{1'b0}};
+                for (u=0;u<NB_ALU_UNIT;u=u+1) begin: PROCESING_SRST_REG_IFS
+                    proc_rs1_val[u*XLEN+:XLEN] <= {XLEN{1'b0}};
+                    proc_rs2_val[u*XLEN+:XLEN] <= {XLEN{1'b0}};
+                end
             end else begin
                 ctrl_rs1_val <= regs[ctrl_rs1_addr];
                 ctrl_rs2_val <= regs[ctrl_rs2_addr];
-                alu_rs1_val <= regs[alu_rs1_addr];
-                alu_rs2_val <= regs[alu_rs2_addr];
-                memfy_rs1_val <= regs[memfy_rs1_addr];
-                memfy_rs2_val <= regs[memfy_rs2_addr];
                 csr_rs1_val <= regs[csr_rs1_addr];
+                for (u=0;u<NB_ALU_UNIT;u=u+1) begin: PROCESING_SYNC_REG_IFS
+                    proc_rs1_val[u*XLEN+:XLEN] <= regs[proc_rs1_addr[u*5+:5]];
+                    proc_rs2_val[u*XLEN+:XLEN] <= regs[proc_rs2_addr[u*5+:5]];
+                end
             end
         end
 

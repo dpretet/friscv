@@ -10,9 +10,17 @@
 module friscv_csr
 
     #(
+        // Architecture selection:
+        // 32 or 64 bits support
+        parameter XLEN = 32,
+        // Floating-point extension support
+        parameter F_EXTENSION = 0,
+        // Multiply/Divide extension support
+        parameter M_EXTENSION = 0,
+        // Reduced RV32 arch
         parameter RV32E = 0,
-        parameter MHART_ID = 0,
-        parameter XLEN = 32
+        // MHART_ID CSR
+        parameter MHART_ID = 0
     )(
         // Clock/reset interface
         input  logic                   aclk,
@@ -337,32 +345,32 @@ module friscv_csr
     ///////////////////////////////////////////////////////////////////////////
 
     // Supported extensions
-    assign misa[0]  = 1'b0;                     // A Atomic extension
-    assign misa[1]  = 1'b0;                     // B Tentatively reserved for Bit-Manipulation extension
-    assign misa[2]  = 1'b0;                     // C Compressed extension
-    assign misa[3]  = 1'b0;                     // D Double-precision floating-point extension
-    assign misa[4]  = (RV32E) ? 1'b1 : 1'b0;    // E RV32E base ISA
-    assign misa[5]  = 1'b0;                     // F Single-precision floating-point extension
-    assign misa[6]  = 1'b0;                     // G Additional standard extensions present
-    assign misa[7]  = 1'b0;                     // H Hypervisor extension
-    assign misa[8]  = (~RV32E) ? 1'b1 : 1'b0;   // I RV32I/64I/128I base ISA
-    assign misa[9]  = 1'b0;                     // J Tentatively reserved for Dynamically Translated Languages extension
-    assign misa[10] = 1'b0;                     // K Reserved
-    assign misa[11] = 1'b0;                     // L Tentatively reserved for Decimal Floating-Point extension
-    assign misa[12] = 1'b0;                     // M Integer Multiply/Divide extension
-    assign misa[13] = 1'b0;                     // N User-level interrupts supported
-    assign misa[14] = 1'b0;                     // O Reserved
-    assign misa[15] = 1'b0;                     // P Tentatively reserved for Packed-SIMD extension
-    assign misa[16] = 1'b0;                     // Q Quad-precision floating-point extension
-    assign misa[17] = 1'b0;                     // R Reserved
-    assign misa[18] = 1'b0;                     // S Supervisor mode implemented
-    assign misa[19] = 1'b0;                     // T Tentatively reserved for Transactional Memory extension
-    assign misa[20] = 1'b0;                     // U User mode implemented
-    assign misa[21] = 1'b0;                     // V Tentatively reserved for Vector extension
-    assign misa[22] = 1'b0;                     // W Reserved
-    assign misa[23] = 1'b0;                     // X Non-standard extensions present
-    assign misa[24] = 1'b0;                     // Y Reserved
-    assign misa[25] = 1'b0;                     // Z Reserved
+    assign misa[0]  = 1'b0;                         // A Atomic extension
+    assign misa[1]  = 1'b0;                         // B Tentatively reserved for Bit-Manipulation extension
+    assign misa[2]  = 1'b0;                         // C Compressed extension
+    assign misa[3]  = 1'b0;                         // D Double-precision floating-point extension
+    assign misa[4]  = (RV32E) ? 1'b1 : 1'b0;        // E RV32E base ISA
+    assign misa[5]  = (F_EXTENSION) ? 1'b1 : 1'b0;  // F Single-precision floating-point extension
+    assign misa[6]  = 1'b0;                         // G Additional standard extensions present
+    assign misa[7]  = 1'b0;                         // H Hypervisor extension
+    assign misa[8]  = (~RV32E) ? 1'b1 : 1'b0;       // I RV32I/64I/128I base ISA
+    assign misa[9]  = 1'b0;                         // J Tentatively reserved for Dynamically Translated Languages extension
+    assign misa[10] = 1'b0;                         // K Reserved
+    assign misa[11] = 1'b0;                         // L Tentatively reserved for Decimal Floating-Point extension
+    assign misa[12] = (M_EXTENSION) ? 1'b1 : 1'b0;  // M Integer Multiply/Divide extension
+    assign misa[13] = 1'b0;                         // N User-level interrupts supported
+    assign misa[14] = 1'b0;                         // O Reserved
+    assign misa[15] = 1'b0;                         // P Tentatively reserved for Packed-SIMD extension
+    assign misa[16] = 1'b0;                         // Q Quad-precision floating-point extension
+    assign misa[17] = 1'b0;                         // R Reserved
+    assign misa[18] = 1'b0;                         // S Supervisor mode implemented
+    assign misa[19] = 1'b0;                         // T Tentatively reserved for Transactional Memory extension
+    assign misa[20] = 1'b0;                         // U User mode implemented
+    assign misa[21] = 1'b0;                         // V Tentatively reserved for Vector extension
+    assign misa[22] = 1'b0;                         // W Reserved
+    assign misa[23] = 1'b0;                         // X Non-standard extensions present
+    assign misa[24] = 1'b0;                         // Y Reserved
+    assign misa[25] = 1'b0;                         // Z Reserved
 
     // MXLEN field encoding
     generate

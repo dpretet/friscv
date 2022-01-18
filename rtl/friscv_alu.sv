@@ -16,9 +16,8 @@ module friscv_alu
         input  logic                      aresetn,
         input  logic                      srst,
         // ALU instruction bus
-        input  logic                      alu_en,
+        input  logic                      alu_valid,
         output logic                      alu_ready,
-        output logic                      alu_empty,
         input  logic [`INST_BUS_W   -1:0] alu_instbus,
         // register source 1 query interface
         output logic [5             -1:0] alu_rs1_addr,
@@ -46,10 +45,7 @@ module friscv_alu
     logic [`RS1_W      -1:0] rs1;
     logic [`RS2_W      -1:0] rs2;
     logic [`RD_W       -1:0] rd;
-    logic [`ZIMM_W     -1:0] zimm;
     logic [`IMM12_W    -1:0] imm12;
-    logic [`IMM20_W    -1:0] imm20;
-    logic [`CSR_W      -1:0] csr;
     logic [`SHAMT_W    -1:0] shamt;
 
     logic                    r_i_opcode;
@@ -87,20 +83,17 @@ module friscv_alu
     assign rs1    = alu_instbus[`RS1    +: `RS1_W   ];
     assign rs2    = alu_instbus[`RS2    +: `RS2_W   ];
     assign rd     = alu_instbus[`RD     +: `RD_W    ];
-    assign zimm   = alu_instbus[`ZIMM   +: `ZIMM_W  ];
     assign imm12  = alu_instbus[`IMM12  +: `IMM12_W ];
-    assign imm20  = alu_instbus[`IMM20  +: `IMM20_W ];
-    assign csr    = alu_instbus[`CSR    +: `CSR_W   ];
     assign shamt  = alu_instbus[`SHAMT  +: `SHAMT_W ];
 
-    assign r_i_opcode = (opcode==`R_ARITH || opcode==`I_ARITH) ? 1'b1 : 1'b0;
+    assign r_i_opcode = ((opcode==`R_ARITH && (funct7==7'b0000000 || funct7==7'b0100000)) || 
+                          opcode==`I_ARITH) ? 1'b1 : 1'b0;
 
     assign alu_ready = 1'b1;
-    assign alu_empty = 1'b0;
 
     ///////////////////////////////////////////////////////////////////////////
     //
-    // Registers IOS
+    // ISA Registers interface
     //
     ///////////////////////////////////////////////////////////////////////////
 
@@ -108,7 +101,7 @@ module friscv_alu
 
     assign alu_rs2_addr = rs2;
 
-    assign alu_rd_wr = alu_en & r_i_opcode;
+    assign alu_rd_wr = alu_valid & r_i_opcode;
 
     assign alu_rd_addr = rd;
 

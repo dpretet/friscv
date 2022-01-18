@@ -50,7 +50,7 @@ module friscv_control
         input  logic [2             -1:0] rresp,
         input  logic [AXI_DATA_W    -1:0] rdata,
         // interface to activate the processing
-        output logic                      proc_en,
+        output logic                      proc_valid,
         input  logic                      proc_ready,
         input  logic                      proc_empty,
         input  logic [4             -1:0] proc_fenceinfo,
@@ -351,7 +351,7 @@ module friscv_control
     ///////////////////////////////////////////////////////////////////////////
 
     // TODO: Needs csr_ready checking ?
-    assign proc_en = ~fifo_empty & processing & (cfsm==FETCH) & csr_ready;
+    assign proc_valid = ~fifo_empty & processing & (cfsm==FETCH) & csr_ready;
 
     assign csr_en = ~fifo_empty && sys[`IS_CSR] & (cfsm==FETCH);
 
@@ -794,7 +794,7 @@ module friscv_control
     ///////////////////////////////////////////////////////////////////////////
 
     // MSTATUS CSR to write when executing MRET
-    assign mstatus_for_mret = {sb_mstatus[XLEN-1:12],  // WPRI
+    assign mstatus_for_mret = {sb_mstatus[XLEN-1:13],  // WPRI
                                priv_mode,              // MPP
                                sb_mstatus[10:9],       // WPRI
                                1'b0,                   // SPP
@@ -808,7 +808,7 @@ module friscv_control
                                1'b0};                  // UIE
 
     // MSTATUS CSR when handling a trap
-    assign mstatus_for_trap = {sb_mstatus[XLEN-1:12],  // WPRI
+    assign mstatus_for_trap = {sb_mstatus[XLEN-1:13],  // WPRI
                                priv_mode,              // MPP
                                sb_mstatus[10:9],       // WPRI
                                1'b0,                   // SPP

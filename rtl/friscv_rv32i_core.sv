@@ -33,6 +33,10 @@ module friscv_rv32i_core
         parameter MHART_ID           = 0,
         // RV32E architecture, limits integer registers to 16, else 32 available
         parameter RV32E              = 0,
+        // Floating-point extension support
+        parameter F_EXTENSION       = 0,
+        // Multiply/Divide extension support
+        parameter M_EXTENSION       = 0,
 
         ////////////////////////////////////////////////////////////////////////
         // AXI4 / AXI4-lite interface setup
@@ -128,99 +132,92 @@ module friscv_rv32i_core
     // Parameters and signals
     //////////////////////////////////////////////////////////////////////////
 
-    logic [5               -1:0] ctrl_rs1_addr;
-    logic [XLEN            -1:0] ctrl_rs1_val;
-    logic [5               -1:0] ctrl_rs2_addr;
-    logic [XLEN            -1:0] ctrl_rs2_val;
-    logic                        ctrl_rd_wr;
-    logic [5               -1:0] ctrl_rd_addr;
-    logic [XLEN            -1:0] ctrl_rd_val;
+    localparam NB_ALU_UNIT = 2 + M_EXTENSION + F_EXTENSION;
 
-    logic [5               -1:0] alu_rs1_addr;
-    logic [XLEN            -1:0] alu_rs1_val;
-    logic [5               -1:0] alu_rs2_addr;
-    logic [XLEN            -1:0] alu_rs2_val;
-    logic                        alu_rd_wr;
-    logic [5               -1:0] alu_rd_addr;
-    logic [XLEN            -1:0] alu_rd_val;
-    logic [XLEN/8          -1:0] alu_rd_strb;
+    logic [5                   -1:0] ctrl_rs1_addr;
+    logic [XLEN                -1:0] ctrl_rs1_val;
+    logic [5                   -1:0] ctrl_rs2_addr;
+    logic [XLEN                -1:0] ctrl_rs2_val;
+    logic                            ctrl_rd_wr;
+    logic [5                   -1:0] ctrl_rd_addr;
+    logic [XLEN                -1:0] ctrl_rd_val;
 
-    logic [5               -1:0] memfy_rs1_addr;
-    logic [XLEN            -1:0] memfy_rs1_val;
-    logic [5               -1:0] memfy_rs2_addr;
-    logic [XLEN            -1:0] memfy_rs2_val;
-    logic                        memfy_rd_wr;
-    logic [5               -1:0] memfy_rd_addr;
-    logic [XLEN            -1:0] memfy_rd_val;
-    logic [XLEN/8          -1:0] memfy_rd_strb;
+    // ISA registers interface
+    logic [NB_ALU_UNIT*5       -1:0] proc_rs1_addr;
+    logic [NB_ALU_UNIT*XLEN    -1:0] proc_rs1_val;
+    logic [NB_ALU_UNIT*5       -1:0] proc_rs2_addr;
+    logic [NB_ALU_UNIT*XLEN    -1:0] proc_rs2_val;
+    logic [NB_ALU_UNIT         -1:0] proc_rd_wr;
+    logic [NB_ALU_UNIT*5       -1:0] proc_rd_addr;
+    logic [NB_ALU_UNIT*XLEN    -1:0] proc_rd_val;
+    logic [NB_ALU_UNIT*XLEN/8  -1:0] proc_rd_strb;
 
-    logic [5               -1:0] csr_rs1_addr;
-    logic [XLEN            -1:0] csr_rs1_val;
-    logic                        csr_rd_wr;
-    logic [5               -1:0] csr_rd_addr;
-    logic [XLEN            -1:0] csr_rd_val;
-    logic [XLEN/8          -1:0] csr_rd_strb;
+    logic [5                   -1:0] csr_rs1_addr;
+    logic [XLEN                -1:0] csr_rs1_val;
+    logic                            csr_rd_wr;
+    logic [5                   -1:0] csr_rd_addr;
+    logic [XLEN                -1:0] csr_rd_val;
 
-    logic                        proc_en;
-    logic [`INST_BUS_W     -1:0] proc_instbus;
-    logic                        proc_ready;
-    logic                        memfy_ready;
-    logic                        proc_empty;
-    logic [4               -1:0] proc_fenceinfo;
+    logic                            proc_valid;
+    logic [`INST_BUS_W         -1:0] proc_instbus;
+    logic                            proc_ready;
+    logic                            memfy_ready;
+    logic                            proc_empty;
+    logic [4                   -1:0] proc_fenceinfo;
 
-    logic                        csr_en;
-    logic [`INST_BUS_W     -1:0] csr_instbus;
-    logic                        csr_ready;
+    logic                            csr_en;
+    logic [`INST_BUS_W         -1:0] csr_instbus;
+    logic                            csr_ready;
 
-    logic                        inst_arvalid_s;
-    logic                        inst_arready_s;
-    logic [AXI_ADDR_W      -1:0] inst_araddr_s;
-    logic [3               -1:0] inst_arprot_s;
-    logic [AXI_ID_W        -1:0] inst_arid_s;
-    logic                        inst_rvalid_s;
-    logic                        inst_rready_s;
-    logic [AXI_ID_W        -1:0] inst_rid_s;
-    logic [2               -1:0] inst_rresp_s;
-    logic [ILEN            -1:0] inst_rdata_s;
+    logic                            inst_arvalid_s;
+    logic                            inst_arready_s;
+    logic [AXI_ADDR_W          -1:0] inst_araddr_s;
+    logic [3                   -1:0] inst_arprot_s;
+    logic [AXI_ID_W            -1:0] inst_arid_s;
+    logic                            inst_rvalid_s;
+    logic                            inst_rready_s;
+    logic [AXI_ID_W            -1:0] inst_rid_s;
+    logic [2                   -1:0] inst_rresp_s;
+    logic [ILEN                -1:0] inst_rdata_s;
 
-    logic                        memfy_awvalid;
-    logic                        memfy_awready;
-    logic [AXI_ADDR_W      -1:0] memfy_awaddr;
-    logic [3               -1:0] memfy_awprot;
-    logic [AXI_ID_W        -1:0] memfy_awid;
-    logic                        memfy_wvalid;
-    logic                        memfy_wready;
-    logic [XLEN            -1:0] memfy_wdata;
-    logic [XLEN/8          -1:0] memfy_wstrb;
-    logic                        memfy_bvalid;
-    logic                        memfy_bready;
-    logic [AXI_ID_W        -1:0] memfy_bid;
-    logic [2               -1:0] memfy_bresp;
-    logic                        memfy_arvalid;
-    logic                        memfy_arready;
-    logic [AXI_ADDR_W      -1:0] memfy_araddr;
-    logic [3               -1:0] memfy_arprot;
-    logic [AXI_ID_W        -1:0] memfy_arid;
-    logic                        memfy_rvalid;
-    logic                        memfy_rready;
-    logic [AXI_ID_W        -1:0] memfy_rid;
-    logic [2               -1:0] memfy_rresp;
-    logic [XLEN            -1:0] memfy_rdata;
+    logic                            memfy_awvalid;
+    logic                            memfy_awready;
+    logic [AXI_ADDR_W          -1:0] memfy_awaddr;
+    logic [3                   -1:0] memfy_awprot;
+    logic [AXI_ID_W            -1:0] memfy_awid;
+    logic                            memfy_wvalid;
+    logic                            memfy_wready;
+    logic [XLEN                -1:0] memfy_wdata;
+    logic [XLEN/8              -1:0] memfy_wstrb;
+    logic                            memfy_bvalid;
+    logic                            memfy_bready;
+    logic [AXI_ID_W            -1:0] memfy_bid;
+    logic [2                   -1:0] memfy_bresp;
+    logic                            memfy_arvalid;
+    logic                            memfy_arready;
+    logic [AXI_ADDR_W          -1:0] memfy_araddr;
+    logic [3                   -1:0] memfy_arprot;
+    logic [AXI_ID_W            -1:0] memfy_arid;
+    logic                            memfy_rvalid;
+    logic                            memfy_rready;
+    logic [AXI_ID_W            -1:0] memfy_rid;
+    logic [2                   -1:0] memfy_rresp;
+    logic [XLEN                -1:0] memfy_rdata;
 
-    logic                        flush_req;
-    logic                        flush_ack;
+    logic                            flush_req;
+    logic                            flush_ack;
 
-    logic [5               -1:0] traps;
+    logic [5                   -1:0] traps;
 
-    logic                        ctrl_mepc_wr;
-    logic [XLEN            -1:0] ctrl_mepc;
-    logic                        ctrl_mstatus_wr;
-    logic [XLEN            -1:0] ctrl_mstatus;
-    logic                        ctrl_mcause_wr;
-    logic [XLEN            -1:0] ctrl_mcause;
-    logic                        ctrl_mtval_wr;
-    logic [XLEN            -1:0] ctrl_mtval;
-    logic [`CSR_SB_W       -1:0] csr_sb;
+    logic                            ctrl_mepc_wr;
+    logic [XLEN                -1:0] ctrl_mepc;
+    logic                            ctrl_mstatus_wr;
+    logic [XLEN                -1:0] ctrl_mstatus;
+    logic                            ctrl_mcause_wr;
+    logic [XLEN                -1:0] ctrl_mcause;
+    logic                            ctrl_mtval_wr;
+    logic [XLEN                -1:0] ctrl_mtval;
+    logic [`CSR_SB_W           -1:0] csr_sb;
 
     //////////////////////////////////////////////////////////////////////////
     // Check parameters setup consistency and break up if not supported
@@ -264,45 +261,39 @@ module friscv_rv32i_core
 
     friscv_registers
     #(
-        .RV32E  (RV32E),
-        .XLEN   (XLEN)
+        .RV32E       (RV32E),
+        .XLEN        (XLEN),
+        .SYNC_READ   (0),
+        .NB_ALU_UNIT (NB_ALU_UNIT)
     )
     isa_registers
     (
-        .aclk            (aclk           ),
-        .aresetn         (aresetn        ),
-        .srst            (srst           ),
+        .aclk            (aclk),
+        .aresetn         (aresetn),
+        .srst            (srst),
         `ifdef FRISCV_SIM
-        .error           (error          ),
+        .error           (error),
         `endif
-        .ctrl_rs1_addr   (ctrl_rs1_addr  ),
-        .ctrl_rs1_val    (ctrl_rs1_val   ),
-        .ctrl_rs2_addr   (ctrl_rs2_addr  ),
-        .ctrl_rs2_val    (ctrl_rs2_val   ),
-        .ctrl_rd_wr      (ctrl_rd_wr     ),
-        .ctrl_rd_addr    (ctrl_rd_addr   ),
-        .ctrl_rd_val     (ctrl_rd_val    ),
-        .alu_rs1_addr    (alu_rs1_addr   ),
-        .alu_rs1_val     (alu_rs1_val    ),
-        .alu_rs2_addr    (alu_rs2_addr   ),
-        .alu_rs2_val     (alu_rs2_val    ),
-        .alu_rd_wr       (alu_rd_wr      ),
-        .alu_rd_addr     (alu_rd_addr    ),
-        .alu_rd_val      (alu_rd_val     ),
-        .alu_rd_strb     (alu_rd_strb    ),
-        .memfy_rs1_addr  (memfy_rs1_addr ),
-        .memfy_rs1_val   (memfy_rs1_val  ),
-        .memfy_rs2_addr  (memfy_rs2_addr ),
-        .memfy_rs2_val   (memfy_rs2_val  ),
-        .memfy_rd_wr     (memfy_rd_wr    ),
-        .memfy_rd_addr   (memfy_rd_addr  ),
-        .memfy_rd_val    (memfy_rd_val   ),
-        .memfy_rd_strb   (memfy_rd_strb  ),
-        .csr_rs1_addr    (csr_rs1_addr   ),
-        .csr_rs1_val     (csr_rs1_val    ),
-        .csr_rd_wr       (csr_rd_wr      ),
-        .csr_rd_addr     (csr_rd_addr    ),
-        .csr_rd_val      (csr_rd_val     )
+        .ctrl_rs1_addr   (ctrl_rs1_addr),
+        .ctrl_rs1_val    (ctrl_rs1_val),
+        .ctrl_rs2_addr   (ctrl_rs2_addr),
+        .ctrl_rs2_val    (ctrl_rs2_val),
+        .ctrl_rd_wr      (ctrl_rd_wr),
+        .ctrl_rd_addr    (ctrl_rd_addr),
+        .ctrl_rd_val     (ctrl_rd_val),
+        .proc_rs1_addr   (proc_rs1_addr),
+        .proc_rs1_val    (proc_rs1_val),
+        .proc_rs2_addr   (proc_rs2_addr),
+        .proc_rs2_val    (proc_rs2_val),
+        .proc_rd_wr      (proc_rd_wr),
+        .proc_rd_addr    (proc_rd_addr),
+        .proc_rd_val     (proc_rd_val),
+        .proc_rd_strb    (proc_rd_strb),
+        .csr_rs1_addr    (csr_rs1_addr),
+        .csr_rs1_val     (csr_rs1_val),
+        .csr_rd_wr       (csr_rd_wr),
+        .csr_rd_addr     (csr_rd_addr),
+        .csr_rd_val      (csr_rd_val)
     );
 
 
@@ -338,7 +329,7 @@ module friscv_rv32i_core
         .rid            (inst_rid_s),
         .rresp          (inst_rresp_s),
         .rdata          (inst_rdata_s),
-        .proc_en        (proc_en),
+        .proc_valid     (proc_valid),
         .proc_ready     (proc_ready),
         .proc_empty     (proc_empty),
         .proc_fenceinfo (proc_fenceinfo),
@@ -449,9 +440,11 @@ module friscv_rv32i_core
 
     friscv_csr
     #(
-        .RV32E     (RV32E),
-        .MHART_ID  (MHART_ID),
-        .XLEN      (XLEN)
+        .RV32E       (RV32E),
+        .MHART_ID    (MHART_ID),
+        .XLEN        (XLEN),
+        .F_EXTENSION (F_EXTENSION),
+        .M_EXTENSION (M_EXTENSION)
     )
     csrs
     (
@@ -488,37 +481,33 @@ module friscv_rv32i_core
     friscv_processing
     #(
         .XLEN         (XLEN),
+        .F_EXTENSION  (F_EXTENSION),
+        .M_EXTENSION  (M_EXTENSION),
+        .RV32E        (RV32E),
         .AXI_ADDR_W   (AXI_ADDR_W),
         .AXI_ID_W     (AXI_ID_W),
         .AXI_DATA_W   (XLEN),
-        .AXI_ID_MASK  (AXI_DMEM_MASK)
+        .AXI_ID_MASK  (AXI_DMEM_MASK),
+        .NB_UNIT      (NB_ALU_UNIT)
     )
     processing
     (
         .aclk           (aclk),
         .aresetn        (aresetn),
         .srst           (srst),
-        .proc_en        (proc_en),
+        .proc_valid     (proc_valid),
         .proc_ready     (proc_ready),
         .proc_empty     (proc_empty),
         .proc_fenceinfo (proc_fenceinfo),
         .proc_instbus   (proc_instbus),
-        .alu_rs1_addr   (alu_rs1_addr),
-        .alu_rs1_val    (alu_rs1_val),
-        .alu_rs2_addr   (alu_rs2_addr),
-        .alu_rs2_val    (alu_rs2_val),
-        .alu_rd_wr      (alu_rd_wr),
-        .alu_rd_addr    (alu_rd_addr),
-        .alu_rd_val     (alu_rd_val),
-        .alu_rd_strb    (alu_rd_strb),
-        .memfy_rs1_addr (memfy_rs1_addr),
-        .memfy_rs1_val  (memfy_rs1_val),
-        .memfy_rs2_addr (memfy_rs2_addr),
-        .memfy_rs2_val  (memfy_rs2_val),
-        .memfy_rd_wr    (memfy_rd_wr),
-        .memfy_rd_addr  (memfy_rd_addr),
-        .memfy_rd_val   (memfy_rd_val),
-        .memfy_rd_strb  (memfy_rd_strb),
+        .proc_rs1_addr  (proc_rs1_addr),
+        .proc_rs1_val   (proc_rs1_val),
+        .proc_rs2_addr  (proc_rs2_addr),
+        .proc_rs2_val   (proc_rs2_val),
+        .proc_rd_wr     (proc_rd_wr),
+        .proc_rd_addr   (proc_rd_addr),
+        .proc_rd_val    (proc_rd_val),
+        .proc_rd_strb   (proc_rd_strb),
         .awvalid        (memfy_awvalid),
         .awready        (memfy_awready),
         .awaddr         (memfy_awaddr),

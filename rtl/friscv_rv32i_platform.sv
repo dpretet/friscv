@@ -33,6 +33,8 @@ module friscv_rv32i_platform
         parameter MHART_ID           = 0,
         // RV32E architecture, limits integer registers to 16, else 32 available
         parameter RV32E              = 0,
+        // Floating-point extension support
+        parameter F_EXTENSION       = 0,
 
         ////////////////////////////////////////////////////////////////////////
         // AXI4 / AXI4-lite interface setup
@@ -284,6 +286,8 @@ module friscv_rv32i_platform
     #(
     .ILEN (ILEN),
     .XLEN (XLEN),
+    .M_EXTENSION (M_EXTENSION),
+    .F_EXTENSION (F_EXTENSION),
     .BOOT_ADDR (BOOT_ADDR),
     .INST_OSTDREQ_NUM (INST_OSTDREQ_NUM),
     .MHART_ID (MHART_ID),
