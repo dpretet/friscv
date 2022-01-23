@@ -17,31 +17,18 @@ source ../common/functions.run.sh
 
 main() {
 
-    echo "INFO: Start RISCV Testsuite"
+    echo "INFO: Start RISCV Compliance Testsuite"
     PID=$$
     echo "PID: $PID"
 
     get_args "$@"
 
-    # Erase first the temporary files
-    rm -f ./test*.v
-    rm -f ./*.log
-    rm -f ./*.out
-    rm -f ./*.o
-    rm -f ./*.vpi
-
     # Then clean temp files into testcase folders
     if [ $do_clean -eq 1 ]; then clean; fi
 
-    # Execute the tests
-    run_tests "./tests/rv32ui-p*.v"
-
-    # Clean-up before exiting
-    rm -f *.vcd
-    rm -f *.out
-
-    # Check status of the execution
-    check_status
+    # Execute the testsuites
+    run_testsuite "./tests/rv32ui-p*.v"
+    run_testsuite "./tests/rv32um-p*.v"
 
     # OK, sounds good, exit gently
     echo -e "${GREEN}SUCCESS: RISCV compliance testsuite successfully terminated ^^${NC}"

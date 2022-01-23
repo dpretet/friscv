@@ -59,6 +59,10 @@ module tb();
     parameter INST_OSTDREQ_NUM   = 8;
     // MHART ID CSR register
     parameter MHART_ID           = 0;
+    // Floating-point extension support
+    parameter F_EXTENSION       = 0;
+    // Multiply/Divide extension support
+    parameter M_EXTENSION       = 1;
 
     // Address buses width
     parameter AXI_ADDR_W         = XLEN;
@@ -206,6 +210,8 @@ module tb();
         .INST_OSTDREQ_NUM (INST_OSTDREQ_NUM),
         .MHART_ID (MHART_ID),
         .RV32E (RV32E),
+        .M_EXTENSION (M_EXTENSION),
+        .F_EXTENSION (F_EXTENSION),
         .AXI_ADDR_W (AXI_ADDR_W),
         .AXI_ID_W (AXI_ID_W),
         .AXI_IMEM_W (AXI_IMEM_W),
@@ -347,6 +353,8 @@ module tb();
         .INST_OSTDREQ_NUM (INST_OSTDREQ_NUM),
         .MHART_ID (MHART_ID),
         .RV32E (RV32E),
+        .M_EXTENSION (M_EXTENSION),
+        .F_EXTENSION (F_EXTENSION),
         .AXI_ADDR_W (AXI_ADDR_W),
         .AXI_ID_W (AXI_ID_W),
         .AXI_DATA_W (AXI_DATA_W),

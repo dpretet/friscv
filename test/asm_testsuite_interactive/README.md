@@ -1,4 +1,4 @@
-# ASM Unit Tests - Interasactive mode
+# ASM Unit Tests - Interactive mode
 
 FRISCV RV32i testsuite is an emulation of the integration of the processor core
 in a complete env. It connects the IOs interfaces (instruction & data bus) on

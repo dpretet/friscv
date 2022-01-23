@@ -108,6 +108,7 @@ main() {
             ./rtl/friscv_processing.sv\
             ./rtl/friscv_memfy.sv\
             ./rtl/friscv_registers.sv\
+            ./rtl/friscv_m_ext.sv\
             ./rtl/friscv_csr.sv\
             ./rtl/friscv_scfifo.sv\
             ./rtl/friscv_scfifo_ram.sv\

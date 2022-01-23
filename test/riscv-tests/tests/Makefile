@@ -10,9 +10,13 @@ env_dir := ./env
 ifeq ($(XLEN),64)
 include $(src_dir)/rv64ui/Makefrag
 include $(src_dir)/rv64si/Makefrag
+include $(src_dir)/rv64mi/Makefrag
+include $(src_dir)/rv64um/Makefrag
 endif
 include $(src_dir)/rv32ui/Makefrag
 include $(src_dir)/rv32si/Makefrag
+include $(src_dir)/rv32mi/Makefrag
+include $(src_dir)/rv32um/Makefrag
 
 default: all
 
@@ -68,9 +72,14 @@ endef
 
 $(eval $(call compile_template,rv32ui,-march=rv32g -mabi=ilp32))
 $(eval $(call compile_template,rv32si,-march=rv32g -mabi=ilp32))
+$(eval $(call compile_template,rv32mi,-march=rv32g -mabi=ilp32))
+$(eval $(call compile_template,rv32um,-march=rv32g -mabi=ilp32))
 ifeq ($(XLEN),64)
 $(eval $(call compile_template,rv64ui,-march=rv64g -mabi=lp64))
 $(eval $(call compile_template,rv64si,-march=rv64g -mabi=lp64))
+$(eval $(call compile_template,rv64mi,-march=rv64g -mabi=lp64))
+$(eval $(call compile_template,rv64um,-march=rv64g -mabi=lp64))
+
 endif
 
 tests_dump = $(addsuffix .asm, $(tests))

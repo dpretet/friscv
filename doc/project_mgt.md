@@ -17,8 +17,10 @@ Misc.
 - [ ] Add counters
 - [ ] 64 bits support
 - [ ] Support privileged instructions, supervisor mode & user mode
+      https://danielmangum.com/posts/risc-v-bytes-privilege-levels/
 - [ ] Support MMU extension
 - [ ] JTAG interface / GDB Usage
+    https://github.com/BLangOS/VexRiscV_with_HW-GDB_Server
 - [ ] Removed the 2 LSBs in instruction cache while always 2'b11 (6.25% saving)
 - [ ] AXI4 Infrastructure
     - [ ] Check des IDs de control sent. Should be incremented in memory
@@ -100,6 +102,7 @@ Verification/Validation:
 - [ ] Prepare a hardware execution environment for preliminary testing
 - [ ] Prepare a hardware execution environment for OS testing
 - [ ] Mettre en place de la CI (Need Iverilog v11 and RISCV toolchain)
+    https://github.com/vortexgpgpu/vortex/blob/master/ci/toolchain_install.sh
 
 
 # Ideas / Applications

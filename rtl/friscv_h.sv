@@ -94,9 +94,9 @@
 `define REMW    3'b110
 `define REMUW   3'b111
 
-//////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////
 // env signal driven by decoder to indicate environment instruction
-//////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////
 
 `define ECALL   3'b001
 `define EBREAK  3'b010
@@ -311,7 +311,8 @@ function automatic string get_inst_desc(
         text = {temp, " / ", text};
     end
     if (opcode==`R_ARITH) begin
-        text = "ARITH / R-type";
+        if (funct7==7'b0000001) text = "MULDIV / R-type";
+        else text = "ARITH / R-type";
         $sformat(temp, "Rd: %x", rd);
         text = {temp, " / ", text};
         $sformat(temp, "Funct3: %x", funct3);

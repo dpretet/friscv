@@ -87,11 +87,10 @@ module friscv_icache_fetcher
     ///////////////////////////////////////////////////////////////////////////
 
     // Missed-fetch FIFO depth
-    localparam MF_FIFO_DEPTH = 2;
+    localparam MF_FIFO_DEPTH = 8;
     localparam PASS_THRU_MODE = CACHE_PIPELINE[0];
 
-    // Control fsm, the sequencer driving the cache read and the memory
-    // controller
+    // Control fsm, the sequencer driving the cache read and the memory controller
     typedef enum logic[2:0] {
         IDLE = 0,
         SERVE = 1,
@@ -116,6 +115,7 @@ module friscv_icache_fetcher
     logic                     fifo_full_mf;
     logic                     pull_addr_mf;
     logic                     fifo_empty_mf;
+    logic                     rvalid_r;
 
     // Instruction fetch address and ID read from the FIFO
     // buffering the instruction fetch stage
@@ -169,7 +169,7 @@ module friscv_icache_fetcher
         .push     (ctrl_arvalid),
         .full     (fifo_full_if),
         .data_out ({arid_if, araddr_if}),
-        .pull     (pull_addr_if),
+        .pull     (pull_addr_if & ctrl_rready),
         .empty    (fifo_empty_if)
     );
 
@@ -206,7 +206,7 @@ module friscv_icache_fetcher
         .push     (cache_miss),
         .full     (fifo_full_mf),
         .data_out ({arid_mf, araddr_mf}),
-        .pull     (pull_addr_mf),
+        .pull     (pull_addr_mf & ctrl_rready),
         .empty    (fifo_empty_mf)
     );
 
@@ -214,7 +214,7 @@ module friscv_icache_fetcher
     // occured, but never if the cache is rebooting.
     assign cache_ren = ((~fifo_empty_if && (seq==IDLE || seq==SERVE)) ||
                         (~fifo_empty_mf && (seq==MISSED))
-                       ) ? ~reboot : 1'b0;
+                       ) ? ~reboot & ctrl_rready : 1'b0;
 
     // Multiplexer stage to drive missed-fetch or to-fetch requests
     assign cache_raddr = (~fifo_empty_mf) ? araddr_mf : araddr_if;
@@ -248,132 +248,111 @@ module friscv_icache_fetcher
             seq <= IDLE;
         end else begin
 
-            case (seq)
-                // Wait for the address requests from the instruction fetcher
-                default: begin
+            if (flush_ack) begin
+                // flush is done in 1 cycle in fetcher, wait req
+                // deassertion then go back to IDLE to reboot
+                flush_fifo <= 1'b0;
+                if (flush_req==1'b0) begin
+                    log.debug("Finished flush procedure");
                     pull_addr_if <= 1'b1;
-                    pull_addr_mf <= 1'b0;
-                    // If flush command is received, clear the FIFO content
-                    // and wait for req deassertion
-                    if (flush_req) begin
-                        log.debug("Start flush procedure");
-                        pull_addr_if <= 1'b0;
-                        pull_addr_mf <= 1'b0;
-                        flush_fifo <= 1'b1;
-                        seq <= FLUSH;
-                    end else if (~fifo_empty_if) begin
-                        log.debug("Start to serve");
-                        seq <= SERVE;
-                    end
+                    flush_ack <= 1'b0;
+                    seq <= IDLE;
                 end
-                // State to serve the instruction read request from the
-                // core controller
-                SERVE: begin
+            end else if (flush_req) begin
+                pull_addr_if <= 1'b0;
+                pull_addr_mf <= 1'b0;
+                flush_fifo <= 1'b1;
+                flush_ack <= 1'b1;
+            end else begin
 
-                    pull_addr_if <= 1'b1;
-
-                    if (reboot) begin
-                        pull_addr_if <= 1'b0;
-                        pull_addr_mf <= 1'b0;
-                        seq <= IDLE;
-                    // If flush command is received, clear the FIFO content
-                    // and wait for req deassertion
-                    end else if (flush_req) begin
-                        log.debug("Start flush procedure");
-                        pull_addr_if <= 1'b0;
-                        pull_addr_mf <= 1'b0;
-                        flush_fifo <= 1'b1;
-                        seq <= FLUSH;
-                    // As soon a cache miss is detected, stop to pull the
-                    // FIFO and move to read the AXI4 interface to grab the
-                    // missing instruction
-                    end else if (cache_miss) begin
-                        log.debug("Cache miss");
-                        pull_addr_if <= 1'b0;
-                        memctrl_arvalid <= 1'b1;
-                        memctrl_araddr <= araddr_ffd;
-                        memctrl_arid <= arid_ffd;
-                        seq <= LOAD;
-                    // When empty, go back to IDLE to wait new requests
-                    end else if (fifo_empty_if) begin
-                        log.debug("Go back to IDLE");
-                        seq <= IDLE;
-                    end
-                end
-                // State to fetch the missed-fetch instruction in the
-                // dedicated FIFO> Empties it, possibiliy in several epochs
-                // Equivalent behavior than SERVE state.
-                MISSED: begin
-                    // If flush command is received, clear the FIFO content
-                    // and wait for req deassertion
-                    if (flush_req) begin
-                        log.debug("Start flush procedure");
-                        pull_addr_if <= 1'b0;
-                        pull_addr_mf <= 1'b0;
-                        flush_fifo <= 1'b1;
-                        seq <= FLUSH;
-                    // As soon a cache miss is detected, stop to pull the
-                    // FIFO and move to read the AXI4 interface to grab the
-                    // missing instruction
-                    end else if (cache_miss) begin
-                        log.debug("Cache miss");
-                        pull_addr_mf <= 1'b0;
-                        memctrl_arvalid <= 1'b1;
-                        memctrl_araddr <= araddr_ffd;
-                        memctrl_arid <= arid_ffd;
-                        seq <= LOAD;
-                    // If other instruction fetchs have been issue,
-                    // continue to serve the core controller
-                    end else if (~fifo_empty_if && fifo_empty_mf) begin
-                        log.debug("Go to to-fetch state");
+                case (seq)
+                    // Wait for the address requests from the instruction fetcher
+                    default: begin
                         pull_addr_if <= 1'b1;
                         pull_addr_mf <= 1'b0;
-                        seq <= SERVE;
-                    // When empty, go back to IDLE to wait new requests
-                    end else if (fifo_empty_mf) begin
-                        log.debug("Go back to IDLE");
-                        pull_addr_mf <= 1'b0;
-                        seq <= IDLE;
+                        if (~fifo_empty_if) begin
+                            log.debug("Start to serve");
+                            seq <= SERVE;
+                        end
                     end
-                end
-                // Fetch a new instruction in external memory
-                LOAD: begin
+                    // State to serve the instruction read request from the
+                    // core controller
+                    SERVE: begin
+                        // Move back to IDLE if ARID changed, meaning the 
+                        // control is jumping to another memory location
+                        if (reboot) begin
+                            pull_addr_if <= 1'b0;
+                            pull_addr_mf <= 1'b0;
+                            seq <= IDLE;
+                        // As soon a cache miss is detected, stop to pull the
+                        // FIFO and move to read the AXI4 interface to grab the
+                        // missing instruction
+                        end else if (cache_miss) begin
+                            log.debug("Cache miss");
+                            pull_addr_if <= 1'b0;
+                            memctrl_arvalid <= 1'b1;
+                            memctrl_araddr <= araddr_ffd;
+                            memctrl_arid <= arid_ffd;
+                            seq <= LOAD;
+                        // When empty, go back to IDLE to wait new requests
+                        end else if (fifo_empty_if) begin
+                            log.debug("Go back to IDLE");
+                            seq <= IDLE;
+                        end
+                    end
+                    // State to fetch the missed-fetch instruction in the
+                    // dedicated FIFO. Empties it, possibiliy along several epochs
+                    // Equivalent behavior than SERVE state.
+                    MISSED: begin
+                        // As soon a cache miss is detected, stop to pull the
+                        // FIFO and move to read the AXI4 interface to grab the
+                        // missing instruction
+                        if (cache_miss) begin
+                            log.debug("Cache miss");
+                            pull_addr_mf <= 1'b0;
+                            memctrl_arvalid <= 1'b1;
+                            memctrl_araddr <= araddr_ffd;
+                            memctrl_arid <= arid_ffd;
+                            seq <= LOAD;
+                        // If other instruction fetchs have been issue,
+                        // continue to serve the core controller
+                        end else if (~fifo_empty_if && fifo_empty_mf) begin
+                            log.debug("Go to to-fetch state");
+                            pull_addr_if <= 1'b1;
+                            pull_addr_mf <= 1'b0;
+                            seq <= SERVE;
+                        // When empty, go back to IDLE to wait new requests
+                        end else if (fifo_empty_mf) begin
+                            log.debug("Go back to IDLE");
+                            pull_addr_mf <= 1'b0;
+                            seq <= IDLE;
+                        end
+                    end
+                    // Fetch a new instruction in external memory
+                    LOAD: begin
 
-                    // Handshaked with memory controller, now
-                    // wait for the write stage to restart
-                    if (memctrl_arvalid && memctrl_arready) begin
-                        log.debug("Read memory");
-                        memctrl_arvalid <= 1'b0;
-                    end
+                        // Handshaked with memory controller, now
+                        // wait for the write stage to restart
+                        if (memctrl_arvalid && memctrl_arready) begin
+                            log.debug("Read memory");
+                            memctrl_arvalid <= 1'b0;
+                        end
 
-                    // If a reboot has been initiated, move back to IDLE
-                    // to avoid a race condition which will fetch twice 
-                    // the next first instruction
-                    if (reboot) begin
-                        seq <= IDLE;
-                    // Go to read the cache lines once the memory controller
-                    // wrote a new cache line, the read completion
-                    end else if (cache_writing) begin
-                        log.debug("Go to missed-fetch state");
-                        pull_addr_mf <= 1'b1;
-                        seq <= MISSED;
+                        // If a reboot has been initiated, move back to IDLE
+                        // to avoid a race condition which will fetch twice 
+                        // the next first instruction
+                        if (reboot) begin
+                            seq <= IDLE;
+                        // Go to read the cache lines once the memory controller
+                        // wrote a new cache line, the read completion
+                        end else if (cache_writing) begin
+                            log.debug("Go to missed-fetch state");
+                            pull_addr_mf <= 1'b1;
+                            seq <= MISSED;
+                        end
                     end
-                end
-                // Clear the current context of the cache execution. Applied
-                // on an FENCE.I instruction execution.
-                FLUSH: begin
-                    // flush is done in 1 cycle in fetcher, wait req
-                    // deassertion then go back to IDLE to reboot
-                    flush_ack <= 1'b1;
-                    flush_fifo <= 1'b0;
-                    if (flush_req==1'b0) begin
-                        log.debug("Finished flush procedure");
-                        pull_addr_if <= 1'b1;
-                        seq <= IDLE;
-                    end
-                end
-            endcase
-
+                endcase
+            end
         end
     end
 
@@ -382,15 +361,30 @@ module friscv_icache_fetcher
     // AXI4-lite interface management
     ///////////////////////////////////////////////////////////////////////////
 
-    // Read request handshake
+
+    // Read address request handshake if able to receive
     assign ctrl_arready = (~fifo_full_if && ~reboot) ? 1'b1 : 1'b0;
 
-    // Read completion going back to the intruction fetch controller
-    assign ctrl_rvalid = cache_hit;
+    // Manage read data channel back-pressure in case RVALID has been
+    // asserted but RREADY wasn't asserted. RDATA stay stable, even after
+    // RVALID has been deasserted, RVALID is asserted only one cycle
+    always @ (posedge aclk or negedge aresetn) begin
+        if (!aresetn) begin
+            rvalid_r <= 1'b0;
+        end else if (srst) begin
+            rvalid_r <= 1'b0;
+        end else begin
+            if (ctrl_rvalid && !ctrl_rready) rvalid_r <= 1'b1;
+            else rvalid_r <= 1'b0;
+        end
+    end
+
+    assign ctrl_rvalid = cache_hit | rvalid_r;
     assign ctrl_rdata = cache_rdata;
     assign ctrl_rresp = 2'b0;
     assign ctrl_rid = arid_ffd;
 
+    // Just transmit, and not managed at all in the core
     assign memctrl_arprot = ctrl_arprot;
 
 endmodule

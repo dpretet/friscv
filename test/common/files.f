@@ -24,6 +24,8 @@
 ../../rtl/friscv_bit_sync.sv
 ../../rtl/friscv_pipeline.sv
 ../../rtl/friscv_uart.sv
+../../rtl/friscv_m_ext.sv
+../../rtl/friscv_div.sv
 ../../dep/axi-crossbar/rtl/axicb_checker.sv
 ../../dep/axi-crossbar/rtl/axicb_crossbar_lite_top.sv
 ../../dep/axi-crossbar/rtl/axicb_crossbar_top.sv

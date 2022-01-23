@@ -271,7 +271,6 @@ module friscv_memfy
     logic [`RD_W       -1:0] rd;
     logic [`IMM12_W    -1:0] imm12;
 
-    logic                    mem_access;
     logic signed [XLEN -1:0] addr;
 
     logic [`OPCODE_W   -1:0] opcode_r;
@@ -360,7 +359,7 @@ module friscv_memfy
                 end
 
             // LOAD or STORE instruction acknowledgment to instruction controller
-            end else if (memfy_valid && mem_access) begin
+            end else if (memfy_valid) begin
 
                 // Control flow
                 memfy_ready <= 1'b0;
@@ -406,6 +405,7 @@ module friscv_memfy
     assign memfy_rd_wr = (~memfy_ready && (opcode_r==`LOAD) &&
                             rvalid && rready 
                          ) ? 1'b1 : 1'b0;
+
     assign memfy_rd_addr = rd_r;
     assign memfy_rd_val = get_rd_val(funct3_r, rdata, offset);
     assign memfy_rd_strb = get_rd_strb(funct3_r, offset, ~two_phases);
@@ -413,10 +413,6 @@ module friscv_memfy
     assign memfy_rs1_addr = rs1;
     assign memfy_rs2_addr = rs2;
 
-    // Indicates a memory access needs to be performed
-    assign mem_access = (opcode == `LOAD)  ? 1'b1 :
-                        (opcode == `STORE) ? 1'b1 :
-                                             1'b0 ;
 
     // The address to access during a LOAD or a STORE
     assign addr = $signed({{(XLEN-12){imm12[11]}}, imm12}) + $signed(memfy_rs1_val);

@@ -74,18 +74,73 @@ module friscv_processing
         input  logic [AXI_DATA_W      -1:0] rdata
     );
 
-    logic memfy_valid;
-    logic alu_valid;
-    logic alu_ready;
-    logic alu_empty;
-    logic memfy_ready;
-    logic memfy_empty;
+    ///////////////////////////////////////////////////////////////////////////
+    //
+    // Parameters and variables declaration
+    //
+    ///////////////////////////////////////////////////////////////////////////
+ 
+    logic [`OPCODE_W   -1:0] opcode;
+    logic [`FUNCT3_W   -1:0] funct3;
+    logic [`FUNCT7_W   -1:0] funct7;
+    logic [`RS1_W      -1:0] rs1;
+    logic [`RS2_W      -1:0] rs2;
+    logic [`RD_W       -1:0] rd;
+    logic                    memfy_valid;
+    logic                    alu_valid;
+    logic                    alu_ready;
+    logic                    alu_empty;
+    logic                    memfy_ready;
+    logic                    memfy_empty;
+    logic                    i_inst;
+    logic                    ls_inst;
+    logic                    m_inst;
+    logic                    m_valid;
+    logic                    m_ready;
 
-    assign alu_valid = proc_valid & memfy_ready;
-    assign memfy_valid = proc_valid & alu_ready;
-    assign proc_ready = alu_ready & memfy_ready;
+    // Assignment of M extension on ISA reg interface
+    localparam M_IX = 2;
+
+    ///////////////////////////////////////////////////////////////////////////
+    //
+    // Instruction bus extraction
+    //
+    ///////////////////////////////////////////////////////////////////////////
+
+    assign opcode = proc_instbus[`OPCODE +: `OPCODE_W];
+    assign funct3 = proc_instbus[`FUNCT3 +: `FUNCT3_W];
+    assign funct7 = proc_instbus[`FUNCT7 +: `FUNCT7_W];
+    assign rs1    = proc_instbus[`RS1    +: `RS1_W   ];
+    assign rs2    = proc_instbus[`RS2    +: `RS2_W   ];
+    assign rd     = proc_instbus[`RD     +: `RD_W    ];
+
+
+    ///////////////////////////////////////////////////////////////////////////
+    //
+    // Computation activation
+    //
+    ///////////////////////////////////////////////////////////////////////////
+
+    assign i_inst = ((opcode==`R_ARITH && (funct7==7'b0000000 || funct7==7'b0100000)) || 
+                      opcode==`I_ARITH
+                    ) ? 1'b1 : 1'b0;
+
+    assign ls_inst = (opcode==`LOAD || opcode==`STORE) ? 1'b1 : 1'b0;
+
+    assign m_inst = (opcode==`MULDIV && funct7==7'b0000001) ? 1'b1 : 1'b0;
+
+    assign alu_valid = proc_valid & memfy_ready & m_ready & i_inst;
+    assign memfy_valid = proc_valid & alu_ready & m_ready & ls_inst;
+    assign m_valid = proc_valid & alu_ready & memfy_ready & m_inst;
+    assign proc_ready = alu_ready & memfy_ready & m_ready;
     assign proc_empty = 1'b0;
 
+
+    ///////////////////////////////////////////////////////////////////////////
+    //
+    // Instances
+    //
+    ///////////////////////////////////////////////////////////////////////////
 
     friscv_alu
     #(
@@ -160,8 +215,39 @@ module friscv_processing
         .rdata           (rdata)
     );
 
+    generate 
+
+    if (M_EXTENSION) begin: MULTDIV_SUPPORT
+
+    friscv_m_ext 
+    #(
+        .XLEN (XLEN)
+    )
+    m_ext
+    (
+        .aclk       (aclk),
+        .aresetn    (aresetn),
+        .srst       (srst),
+        .m_valid    (m_valid),
+        .m_ready    (m_ready),
+        .m_instbus  (proc_instbus),
+        .m_rs1_addr (proc_rs1_addr[M_IX*5+:5]),
+        .m_rs1_val  (proc_rs1_val[M_IX*XLEN+:XLEN]),
+        .m_rs2_addr (proc_rs2_addr[M_IX*5+:5]),
+        .m_rs2_val  (proc_rs2_val[M_IX*XLEN+:XLEN]),
+        .m_rd_wr    (proc_rd_wr[M_IX]),
+        .m_rd_addr  (proc_rd_addr[M_IX*5+:5]),
+        .m_rd_val   (proc_rd_val[M_IX*XLEN+:XLEN]),
+        .m_rd_strb  (proc_rd_strb[M_IX*XLEN/8+:XLEN/8])
+    );
+
+    end else begin: NO_M_EXT
+
+        assign m_ready = 1'b1;
+    
+    end 
+    endgenerate
 
 endmodule
 
 `resetall
-

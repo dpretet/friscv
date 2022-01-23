@@ -95,7 +95,7 @@
     string svut_test_name = ""; \
     string svut_suite_name = ""; \
     string svut_msg = ""; \
-    string svut_fail_list = "Failling tests:";
+    string svut_fail_list = "Failling test(s):";
 
 /// LAST_STATUS is a flag asserted if check the last
 /// check function failed
@@ -182,7 +182,7 @@ endfunction
         svut_error = 0; \
         svut_nb_test = svut_nb_test + 1;
 
-/// This header must be placed to close a test
+/// This footer must be placed to close a test
 `define UNIT_TEST_END \
         teardown(); \
         if (svut_error == 0) begin \
@@ -198,7 +198,7 @@ endfunction
         svut_test_number = svut_test_number + 1; \
     end
 
-/// This header must be placed to close a test suite
+/// This footer must be placed to close a test suite
 `define TEST_SUITE_END \
     end \
     endtask \

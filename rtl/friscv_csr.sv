@@ -267,6 +267,7 @@ module friscv_csr
                 COMPUTE: begin
 
                     cfsm <= IDLE;
+                    ready <= 1'b1;
 
                     // Swap RS1 and CSR
                     if (funct3_r==`CSRRW) begin

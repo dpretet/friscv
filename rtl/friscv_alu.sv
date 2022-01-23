@@ -38,7 +38,6 @@ module friscv_alu
     //
     ///////////////////////////////////////////////////////////////////////////
 
-    // instructions fields
     logic [`OPCODE_W   -1:0] opcode;
     logic [`FUNCT3_W   -1:0] funct3;
     logic [`FUNCT7_W   -1:0] funct7;
@@ -47,8 +46,6 @@ module friscv_alu
     logic [`RD_W       -1:0] rd;
     logic [`IMM12_W    -1:0] imm12;
     logic [`SHAMT_W    -1:0] shamt;
-
-    logic                    r_i_opcode;
 
     logic        [XLEN -1:0] _add;
     logic        [XLEN -1:0] _sub;
@@ -86,9 +83,6 @@ module friscv_alu
     assign imm12  = alu_instbus[`IMM12  +: `IMM12_W ];
     assign shamt  = alu_instbus[`SHAMT  +: `SHAMT_W ];
 
-    assign r_i_opcode = ((opcode==`R_ARITH && (funct7==7'b0000000 || funct7==7'b0100000)) || 
-                          opcode==`I_ARITH) ? 1'b1 : 1'b0;
-
     assign alu_ready = 1'b1;
 
     ///////////////////////////////////////////////////////////////////////////
@@ -101,7 +95,7 @@ module friscv_alu
 
     assign alu_rs2_addr = rs2;
 
-    assign alu_rd_wr = alu_valid & r_i_opcode;
+    assign alu_rd_wr = alu_valid;
 
     assign alu_rd_addr = rd;
 
@@ -126,7 +120,7 @@ module friscv_alu
                         (opcode==`R_ARITH && funct3==`SRA && funct7[5]==1'b1)  ? _sra :
                                                                                  {XLEN{1'b0}};
 
-    assign alu_rd_strb = (r_i_opcode) ? {(XLEN/8){1'b1}} : {(XLEN/8){1'b0}};
+    assign alu_rd_strb = {(XLEN/8){1'b1}};
 
 
     ///////////////////////////////////////////////////////////////////////////

@@ -35,6 +35,8 @@ module friscv_rv32i_platform
         parameter RV32E              = 0,
         // Floating-point extension support
         parameter F_EXTENSION       = 0,
+        // Multiply/Divide extension support
+        parameter M_EXTENSION       = 0,
 
         ////////////////////////////////////////////////////////////////////////
         // AXI4 / AXI4-lite interface setup

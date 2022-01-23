@@ -124,6 +124,31 @@ run_tests() {
 }
 #------------------------------------------------------------------------------
 
+#------------------------------------------------------------------------------
+# Execute a testsuite
+#------------------------------------------------------------------------------
+
+run_testsuite() {
+
+    # Erase first the temporary files
+    rm -f ./test*.v
+    rm -f ./*.log
+    rm -f ./*.out
+    rm -f ./*.o
+    rm -f ./*.vpi
+
+    # Execute the testsuite
+    run_tests "$@"
+
+    # Clean-up before exiting
+    rm -f *.vcd
+    rm -f *.out
+
+    # Check status of the execution
+    check_status
+}
+#------------------------------------------------------------------------------
+
 
 #------------------------------------------------------------------------------
 # Check the execution ran well
