@@ -5,7 +5,6 @@
 `default_nettype none
 
 `include "friscv_h.sv"
-`include "svlogger.sv"
 
 module friscv_csr
 
@@ -143,12 +142,6 @@ module friscv_csr
     // User Counter/Timers
     // logic [XLEN-1:0] ucycle;         // 0xC00
 
-
-    // Logger setup
-    svlogger log;
-    initial log = new("CSR",
-                      `CSR_VERBOSITY,
-                      `CSR_ROUTE);
 
     //////////////////////////////////////////////////////////////////////////
     // Decompose the instruction bus

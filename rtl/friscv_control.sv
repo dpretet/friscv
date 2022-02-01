@@ -4,7 +4,6 @@
 `timescale 1 ns / 1 ps
 `default_nettype none
 
-`include "svlogger.sv"
 `include "friscv_h.sv"
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -17,14 +16,18 @@ module friscv_control
     #(
         // Instruction length (always 32, whatever the architecture)
         parameter ILEN = 32,
-        // Registers width, 32 bits for RV32i. [CAN'T BE CHANGED]
+        // Registers width, 32 bits for RV32i
         parameter XLEN = 32,
+        // Reduced RV32 arch
+        parameter RV32E = 0,
         // Address bus width defined for both control and AXI4 address signals
         parameter AXI_ADDR_W = ILEN,
         // AXI ID width, setup by default to 8 and unused
         parameter AXI_ID_W = 8,
         // AXI4 data width, independant of control unit width
         parameter AXI_DATA_W = XLEN,
+        // Express mode track the register usage and avoid wait state in control unit
+        parameter EXPRESS_MODE = 0,
         // Number of outstanding requests supported
         parameter OSTDREQ_NUM = 4,
         // Primary address to boot to load the firmware [0:2**ADDRW-1]
@@ -52,9 +55,9 @@ module friscv_control
         // interface to activate the processing
         output logic                      proc_valid,
         input  logic                      proc_ready,
-        input  logic                      proc_empty,
-        input  logic [4             -1:0] proc_fenceinfo,
         output logic [`INST_BUS_W   -1:0] proc_instbus,
+        input  logic [32            -1:0] proc_rsvd_regs,
+        input  logic [4             -1:0] proc_fenceinfo,
         // interface to activate teh CSR management
         output logic                      csr_en,
         input  logic                      csr_ready,
@@ -181,10 +184,13 @@ module friscv_control
     logic [2         -1:0] priv_mode;
 
     // Logger setup
+    `ifdef FRISCV_SIM
+    `include "svlogger.sv"
     svlogger log;
     initial log = new("ControlUnit",
                       `CONTROL_VERBOSITY,
                       `CONTROL_ROUTE);
+    `endif
 
 
     /////////////////////////////////////////////////////////////////
@@ -509,7 +515,9 @@ module friscv_control
                     priv_mode <= 2'b11;
 
                     if (arready) begin
+                        `ifdef FRISCV_SIM
                         log.info("Boot the processor");
+                        `endif
                         cfsm <= FETCH;
                     end
                 end
@@ -565,7 +573,9 @@ module friscv_control
                         // Move to the trap handling when received an
                         // interrupt, a wrong instruction, ...
                         if (trap_occuring) begin
+                            `ifdef FRISCV_SIM
                             print_mcause("Handling a trap: ", mcause_code);
+                            `endif
                             traps[3] <= 1'b1;
                             flush_fifo <= 1'b1;
                             arvalid <= 1'b0;
@@ -586,9 +596,11 @@ module friscv_control
                         // and reload new instructions
                         else if (jump_branch && ~cant_branch_now && csr_ready) begin
 
+                            `ifdef FRISCV_SIM
                             log.info("Jump/Branch");
                             print_instruction(instruction, pc_reg, opcode, funct3,
                                               funct7, rs1, rs2, rd, imm12, imm20, csr);
+                            `endif
                             flush_fifo <= 1'b1;
                             arvalid <= 1'b0;
                             arid <= next_id(arid);
@@ -598,9 +610,11 @@ module friscv_control
                         // Reach an ECALL instruction, jump to trap handler
                         end else if (sys[`IS_ECALL] && ~cant_branch_now && csr_ready) begin
 
+                            `ifdef FRISCV_SIM
                             log.info("ECALL -> Jump to trap handler");
                             print_instruction(instruction, pc_reg, opcode, funct3,
                                               funct7, rs1, rs2, rd, imm12, imm20, csr);
+                            `endif
                             traps[0] <= 1'b1;
                             flush_fifo <= 1'b1;
                             arvalid <= 1'b0;
@@ -615,9 +629,11 @@ module friscv_control
                         // Reach an EBREAK instruction, need to stall the core
                         end else if (sys[`IS_EBREAK]) begin
 
+                            `ifdef FRISCV_SIM
                             log.info("Execute EBREAK -> Stop the processor");
                             print_instruction(instruction, pc_reg, opcode, funct3,
                                               funct7, rs1, rs2, rd, imm12, imm20, csr);
+                            `endif
                             flush_fifo <= 1'b1;
                             traps[1] <= 1'b1;
                             cfsm <= EBREAK;
@@ -625,9 +641,11 @@ module friscv_control
                         // Reach a MRET instruction, jump to exception return
                         end else if (sys[`IS_MRET] && ~cant_branch_now && csr_ready) begin
 
+                            `ifdef FRISCV_SIM
                             log.info("MRET -> Return from trap");
                             print_instruction(instruction, pc_reg, opcode, funct3,
                                               funct7, rs1, rs2, rd, imm12, imm20, csr);
+                            `endif
                             flush_fifo <= 1'b1;
                             traps[2] <= 1'b1;
                             arvalid <= 1'b0;
@@ -641,9 +659,11 @@ module friscv_control
                         // the instruction pipeline
                         end else if (fence[`IS_FENCEI]) begin
 
+                            `ifdef FRISCV_SIM
                             log.info("FENCE.i -> Start iCache flushing");
                             print_instruction(instruction, pc_reg, opcode, funct3,
                                               funct7, rs1, rs2, rd, imm12, imm20, csr);
+                            `endif
                             flush_fifo <= 1'b1;
                             pc_reg <= pc;
                             arvalid <= 1'b0;
@@ -654,9 +674,11 @@ module friscv_control
                         // Reach an ECALL instruction, jump to trap handler
                         end else if (sys[`IS_WFI] && ~cant_branch_now && csr_ready) begin
 
+                            `ifdef FRISCV_SIM
                             log.info("WFI -> Stall and wait for interrupt");
                             print_instruction(instruction, pc_reg, opcode, funct3,
                                               funct7, rs1, rs2, rd, imm12, imm20, csr);
+                            `endif
                             traps[0] <= 1'b1;
                             flush_fifo <= 1'b1;
                             arvalid <= 1'b0;
@@ -670,8 +692,10 @@ module friscv_control
                         // All other instructions
                         end else if (csr_ready &&
                                      ~cant_branch_now && ~cant_process_now) begin
+                            `ifdef FRISCV_SIM
                             print_instruction(instruction, pc_reg, opcode, funct3,
                                               funct7, rs1, rs2, rd, imm12, imm20, csr);
+                            `endif
                             pc_reg <= pc;
                         end
                     end
@@ -703,7 +727,9 @@ module friscv_control
                 FENCE_I: begin
                     flush_req <= 1'b1;
                     if (flush_ack) begin
+                        `ifdef FRISCV_SIM
                         log.info("FENCE.i execution done");
+                        `endif
                         flush_req <= 1'b0;
                         flush_fifo <= 1'b0;
                         arvalid <= 1'b1;
@@ -717,7 +743,9 @@ module friscv_control
                 ///////////////////////////////////////////////////////////////
                 WFI: begin
                     if (csr_sb[`MSIP] || csr_sb[`MTIP] || csr_sb[`MEIP]) begin
+                        `ifdef FRISCV_SIM
                         log.info("WFI -> received an interrupt");
+                        `endif
                         arvalid <= 1'b1;
                         mepc_wr <= 1'b1;
                         mepc <= pc_reg;
@@ -770,19 +798,29 @@ module friscv_control
     assign ctrl_rs1_addr = rs1;
     assign ctrl_rs2_addr = rs2;
 
-    // register destination
-    assign ctrl_rd_wr =  (cfsm!=FETCH)                                ? 1'b0 :
-                         (pull_inst && (auipc || jal || jalr || lui)) ? 1'b1 :
-                                                                        1'b0 ;
-    assign ctrl_rd_addr = rd;
+    always @ (posedge aclk or negedge aresetn) begin
+        if (!aresetn) begin
+            ctrl_rd_wr <= 1'b0;
+            ctrl_rd_addr <= 5'b0;
+            ctrl_rd_val <= {XLEN{1'b0}};
+        end else if (srst) begin
+            ctrl_rd_wr <= 1'b0;
+            ctrl_rd_addr <= 5'b0;
+            ctrl_rd_val <= {XLEN{1'b0}};
+        end else begin
+            ctrl_rd_wr <=  (cfsm!=FETCH)                                ? 1'b0 :
+                           (pull_inst && (auipc || jal || jalr || lui)) ? 1'b1 :
+                                                                          1'b0 ;
+            ctrl_rd_addr <= rd;
 
-    assign ctrl_rd_val = ((jal || jalr) && ~pull_inst) ? pc_jal_saved :
-                         ((jal || jalr) && pull_inst)  ? pc_plus4 :
-                         (lui)                         ? {imm20, 12'b0} :
-                         (auipc && ~pull_inst)         ? pc_auipc_saved :
-                         (auipc && pull_inst)          ? pc_auipc :
-                                                         pc;
-
+            ctrl_rd_val <= ((jal || jalr) && ~pull_inst) ? pc_jal_saved :
+                           ((jal || jalr) && pull_inst)  ? pc_plus4 :
+                           (lui)                         ? {imm20, 12'b0} :
+                           (auipc && ~pull_inst)         ? pc_auipc_saved :
+                           (auipc && pull_inst)          ? pc_auipc :
+                                                           pc;
+        end
+    end
 
     ///////////////////////////////////////////////////////////////////////////
     //

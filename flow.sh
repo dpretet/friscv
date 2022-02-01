@@ -92,7 +92,12 @@ main() {
 
     if [[ $1 == "lint" ]]; then
 
-        printinfo "Start Verilator lint"
+        set +e
+
+        printinfo "Start SVlint linting"
+        svlint rtl/*.sv -i rtl -i dep/svlogger
+
+        printinfo "Start Verilator linting"
         verilator --lint-only +1800-2017ext+sv \
             -Wall -Wpedantic -cdc \
             -Wno-VARHIDDEN \
@@ -118,6 +123,8 @@ main() {
             ./rtl/friscv_icache_blocks.sv\
             ./rtl/friscv_icache_memctrl.sv\
             --top-module friscv_rv32i_core
+
+        set -e
     fi
     if [[ $1 == "sim" ]]; then
 

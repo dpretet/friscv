@@ -167,27 +167,52 @@ module friscv_m_ext
 
     assign m_rs2_addr = rs2;
 
-    assign m_rd_wr = (m_valid & !funct3[2]) | rd_wr_div;
+    always @ (posedge aclk or negedge aresetn) begin
+        if (aresetn == 1'b0) begin
+            m_rd_wr <= 1'b0;
+            m_rd_addr <= 5'b0;
+        end else if (srst) begin
+            m_rd_wr <= 1'b0;
+            m_rd_addr <= 5'b0;
+        end else begin
+            m_rd_wr <= (m_valid & !funct3[2]) | rd_wr_div;
 
-    assign m_rd_addr = (rd_wr_div) ? rd_r : rd;
+            m_rd_addr <= (rd_wr_div) ? rd_r : rd;
+
+        end
+    end
 
     assign m_rd_strb = {XLEN/8{1'b1}};
 
     generate
 
     if (XLEN==64) begin: l_MULDIV64_SUPPORT
-
-    assign m_rd_val =   (rd_wr_div && (funct3_r==`DIV || funct3_r==`DIVU)) ? quot :
-                        (rd_wr_div && (funct3_r==`REM || funct3_r==`REMU)) ? rem :
-                        (opcode==`MULDIVW)                                 ? muldiv64 : 
-                                                                             muldiv32 ;
+        always @ (posedge aclk or negedge aresetn) begin
+            if (aresetn == 1'b0) begin
+                m_rd_val <= {XLEN{1'b0}};
+            end else if (srst) begin
+                m_rd_val <= {XLEN{1'b0}};
+            end else begin
+                m_rd_val <= (rd_wr_div && (funct3_r==`DIV || funct3_r==`DIVU)) ? quot :
+                            (rd_wr_div && (funct3_r==`REM || funct3_r==`REMU)) ? rem :
+                            (opcode==`MULDIVW)                                 ? muldiv64 : 
+                                                                                 muldiv32 ;
+            end
+        end
 
     end else begin: l_NO_MULDIV64_SUPPORT
 
-    assign m_rd_val =   (rd_wr_div && (funct3_r==`DIV || funct3_r==`DIVU)) ? quot :
-                        (rd_wr_div && (funct3_r==`REM || funct3_r==`REMU)) ? rem :
-                                                                             muldiv32;
-
+        always @ (posedge aclk or negedge aresetn) begin
+            if (aresetn == 1'b0) begin
+                m_rd_val <= {XLEN{1'b0}};
+            end else if (srst) begin
+                m_rd_val <= {XLEN{1'b0}};
+            end else begin
+                m_rd_val <= (rd_wr_div && (funct3_r==`DIV || funct3_r==`DIVU)) ? quot :
+                            (rd_wr_div && (funct3_r==`REM || funct3_r==`REMU)) ? rem :
+                                                                                 muldiv32;
+            end
+       end
     end
     endgenerate
 

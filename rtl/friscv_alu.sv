@@ -95,30 +95,42 @@ module friscv_alu
 
     assign alu_rs2_addr = rs2;
 
-    assign alu_rd_wr = alu_valid;
+    always @ (posedge aclk or negedge aresetn) begin
+        if (!aresetn) begin
+            alu_rd_wr <= 1'b0;
+            alu_rd_addr <= 5'b0;
+            alu_rd_val <= {XLEN{1'b0}};
+        end else if (srst) begin
+            alu_rd_wr <= 1'b0;
+            alu_rd_addr <= 5'b0;
+            alu_rd_val <= {XLEN{1'b0}};
+        end else begin
+           alu_rd_wr <= alu_valid;
 
-    assign alu_rd_addr = rd;
+           alu_rd_addr <= rd;
 
-    assign alu_rd_val = (opcode==`I_ARITH && funct3==`ADDI)                    ? _addi :
-                        (opcode==`I_ARITH && funct3==`SLTI)                    ? _slti :
-                        (opcode==`I_ARITH && funct3==`SLTIU)                   ? _sltiu :
-                        (opcode==`I_ARITH && funct3==`XORI)                    ? _xori :
-                        (opcode==`I_ARITH && funct3==`ORI)                     ? _ori :
-                        (opcode==`I_ARITH && funct3==`ANDI)                    ? _andi :
-                        (opcode==`I_ARITH && funct3==`SLLI)                    ? _slli :
-                        (opcode==`I_ARITH && funct3==`SRLI && funct7[5]==1'b0) ? _srli :
-                        (opcode==`I_ARITH && funct3==`SRAI && funct7[5]==1'b1) ? _srai :
-                        (opcode==`R_ARITH && funct3==`ADD && funct7[5]==1'b0)  ? _add :
-                        (opcode==`R_ARITH && funct3==`SUB && funct7[5]==1'b1)  ? _sub :
-                        (opcode==`R_ARITH && funct3==`SLT)                     ? _slt :
-                        (opcode==`R_ARITH && funct3==`SLTU)                    ? _sltu :
-                        (opcode==`R_ARITH && funct3==`XOR)                     ? _xor :
-                        (opcode==`R_ARITH && funct3==`OR)                      ? _or :
-                        (opcode==`R_ARITH && funct3==`AND)                     ? _and :
-                        (opcode==`R_ARITH && funct3==`SLL)                     ? _sll :
-                        (opcode==`R_ARITH && funct3==`SRL && funct7[5]==1'b0)  ? _srl :
-                        (opcode==`R_ARITH && funct3==`SRA && funct7[5]==1'b1)  ? _sra :
-                                                                                 {XLEN{1'b0}};
+           alu_rd_val <= (opcode==`I_ARITH && funct3==`ADDI)                    ? _addi :
+                         (opcode==`I_ARITH && funct3==`SLTI)                    ? _slti :
+                         (opcode==`I_ARITH && funct3==`SLTIU)                   ? _sltiu :
+                         (opcode==`I_ARITH && funct3==`XORI)                    ? _xori :
+                         (opcode==`I_ARITH && funct3==`ORI)                     ? _ori :
+                         (opcode==`I_ARITH && funct3==`ANDI)                    ? _andi :
+                         (opcode==`I_ARITH && funct3==`SLLI)                    ? _slli :
+                         (opcode==`I_ARITH && funct3==`SRLI && funct7[5]==1'b0) ? _srli :
+                         (opcode==`I_ARITH && funct3==`SRAI && funct7[5]==1'b1) ? _srai :
+                         (opcode==`R_ARITH && funct3==`ADD && funct7[5]==1'b0)  ? _add :
+                         (opcode==`R_ARITH && funct3==`SUB && funct7[5]==1'b1)  ? _sub :
+                         (opcode==`R_ARITH && funct3==`SLT)                     ? _slt :
+                         (opcode==`R_ARITH && funct3==`SLTU)                    ? _sltu :
+                         (opcode==`R_ARITH && funct3==`XOR)                     ? _xor :
+                         (opcode==`R_ARITH && funct3==`OR)                      ? _or :
+                         (opcode==`R_ARITH && funct3==`AND)                     ? _and :
+                         (opcode==`R_ARITH && funct3==`SLL)                     ? _sll :
+                         (opcode==`R_ARITH && funct3==`SRL && funct7[5]==1'b0)  ? _srl :
+                         (opcode==`R_ARITH && funct3==`SRA && funct7[5]==1'b1)  ? _sra :
+                                                                                  {XLEN{1'b0}};
+        end
+    end
 
     assign alu_rd_strb = {(XLEN/8){1'b1}};
 

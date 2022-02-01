@@ -401,14 +401,26 @@ module friscv_memfy
 
     end
 
-    // Write into RD once the read data channel handshakes
-    assign memfy_rd_wr = (~memfy_ready && (opcode_r==`LOAD) &&
-                            rvalid && rready 
-                         ) ? 1'b1 : 1'b0;
+    always @ (posedge aclk or negedge aresetn) begin
+        if (!aresetn) begin
+            memfy_rd_wr <= 1'b0;
+            memfy_rd_strb <= {XLEN/8{1'b0}};
+            memfy_rd_val <= {XLEN{1'b0}};
+        end else if (srst) begin
+            memfy_rd_wr <= 1'b0;
+            memfy_rd_strb <= {XLEN/8{1'b0}};
+            memfy_rd_val <= {XLEN{1'b0}};
+        end else begin
+            // Write into RD once the read data channel handshakes
+            memfy_rd_wr <= (~memfy_ready && (opcode_r==`LOAD) &&
+                             rvalid && rready 
+                           ) ? 1'b1 : 1'b0;
+            memfy_rd_strb <= get_rd_strb(funct3_r, offset, ~two_phases);
+            memfy_rd_val <= get_rd_val(funct3_r, rdata, offset);
+        end
+    end
 
     assign memfy_rd_addr = rd_r;
-    assign memfy_rd_val = get_rd_val(funct3_r, rdata, offset);
-    assign memfy_rd_strb = get_rd_strb(funct3_r, offset, ~two_phases);
 
     assign memfy_rs1_addr = rs1;
     assign memfy_rs2_addr = rs2;

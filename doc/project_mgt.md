@@ -2,7 +2,7 @@
 
 - [ ] Review WARL CSR implementation
 - [ ] enhance processing unit
-    - control asserts registers under use in an instruction
+    - control checks registers under use in an instruction
     - processing clear the tickets once instruction is finished
     - processing knows if a ALU can be used based register targeted
     - control knows if it can branch
@@ -20,7 +20,7 @@ Misc.
       https://danielmangum.com/posts/risc-v-bytes-privilege-levels/
 - [ ] Support MMU extension
 - [ ] JTAG interface / GDB Usage
-    https://github.com/BLangOS/VexRiscV_with_HW-GDB_Server
+      https://github.com/BLangOS/VexRiscV_with_HW-GDB_Server
 - [ ] Removed the 2 LSBs in instruction cache while always 2'b11 (6.25% saving)
 - [ ] AXI4 Infrastructure
     - [ ] Check des IDs de control sent. Should be incremented in memory
@@ -49,7 +49,6 @@ https://www.youtube.com/channel/UCPSsA8oxlSBjidJsSPdpjsQ/videos
     - Write completion: how to support BRESP error
     - Read completion: how to support RRESP error
     - Detect IO requests to forward info for FENCE execution
-- [ ] Support mult/div
 - [ ] Support floating point
 - [ ] Support FENCE if AXI4-lite & OR support
 
@@ -132,6 +131,7 @@ Verification/Validation:
 
 # DONE
 
+- [X] Add M extension
 - [X] Simplifier les r/w de CSR, save one cycle to execute an op
 - [X] Option to read ISA registers on falling edge, not combinatorial read
 - [X] Design a generic pipeline stage for processing front-end

@@ -52,6 +52,7 @@ module friscv_registers
 
     // ISA registers 0-31
     logic [XLEN-1:0] regs [REGNUM-1:0];
+    logic [XLEN-1:0] regs_r [REGNUM-1:0];
 
 
     generate
@@ -61,50 +62,60 @@ module friscv_registers
 
     for (i=0; i<REGNUM; i++) begin: RegisterGeneration
 
-    // registers' write circuit
-    always @ (posedge aclk or negedge aresetn) begin
-        // asynchronous reset
-        if (aresetn == 1'b0) begin
-            regs[i] <= {XLEN{1'b0}};
-        // synchronous reset
-        end else if (srst) begin
-            regs[i] <= {XLEN{1'b0}};
-        // write access to registers
-        end else begin
+        logic [XLEN-1:0] _reg;
 
-            ///////////////////////////////////////////////
-            // register 0 is always 0, can't be overwritten
-            ///////////////////////////////////////////////
-
-            if (i==0) begin
-                regs[i] <= {XLEN{1'b0}};
-
-            ///////////////////////////////////////////////
-            // registers 1-31
-            ///////////////////////////////////////////////
-
-            // Access from central controller
-            end else if (ctrl_rd_wr && ctrl_rd_addr==i) begin
-                regs[i] <= ctrl_rd_val;
-
-            // Access from CSR manager
-            end else if (csr_rd_wr && csr_rd_addr==i) begin
-                regs[i] <= csr_rd_val;
-
-            // Access from data memory controller
+        // Registers content saving
+        always @ (posedge aclk or negedge aresetn) begin
+            if (aresetn == 1'b0) begin
+                regs_r[i] <= {XLEN{1'b0}};
+                _reg <= {XLEN{1'b0}};
+            end else if (srst) begin
+                regs_r[i] <= {XLEN{1'b0}};
+                _reg <= {XLEN{1'b0}};
             end else begin
-                for (u=0;u<NB_ALU_UNIT;u=u+1) begin
-                    if (proc_rd_wr[u] && proc_rd_addr[u*5+:5]==i) begin
-                        for (s=0;s<(XLEN/8);s=s+1) begin
-                            if (proc_rd_strb[u*XLEN/8+s]) begin
-                                regs[i][s*8+:8] <= proc_rd_val[u*XLEN+s*8+:8];
+                // register 0 is always 0, can't be overwritten
+                if (i==0) regs_r[i] <= {XLEN{1'b0}};
+                else regs_r[i] <= regs[i];
+                if (i==0) _reg <= {XLEN{1'b0}};
+                else _reg <= regs[i];
+            end
+        end
+
+        // registers' write circuit
+        always @ (_reg,
+                  ctrl_rd_wr, ctrl_rd_addr, ctrl_rd_val,
+                  csr_rd_wr, csr_rd_addr, csr_rd_val,
+                  proc_rd_wr, proc_rd_addr, proc_rd_val
+        ) begin
+        // always @ (*) begin
+
+            // regs[i] = regs_r[i];
+            regs[i] = _reg;
+
+            if (i!=0) begin
+
+                // Access from central controller
+                if (ctrl_rd_wr && ctrl_rd_addr==i) begin
+                    regs[i] = ctrl_rd_val;
+
+                // Access from CSR manager
+                end else if (csr_rd_wr && csr_rd_addr==i) begin
+                    regs[i] = csr_rd_val;
+
+                // Access from data memory controller
+                end else if (|proc_rd_wr) begin
+                    for (u=0;u<NB_ALU_UNIT;u=u+1) begin
+                        if (proc_rd_wr[u] && proc_rd_addr[u*5+:5]==i) begin
+                            for (s=0;s<(XLEN/8);s=s+1) begin
+                                if (proc_rd_strb[u*XLEN/8+s]) begin
+                                    regs[i][s*8+:8] = proc_rd_val[u*XLEN+s*8+:8];
+                                end
                             end
                         end
                     end
                 end
             end
         end
-    end
 
     end
     endgenerate

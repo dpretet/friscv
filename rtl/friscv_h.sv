@@ -166,6 +166,8 @@
 // Loggers setup
 //////////////////////////////////////////////////////////////////
 
+`ifdef FRISCV_SIM
+
 `include "svlogger.sv"
 
 `ifndef LOGGER
@@ -329,5 +331,7 @@ function automatic string get_inst_desc(
     get_inst_desc = text;
 
 endfunction
+
+`endif
 
 `endif // FRISCV_H

@@ -22,21 +22,27 @@ module friscv_rv32i_core
 
         // Instruction length (always 32, whatever the architecture,
         // compressed ISA is not supported)
-        parameter ILEN               = 32,
+        parameter ILEN              = 32,
         // RISCV Architecture
-        parameter XLEN               = 32,
+        parameter XLEN              = 32,
         // Boot address used by the control unit
-        parameter BOOT_ADDR          = 0,
+        parameter BOOT_ADDR         = 0,
         // Number of outstanding requests used by the control unit
-        parameter INST_OSTDREQ_NUM   = 8,
+        parameter INST_OSTDREQ_NUM  = 8,
         // Core Hart ID
-        parameter MHART_ID           = 0,
+        parameter MHART_ID          = 0,
         // RV32E architecture, limits integer registers to 16, else 32 available
-        parameter RV32E              = 0,
+        parameter RV32E             = 0,
         // Floating-point extension support
         parameter F_EXTENSION       = 0,
         // Multiply/Divide extension support
         parameter M_EXTENSION       = 0,
+        // Insert a pipeline on instruction bus coming from the controller
+        parameter PROCESSING_BUS_PIPELINE = 0,
+        // FIFO depth of processing unit, buffering the instruction to execute
+        parameter PROCESSING_QUEUE_DEPTH = 0,
+        // Express mode track the register usage and avoid wait state in control unit
+        parameter EXPRESS_MODE = 0,
 
         ////////////////////////////////////////////////////////////////////////
         // AXI4 / AXI4-lite interface setup
@@ -161,8 +167,7 @@ module friscv_rv32i_core
     logic                            proc_valid;
     logic [`INST_BUS_W         -1:0] proc_instbus;
     logic                            proc_ready;
-    logic                            memfy_ready;
-    logic                            proc_empty;
+    logic [32                  -1:0] proc_rsvd_regs;
     logic [4                   -1:0] proc_fenceinfo;
 
     logic                            csr_en;
@@ -303,13 +308,15 @@ module friscv_rv32i_core
 
     friscv_control
     #(
-        .ILEN        (ILEN),
-        .XLEN        (XLEN),
-        .AXI_ADDR_W  (AXI_ADDR_W),
-        .AXI_ID_W    (AXI_ID_W),
-        .AXI_DATA_W  (XLEN),
-        .OSTDREQ_NUM (INST_OSTDREQ_NUM),
-        .BOOT_ADDR   (BOOT_ADDR)
+        .ILEN         (ILEN),
+        .XLEN         (XLEN),
+        .RV32E        (RV32E),
+        .EXPRESS_MODE (EXPRESS_MODE),
+        .AXI_ADDR_W   (AXI_ADDR_W),
+        .AXI_ID_W     (AXI_ID_W),
+        .AXI_DATA_W   (XLEN),
+        .OSTDREQ_NUM  (INST_OSTDREQ_NUM),
+        .BOOT_ADDR    (BOOT_ADDR)
     )
     control
     (
@@ -331,7 +338,7 @@ module friscv_rv32i_core
         .rdata          (inst_rdata_s),
         .proc_valid     (proc_valid),
         .proc_ready     (proc_ready),
-        .proc_empty     (proc_empty),
+        .proc_rsvd_regs (proc_rsvd_regs),
         .proc_fenceinfo (proc_fenceinfo),
         .proc_instbus   (proc_instbus),
         .csr_en         (csr_en),
@@ -475,20 +482,28 @@ module friscv_rv32i_core
 
 
     //////////////////////////////////////////////////////////////////////////
-    // All ISA enxtensions supported: standard arithmetic / memory, ...
+    // All ISA enxtensions supported: 
+    //  - standard integer arithmetic 
+    //  - memory LOAD/STORE
+    //  - multiply / divide
+    //  - atomic
+    //  - ...
     //////////////////////////////////////////////////////////////////////////
 
     friscv_processing
     #(
-        .XLEN         (XLEN),
-        .F_EXTENSION  (F_EXTENSION),
-        .M_EXTENSION  (M_EXTENSION),
-        .RV32E        (RV32E),
-        .AXI_ADDR_W   (AXI_ADDR_W),
-        .AXI_ID_W     (AXI_ID_W),
-        .AXI_DATA_W   (XLEN),
-        .AXI_ID_MASK  (AXI_DMEM_MASK),
-        .NB_UNIT      (NB_ALU_UNIT)
+        .XLEN              (XLEN),
+        .F_EXTENSION       (F_EXTENSION),
+        .M_EXTENSION       (M_EXTENSION),
+        .RV32E             (RV32E),
+        .EXPRESS_MODE      (EXPRESS_MODE),
+        .AXI_ADDR_W        (AXI_ADDR_W),
+        .AXI_ID_W          (AXI_ID_W),
+        .AXI_DATA_W        (XLEN),
+        .AXI_ID_MASK       (AXI_DMEM_MASK),
+        .NB_UNIT           (NB_ALU_UNIT),
+        .INST_BUS_PIPELINE (PROCESSING_BUS_PIPELINE),
+        .INST_QUEUE_DEPTH  (PROCESSING_QUEUE_DEPTH)
     )
     processing
     (
@@ -497,7 +512,7 @@ module friscv_rv32i_core
         .srst           (srst),
         .proc_valid     (proc_valid),
         .proc_ready     (proc_ready),
-        .proc_empty     (proc_empty),
+        .proc_rsvd_regs (proc_rsvd_regs),
         .proc_fenceinfo (proc_fenceinfo),
         .proc_instbus   (proc_instbus),
         .proc_rs1_addr  (proc_rs1_addr),
@@ -537,89 +552,89 @@ module friscv_rv32i_core
 
     if (DCACHE_EN) begin: DCACHE_ON
 
-    friscv_dcache
-    #(
-    .ILEN              (ILEN),
-    .XLEN              (XLEN),
-    .OSTDREQ_NUM       (4),
-    .AXI_ADDR_W        (AXI_ADDR_W),
-    .AXI_ID_W          (AXI_ID_W),
-    .AXI_DATA_W        (AXI_DMEM_W),
-    .AXI_ID_MASK       (AXI_DMEM_MASK),
-    .CACHE_PREFETCH_EN (DCACHE_PREFETCH_EN),
-    .CACHE_BLOCK_W     (DCACHE_BLOCK_W),
-    .CACHE_DEPTH       (DCACHE_DEPTH)
-    )
-    dcache
-    (
-    .aclk            (aclk),
-    .aresetn         (aresetn),
-    .srst            (srst),
-    .flush_req       (1'b0),
-    .flush_ack       (),
-    .memfy_awvalid   (memfy_awvalid),
-    .memfy_awready   (memfy_awready),
-    .memfy_awaddr    (memfy_awaddr),
-    .memfy_awprot    (memfy_awprot),
-    .memfy_awid      (memfy_awid),
-    .memfy_wvalid    (memfy_wvalid),
-    .memfy_wready    (memfy_wready),
-    .memfy_wdata     (memfy_wdata),
-    .memfy_wstrb     (memfy_wstrb),
-    .memfy_bvalid    (memfy_bvalid),
-    .memfy_bready    (memfy_bready),
-    .memfy_bid       (memfy_bid),
-    .memfy_bresp     (memfy_bresp),
-    .memfy_arvalid   (memfy_arvalid),
-    .memfy_arready   (memfy_arready),
-    .memfy_araddr    (memfy_araddr),
-    .memfy_arprot    (memfy_arprot),
-    .memfy_arid      (memfy_arid),
-    .memfy_rvalid    (memfy_rvalid),
-    .memfy_rready    (memfy_rready),
-    .memfy_rid       (memfy_rid),
-    .memfy_rresp     (memfy_rresp),
-    .memfy_rdata     (memfy_rdata),
-    .dcache_awvalid  (dmem_awvalid),
-    .dcache_awready  (dmem_awready),
-    .dcache_awaddr   (dmem_awaddr),
-    .dcache_awlen    (),
-    .dcache_awsize   (),
-    .dcache_awburst  (),
-    .dcache_awlock   (),
-    .dcache_awcache  (),
-    .dcache_awprot   (dmem_awprot),
-    .dcache_awqos    (),
-    .dcache_awregion (),
-    .dcache_awid     (dmem_awid),
-    .dcache_wvalid   (dmem_wvalid),
-    .dcache_wready   (dmem_wready),
-    .dcache_wlast    (),
-    .dcache_wdata    (dmem_wdata),
-    .dcache_wstrb    (dmem_wstrb),
-    .dcache_bvalid   (dmem_bvalid),
-    .dcache_bready   (dmem_bready),
-    .dcache_bid      (dmem_bid),
-    .dcache_bresp    (dmem_bresp),
-    .dcache_arvalid  (dmem_arvalid),
-    .dcache_arready  (dmem_arready),
-    .dcache_araddr   (dmem_araddr),
-    .dcache_arlen    (),
-    .dcache_arsize   (),
-    .dcache_arburst  (),
-    .dcache_arlock   (),
-    .dcache_arcache  (),
-    .dcache_arprot   (dmem_arprot),
-    .dcache_arqos    (),
-    .dcache_arregion (),
-    .dcache_arid     (dmem_arid),
-    .dcache_rvalid   (dmem_rvalid),
-    .dcache_rready   (dmem_rready),
-    .dcache_rid      (dmem_rid),
-    .dcache_rresp    (dmem_rresp),
-    .dcache_rdata    (dmem_rdata),
-    .dcache_rlast    (1'b1)
-    );
+        friscv_dcache
+        #(
+            .ILEN              (ILEN),
+            .XLEN              (XLEN),
+            .OSTDREQ_NUM       (4),
+            .AXI_ADDR_W        (AXI_ADDR_W),
+            .AXI_ID_W          (AXI_ID_W),
+            .AXI_DATA_W        (AXI_DMEM_W),
+            .AXI_ID_MASK       (AXI_DMEM_MASK),
+            .CACHE_PREFETCH_EN (DCACHE_PREFETCH_EN),
+            .CACHE_BLOCK_W     (DCACHE_BLOCK_W),
+            .CACHE_DEPTH       (DCACHE_DEPTH)
+        )
+        dcache
+        (
+            .aclk            (aclk),
+            .aresetn         (aresetn),
+            .srst            (srst),
+            .flush_req       (1'b0),
+            .flush_ack       (),
+            .memfy_awvalid   (memfy_awvalid),
+            .memfy_awready   (memfy_awready),
+            .memfy_awaddr    (memfy_awaddr),
+            .memfy_awprot    (memfy_awprot),
+            .memfy_awid      (memfy_awid),
+            .memfy_wvalid    (memfy_wvalid),
+            .memfy_wready    (memfy_wready),
+            .memfy_wdata     (memfy_wdata),
+            .memfy_wstrb     (memfy_wstrb),
+            .memfy_bvalid    (memfy_bvalid),
+            .memfy_bready    (memfy_bready),
+            .memfy_bid       (memfy_bid),
+            .memfy_bresp     (memfy_bresp),
+            .memfy_arvalid   (memfy_arvalid),
+            .memfy_arready   (memfy_arready),
+            .memfy_araddr    (memfy_araddr),
+            .memfy_arprot    (memfy_arprot),
+            .memfy_arid      (memfy_arid),
+            .memfy_rvalid    (memfy_rvalid),
+            .memfy_rready    (memfy_rready),
+            .memfy_rid       (memfy_rid),
+            .memfy_rresp     (memfy_rresp),
+            .memfy_rdata     (memfy_rdata),
+            .dcache_awvalid  (dmem_awvalid),
+            .dcache_awready  (dmem_awready),
+            .dcache_awaddr   (dmem_awaddr),
+            .dcache_awlen    (),
+            .dcache_awsize   (),
+            .dcache_awburst  (),
+            .dcache_awlock   (),
+            .dcache_awcache  (),
+            .dcache_awprot   (dmem_awprot),
+            .dcache_awqos    (),
+            .dcache_awregion (),
+            .dcache_awid     (dmem_awid),
+            .dcache_wvalid   (dmem_wvalid),
+            .dcache_wready   (dmem_wready),
+            .dcache_wlast    (),
+            .dcache_wdata    (dmem_wdata),
+            .dcache_wstrb    (dmem_wstrb),
+            .dcache_bvalid   (dmem_bvalid),
+            .dcache_bready   (dmem_bready),
+            .dcache_bid      (dmem_bid),
+            .dcache_bresp    (dmem_bresp),
+            .dcache_arvalid  (dmem_arvalid),
+            .dcache_arready  (dmem_arready),
+            .dcache_araddr   (dmem_araddr),
+            .dcache_arlen    (),
+            .dcache_arsize   (),
+            .dcache_arburst  (),
+            .dcache_arlock   (),
+            .dcache_arcache  (),
+            .dcache_arprot   (dmem_arprot),
+            .dcache_arqos    (),
+            .dcache_arregion (),
+            .dcache_arid     (dmem_arid),
+            .dcache_rvalid   (dmem_rvalid),
+            .dcache_rready   (dmem_rready),
+            .dcache_rid      (dmem_rid),
+            .dcache_rresp    (dmem_rresp),
+            .dcache_rdata    (dmem_rdata),
+            .dcache_rlast    (1'b1)
+        );
 
     end else begin: DCACHE_OFF
 

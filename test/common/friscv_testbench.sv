@@ -48,60 +48,67 @@ module tb();
     parameter TB_CHOICE = ``TB_CHOICE;
 
     // Instruction length
-    parameter ILEN               = 32;
+    parameter ILEN = 32;
     // 32 bits architecture
-    parameter XLEN               = `XLEN;
+    parameter XLEN = `XLEN;
     // RV32E architecture, limits integer registers to 16, else 32
-    parameter RV32E              = 0;
+    parameter RV32E = 0;
     // Boot address used by the control unit
-    parameter BOOT_ADDR          = `BOOT_ADDR;
+    parameter BOOT_ADDR = `BOOT_ADDR;
     // Number of outstanding requests used by the control unit
-    parameter INST_OSTDREQ_NUM   = 8;
+    parameter INST_OSTDREQ_NUM = 8;
     // MHART ID CSR register
-    parameter MHART_ID           = 0;
+    parameter MHART_ID = 0;
+
     // Floating-point extension support
-    parameter F_EXTENSION       = 0;
+    parameter F_EXTENSION = 0;
     // Multiply/Divide extension support
-    parameter M_EXTENSION       = 1;
+    parameter M_EXTENSION = 1;
+    // Insert a pipeline on instruction bus coming from the controller
+    parameter PROCESSING_BUS_PIPELINE = 0;
+    // FIFO depth of processing unit, buffering the instruction to execute
+    parameter PROCESSING_QUEUE_DEPTH = 0;
+    // Express mode track the register usage and avoid wait state in control unit
+    parameter EXPRESS_MODE = 0;
 
     // Address buses width
-    parameter AXI_ADDR_W         = XLEN;
+    parameter AXI_ADDR_W = XLEN;
     // AXI ID width, setup by default to 8 and unused
-    parameter AXI_ID_W           = 8;
+    parameter AXI_ID_W = 8;
     // AXI4 data width
-    parameter AXI_DATA_W         = `CACHE_BLOCK_W;
+    parameter AXI_DATA_W = `CACHE_BLOCK_W;
     // AXI4 instruction bus width
-    parameter AXI_IMEM_W         = `CACHE_BLOCK_W;
+    parameter AXI_IMEM_W = `CACHE_BLOCK_W;
     // AXI4 data bus width
-    parameter AXI_DMEM_W        = (TB_CHOICE=="CORE") ? XLEN : `CACHE_BLOCK_W;
+    parameter AXI_DMEM_W = (TB_CHOICE=="CORE") ? XLEN : `CACHE_BLOCK_W;
     // ID used by instruction and data buses
-    parameter AXI_IMEM_MASK     = 'h10;
-    parameter AXI_DMEM_MASK     = 'h20;
+    parameter AXI_IMEM_MASK = 'h10;
+    parameter AXI_DMEM_MASK = 'h20;
 
     // Enable Instruction cache
-    parameter ICACHE_EN          = 1;
+    parameter ICACHE_EN = 1;
     // Enable cache block prefetch
     parameter ICACHE_PREFETCH_EN = 0;
     // Block width defining only the data payload, in bits, must an
     // integer multiple of XLEN
-    parameter ICACHE_BLOCK_W     = `CACHE_BLOCK_W;
+    parameter ICACHE_BLOCK_W = `CACHE_BLOCK_W;
     // Number of blocks in the cache
-    parameter ICACHE_DEPTH       = 512;
+    parameter ICACHE_DEPTH = 512;
 
     // Enable data cache
-    parameter DCACHE_EN          = (TB_CHOICE=="PLATFORM") ? 1 : 0;
+    parameter DCACHE_EN = (TB_CHOICE=="PLATFORM") ? 1 : 0;
     // Enable cache block prefetch
     parameter DCACHE_PREFETCH_EN = 0;
     // Block width defining only the data payload, in bits, must an
     // integer multiple of XLEN
-    parameter DCACHE_BLOCK_W     = `CACHE_BLOCK_W;
+    parameter DCACHE_BLOCK_W = `CACHE_BLOCK_W;
     // Number of blocks in the cache
-    parameter DCACHE_DEPTH       = 512;
+    parameter DCACHE_DEPTH = 512;
 
     // timeout used in the testbench to break the simulation
-    parameter TIMEOUT            = `TIMEOUT;
+    parameter TIMEOUT = `TIMEOUT;
     // Variable latency setup the AXI4-lite RAM model
-    parameter VARIABLE_LATENCY   = 0;
+    parameter VARIABLE_LATENCY = 0;
 
 
     integer                    timer;
@@ -186,6 +193,7 @@ module tb();
     logic [AXI_ID_W      -1:0] mem_rid;
     logic [2             -1:0] mem_rresp;
     logic [AXI_DATA_W    -1:0] mem_rdata;
+
     logic [XLEN          -1:0] gpio_in;
     logic [XLEN          -1:0] gpio_out;
     logic                      uart_rx;
@@ -212,6 +220,9 @@ module tb();
         .RV32E (RV32E),
         .M_EXTENSION (M_EXTENSION),
         .F_EXTENSION (F_EXTENSION),
+        .PROCESSING_QUEUE_DEPTH (PROCESSING_QUEUE_DEPTH),
+        .PROCESSING_BUS_PIPELINE (PROCESSING_BUS_PIPELINE),
+        .EXPRESS_MODE (EXPRESS_MODE),
         .AXI_ADDR_W (AXI_ADDR_W),
         .AXI_ID_W (AXI_ID_W),
         .AXI_IMEM_W (AXI_IMEM_W),
@@ -355,6 +366,9 @@ module tb();
         .RV32E (RV32E),
         .M_EXTENSION (M_EXTENSION),
         .F_EXTENSION (F_EXTENSION),
+        .PROCESSING_QUEUE_DEPTH (PROCESSING_QUEUE_DEPTH),
+        .PROCESSING_BUS_PIPELINE (PROCESSING_BUS_PIPELINE),
+        .EXPRESS_MODE (EXPRESS_MODE),
         .AXI_ADDR_W (AXI_ADDR_W),
         .AXI_ID_W (AXI_ID_W),
         .AXI_DATA_W (AXI_DATA_W),

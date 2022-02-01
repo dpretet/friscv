@@ -26,8 +26,14 @@ module friscv_processing
         parameter AXI_DATA_W        = XLEN,
         // ID used to identify the dta abus in the infrastructure
         parameter AXI_ID_MASK       = 'h20,
+        // Express mode track the register usage and avoid wait state in control unit
+        parameter EXPRESS_MODE      = 0,
         // Number of extension supported in processing unit
-        parameter NB_UNIT           = 2
+        parameter NB_UNIT           = 2,
+        // Insert a pipeline on instruction bus coming from the controller
+        parameter INST_BUS_PIPELINE = 0,
+        // Internal FIFO depth, buffering the instruction to execute
+        parameter INST_QUEUE_DEPTH  = 0
     )(
         // clock & reset
         input  logic                        aclk,
@@ -36,9 +42,9 @@ module friscv_processing
         // ALU instruction bus
         input  logic                        proc_valid,
         output logic                        proc_ready,
-        output logic                        proc_empty,
-        output logic [4               -1:0] proc_fenceinfo,
         input  logic [`INST_BUS_W     -1:0] proc_instbus,
+        output logic [32              -1:0] proc_rsvd_regs,
+        output logic [4               -1:0] proc_fenceinfo,
         // ISA registers interface
         output logic [NB_UNIT*5       -1:0] proc_rs1_addr,
         input  logic [NB_UNIT*XLEN    -1:0] proc_rs1_val,
@@ -79,40 +85,175 @@ module friscv_processing
     // Parameters and variables declaration
     //
     ///////////////////////////////////////////////////////////////////////////
- 
-    logic [`OPCODE_W   -1:0] opcode;
-    logic [`FUNCT3_W   -1:0] funct3;
-    logic [`FUNCT7_W   -1:0] funct7;
-    logic [`RS1_W      -1:0] rs1;
-    logic [`RS2_W      -1:0] rs2;
-    logic [`RD_W       -1:0] rd;
-    logic                    memfy_valid;
-    logic                    alu_valid;
-    logic                    alu_ready;
-    logic                    alu_empty;
-    logic                    memfy_ready;
-    logic                    memfy_empty;
-    logic                    i_inst;
-    logic                    ls_inst;
-    logic                    m_inst;
-    logic                    m_valid;
-    logic                    m_ready;
 
-    // Assignment of M extension on ISA reg interface
+    logic [`OPCODE_W       -1:0] opcode;
+    logic [`FUNCT7_W       -1:0] funct7;
+    logic [`RS1_W          -1:0] rs1;
+    logic [`RS2_W          -1:0] rs2;
+    logic [`RD_W           -1:0] rd;
+    logic [`RD_W           -1:0] rd_pre;
+    logic                        memfy_valid;
+    logic                        alu_valid;
+    logic                        m_valid;
+    logic                        m_ready;
+    logic                        alu_ready;
+    logic                        memfy_ready;
+    logic                        i_inst;
+    logic                        ls_inst;
+    logic                        m_inst;
+    // Bus on pipline output
+    logic                        proc_valid_p;
+    logic                        proc_ready_p;
+    logic [`INST_BUS_W     -1:0] proc_instbus_p;
+    // Bus on FIFO output (optional)
+    logic                        proc_valid_q;
+    logic                        proc_ready_q;
+    logic [`INST_BUS_W     -1:0] proc_instbus_q;
+    logic [32              -1:0] proc_rsvd_regs_cnt[$clog2(INST_QUEUE_DEPTH)-1:0];
+
+    // Assignment of M extension on integer registers' interface
     localparam M_IX = 2;
 
+    // Number of integer registers really used based on RV32E arch
+    localparam NB_INT_REG = (RV32E) ? 16 : 32;
+
+    // Used to parse all the integer registers
+    integer regi;
+    // Used to parse all the integer registers' interfaces
+    integer itfi;
+
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Indicate to the control unit the integer registers under use
+    ///////////////////////////////////////////////////////////////////////////
+
+    generate
+
+    if (EXPRESS_MODE) begin
+
+        assign rd_pre = proc_instbus[`RD+:`RD_W];
+
+        always @ (posedge aclk or negedge aresetn) begin
+            if (!aresetn) begin
+                for (regi=0;regi<NB_INT_REG;regi=regi+1) begin
+                    proc_rsvd_regs_cnt[regi] <= 0;
+                end
+            end else if (srst) begin
+                for (regi=0;regi<NB_INT_REG;regi=regi+1) begin
+                    proc_rsvd_regs_cnt[regi] <= 0;
+                end
+            end else begin
+                for (regi=0;regi<NB_INT_REG;regi=regi+1) begin
+                    for (itfi=0;itfi<NB_UNIT;itfi=itfi+1) begin
+                        // If new instruction will target this instruction, increment
+                        if ((proc_valid && rd_pre==regi[4:0]) &&
+                            ((proc_rd_wr[itfi] && proc_rd_addr[itfi]!=regi[4:0]) ||
+                             &proc_rd_wr==1'b0)
+                        ) begin
+                            proc_rsvd_regs_cnt[regi] <= proc_rsvd_regs_cnt[regi] + 1;
+                        // Else if releasing the register, decrement
+                        end else if ((proc_valid && rd_pre!=regi[4:0]) &&
+                            ((proc_rd_wr[itfi] && proc_rd_addr[itfi]==regi[4:0]) ||
+                             &proc_rd_wr==1'b0)
+                        ) begin
+                            proc_rsvd_regs_cnt[regi] <= proc_rsvd_regs_cnt[regi] - 1;
+                        end
+                    end
+                end
+            end
+        end
+    end else begin
+        assign proc_rsvd_regs = 32'b0;
+    end
+    endgenerate
+
+    generate
+    if (RV32E) begin
+        assign proc_rsvd_regs[16+:16] = 16'b0;
+    end
+    endgenerate
+
+
     ///////////////////////////////////////////////////////////////////////////
     //
-    // Instruction bus extraction
+    // Instruction bus pipeline and extraction
     //
     ///////////////////////////////////////////////////////////////////////////
 
-    assign opcode = proc_instbus[`OPCODE +: `OPCODE_W];
-    assign funct3 = proc_instbus[`FUNCT3 +: `FUNCT3_W];
-    assign funct7 = proc_instbus[`FUNCT7 +: `FUNCT7_W];
-    assign rs1    = proc_instbus[`RS1    +: `RS1_W   ];
-    assign rs2    = proc_instbus[`RS2    +: `RS2_W   ];
-    assign rd     = proc_instbus[`RD     +: `RD_W    ];
+    generate
+    // Insert a pipline stage to ease timing closure and placement
+    if (INST_BUS_PIPELINE) begin
+
+        friscv_pipeline
+        #(
+            .DATA_BUS_W  (`INST_BUS_W),
+            .NB_PIPELINE (1)
+        )
+        inst_bus_pipeline
+        (
+            .aclk    (aclk),
+            .aresetn (aresetn),
+            .srst    (srst),
+            .i_valid (proc_valid),
+            .i_ready (proc_ready),
+            .i_data  (proc_instbus),
+            .o_valid (proc_valid_p),
+            .o_ready (proc_ready_p),
+            .o_data  (proc_instbus_p)
+        );
+
+    end else begin
+
+        assign proc_instbus_p = proc_instbus;
+        assign proc_valid_p = proc_valid;
+        assign proc_ready = proc_ready_p;
+
+    end
+    endgenerate
+
+    generate
+    if (INST_QUEUE_DEPTH>0) begin: USE_QUEUE
+
+        logic queue_full;
+        logic queue_empty;
+
+        friscv_scfifo
+        #(
+            .PASS_THRU  (0),
+            .ADDR_WIDTH ($clog2(INST_QUEUE_DEPTH)),
+            .DATA_WIDTH (`INST_BUS_W)
+        )
+        inst_bus_queue
+        (
+            .aclk     (aclk),
+            .aresetn  (aresetn),
+            .srst     (srst),
+            .flush    (1'b0),
+            .data_in  (proc_instbus_p),
+            .push     (proc_valid_p),
+            .full     (queue_full),
+            .data_out (proc_instbus_q),
+            .pull     (proc_ready_q),
+            .empty    (queue_empty)
+        );
+
+        assign proc_ready_p = !queue_full;
+        assign proc_valid_q = !queue_empty;
+
+    end else begin: NO_QUEUE
+
+        assign proc_instbus_q = proc_instbus_p;
+        assign proc_valid_q = proc_valid_p;
+        assign proc_ready_p = proc_ready_q;
+
+    end
+    endgenerate
+
+    assign opcode = proc_instbus_p[`OPCODE +: `OPCODE_W];
+    assign funct7 = proc_instbus_p[`FUNCT7 +: `FUNCT7_W];
+    assign rs1    = proc_instbus_p[`RS1    +: `RS1_W   ];
+    assign rs2    = proc_instbus_p[`RS2    +: `RS2_W   ];
+    assign rd     = proc_instbus_p[`RD     +: `RD_W    ];
 
 
     ///////////////////////////////////////////////////////////////////////////
@@ -121,7 +262,7 @@ module friscv_processing
     //
     ///////////////////////////////////////////////////////////////////////////
 
-    assign i_inst = ((opcode==`R_ARITH && (funct7==7'b0000000 || funct7==7'b0100000)) || 
+    assign i_inst = ((opcode==`R_ARITH && (funct7==7'b0000000 || funct7==7'b0100000)) ||
                       opcode==`I_ARITH
                     ) ? 1'b1 : 1'b0;
 
@@ -129,11 +270,11 @@ module friscv_processing
 
     assign m_inst = (opcode==`MULDIV && funct7==7'b0000001) ? 1'b1 : 1'b0;
 
-    assign alu_valid = proc_valid & memfy_ready & m_ready & i_inst;
-    assign memfy_valid = proc_valid & alu_ready & m_ready & ls_inst;
-    assign m_valid = proc_valid & alu_ready & memfy_ready & m_inst;
-    assign proc_ready = alu_ready & memfy_ready & m_ready;
-    assign proc_empty = 1'b0;
+    assign alu_valid = proc_valid_q & memfy_ready & m_ready & i_inst;
+    assign memfy_valid = proc_valid_q & alu_ready & m_ready & ls_inst;
+    assign m_valid = proc_valid_q & alu_ready & memfy_ready & m_inst;
+
+    assign proc_ready_q = alu_ready & memfy_ready & m_ready;
 
 
     ///////////////////////////////////////////////////////////////////////////
@@ -153,7 +294,7 @@ module friscv_processing
         .srst          (srst),
         .alu_valid     (alu_valid),
         .alu_ready     (alu_ready),
-        .alu_instbus   (proc_instbus),
+        .alu_instbus   (proc_instbus_q),
         .alu_rs1_addr  (proc_rs1_addr[0*5+:5]),
         .alu_rs1_val   (proc_rs1_val[0*XLEN+:XLEN]),
         .alu_rs2_addr  (proc_rs2_addr[0*5+:5]),
@@ -181,7 +322,7 @@ module friscv_processing
         .memfy_valid     (memfy_valid),
         .memfy_ready     (memfy_ready),
         .memfy_fenceinfo (proc_fenceinfo),
-        .memfy_instbus   (proc_instbus),
+        .memfy_instbus   (proc_instbus_q),
         .memfy_rs1_addr  (proc_rs1_addr[1*5+:5]),
         .memfy_rs1_val   (proc_rs1_val[1*XLEN+:XLEN]),
         .memfy_rs2_addr  (proc_rs2_addr[1*5+:5]),
@@ -215,11 +356,11 @@ module friscv_processing
         .rdata           (rdata)
     );
 
-    generate 
+    generate
 
-    if (M_EXTENSION) begin: MULTDIV_SUPPORT
+    if (M_EXTENSION) begin: M_EXTENSION_SUPPORT
 
-    friscv_m_ext 
+    friscv_m_ext
     #(
         .XLEN (XLEN)
     )
@@ -230,7 +371,7 @@ module friscv_processing
         .srst       (srst),
         .m_valid    (m_valid),
         .m_ready    (m_ready),
-        .m_instbus  (proc_instbus),
+        .m_instbus  (proc_instbus_q),
         .m_rs1_addr (proc_rs1_addr[M_IX*5+:5]),
         .m_rs1_val  (proc_rs1_val[M_IX*XLEN+:XLEN]),
         .m_rs2_addr (proc_rs2_addr[M_IX*5+:5]),
@@ -241,11 +382,11 @@ module friscv_processing
         .m_rd_strb  (proc_rd_strb[M_IX*XLEN/8+:XLEN/8])
     );
 
-    end else begin: NO_M_EXT
+    end else begin: NO_M_EXTENSION
 
         assign m_ready = 1'b1;
-    
-    end 
+
+    end
     endgenerate
 
 endmodule

@@ -3,7 +3,6 @@
 
 `timescale 1 ns / 1 ps
 `default_nettype none
-`include "svlogger.sv"
 `include "friscv_h.sv"
 
 ///////////////////////////////////////////////////////////////////////////
@@ -133,10 +132,13 @@ module friscv_icache_fetcher
     logic [AXI_ID_W     -1:0] cache_rid;
 
     // Logger setup
+    `ifdef FRISCV_SIM
+    `include "svlogger.sv"
     svlogger log;
     initial log = new("iCache-Fetcher",
                       `ICACHE_VERBOSITY,
                       `ICACHE_ROUTE);
+    `endif
 
     ///////////////////////////////////////////////////////////////////////////
     // Buffering stage
@@ -253,7 +255,9 @@ module friscv_icache_fetcher
                 // deassertion then go back to IDLE to reboot
                 flush_fifo <= 1'b0;
                 if (flush_req==1'b0) begin
+                    `ifdef FRISCV_SIM
                     log.debug("Finished flush procedure");
+                    `endif
                     pull_addr_if <= 1'b1;
                     flush_ack <= 1'b0;
                     seq <= IDLE;
@@ -271,7 +275,9 @@ module friscv_icache_fetcher
                         pull_addr_if <= 1'b1;
                         pull_addr_mf <= 1'b0;
                         if (~fifo_empty_if) begin
+                            `ifdef FRISCV_SIM
                             log.debug("Start to serve");
+                            `endif
                             seq <= SERVE;
                         end
                     end
@@ -288,7 +294,9 @@ module friscv_icache_fetcher
                         // FIFO and move to read the AXI4 interface to grab the
                         // missing instruction
                         end else if (cache_miss) begin
+                            `ifdef FRISCV_SIM
                             log.debug("Cache miss");
+                            `endif
                             pull_addr_if <= 1'b0;
                             memctrl_arvalid <= 1'b1;
                             memctrl_araddr <= araddr_ffd;
@@ -296,7 +304,9 @@ module friscv_icache_fetcher
                             seq <= LOAD;
                         // When empty, go back to IDLE to wait new requests
                         end else if (fifo_empty_if) begin
+                            `ifdef FRISCV_SIM
                             log.debug("Go back to IDLE");
+                            `endif
                             seq <= IDLE;
                         end
                     end
@@ -308,7 +318,9 @@ module friscv_icache_fetcher
                         // FIFO and move to read the AXI4 interface to grab the
                         // missing instruction
                         if (cache_miss) begin
+                            `ifdef FRISCV_SIM
                             log.debug("Cache miss");
+                            `endif
                             pull_addr_mf <= 1'b0;
                             memctrl_arvalid <= 1'b1;
                             memctrl_araddr <= araddr_ffd;
@@ -317,13 +329,17 @@ module friscv_icache_fetcher
                         // If other instruction fetchs have been issue,
                         // continue to serve the core controller
                         end else if (~fifo_empty_if && fifo_empty_mf) begin
+                            `ifdef FRISCV_SIM
                             log.debug("Go to to-fetch state");
+                            `endif
                             pull_addr_if <= 1'b1;
                             pull_addr_mf <= 1'b0;
                             seq <= SERVE;
                         // When empty, go back to IDLE to wait new requests
                         end else if (fifo_empty_mf) begin
+                            `ifdef FRISCV_SIM
                             log.debug("Go back to IDLE");
+                            `endif
                             pull_addr_mf <= 1'b0;
                             seq <= IDLE;
                         end
@@ -334,7 +350,9 @@ module friscv_icache_fetcher
                         // Handshaked with memory controller, now
                         // wait for the write stage to restart
                         if (memctrl_arvalid && memctrl_arready) begin
+                            `ifdef FRISCV_SIM
                             log.debug("Read memory");
+                            `endif
                             memctrl_arvalid <= 1'b0;
                         end
 
@@ -346,7 +364,9 @@ module friscv_icache_fetcher
                         // Go to read the cache lines once the memory controller
                         // wrote a new cache line, the read completion
                         end else if (cache_writing) begin
+                            `ifdef FRISCV_SIM
                             log.debug("Go to missed-fetch state");
+                            `endif
                             pull_addr_mf <= 1'b1;
                             seq <= MISSED;
                         end

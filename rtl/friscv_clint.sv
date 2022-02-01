@@ -4,7 +4,6 @@
 `timescale 1 ns / 1 ps
 `default_nettype none
 
-`include "svlogger.sv"
 `include "friscv_h.sv"
 
 
