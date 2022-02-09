@@ -65,7 +65,7 @@ module tb();
     // Multiply/Divide extension support
     parameter M_EXTENSION = 1;
     // Insert a pipeline on instruction bus coming from the controller
-    parameter PROCESSING_BUS_PIPELINE = 0;
+    parameter PROCESSING_BUS_PIPELINE = 1;
     // FIFO depth of processing unit, buffering the instruction to execute
     parameter PROCESSING_QUEUE_DEPTH = 0;
     // Express mode track the register usage and avoid wait state in control unit

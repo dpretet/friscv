@@ -28,3 +28,4 @@ tab_character = true
 unique0_keyword = true
 unique_keyword = true
 wire_reg = true
+prefix_label=""

@@ -131,6 +131,7 @@ Verification/Validation:
 
 # DONE
 
+- [X] Pass vivado synthesis (rework sim-only constructs)
 - [X] Add M extension
 - [X] Simplifier les r/w de CSR, save one cycle to execute an op
 - [X] Option to read ISA registers on falling edge, not combinatorial read

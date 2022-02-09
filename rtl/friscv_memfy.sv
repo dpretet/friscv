@@ -31,20 +31,21 @@ module friscv_memfy
         parameter AXI_ID_MASK       = 'h20
     )(
         // clock & reset
-        input  logic                        aclk,
-        input  logic                        aresetn,
-        input  logic                        srst,
+        input  wire                         aclk,
+        input  wire                         aresetn,
+        input  wire                         srst,
         // ALU instruction bus
-        input  logic                        memfy_valid,
+        input  wire                         memfy_valid,
         output logic                        memfy_ready,
         output logic [4               -1:0] memfy_fenceinfo,
-        input  logic [`INST_BUS_W     -1:0] memfy_instbus,
+        input  wire  [`INST_BUS_W     -1:0] memfy_instbus,
+        output logic [2               -1:0] memfy_exceptions,
         // register source 1 query interface
         output logic [5               -1:0] memfy_rs1_addr,
-        input  logic [XLEN            -1:0] memfy_rs1_val,
+        input  wire  [XLEN            -1:0] memfy_rs1_val,
         // register source 2 for query interface
         output logic [5               -1:0] memfy_rs2_addr,
-        input  logic [XLEN            -1:0] memfy_rs2_val,
+        input  wire  [XLEN            -1:0] memfy_rs2_val,
         // register estination for query interface
         output logic                        memfy_rd_wr,
         output logic [5               -1:0] memfy_rd_addr,
@@ -52,28 +53,28 @@ module friscv_memfy
         output logic [XLEN/8          -1:0] memfy_rd_strb,
         // data memory interface
         output logic                        awvalid,
-        input  logic                        awready,
+        input  wire                         awready,
         output logic [AXI_ADDR_W      -1:0] awaddr,
         output logic [3               -1:0] awprot,
         output logic [AXI_ID_W        -1:0] awid,
         output logic                        wvalid,
-        input  logic                        wready,
+        input  wire                         wready,
         output logic [AXI_DATA_W      -1:0] wdata,
         output logic [AXI_DATA_W/8    -1:0] wstrb,
-        input  logic                        bvalid,
+        input  wire                         bvalid,
         output logic                        bready,
-        input  logic [AXI_ID_W        -1:0] bid,
-        input  logic [2               -1:0] bresp,
+        input  wire  [AXI_ID_W        -1:0] bid,
+        input  wire  [2               -1:0] bresp,
         output logic                        arvalid,
-        input  logic                        arready,
+        input  wire                         arready,
         output logic [AXI_ADDR_W      -1:0] araddr,
         output logic [3               -1:0] arprot,
         output logic [AXI_ID_W        -1:0] arid,
-        input  logic                        rvalid,
+        input  wire                         rvalid,
         output logic                        rready,
-        input  logic [AXI_ID_W        -1:0] rid,
-        input  logic [2               -1:0] rresp,
-        input  logic [AXI_DATA_W      -1:0] rdata
+        input  wire  [AXI_ID_W        -1:0] rid,
+        input  wire  [2               -1:0] rresp,
+        input  wire  [AXI_DATA_W      -1:0] rdata
     );
 
 
@@ -93,8 +94,8 @@ module friscv_memfy
     ///////////////////////////////////////////////////////////////////////////
     function automatic logic [XLEN-1:0] get_aligned_mem_data(
 
-        input logic [XLEN  -1:0] data,
-        input logic [2     -1:0] offset
+        input logic  [XLEN  -1:0] data,
+        input logic  [2     -1:0] offset
     );
         if (offset==2'b00) get_aligned_mem_data = data;
         if (offset==2'b01) get_aligned_mem_data = {data[XLEN- 8-1:0], data[XLEN-1-:8]};
@@ -113,8 +114,8 @@ module friscv_memfy
     ///////////////////////////////////////////////////////////////////////////
     function automatic logic [XLEN-1:0] get_aligned_rd_data(
 
-        input logic [XLEN  -1:0] data,
-        input logic [2     -1:0] offset
+        input logic  [XLEN  -1:0] data,
+        input logic  [2     -1:0] offset
     );
         if (offset==2'b00) get_aligned_rd_data = data;
         if (offset==2'b01) get_aligned_rd_data = {data[XLEN-24-1:0], data[XLEN-1:8]};
@@ -134,9 +135,9 @@ module friscv_memfy
     ///////////////////////////////////////////////////////////////////////////
     function automatic logic [XLEN/8-1:0] aligned_strb(
 
-        input logic [XLEN/8-1:0] strb,
-        input logic [2     -1:0] offset,
-        input logic              phase
+        input logic  [XLEN/8-1:0] strb,
+        input logic  [2     -1:0] offset,
+        input logic               phase
     );
         // Return STRB for first request phase
         if (~phase) begin
@@ -165,9 +166,9 @@ module friscv_memfy
     ///////////////////////////////////////////////////////////////////////////
     function automatic logic [XLEN/8-1:0] get_mem_strb(
 
-        input logic [2:0] funct3,
-        input logic [1:0] offset,
-        input logic       phase
+        input logic  [2:0] funct3,
+        input logic  [1:0] offset,
+        input logic        phase
     );
         if (funct3==`SB) get_mem_strb = aligned_strb({{(XLEN/8-1){1'b0}},1'b1}, offset, phase);
         if (funct3==`SH) get_mem_strb = aligned_strb({{(XLEN/8-2){1'b0}},2'b11}, offset, phase);
@@ -186,9 +187,9 @@ module friscv_memfy
     ///////////////////////////////////////////////////////////////////////////
     function automatic logic [XLEN-1:0] get_rd_val(
 
-        input logic [3   -1:0] funct3,
-        input logic [XLEN-1:0] rdata,
-        input logic [2   -1:0] offset
+        input logic  [3   -1:0] funct3,
+        input logic  [XLEN-1:0] rdata,
+        input logic  [2   -1:0] offset
     );
         logic [XLEN-1:0] data_aligned;
 
@@ -212,9 +213,9 @@ module friscv_memfy
     ///////////////////////////////////////////////////////////////////////////
     function automatic logic [XLEN/8-1:0] get_rd_strb(
 
-        input logic [3   -1:0] funct3,
-        input logic [2   -1:0] offset,
-        input logic            phase
+        input logic  [3   -1:0] funct3,
+        input logic  [2   -1:0] offset,
+        input logic             phase
     );
         if (funct3==`LB || funct3==`LBU) begin
             get_rd_strb = {(XLEN/8){1'b1}};
@@ -279,6 +280,8 @@ module friscv_memfy
     logic                    cross_boundary;
     logic                    two_phases;
     logic [2           -1:0] offset;
+    logic                    load_misaligned;
+    logic                    store_misaligned;
 
 
     ///////////////////////////////////////////////////////////////////////////
@@ -353,6 +356,7 @@ module friscv_memfy
                     if (awready) awvalid <= 1'b0;
                     if (wready) wvalid <= 1'b0;
                     // Wait until the data has been received
+                    // TODO: Study of last condition is possible and useful (data acked before addr)
                     if (awready && wready || ~awvalid && wready || awready && ~wvalid) begin
                         memfy_ready <= 1'b1;
                     end
@@ -444,6 +448,7 @@ module friscv_memfy
     // bit 3: device input
     assign memfy_fenceinfo = 4'b0;
 
+
     //////////////////////////////////////////////////////////////////////////
     // Unsupported AXI4-lite signals
     //////////////////////////////////////////////////////////////////////////
@@ -454,6 +459,27 @@ module friscv_memfy
 
     assign arid = {AXI_ID_W{1'b0}} | AXI_ID_MASK;
     assign arprot = 3'b0;
+
+
+    //////////////////////////////////////////////////////////////////////////
+    // Exception flags, driven back to control unit
+    //////////////////////////////////////////////////////////////////////////
+
+    // LOAD is not XLEN boundary aligned, must be aligned on data type
+    assign load_misaligned = (opcode==`LOAD && (funct3==`LH || funct3==`LHU) &&
+                                (addr[1:0]==2'h3 || addr[1:0]==2'h1))           ? 1'b1 :
+                             (opcode==`LOAD && funct3==`LW  && addr[1:0]!=2'b0) ? 1'b1 :
+                                                                                1'b0 ;
+
+    // STORE is not XLEN boundary aligned
+    assign store_misaligned = (opcode==`STORE && funct3==`SH &&
+                                (addr[1:0]==2'h3 || addr[1:0]==2'h1))            ? 1'b1 :
+                              (opcode==`STORE && funct3==`SW && addr[1:0]!=2'b0) ? 1'b1 :
+                                                                                   1'b0 ;
+
+    assign memfy_exceptions[`LD_MA] = load_misaligned & memfy_valid & memfy_ready;
+
+    assign memfy_exceptions[`ST_MA] = store_misaligned & memfy_valid & memfy_ready;
 
 endmodule
 

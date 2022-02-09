@@ -30,15 +30,15 @@ module friscv_icache_blocks
         // Number of blocks in the cache
         parameter CACHE_DEPTH = 512
     )(
-        input  logic                     aclk,
-        input  logic                     aresetn,
-        input  logic                     srst,
-        input  logic                     flush,
-        input  logic                     wen,
-        input  logic [ADDR_W       -1:0] waddr,
-        input  logic [CACHE_BLOCK_W-1:0] wdata,
-        input  logic                     ren,
-        input  logic [ADDR_W       -1:0] raddr,
+        input  wire                      aclk,
+        input  wire                      aresetn,
+        input  wire                      srst,
+        input  wire                      flush,
+        input  wire                      wen,
+        input  wire  [ADDR_W       -1:0] waddr,
+        input  wire  [CACHE_BLOCK_W-1:0] wdata,
+        input  wire                      ren,
+        input  wire  [ADDR_W       -1:0] raddr,
         output logic [ILEN         -1:0] rdata,
         output logic                     hit,
         output logic                     miss

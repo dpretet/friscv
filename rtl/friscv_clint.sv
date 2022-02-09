@@ -31,19 +31,19 @@ module friscv_clint
         parameter XLEN = 32
     )(
         // clock & reset
-        input  logic                  aclk,
-        input  logic                  aresetn,
-        input  logic                  srst,
+        input  wire                   aclk,
+        input  wire                   aresetn,
+        input  wire                   srst,
         // APB slave interface
-        input  logic                  slv_en,
-        input  logic                  slv_wr,
-        input  logic [ADDRW     -1:0] slv_addr,
-        input  logic [XLEN      -1:0] slv_wdata,
-        input  logic [XLEN/8    -1:0] slv_strb,
+        input  wire                   slv_en,
+        input  wire                   slv_wr,
+        input  wire  [ADDRW     -1:0] slv_addr,
+        input  wire  [XLEN      -1:0] slv_wdata,
+        input  wire  [XLEN/8    -1:0] slv_strb,
         output logic [XLEN      -1:0] slv_rdata,
         output logic                  slv_ready,
         // real-time clock, shared across the harts
-        input  logic                  rtc,
+        input  wire                   rtc,
         // software interrupt 
         output logic                  sw_irq,
         // timer interrupt 

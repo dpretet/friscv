@@ -9,12 +9,12 @@ module friscv_stats
     #(
     parameter XLEN = 32
     )(
-    input  logic        aclk,
-    input  logic        aresetn,
-    input  logic        srst,
-    input  logic        enable,
-    input  logic        inst_en,
-    input  logic        inst_ready,
+    input  wire         aclk,
+    input  wire         aresetn,
+    input  wire         srst,
+    input  wire         enable,
+    input  wire         inst_en,
+    input  wire         inst_ready,
     output logic        debug
     );
 

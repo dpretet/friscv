@@ -19,15 +19,15 @@ module friscv_apb_interconnect
         parameter SLV2_SIZE = 4
     )(
         // clock & reset 
-        input  logic                        aclk, 
-        input  logic                        aresetn, 
-        input  logic                        srst,
+        input  wire                         aclk, 
+        input  wire                         aresetn, 
+        input  wire                         srst,
         // APB Master
-        input  logic                        slv_en,
-        input  logic                        slv_wr,
-        input  logic [ADDRW           -1:0] slv_addr,
-        input  logic [XLEN            -1:0] slv_wdata,
-        input  logic [XLEN/8          -1:0] slv_strb,
+        input  wire                         slv_en,
+        input  wire                         slv_wr,
+        input  wire  [ADDRW           -1:0] slv_addr,
+        input  wire  [XLEN            -1:0] slv_wdata,
+        input  wire  [XLEN/8          -1:0] slv_strb,
         output logic [XLEN            -1:0] slv_rdata,
         output logic                        slv_ready,
         // APB Slave 0
@@ -36,24 +36,24 @@ module friscv_apb_interconnect
         output logic [ADDRW           -1:0] mst0_addr,
         output logic [XLEN            -1:0] mst0_wdata,
         output logic [XLEN/8          -1:0] mst0_strb,
-        input  logic [XLEN            -1:0] mst0_rdata,
-        input  logic                        mst0_ready,
+        input  wire  [XLEN            -1:0] mst0_rdata,
+        input  wire                         mst0_ready,
         // APB Slave 1
         output logic                        mst1_en,
         output logic                        mst1_wr,
         output logic [ADDRW           -1:0] mst1_addr,
         output logic [XLEN            -1:0] mst1_wdata,
         output logic [XLEN/8          -1:0] mst1_strb,
-        input  logic [XLEN            -1:0] mst1_rdata,
-        input  logic                        mst1_ready,
+        input  wire  [XLEN            -1:0] mst1_rdata,
+        input  wire                         mst1_ready,
         // APB Slave 2
         output logic                        mst2_en,
         output logic                        mst2_wr,
         output logic [ADDRW           -1:0] mst2_addr,
         output logic [XLEN            -1:0] mst2_wdata,
         output logic [XLEN/8          -1:0] mst2_strb,
-        input  logic [XLEN            -1:0] mst2_rdata,
-        input  logic                        mst2_ready
+        input  wire  [XLEN            -1:0] mst2_rdata,
+        input  wire                         mst2_ready
     );
 
 

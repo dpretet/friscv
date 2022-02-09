@@ -27,18 +27,18 @@ module friscv_div
         parameter WIDTH  = 32
     )(
         // clock & reset
-        input  logic                      aclk,
-        input  logic                      aresetn,
-        input  logic                      srst,
+        input  wire                       aclk,
+        input  wire                       aresetn,
+        input  wire                       srst,
         // Input interface
-        input  logic                      i_valid,      // AMBA-like handshake
+        input  wire                       i_valid,      // AMBA-like handshake
         output logic                      i_ready,
-        input  logic                      signed_div,   // 1: signed, 0: unsigned division
-        input  logic [WIDTH         -1:0] divd,         // dividend
-        input  logic [WIDTH         -1:0] divs,         // divisor
+        input  wire                       signed_div,   // 1: signed, 0: unsigned division
+        input  wire  [WIDTH         -1:0] divd,         // dividend
+        input  wire  [WIDTH         -1:0] divs,         // divisor
         // Output interface
         output logic                      o_valid,
-        input  logic                      o_ready,
+        input  wire                       o_ready,
         output logic                      zero_div,     // division by zero exception
         output logic [WIDTH         -1:0] quot,         // quotient
         output logic [WIDTH         -1:0] rem           // reminder
@@ -60,7 +60,7 @@ module friscv_div
     logic                      rem_sign;
 
     function automatic [WIDTH-1:0] inv_sign(
-        input logic [WIDTH-1:0] number
+        input logic  [WIDTH-1:0] number
     );
         inv_sign = ~number + 1;
     endfunction

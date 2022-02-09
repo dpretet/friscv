@@ -49,36 +49,36 @@ module friscv_icache_fetcher
 
     )(
         // Clock / Reset
-        input  logic                      aclk,
-        input  logic                      aresetn,
-        input  logic                      srst,
+        input  wire                       aclk,
+        input  wire                       aresetn,
+        input  wire                       srst,
         // Flush control
-        input  logic                      flush_req,
+        input  wire                       flush_req,
         output logic                      flush_ack,
         // Control unit interface
-        input  logic                      ctrl_arvalid,
+        input  wire                       ctrl_arvalid,
         output logic                      ctrl_arready,
-        input  logic [AXI_ADDR_W    -1:0] ctrl_araddr,
-        input  logic [3             -1:0] ctrl_arprot,
-        input  logic [AXI_ID_W      -1:0] ctrl_arid,
+        input  wire  [AXI_ADDR_W    -1:0] ctrl_araddr,
+        input  wire  [3             -1:0] ctrl_arprot,
+        input  wire  [AXI_ID_W      -1:0] ctrl_arid,
         output logic                      ctrl_rvalid,
-        input  logic                      ctrl_rready,
+        input  wire                       ctrl_rready,
         output logic [AXI_ID_W      -1:0] ctrl_rid,
         output logic [2             -1:0] ctrl_rresp,
         output logic [ILEN          -1:0] ctrl_rdata,
         // Memory controller read interface
         output logic                      memctrl_arvalid,
-        input  logic                      memctrl_arready,
+        input  wire                       memctrl_arready,
         output logic [AXI_ADDR_W    -1:0] memctrl_araddr,
         output logic [3             -1:0] memctrl_arprot,
         output logic [AXI_ID_W      -1:0] memctrl_arid,
         // Cache line read interface
-        input  logic                      cache_writing,
+        input  wire                       cache_writing,
         output logic                      cache_ren,
         output logic [AXI_ADDR_W    -1:0] cache_raddr,
-        input  logic [ILEN          -1:0] cache_rdata,
-        input  logic                      cache_hit,
-        input  logic                      cache_miss
+        input  wire  [ILEN          -1:0] cache_rdata,
+        input  wire                       cache_hit,
+        input  wire                       cache_miss
     );
 
     ///////////////////////////////////////////////////////////////////////////
@@ -313,11 +313,18 @@ module friscv_icache_fetcher
                     // State to fetch the missed-fetch instruction in the
                     // dedicated FIFO. Empties it, possibiliy along several epochs
                     // Equivalent behavior than SERVE state.
+                    // TODO: Try to merge FETCH and MISS states
                     MISSED: begin
+                        // Move back to IDLE if ARID changed, meaning the 
+                        // control is jumping to another memory location
+                        if (reboot) begin
+                            pull_addr_if <= 1'b0;
+                            pull_addr_mf <= 1'b0;
+                            seq <= IDLE;
                         // As soon a cache miss is detected, stop to pull the
                         // FIFO and move to read the AXI4 interface to grab the
                         // missing instruction
-                        if (cache_miss) begin
+                        end else if (cache_miss) begin
                             `ifdef FRISCV_SIM
                             log.debug("Cache miss");
                             `endif

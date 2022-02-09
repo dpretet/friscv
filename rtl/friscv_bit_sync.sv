@@ -12,11 +12,11 @@ module friscv_bit_sync
         parameter DEPTH  = 2
     )(
         // clock & reset
-        input  logic                      aclk,
-        input  logic                      aresetn,
-        input  logic                      srst,
+        input  wire                       aclk,
+        input  wire                       aresetn,
+        input  wire                       srst,
         // bit to synch & synched
-        input  logic                      bit_i,
+        input  wire                       bit_i,
         output logic                      bit_o
     );
 

@@ -15,22 +15,22 @@ module friscv_uart
         parameter CLK_DIVIDER     = 4
     )(
         // clock & reset
-        input  logic                        aclk,
-        input  logic                        aresetn,
-        input  logic                        srst,
+        input  wire                         aclk,
+        input  wire                         aresetn,
+        input  wire                         srst,
         // APB Master
-        input  logic                        slv_en,
-        input  logic                        slv_wr,
-        input  logic [ADDRW           -1:0] slv_addr,
-        input  logic [XLEN            -1:0] slv_wdata,
-        input  logic [XLEN/8          -1:0] slv_strb,
+        input  wire                         slv_en,
+        input  wire                         slv_wr,
+        input  wire  [ADDRW           -1:0] slv_addr,
+        input  wire  [XLEN            -1:0] slv_wdata,
+        input  wire  [XLEN/8          -1:0] slv_strb,
         output logic [XLEN            -1:0] slv_rdata,
         output logic                        slv_ready,
         // UART interface
-        input  logic                        uart_rx,
+        input  wire                         uart_rx,
         output logic                        uart_tx,
         output logic                        uart_rts,
-        input  logic                        uart_cts
+        input  wire                         uart_cts
     );
 
     ///////////////////////////////////////////////////////////////////////////

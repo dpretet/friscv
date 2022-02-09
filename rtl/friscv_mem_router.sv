@@ -17,15 +17,15 @@ module friscv_mem_router
         parameter DATA_MEM_BASE_SIZE = 16384
     )(
         // clock & reset
-        input  logic                        aclk,
-        input  logic                        aresetn,
-        input  logic                        srst,
+        input  wire                         aclk,
+        input  wire                         aresetn,
+        input  wire                         srst,
         // Master interface
-        input  logic                        mst_en,
-        input  logic                        mst_wr,
-        input  logic [ADDRW           -1:0] mst_addr,
-        input  logic [XLEN            -1:0] mst_wdata,
-        input  logic [XLEN/8          -1:0] mst_strb,
+        input  wire                         mst_en,
+        input  wire                         mst_wr,
+        input  wire  [ADDRW           -1:0] mst_addr,
+        input  wire  [XLEN            -1:0] mst_wdata,
+        input  wire  [XLEN/8          -1:0] mst_strb,
         output logic [XLEN            -1:0] mst_rdata,
         output logic                        mst_ready,
         // GPIOs subsystem interface
@@ -34,16 +34,16 @@ module friscv_mem_router
         output logic [ADDRW           -1:0] gpio_addr,
         output logic [XLEN            -1:0] gpio_wdata,
         output logic [XLEN/8          -1:0] gpio_strb,
-        input  logic [XLEN            -1:0] gpio_rdata,
-        input  logic                        gpio_ready,
+        input  wire  [XLEN            -1:0] gpio_rdata,
+        input  wire                         gpio_ready,
         // Data memory interface
         output logic                        data_mem_en,
         output logic                        data_mem_wr,
         output logic [ADDRW           -1:0] data_mem_addr,
         output logic [XLEN            -1:0] data_mem_wdata,
         output logic [XLEN/8          -1:0] data_mem_strb,
-        input  logic [XLEN            -1:0] data_mem_rdata,
-        input  logic                        data_mem_ready
+        input  wire  [XLEN            -1:0] data_mem_rdata,
+        input  wire                         data_mem_ready
     );
 
     // Switching logic to drive GPIO or data memory based on address targeted

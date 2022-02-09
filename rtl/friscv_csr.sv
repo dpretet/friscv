@@ -22,32 +22,32 @@ module friscv_csr
         parameter MHART_ID = 0
     )(
         // Clock/reset interface
-        input  logic                   aclk,
-        input  logic                   aresetn,
-        input  logic                   srst,
+        input  wire                    aclk,
+        input  wire                    aresetn,
+        input  wire                    srst,
         // Interrupts
-        input  logic                   ext_irq,
-        input  logic                   sw_irq,
-        input  logic                   timer_irq,
+        input  wire                    ext_irq,
+        input  wire                    sw_irq,
+        input  wire                    timer_irq,
         // Instruction bus
-        input  logic                   valid,
+        input  wire                    valid,
         output logic                   ready,
-        input  logic [`INST_BUS_W-1:0] instbus,
+        input  wire  [`INST_BUS_W-1:0] instbus,
         // Register source 1 query interface
         output logic [5          -1:0] rs1_addr,
-        input  logic [XLEN       -1:0] rs1_val,
+        input  wire  [XLEN       -1:0] rs1_val,
         output logic                   rd_wr_en,
         output logic [5          -1:0] rd_wr_addr,
         output logic [XLEN       -1:0] rd_wr_val,
         // External source of CSRs
-        input  logic                   ctrl_mepc_wr,
-        input  logic [XLEN       -1:0] ctrl_mepc,
-        input  logic                   ctrl_mstatus_wr,
-        input  logic [XLEN       -1:0] ctrl_mstatus,
-        input  logic                   ctrl_mcause_wr,
-        input  logic [XLEN       -1:0] ctrl_mcause,
-        input  logic                   ctrl_mtval_wr,
-        input  logic [XLEN       -1:0] ctrl_mtval,
+        input  wire                    ctrl_mepc_wr,
+        input  wire  [XLEN       -1:0] ctrl_mepc,
+        input  wire                    ctrl_mstatus_wr,
+        input  wire  [XLEN       -1:0] ctrl_mstatus,
+        input  wire                    ctrl_mcause_wr,
+        input  wire  [XLEN       -1:0] ctrl_mcause,
+        input  wire                    ctrl_mtval_wr,
+        input  wire  [XLEN       -1:0] ctrl_mtval,
         // CSR shared bus
         output logic [`CSR_SB_W  -1:0] csr_sb
     );

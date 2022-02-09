@@ -17,42 +17,42 @@ module friscv_registers
         parameter NB_ALU_UNIT = 2
     )(
         // clock and resets
-        input  logic              aclk,
-        input  logic              aresetn,
-        input  logic              srst,
+        input  wire                             aclk,
+        input  wire                             aresetn,
+        input  wire                             srst,
         `ifdef FRISCV_SIM
-        output logic              error,
+        output logic                            error,
         `endif
         // Control interface
-        input  logic [5                   -1:0] ctrl_rs1_addr,
+        input  wire  [5                   -1:0] ctrl_rs1_addr,
         output logic [XLEN                -1:0] ctrl_rs1_val,
-        input  logic [5                   -1:0] ctrl_rs2_addr,
+        input  wire  [5                   -1:0] ctrl_rs2_addr,
         output logic [XLEN                -1:0] ctrl_rs2_val,
-        input  logic                            ctrl_rd_wr,
-        input  logic [5                   -1:0] ctrl_rd_addr,
-        input  logic [XLEN                -1:0] ctrl_rd_val,
+        input  wire                             ctrl_rd_wr,
+        input  wire  [5                   -1:0] ctrl_rd_addr,
+        input  wire  [XLEN                -1:0] ctrl_rd_val,
         // Processing interface
-        input  logic [NB_ALU_UNIT*5       -1:0] proc_rs1_addr,
+        input  wire  [NB_ALU_UNIT*5       -1:0] proc_rs1_addr,
         output logic [NB_ALU_UNIT*XLEN    -1:0] proc_rs1_val,
-        input  logic [NB_ALU_UNIT*5       -1:0] proc_rs2_addr,
+        input  wire  [NB_ALU_UNIT*5       -1:0] proc_rs2_addr,
         output logic [NB_ALU_UNIT*XLEN    -1:0] proc_rs2_val,
-        input  logic [NB_ALU_UNIT         -1:0] proc_rd_wr,
-        input  logic [NB_ALU_UNIT*5       -1:0] proc_rd_addr,
-        input  logic [NB_ALU_UNIT*XLEN    -1:0] proc_rd_val,
-        input  logic [NB_ALU_UNIT*XLEN/8  -1:0] proc_rd_strb,
+        input  wire  [NB_ALU_UNIT         -1:0] proc_rd_wr,
+        input  wire  [NB_ALU_UNIT*5       -1:0] proc_rd_addr,
+        input  wire  [NB_ALU_UNIT*XLEN    -1:0] proc_rd_val,
+        input  wire  [NB_ALU_UNIT*XLEN/8  -1:0] proc_rd_strb,
         // CSR interface
-        input  logic [5                   -1:0] csr_rs1_addr,
+        input  wire  [5                   -1:0] csr_rs1_addr,
         output logic [XLEN                -1:0] csr_rs1_val,
-        input  logic                            csr_rd_wr,
-        input  logic [5                   -1:0] csr_rd_addr,
-        input  logic [XLEN                -1:0] csr_rd_val
+        input  wire                             csr_rd_wr,
+        input  wire  [5                   -1:0] csr_rd_addr,
+        input  wire  [XLEN                -1:0] csr_rd_val
     );
 
+    // E extension limiting the register number to 16
     localparam REGNUM = (RV32E) ? 16 : 32;
 
     // ISA registers 0-31
     logic [XLEN-1:0] regs [REGNUM-1:0];
-    logic [XLEN-1:0] regs_r [REGNUM-1:0];
 
 
     generate
@@ -60,36 +60,26 @@ module friscv_registers
     genvar i;
     integer u, s;
 
-    for (i=0; i<REGNUM; i++) begin: RegisterGeneration
+    for (i=0; i<REGNUM; i++) begin: RegisterFFD
 
         logic [XLEN-1:0] _reg;
 
         // Registers content saving
         always @ (posedge aclk or negedge aresetn) begin
             if (aresetn == 1'b0) begin
-                regs_r[i] <= {XLEN{1'b0}};
                 _reg <= {XLEN{1'b0}};
             end else if (srst) begin
-                regs_r[i] <= {XLEN{1'b0}};
                 _reg <= {XLEN{1'b0}};
             end else begin
                 // register 0 is always 0, can't be overwritten
-                if (i==0) regs_r[i] <= {XLEN{1'b0}};
-                else regs_r[i] <= regs[i];
                 if (i==0) _reg <= {XLEN{1'b0}};
                 else _reg <= regs[i];
             end
         end
 
         // registers' write circuit
-        always @ (_reg,
-                  ctrl_rd_wr, ctrl_rd_addr, ctrl_rd_val,
-                  csr_rd_wr, csr_rd_addr, csr_rd_val,
-                  proc_rd_wr, proc_rd_addr, proc_rd_val
-        ) begin
-        // always @ (*) begin
+        always @ (*) begin: RegisterWrite
 
-            // regs[i] = regs_r[i];
             regs[i] = _reg;
 
             if (i!=0) begin
@@ -123,7 +113,7 @@ module friscv_registers
     generate
 
     if (SYNC_READ==0) begin: COMB_READ
- 
+
         assign ctrl_rs1_val = regs[ctrl_rs1_addr];
         assign ctrl_rs2_val = regs[ctrl_rs2_addr];
         assign csr_rs1_val = regs[csr_rs1_addr];

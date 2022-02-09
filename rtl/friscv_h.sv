@@ -145,6 +145,10 @@
 `define INST_BUS_W `OPCODE_W + `FUNCT3_W + `FUNCT7_W + `RS1_W + `RS2_W + \
                    `RD_W + `ZIMM_W + `IMM12_W + `IMM20_W + `CSR_W + `SHAMT_W
 
+// Load misaligned in memfy
+`define LD_MA 0
+// Store misaligned in memfy
+`define ST_MA 1
 
 //////////////////////////////////////////////////////////////////
 // CSR Shared Bus Definition

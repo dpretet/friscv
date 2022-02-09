@@ -36,48 +36,50 @@ module friscv_processing
         parameter INST_QUEUE_DEPTH  = 0
     )(
         // clock & reset
-        input  logic                        aclk,
-        input  logic                        aresetn,
-        input  logic                        srst,
+        input  wire                         aclk,
+        input  wire                         aresetn,
+        input  wire                         srst,
         // ALU instruction bus
-        input  logic                        proc_valid,
+        input  wire                         proc_valid,
         output logic                        proc_ready,
-        input  logic [`INST_BUS_W     -1:0] proc_instbus,
+        input  wire  [`INST_BUS_W     -1:0] proc_instbus,
         output logic [32              -1:0] proc_rsvd_regs,
         output logic [4               -1:0] proc_fenceinfo,
+        output logic                        proc_busy,
+        output logic [2               -1:0] proc_exceptions,
         // ISA registers interface
         output logic [NB_UNIT*5       -1:0] proc_rs1_addr,
-        input  logic [NB_UNIT*XLEN    -1:0] proc_rs1_val,
+        input  wire  [NB_UNIT*XLEN    -1:0] proc_rs1_val,
         output logic [NB_UNIT*5       -1:0] proc_rs2_addr,
-        input  logic [NB_UNIT*XLEN    -1:0] proc_rs2_val,
+        input  wire  [NB_UNIT*XLEN    -1:0] proc_rs2_val,
         output logic [NB_UNIT         -1:0] proc_rd_wr,
         output logic [NB_UNIT*5       -1:0] proc_rd_addr,
         output logic [NB_UNIT*XLEN    -1:0] proc_rd_val,
         output logic [NB_UNIT*XLEN/8  -1:0] proc_rd_strb,
         // data memory interface
         output logic                        awvalid,
-        input  logic                        awready,
+        input  wire                         awready,
         output logic [AXI_ADDR_W      -1:0] awaddr,
         output logic [3               -1:0] awprot,
         output logic [AXI_ID_W        -1:0] awid,
         output logic                        wvalid,
-        input  logic                        wready,
+        input  wire                         wready,
         output logic [AXI_DATA_W      -1:0] wdata,
         output logic [AXI_DATA_W/8    -1:0] wstrb,
-        input  logic                        bvalid,
+        input  wire                         bvalid,
         output logic                        bready,
-        input  logic [AXI_ID_W        -1:0] bid,
-        input  logic [2               -1:0] bresp,
+        input  wire  [AXI_ID_W        -1:0] bid,
+        input  wire  [2               -1:0] bresp,
         output logic                        arvalid,
-        input  logic                        arready,
+        input  wire                         arready,
         output logic [AXI_ADDR_W      -1:0] araddr,
         output logic [3               -1:0] arprot,
         output logic [AXI_ID_W        -1:0] arid,
-        input  logic                        rvalid,
+        input  wire                         rvalid,
         output logic                        rready,
-        input  logic [AXI_ID_W        -1:0] rid,
-        input  logic [2               -1:0] rresp,
-        input  logic [AXI_DATA_W      -1:0] rdata
+        input  wire  [AXI_ID_W        -1:0] rid,
+        input  wire  [2               -1:0] rresp,
+        input  wire  [AXI_DATA_W      -1:0] rdata
     );
 
     ///////////////////////////////////////////////////////////////////////////
@@ -101,7 +103,7 @@ module friscv_processing
     logic                        i_inst;
     logic                        ls_inst;
     logic                        m_inst;
-    // Bus on pipline output
+    // Bus on pipeline output
     logic                        proc_valid_p;
     logic                        proc_ready_p;
     logic [`INST_BUS_W     -1:0] proc_instbus_p;
@@ -110,6 +112,7 @@ module friscv_processing
     logic                        proc_ready_q;
     logic [`INST_BUS_W     -1:0] proc_instbus_q;
     logic [32              -1:0] proc_rsvd_regs_cnt[$clog2(INST_QUEUE_DEPTH)-1:0];
+    logic [2               -1:0] memfy_exceptions;
 
     // Assignment of M extension on integer registers' interface
     localparam M_IX = 2;
@@ -129,7 +132,7 @@ module friscv_processing
 
     generate
 
-    if (EXPRESS_MODE) begin
+    if (EXPRESS_MODE) begin: EXPRESS_MODE_ON
 
         assign rd_pre = proc_instbus[`RD+:`RD_W];
 
@@ -162,14 +165,35 @@ module friscv_processing
                 end
             end
         end
-    end else begin
+
+        if (RV32E) begin
+            assign proc_rsvd_regs[16+:16] = 16'b0;
+        end
+
+    end else begin: EXPRESS_MODE_OFF
         assign proc_rsvd_regs = 32'b0;
     end
     endgenerate
 
     generate
-    if (RV32E) begin
-        assign proc_rsvd_regs[16+:16] = 16'b0;
+    if (INST_BUS_PIPELINE || INST_QUEUE_DEPTH) begin: BUSY_FLAG_WITH_PIPE
+
+        always @ (posedge aclk or negedge aresetn) begin
+            if (!aresetn) begin
+                proc_busy <= 1'b0;
+            end else if (srst) begin
+                proc_busy <= 1'b0;
+            end else begin
+                if (proc_valid) begin
+                    proc_busy <= 1'b1;
+                end else if (|proc_rd_wr || (!proc_valid_q  && proc_ready_q)) begin
+                    proc_busy <= 1'b0;
+                end
+            end
+        end
+
+    end else begin: BUSY_FLAG_WITHOUT_PIPE
+        assign proc_busy = !proc_ready;
     end
     endgenerate
 
@@ -182,7 +206,7 @@ module friscv_processing
 
     generate
     // Insert a pipline stage to ease timing closure and placement
-    if (INST_BUS_PIPELINE) begin
+    if (INST_BUS_PIPELINE) begin: INPUT_PIPELINE_ON
 
         friscv_pipeline
         #(
@@ -202,7 +226,7 @@ module friscv_processing
             .o_data  (proc_instbus_p)
         );
 
-    end else begin
+    end else begin: INPUT_PIPELINE_OFF
 
         assign proc_instbus_p = proc_instbus;
         assign proc_valid_p = proc_valid;
@@ -249,11 +273,11 @@ module friscv_processing
     end
     endgenerate
 
-    assign opcode = proc_instbus_p[`OPCODE +: `OPCODE_W];
-    assign funct7 = proc_instbus_p[`FUNCT7 +: `FUNCT7_W];
-    assign rs1    = proc_instbus_p[`RS1    +: `RS1_W   ];
-    assign rs2    = proc_instbus_p[`RS2    +: `RS2_W   ];
-    assign rd     = proc_instbus_p[`RD     +: `RD_W    ];
+    assign opcode = proc_instbus_q[`OPCODE +: `OPCODE_W];
+    assign funct7 = proc_instbus_q[`FUNCT7 +: `FUNCT7_W];
+    assign rs1    = proc_instbus_q[`RS1    +: `RS1_W   ];
+    assign rs2    = proc_instbus_q[`RS2    +: `RS2_W   ];
+    assign rd     = proc_instbus_q[`RD     +: `RD_W    ];
 
 
     ///////////////////////////////////////////////////////////////////////////
@@ -316,44 +340,45 @@ module friscv_processing
     )
     memfy
     (
-        .aclk            (aclk),
-        .aresetn         (aresetn),
-        .srst            (srst),
-        .memfy_valid     (memfy_valid),
-        .memfy_ready     (memfy_ready),
-        .memfy_fenceinfo (proc_fenceinfo),
-        .memfy_instbus   (proc_instbus_q),
-        .memfy_rs1_addr  (proc_rs1_addr[1*5+:5]),
-        .memfy_rs1_val   (proc_rs1_val[1*XLEN+:XLEN]),
-        .memfy_rs2_addr  (proc_rs2_addr[1*5+:5]),
-        .memfy_rs2_val   (proc_rs2_val[1*XLEN+:XLEN]),
-        .memfy_rd_wr     (proc_rd_wr[1]),
-        .memfy_rd_addr   (proc_rd_addr[1*5+:5]),
-        .memfy_rd_val    (proc_rd_val[1*XLEN+:XLEN]),
-        .memfy_rd_strb   (proc_rd_strb[1*XLEN/8+:XLEN/8]),
-        .awvalid         (awvalid),
-        .awready         (awready),
-        .awaddr          (awaddr),
-        .awprot          (awprot),
-        .awid            (awid),
-        .wvalid          (wvalid),
-        .wready          (wready),
-        .wdata           (wdata),
-        .wstrb           (wstrb),
-        .bvalid          (bvalid),
-        .bready          (bready),
-        .bid             (bid),
-        .bresp           (bresp),
-        .arvalid         (arvalid),
-        .arready         (arready),
-        .araddr          (araddr),
-        .arprot          (arprot),
-        .arid            (arid),
-        .rvalid          (rvalid),
-        .rready          (rready),
-        .rid             (rid),
-        .rresp           (rresp),
-        .rdata           (rdata)
+        .aclk               (aclk),
+        .aresetn            (aresetn),
+        .srst               (srst),
+        .memfy_valid        (memfy_valid),
+        .memfy_ready        (memfy_ready),
+        .memfy_fenceinfo    (proc_fenceinfo),
+        .memfy_instbus      (proc_instbus_q),
+        .memfy_exceptions   (memfy_exceptions),
+        .memfy_rs1_addr     (proc_rs1_addr[1*5+:5]),
+        .memfy_rs1_val      (proc_rs1_val[1*XLEN+:XLEN]),
+        .memfy_rs2_addr     (proc_rs2_addr[1*5+:5]),
+        .memfy_rs2_val      (proc_rs2_val[1*XLEN+:XLEN]),
+        .memfy_rd_wr        (proc_rd_wr[1]),
+        .memfy_rd_addr      (proc_rd_addr[1*5+:5]),
+        .memfy_rd_val       (proc_rd_val[1*XLEN+:XLEN]),
+        .memfy_rd_strb      (proc_rd_strb[1*XLEN/8+:XLEN/8]),
+        .awvalid            (awvalid),
+        .awready            (awready),
+        .awaddr             (awaddr),
+        .awprot             (awprot),
+        .awid               (awid),
+        .wvalid             (wvalid),
+        .wready             (wready),
+        .wdata              (wdata),
+        .wstrb              (wstrb),
+        .bvalid             (bvalid),
+        .bready             (bready),
+        .bid                (bid),
+        .bresp              (bresp),
+        .arvalid            (arvalid),
+        .arready            (arready),
+        .araddr             (araddr),
+        .arprot             (arprot),
+        .arid               (arid),
+        .rvalid             (rvalid),
+        .rready             (rready),
+        .rid                (rid),
+        .rresp              (rresp),
+        .rdata              (rdata)
     );
 
     generate
@@ -388,6 +413,14 @@ module friscv_processing
 
     end
     endgenerate
+
+    ///////////////////////////////////////////////////////////////////////////
+    //
+    // Exceptions mapping
+    //
+    ///////////////////////////////////////////////////////////////////////////
+    
+    assign proc_exceptions[0+:2] = memfy_exceptions;
 
 endmodule
 

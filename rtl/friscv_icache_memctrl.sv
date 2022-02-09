@@ -44,21 +44,21 @@ module friscv_icache_memctrl
         parameter CACHE_DEPTH = 512
 
     )(
-        input  logic                      aclk,
-        input  logic                      aresetn,
-        input  logic                      srst,
-        input  logic                      flush_req,
+        input  wire                       aclk,
+        input  wire                       aresetn,
+        input  wire                       srst,
+        input  wire                       flush_req,
         output logic                      flush_ack,
         output logic                      flush,
         // ctrlruction memory interface
-        input  logic                      ctrl_arvalid,
+        input  wire                       ctrl_arvalid,
         output logic                      ctrl_arready,
-        input  logic [AXI_ADDR_W    -1:0] ctrl_araddr,
-        input  logic [3             -1:0] ctrl_arprot,
-        input  logic [AXI_ID_W      -1:0] ctrl_arid,
+        input  wire  [AXI_ADDR_W    -1:0] ctrl_araddr,
+        input  wire  [3             -1:0] ctrl_arprot,
+        input  wire  [AXI_ID_W      -1:0] ctrl_arid,
         // AXI4 Read channels interface to central memory
         output logic                      mem_arvalid,
-        input  logic                      mem_arready,
+        input  wire                       mem_arready,
         output logic [AXI_ADDR_W    -1:0] mem_araddr,
         output logic [8             -1:0] mem_arlen,
         output logic [3             -1:0] mem_arsize,
@@ -69,12 +69,12 @@ module friscv_icache_memctrl
         output logic [4             -1:0] mem_arqos,
         output logic [4             -1:0] mem_arregion,
         output logic [AXI_ID_W      -1:0] mem_arid,
-        input  logic                      mem_rvalid,
+        input  wire                       mem_rvalid,
         output logic                      mem_rready,
-        input  logic [AXI_ID_W      -1:0] mem_rid,
-        input  logic [2             -1:0] mem_rresp,
-        input  logic [AXI_DATA_W    -1:0] mem_rdata,
-        input  logic                      mem_rlast,
+        input  wire  [AXI_ID_W      -1:0] mem_rid,
+        input  wire  [2             -1:0] mem_rresp,
+        input  wire  [AXI_DATA_W    -1:0] mem_rdata,
+        input  wire                       mem_rlast,
         // Cache lines write interface
         output logic                      cache_wen,
         output logic [AXI_ADDR_W    -1:0] cache_waddr,
@@ -95,7 +95,7 @@ module friscv_icache_memctrl
 
     ctrl_fsm cfsm;
 
-    parameter ADDR_LSB_W = $clog2(AXI_DATA_W/8);
+    localparam ADDR_LSB_W = $clog2(AXI_DATA_W/8);
 
     // Used on flush request to erase the cache content
     logic                erase_wen;
@@ -149,13 +149,13 @@ module friscv_icache_memctrl
     assign mem_arid = ctrl_arid | AXI_ID_MASK;
 
 
-    friscv_scfifo 
+    friscv_scfifo
     #(
         .PASS_THRU  (0),
         .ADDR_WIDTH (3),
         .DATA_WIDTH (AXI_ADDR_W)
     )
-    araddr_fifo 
+    araddr_fifo
     (
         .aclk     (aclk),
         .aresetn  (aresetn),

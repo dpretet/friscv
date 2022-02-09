@@ -13,19 +13,19 @@ module friscv_gpios
         parameter XLEN      = 32
     )(
         // clock & reset
-        input  logic                        aclk,
-        input  logic                        aresetn,
-        input  logic                        srst,
+        input  wire                         aclk,
+        input  wire                         aresetn,
+        input  wire                         srst,
         // APB slave interface
-        input  logic                        slv_en,
-        input  logic                        slv_wr,
-        input  logic [ADDRW           -1:0] slv_addr,
-        input  logic [XLEN            -1:0] slv_wdata,
-        input  logic [XLEN/8          -1:0] slv_strb,
+        input  wire                         slv_en,
+        input  wire                         slv_wr,
+        input  wire  [ADDRW           -1:0] slv_addr,
+        input  wire  [XLEN            -1:0] slv_wdata,
+        input  wire  [XLEN/8          -1:0] slv_strb,
         output logic [XLEN            -1:0] slv_rdata,
         output logic                        slv_ready,
         // GPIO interface
-        input  logic [XLEN            -1:0] gpio_in,
+        input  wire  [XLEN            -1:0] gpio_in,
         output logic [XLEN            -1:0] gpio_out
     );
 

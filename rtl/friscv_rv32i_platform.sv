@@ -84,13 +84,13 @@ module friscv_rv32i_platform
 
     )(
         // Clock/reset interface
-        input  logic                      aclk,
-        input  logic                      aresetn,
-        input  logic                      srst,
+        input  wire                       aclk,
+        input  wire                       aresetn,
+        input  wire                       srst,
         // Real-time reference clock
-        input  logic                      rtc,
+        input  wire                       rtc,
         // Interrupts
-        input  logic                      ext_irq,
+        input  wire                       ext_irq,
         // Internal core status
         output logic [8             -1:0] status,
         `ifdef FRISCV_SIM
@@ -98,36 +98,36 @@ module friscv_rv32i_platform
         `endif
         // Central Memeory interface
         output logic                      mem_awvalid,
-        input  logic                      mem_awready,
+        input  wire                       mem_awready,
         output logic [AXI_ADDR_W    -1:0] mem_awaddr,
         output logic [3             -1:0] mem_awprot,
         output logic [AXI_ID_W      -1:0] mem_awid,
         output logic                      mem_wvalid,
-        input  logic                      mem_wready,
+        input  wire                       mem_wready,
         output logic [AXI_DATA_W    -1:0] mem_wdata,
         output logic [AXI_DATA_W/8  -1:0] mem_wstrb,
-        input  logic                      mem_bvalid,
+        input  wire                       mem_bvalid,
         output logic                      mem_bready,
-        input  logic [AXI_ID_W      -1:0] mem_bid,
-        input  logic [2             -1:0] mem_bresp,
+        input  wire  [AXI_ID_W      -1:0] mem_bid,
+        input  wire  [2             -1:0] mem_bresp,
         output logic                      mem_arvalid,
-        input  logic                      mem_arready,
+        input  wire                       mem_arready,
         output logic [AXI_ADDR_W    -1:0] mem_araddr,
         output logic [3             -1:0] mem_arprot,
         output logic [AXI_ID_W      -1:0] mem_arid,
-        input  logic                      mem_rvalid,
+        input  wire                       mem_rvalid,
         output logic                      mem_rready,
-        input  logic [AXI_ID_W      -1:0] mem_rid,
-        input  logic [2             -1:0] mem_rresp,
-        input  logic [AXI_DATA_W    -1:0] mem_rdata,
+        input  wire  [AXI_ID_W      -1:0] mem_rid,
+        input  wire  [2             -1:0] mem_rresp,
+        input  wire  [AXI_DATA_W    -1:0] mem_rdata,
         // GPIOs interface
-        input  logic [XLEN          -1:0] gpio_in,
+        input  wire  [XLEN          -1:0] gpio_in,
         output logic [XLEN          -1:0] gpio_out,
         // UART interface
-        input  logic                      uart_rx,
+        input  wire                       uart_rx,
         output logic                      uart_tx,
         output logic                      uart_rts,
-        input  logic                      uart_cts
+        input  wire                       uart_cts
     );
 
     ///////////////////////////////////////////////////////////////////////////

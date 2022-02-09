@@ -12,19 +12,19 @@ module friscv_m_ext
         parameter XLEN  = 32
     )(
         // clock & reset
-        input  logic                      aclk,
-        input  logic                      aresetn,
-        input  logic                      srst,
+        input  wire                       aclk,
+        input  wire                       aresetn,
+        input  wire                       srst,
         // ALU instruction bus
-        input  logic                      m_valid,
+        input  wire                       m_valid,
         output logic                      m_ready,
-        input  logic [`INST_BUS_W   -1:0] m_instbus,
+        input  wire  [`INST_BUS_W   -1:0] m_instbus,
         // register source 1 query interface
         output logic [5             -1:0] m_rs1_addr,
-        input  logic [XLEN          -1:0] m_rs1_val,
+        input  wire  [XLEN          -1:0] m_rs1_val,
         // register source 2 for query interface
         output logic [5             -1:0] m_rs2_addr,
-        input  logic [XLEN          -1:0] m_rs2_val,
+        input  wire  [XLEN          -1:0] m_rs2_val,
         // register estination for query interface
         output logic                      m_rd_wr,
         output logic [5             -1:0] m_rd_addr,

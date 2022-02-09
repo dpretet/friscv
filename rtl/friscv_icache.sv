@@ -66,26 +66,26 @@ module friscv_icache
 
     )(
         // Clock / Reset
-        input  logic                      aclk,
-        input  logic                      aresetn,
-        input  logic                      srst,
+        input  wire                       aclk,
+        input  wire                       aresetn,
+        input  wire                       srst,
         // Flush control
-        input  logic                      flush_req,
+        input  wire                       flush_req,
         output logic                      flush_ack,
         // Control unit interface
-        input  logic                      ctrl_arvalid,
+        input  wire                       ctrl_arvalid,
         output logic                      ctrl_arready,
-        input  logic [AXI_ADDR_W    -1:0] ctrl_araddr,
-        input  logic [3             -1:0] ctrl_arprot,
-        input  logic [AXI_ID_W      -1:0] ctrl_arid,
+        input  wire  [AXI_ADDR_W    -1:0] ctrl_araddr,
+        input  wire  [3             -1:0] ctrl_arprot,
+        input  wire  [AXI_ID_W      -1:0] ctrl_arid,
         output logic                      ctrl_rvalid,
-        input  logic                      ctrl_rready,
+        input  wire                       ctrl_rready,
         output logic [AXI_ID_W      -1:0] ctrl_rid,
         output logic [2             -1:0] ctrl_rresp,
         output logic [ILEN          -1:0] ctrl_rdata,
         // AXI4 Read channels interface to central memory
         output logic                      icache_arvalid,
-        input  logic                      icache_arready,
+        input  wire                       icache_arready,
         output logic [AXI_ADDR_W    -1:0] icache_araddr,
         output logic [8             -1:0] icache_arlen,
         output logic [3             -1:0] icache_arsize,
@@ -96,12 +96,12 @@ module friscv_icache
         output logic [4             -1:0] icache_arqos,
         output logic [4             -1:0] icache_arregion,
         output logic [AXI_ID_W      -1:0] icache_arid,
-        input  logic                      icache_rvalid,
+        input  wire                       icache_rvalid,
         output logic                      icache_rready,
-        input  logic [AXI_ID_W      -1:0] icache_rid,
-        input  logic [2             -1:0] icache_rresp,
-        input  logic [AXI_DATA_W    -1:0] icache_rdata,
-        input  logic                      icache_rlast
+        input  wire  [AXI_ID_W      -1:0] icache_rid,
+        input  wire  [2             -1:0] icache_rresp,
+        input  wire  [AXI_DATA_W    -1:0] icache_rdata,
+        input  wire                       icache_rlast
     );
 
 
