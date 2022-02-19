@@ -30,6 +30,8 @@ BOOT_ADDR=0
 TIMEOUT=10000
 # Testbench configuration
 TB_CHOICE='CORE'
+# Specific testcase(s) to run
+TC=""
 
 
 #------------------------------------------------------------------------------
@@ -199,6 +201,10 @@ get_args() {
             -t | --timeout )
                 shift
                 TIMEOUT=$1
+            ;;
+            --tc )
+                shift
+                TC=$1
             ;;
             -h | --help )
                 usage

@@ -79,10 +79,14 @@ module friscv_clint
             sw_irq <= 1'b0;
             timer_irq <= 1'b0;
             slv_rdata <= {XLEN{1'b0}};
+            mtime <= {XLEN{1'b0}};
+            mtimecmp <= {XLEN{1'b0}};
             slv_ready <= 1'b0;
         end else if (srst) begin
             sw_irq <= 1'b0;
             timer_irq <= 1'b0;
+            mtime <= {XLEN{1'b0}};
+            mtimecmp <= {XLEN{1'b0}};
             slv_rdata <= {XLEN{1'b0}};
             slv_ready <= 1'b0;
         end else begin

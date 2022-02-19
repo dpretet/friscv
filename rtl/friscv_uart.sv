@@ -297,12 +297,14 @@ module friscv_uart
             tx_data_srr <= 8'b0;
             tx_bit_cnt <= 4'b0;
             tx_baud_cnt <= 16'b0;
+            uart_tx <= 1'b0;
             txfsm <= IDLE;
         end else if (srst) begin
             tx_pull <= 1'b0;
             tx_data_srr <= 8'b0;
             tx_bit_cnt <= 4'b0;
             tx_baud_cnt <= 16'b0;
+            uart_tx <= 1'b0;
             txfsm <= IDLE;
         end else begin
             case (txfsm)
