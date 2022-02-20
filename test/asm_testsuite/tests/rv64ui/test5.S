@@ -1,7 +1,7 @@
 #include "riscv_test.h"
 #include "test_macros.h"
 
-# Test 5: CSRs: Throttle execution by acessing the ISA CSRs
+# Test 5: CSRs: Throttle execution by accessing the ISA CSRs
 # 
 # This testcase executes memory and arithmetic instructions break up by CSR
 # accesses. CSR instructions require several cycles to complete, thus could lead
@@ -25,7 +25,7 @@ addi x3, x3, 0xF
 # Registers used to compare the results
 addi x11, x11, 0x5
 addi x12, x12, 0xA
-addi x13, x13, 0x0
+addi x13, x13, 0xA
 lui x14, 1
 lui x15, 2
 lui x16, 2
@@ -50,7 +50,7 @@ csrrw x2, 0x305, x2
 # x2 must store x12 value
 auipc x10, 0
 addi x10, x10, 12
-# bne x12, x2, fail
+bne x12, x2, fail
 # Swap and break with JAL
 jal x20, BACKnFORTH
 csrrw x2, 0x305, x2
@@ -58,6 +58,7 @@ jal x20, BACKnFORTH
 # x2 must contains 0 (init val of the CSRs)
 auipc x10, 0
 addi x10, x10, 12
+csrrw x2, 0x305, x2
 bne x13, x2, fail
 
 # Surrender CSRRW with LUI

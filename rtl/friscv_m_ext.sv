@@ -46,12 +46,13 @@ module friscv_m_ext
     logic [`RS2_W      -1:0] rs2;
     logic [`RD_W       -1:0] rd;
     logic [`RD_W       -1:0] rd_r;
-    logic [2*XLEN      -1:0] muldiv32;
-    logic [2*XLEN      -1:0] muldiv64;
-    logic [2*XLEN      -1:0] mul_h;
-    logic [2*XLEN+2    -1:0] mulhsu;
-    logic [2*XLEN      -1:0] mulhu;
+
+    logic [2*XLEN      -1:0] mul;
     logic [2*XLEN      -1:0] mulw;
+    logic [2*XLEN      -1:0] mul32;
+    logic [2*XLEN      -1:0] mul64;
+    logic                    rs1_sign;
+    logic                    rs2_sign;
 
     logic [XLEN        -1:0] quot;
     logic [XLEN        -1:0] quotu;
@@ -83,17 +84,13 @@ module friscv_m_ext
     //
     ///////////////////////////////////////////////////////////////////////////
 
-    // 32 bits multiplication instructions
-    assign mul_h = $signed(m_rs1_val) * $signed(m_rs2_val);
-    // TODO: Share this multiplier with mul if timing closure is difficult
-    assign mulhsu = $signed({m_rs1_val[31],m_rs1_val}) * $signed({1'b0, m_rs2_val[31:0]});
-    assign mulhu = m_rs1_val * m_rs2_val;
 
-    assign muldiv32 = (funct3==`MUL)    ? mul_h[0+:32] :
-                      (funct3==`MULH)   ? mul_h[32+:32] :
-                      (funct3==`MULHSU) ? mulhsu[32+:32] :
-                      (funct3==`MULHU)  ? mulhu[32+:32] :
-                                          {XLEN{1'b0}};
+    assign rs1_sign = m_rs1_val[31] & (funct3!=`MULHU);
+    assign rs2_sign = m_rs2_val[31] & (funct3==`MUL || funct3==`MULH);
+    assign mul = $signed({rs1_sign,m_rs1_val}) * $signed({rs2_sign, m_rs2_val});
+
+    assign mul32 = (funct3==`MUL) ? mul[0 +:32] :
+                                    mul[32+:32] ;
 
 
     // 32 bits division
@@ -107,11 +104,11 @@ module friscv_m_ext
         // 64 bits multiplication instruction
         assign mulw = $signed(m_rs1_val[0+:32]) * $signed(m_rs2_val[0+:32]);
 
-        assign muldiv64 = {{32{mulw[31]}},mulw[31:0]};
+        assign mul64 = {{32{mulw[31]}},mulw[31:0]};
 
     end else begin: l_NO_MULDIV64_GEN
 
-        assign muldiv64 = {XLEN{1'b0}};
+        assign mul64 = {XLEN{1'b0}};
 
     end
     endgenerate
@@ -195,8 +192,8 @@ module friscv_m_ext
             end else begin
                 m_rd_val <= (rd_wr_div && (funct3_r==`DIV || funct3_r==`DIVU)) ? quot :
                             (rd_wr_div && (funct3_r==`REM || funct3_r==`REMU)) ? rem :
-                            (opcode==`MULDIVW)                                 ? muldiv64 : 
-                                                                                 muldiv32 ;
+                            (opcode==`MULDIVW)                                 ? mul64 : 
+                                                                                 mul32 ;
             end
         end
 
@@ -210,7 +207,7 @@ module friscv_m_ext
             end else begin
                 m_rd_val <= (rd_wr_div && (funct3_r==`DIV || funct3_r==`DIVU)) ? quot :
                             (rd_wr_div && (funct3_r==`REM || funct3_r==`REMU)) ? rem :
-                                                                                 muldiv32;
+                                                                                 mul32;
             end
        end
     end

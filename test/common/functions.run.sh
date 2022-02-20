@@ -31,7 +31,7 @@ TIMEOUT=10000
 # Testbench configuration
 TB_CHOICE='CORE'
 # Specific testcase(s) to run
-TC=""
+TC=
 
 
 #------------------------------------------------------------------------------
@@ -112,11 +112,8 @@ run_tests() {
         # Grab the return code used later to determine the compliance status
         test_ret=$((test_ret+$?))
 
-        # Copy the VCD generated, create a GTKWave file from the template then
-        # add into the path to the good VCD file.
+        # Copy the VCD generated for further debug
         cp ./friscv_testbench.vcd "./tests/$test_name.vcd"
-        cp ./friscv_testbench.gtkw.tmpl "./tests/$gtk_file"
-        sed -i '' "s|__TMPL__|\"$test_name.vcd\"|g" "./tests/$gtk_file"
 
     done
 

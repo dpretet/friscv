@@ -133,7 +133,6 @@ dmypy.json
 build
 *.vcd
 *.hex
-*.vcd
 
 syn/*.lib
 syn/*.v
@@ -141,7 +140,6 @@ obj_dir
 .DS_Store
 tags
 test/*/*.txt
-*.gtkw
-*.v
+test/*/tests/*.v
 *.elf
 *.asm
