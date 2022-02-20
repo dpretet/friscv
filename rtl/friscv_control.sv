@@ -202,6 +202,7 @@ module friscv_control
     /////////////////////////////////////////////////////////////////
 
     task print_instruction(input logic a);
+        `ifdef FRISCV_SIM
         string inst_str;
         string pc_str;
         $sformat(inst_str, "%x", instruction);
@@ -218,6 +219,7 @@ module friscv_control
                     imm12,
                     imm20,
                     csr));
+        `endif
     endtask
 
     /////////////////////////////////////////////////////////////////////
@@ -239,6 +241,7 @@ module friscv_control
         input string           msg,
         input logic [XLEN-1:0] mcause
     );
+        `ifdef FRISCV_SIM
         string mcause_str;
         $sformat(mcause_str, "%x", mcause);
         log.warning({msg,
@@ -247,6 +250,7 @@ module friscv_control
                      get_mcause_desc(mcause),
                      ")"
                    });
+        `endif
     endtask
 
 
@@ -591,6 +595,7 @@ module friscv_control
 
                             `ifdef FRISCV_SIM
                             print_mcause("Handling a trap -> MCAUSE=0x", mcause_code);
+                            print_instruction(0);
                             `endif
                             traps[3] <= 1'b1;
                             flush_fifo <= 1'b1;
@@ -614,10 +619,15 @@ module friscv_control
 
                             if (~cant_jump) begin
                                 `ifdef FRISCV_SIM
-                                log.info("Jump/Branch");
                                 print_instruction(0);
                                 `endif
                                 pc_reg <= pc;
+                            end
+
+                            if (jump_branch & ~cant_jump) begin
+                                `ifdef FRISCV_SIM
+                                log.info("Jump/Branch");
+                                `endif
                             end
 
                             if (jump_branch && ~cant_jump) begin
@@ -635,8 +645,8 @@ module friscv_control
                             if (sys[`IS_ECALL] && ~proc_busy && csr_ready) begin
 
                                 `ifdef FRISCV_SIM
-                                log.info("ECALL -> Jump to trap handler");
                                 print_instruction(0);
+                                log.info("ECALL -> Jump to trap handler");
                                 `endif
                                 traps[0] <= 1'b1;
                                 flush_fifo <= 1'b1;
@@ -653,8 +663,8 @@ module friscv_control
                             end else if (sys[`IS_EBREAK]) begin
 
                                 `ifdef FRISCV_SIM
-                                log.info("EBREAK -> Stop the processor");
                                 print_instruction(0);
+                                log.info("EBREAK -> Stop the processor");
                                 `endif
                                 flush_fifo <= 1'b1;
                                 traps[1] <= 1'b1;
@@ -664,8 +674,8 @@ module friscv_control
                             end else if (sys[`IS_MRET] && ~proc_busy && csr_ready) begin
 
                                 `ifdef FRISCV_SIM
-                                log.info("MRET -> Return from trap");
                                 print_instruction(0);
+                                log.info("MRET -> Return from trap");
                                 `endif
                                 flush_fifo <= 1'b1;
                                 traps[2] <= 1'b1;
@@ -681,8 +691,8 @@ module friscv_control
                             end else if (fence[`IS_FENCEI]) begin
 
                                 `ifdef FRISCV_SIM
-                                log.info("FENCE.i -> Start iCache flushing");
                                 print_instruction(0);
+                                log.info("FENCE.i -> Start iCache flushing");
                                 `endif
                                 flush_fifo <= 1'b1;
                                 pc_reg <= pc;
@@ -695,8 +705,8 @@ module friscv_control
                             end else if (sys[`IS_WFI] && ~proc_busy && csr_ready) begin
 
                                 `ifdef FRISCV_SIM
-                                log.info("WFI -> Stall and wait for interrupt");
                                 print_instruction(0);
+                                log.info("WFI -> Stall and wait for interrupt");
                                 `endif
                                 traps[0] <= 1'b1;
                                 flush_fifo <= 1'b1;

@@ -33,7 +33,7 @@ main() {
     else
         # Execute the testsuites
         run_testsuite "./tests/rv32ui-p*.v"
-        run_testsuite "./tests/rv32um-p*.v"
+        if [[ -f "./tests/rv32um-p*.v" ]]; then run_testsuite "./tests/rv32um-p*.v"; fi
     fi
 
     # OK, sounds good, exit gently
