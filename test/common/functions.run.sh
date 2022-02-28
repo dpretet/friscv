@@ -32,7 +32,8 @@ TIMEOUT=10000
 TB_CHOICE='CORE'
 # Specific testcase(s) to run
 TC=
-
+# Use Icarus Verilog simulator
+SIM="icarus"
 
 #------------------------------------------------------------------------------
 # Clean compiled programs
@@ -80,7 +81,7 @@ run_tests() {
     # Execute one by one the available tests
     for test in $1; do
 
-        # Convert the verilog content to a file to init the RAM
+        # Convert the verilog content into a file to init the RAM
         BOOT_ADDR=$(../common/bin2hex.py "$test" test.v $INST_PER_LINE)
 
         # Get test name by removing the extension
@@ -96,9 +97,18 @@ run_tests() {
         echo "  - BOOT_ADDR:     $BOOT_ADDR"
         echo "  - CACHE_BLOCK_W: $CACHE_BLOCK_W"
         echo "  - TIMEOUT:       $TIMEOUT"
+        echo "  - TB_CHOICE:     $TB_CHOICE"
+        echo "  - TCNAME:        ${test_name}"
+        echo "  - SIMULATOR:     $SIM"
 
         # Defines passed to the testbench
-        DEFINES=""
+        if [[ $SIM == "icarus" ]]; then
+            DEFINES="USE_ICARUS=1;"
+            SIM="icarus"
+        else
+            DEFINES=""
+            SIM="verilator"
+        fi
         DEFINES="${DEFINES}CACHE_BLOCK_W=$CACHE_BLOCK_W;"
         DEFINES="${DEFINES}BOOT_ADDR=$BOOT_ADDR;"
         DEFINES="${DEFINES}XLEN=$XLEN;"
@@ -106,9 +116,13 @@ run_tests() {
         DEFINES="${DEFINES}TB_CHOICE=$TB_CHOICE;"
         DEFINES="${DEFINES}TCNAME=${test_name}"
 
-        # Execute the testcase with SVUT. Will stop once it reaches a EBREAK
-        # instruction, MRET or illegal exception
-        svutRun -t ./friscv_testbench.sv -define $DEFINES | tee -a simulation.log
+        # Execute the testcase with SVUT
+        svutRun -t ./friscv_testbench.sv \
+                -define $DEFINES \
+                -sim $SIM \
+                -include ../../dep/svlogger ../../rtl ../../dep/axi-crossbar/rtl \
+                | tee -a simulation.log
+
         # Grab the return code used later to determine the compliance status
         test_ret=$((test_ret+$?))
 
@@ -203,6 +217,11 @@ get_args() {
                 shift
                 TC=$1
             ;;
+            --simulator )
+                shift
+                SIM=$1
+            ;;
+
             -h | --help )
                 usage
                 exit 0

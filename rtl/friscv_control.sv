@@ -188,7 +188,7 @@ module friscv_control
     logic [2         -1:0] priv_mode;
 
     // Logger setup
-    `ifdef FRISCV_SIM
+    `ifdef USE_SVL
     `include "svlogger.sv"
     svlogger log;
     initial log = new("ControlUnit",
@@ -202,7 +202,7 @@ module friscv_control
     /////////////////////////////////////////////////////////////////
 
     task print_instruction(input logic a);
-        `ifdef FRISCV_SIM
+        `ifdef USE_SVL
         string inst_str;
         string pc_str;
         $sformat(inst_str, "%x", instruction);
@@ -241,7 +241,7 @@ module friscv_control
         input string           msg,
         input logic [XLEN-1:0] mcause
     );
-        `ifdef FRISCV_SIM
+        `ifdef USE_SVL
         string mcause_str;
         $sformat(mcause_str, "%x", mcause);
         log.warning({msg,
@@ -534,7 +534,7 @@ module friscv_control
                     priv_mode <= 2'b11;
 
                     if (arready) begin
-                        `ifdef FRISCV_SIM
+                        `ifdef USE_SVL
                         log.info("IDLE -> Boot the processor");
                         `endif
                         cfsm <= FETCH;
@@ -593,7 +593,7 @@ module friscv_control
                         // interrupt, a wrong instruction, ...
                         if (trap_occuring) begin
 
-                            `ifdef FRISCV_SIM
+                            `ifdef USE_SVL
                             print_mcause("Handling a trap -> MCAUSE=0x", mcause_code);
                             print_instruction(0);
                             `endif
@@ -618,14 +618,14 @@ module friscv_control
                         else if (jal | jalr | branching) begin
 
                             if (~cant_jump) begin
-                                `ifdef FRISCV_SIM
+                                `ifdef USE_SVL
                                 print_instruction(0);
                                 `endif
                                 pc_reg <= pc;
                             end
 
                             if (jump_branch & ~cant_jump) begin
-                                `ifdef FRISCV_SIM
+                                `ifdef USE_SVL
                                 log.info("Jump/Branch");
                                 `endif
                             end
@@ -644,7 +644,7 @@ module friscv_control
                             // Reach an ECALL instruction, jump to trap handler
                             if (sys[`IS_ECALL] && ~proc_busy && csr_ready) begin
 
-                                `ifdef FRISCV_SIM
+                                `ifdef USE_SVL
                                 print_instruction(0);
                                 log.info("ECALL -> Jump to trap handler");
                                 `endif
@@ -662,7 +662,7 @@ module friscv_control
                             // Reach an EBREAK instruction, need to stall the core
                             end else if (sys[`IS_EBREAK]) begin
 
-                                `ifdef FRISCV_SIM
+                                `ifdef USE_SVL
                                 print_instruction(0);
                                 log.info("EBREAK -> Stop the processor");
                                 `endif
@@ -673,7 +673,7 @@ module friscv_control
                             // Reach a MRET instruction, jump to exception return
                             end else if (sys[`IS_MRET] && ~proc_busy && csr_ready) begin
 
-                                `ifdef FRISCV_SIM
+                                `ifdef USE_SVL
                                 print_instruction(0);
                                 log.info("MRET -> Return from trap");
                                 `endif
@@ -690,7 +690,7 @@ module friscv_control
                             // the instruction pipeline
                             end else if (fence[`IS_FENCEI]) begin
 
-                                `ifdef FRISCV_SIM
+                                `ifdef USE_SVL
                                 print_instruction(0);
                                 log.info("FENCE.i -> Start iCache flushing");
                                 `endif
@@ -704,7 +704,7 @@ module friscv_control
                             // Reach an ECALL instruction, jump to trap handler
                             end else if (sys[`IS_WFI] && ~proc_busy && csr_ready) begin
 
-                                `ifdef FRISCV_SIM
+                                `ifdef USE_SVL
                                 print_instruction(0);
                                 log.info("WFI -> Stall and wait for interrupt");
                                 `endif
@@ -721,7 +721,7 @@ module friscv_control
                             // CSR instructions
                             end else if (sys[`IS_CSR] && ~cant_sys) begin
 
-                                `ifdef FRISCV_SIM
+                                `ifdef USE_SVL
                                 print_instruction(0);
                                 `endif
                                 pc_reg <= pc;
@@ -729,7 +729,7 @@ module friscv_control
                             // FENCE instruction (not supported)
                             end else if (~proc_busy && csr_ready) begin
 
-                                `ifdef FRISCV_SIM
+                                `ifdef USE_SVL
                                 print_instruction(0);
                                 `endif
                                 pc_reg <= pc;
@@ -738,7 +738,7 @@ module friscv_control
                         // LUI and AUIPC execution, done in this module
                         end else if (lui_auipc && ~cant_lui_auipc) begin
 
-                            `ifdef FRISCV_SIM
+                            `ifdef USE_SVL
                             print_instruction(0);
                             `endif
                             pc_reg <= pc;
@@ -747,7 +747,7 @@ module friscv_control
                         end else if (processing) begin
 
                             if (~cant_process) begin
-                                `ifdef FRISCV_SIM
+                                `ifdef USE_SVL
                                 print_instruction(0);
                                 `endif
                                 pc_reg <= pc;
@@ -782,7 +782,7 @@ module friscv_control
                 FENCE_I: begin
                     flush_req <= 1'b1;
                     if (flush_ack) begin
-                        `ifdef FRISCV_SIM
+                        `ifdef USE_SVL
                         log.info("FENCE.i execution done");
                         `endif
                         flush_req <= 1'b0;
@@ -798,7 +798,7 @@ module friscv_control
                 ///////////////////////////////////////////////////////////////
                 WFI: begin
                     if (csr_sb[`MSIP] || csr_sb[`MTIP] || csr_sb[`MEIP]) begin
-                        `ifdef FRISCV_SIM
+                        `ifdef USE_SVL
                         log.info("WFI -> received an interrupt");
                         `endif
                         arvalid <= 1'b1;

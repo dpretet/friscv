@@ -7,12 +7,15 @@
 `include "svut_h.sv"
 `include "../../rtl/friscv_h.sv"
 
-module tb();
+module friscv_testbench();
 
     `SVUT_SETUP
 
     `ifndef FRISCV_SIM
     `define FRISCV_SIM 1
+    `ifdef USE_ICARUS
+        `define USE_SVL
+    `endif
     `endif
 
     // Maximum cycle of a simulation run, after that break it
@@ -45,7 +48,11 @@ module tb();
     `define TB_CHOICE "CORE"
     `endif
 
+`ifdef USE_ICARUS
     parameter TB_CHOICE = ``TB_CHOICE;
+`else
+    parameter TB_CHOICE = `TB_CHOICE;
+`endif
 
     // Instruction length
     parameter ILEN = 32;
@@ -107,6 +114,7 @@ module tb();
 
     // timeout used in the testbench to break the simulation
     parameter TIMEOUT = `TIMEOUT;
+    integer timeout = TIMEOUT;
     // Variable latency setup the AXI4-lite RAM model
     parameter VARIABLE_LATENCY = 0;
 
@@ -488,12 +496,14 @@ module tb();
     end
     endgenerate
 
+`ifdef USE_ICARUS
+
     initial aclk = 0;
     always #1 aclk = ~aclk;
 
     initial begin
         $dumpfile("friscv_testbench.vcd");
-        $dumpvars(0, tb);
+        $dumpvars(0, friscv_testbench);
     end
 
     initial begin
@@ -521,7 +531,6 @@ module tb();
 
     task teardown(msg="");
     begin
-        /// teardown() runs when a test ends
     end
     endtask
 
@@ -555,4 +564,5 @@ module tb();
 
     `TEST_SUITE_END
 
+`endif
 endmodule

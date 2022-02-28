@@ -170,7 +170,7 @@
 // Loggers setup
 //////////////////////////////////////////////////////////////////
 
-`ifdef FRISCV_SIM
+`ifdef USE_SVL
 
 `include "svlogger.sv"
 
