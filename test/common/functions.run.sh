@@ -72,7 +72,7 @@ EOF
 #------------------------------------------------------------------------------
 run_tests() {
 
-    if [ -n "$(find tests/ -maxdepth 1 -name \*.elf -print -quit)" ] ; then
+    if [ -n "$(find tests/ -maxdepth 1 -name \*.v -print -quit)" ] ; then
         echo "Found compiled programs, execute ./run -C to rebuild from scratch"
     else
         make -C ./tests XLEN=$XLEN
@@ -103,7 +103,7 @@ run_tests() {
 
         # Defines passed to the testbench
         if [[ $SIM == "icarus" ]]; then
-            DEFINES="USE_ICARUS=1;"
+            DEFINES="USE_ICARUS=1;USE_SVL=1;"
             SIM="icarus"
         else
             DEFINES=""

@@ -13,9 +13,6 @@ module friscv_testbench();
 
     `ifndef FRISCV_SIM
     `define FRISCV_SIM 1
-    `ifdef USE_ICARUS
-        `define USE_SVL
-    `endif
     `endif
 
     // Maximum cycle of a simulation run, after that break it
@@ -204,10 +201,12 @@ module friscv_testbench();
 
     logic [XLEN          -1:0] gpio_in;
     logic [XLEN          -1:0] gpio_out;
+    logic [XLEN          -1:0] pc;
     logic                      uart_rx;
     logic                      uart_tx;
     logic                      uart_rts;
     logic                      uart_cts;
+    string                     stop_msg;
 
 
     // Run the testbench by using only the CPU core
@@ -256,6 +255,7 @@ module friscv_testbench();
         .sw_irq       (sw_irq),
         .status       (status),
         .error        (error_status_reg),
+        .pc_val       (pc),
         .imem_arvalid (imem_arvalid),
         .imem_arready (imem_arready),
         .imem_araddr  (imem_araddr),
@@ -400,6 +400,7 @@ module friscv_testbench();
         .ext_irq     (ext_irq),
         .status      (status),
         .error       (error_status_reg),
+        .pc_val      (pc),
         .mem_awvalid (mem_awvalid),
         .mem_awready (mem_awready),
         .mem_awaddr  (mem_awaddr),
@@ -538,7 +539,10 @@ module friscv_testbench();
 
     `UNIT_TEST(tcname)
 
+        // status[0] = ECALL
         // status[1] = EBREAK
+        // status[2] = MRET
+        // status[3] = Decoding error
         // status[4] = CSR write in read-only register
         while (status[1]==1'b0 && status[4]==1'b0 && timer<TIMEOUT) begin
             timer = timer + 1;
@@ -546,6 +550,8 @@ module friscv_testbench();
         end
 
         `ASSERT((error_status_reg==0), "TEST FAILED, X31 != 0");
+        $sformat(stop_msg, "TEST FAILED, PC=%x", pc);
+        `ASSERT((pc>64'h10174), stop_msg);
 
         if (timer<TIMEOUT) begin
             if (status[0])

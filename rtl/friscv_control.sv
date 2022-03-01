@@ -38,6 +38,9 @@ module friscv_control
         input  wire                       aresetn,
         input  wire                       srst,
         output logic [5             -1:0] traps,
+        `ifdef FRISCV_SIM
+        output logic [XLEN          -1:0] pc_val,
+        `endif
         // Flush control
         output logic                      flush_req,
         input  wire                       flush_ack,
@@ -474,6 +477,8 @@ module friscv_control
     // incoming instructions, the CSR & processing unit and all traps
     //
     ///////////////////////////////////////////////////////////////////////////
+
+    assign pc_val = pc_reg;
 
     always @ (posedge aclk or negedge aresetn) begin
 

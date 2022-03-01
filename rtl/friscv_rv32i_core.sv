@@ -95,6 +95,7 @@ module friscv_rv32i_core
         output logic [8             -1:0] status,
         `ifdef FRISCV_SIM
         output logic                      error,
+        output logic [XLEN          -1:0] pc_val,
         `endif
         // Instruction memory interface
         output logic                      imem_arvalid,
@@ -326,6 +327,7 @@ module friscv_rv32i_core
         .aresetn            (aresetn),
         .srst               (srst),
         .traps              (traps),
+        .pc_val             (pc_val),
         .flush_req          (flush_req),
         .flush_ack          (flush_ack),
         .arvalid            (inst_arvalid_s),

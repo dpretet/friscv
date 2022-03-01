@@ -95,6 +95,7 @@ module friscv_rv32i_platform
         output logic [8             -1:0] status,
         `ifdef FRISCV_SIM
         output logic                      error,
+        output logic [XLEN          -1:0] pc_val,
         `endif
         // Central Memeory interface
         output logic                      mem_awvalid,
@@ -329,6 +330,7 @@ module friscv_rv32i_platform
     .status       (status),
     `ifdef FRISCV_SIM
     .error        (error),
+    .pc_val       (pc_val),
     `endif
     .imem_arvalid (imem_arvalid),
     .imem_arready (imem_arready),

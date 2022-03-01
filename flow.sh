@@ -7,7 +7,7 @@
 set -eu -o pipefail
 
 # Current script path; doesn't support symlink
-FRISCVDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+FRISCV_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
 ret=0
 
@@ -94,12 +94,9 @@ main() {
 
         set +e
 
-        printinfo "Start SVlint linting"
-        svlint rtl/*.sv -i rtl -i dep/svlogger
-
         printinfo "Start Verilator linting"
         verilator --lint-only +1800-2017ext+sv \
-            -Wall -Wpedantic -cdc \
+            -Wall -Wpedantic \
             -Wno-VARHIDDEN \
             -Wno-PINCONNECTEMPTY \
             -I./rtl\
@@ -126,24 +123,19 @@ main() {
 
         set -e
     fi
+
     if [[ $1 == "sim" ]]; then
 
         source script/setup.sh
-        iverilog -V
+
+        if [[ ! $(type iverilog) ]]; then
+            printerror "Icarus-Verilog is not installed"
+            exit 1
+        fi
 
         echo ""
-        printinfo "Start ASM simulation flow"
-
-        cd "${FRISCVDIR}/test/asm_testsuite"
-
-        ./run.sh
-        ret=$((ret+$?))
-
-        if [ $ret != 0 ] ; then
-            return $ret
-        fi
-
-        cd "${FRISCVDIR}/test/riscv-tests"
+        printinfo "Start ASM Simulation flow"
+        cd "${FRISCV_DIR}/test/asm_testsuite"
 
         ./run.sh
         ret=$((ret+$?))
@@ -151,12 +143,24 @@ main() {
         if [ $ret != 0 ] ; then
             return $ret
         fi
+
+        echo ""
+        printinfo "Start RISCV Compliance flow"
+        cd "${FRISCV_DIR}/test/riscv-tests"
+
+        ./run.sh
+        ret=$((ret+$?))
+
+        if [ $ret != 0 ] ; then
+        return $ret
+        fi
+
         exit 0
     fi
 
     if [[ $1 == "syn" ]]; then
         printinfo "Start synthesis flow"
-        cd "$FRISCVDIR/syn"
+        cd "$FRISCV_DIR/syn"
         ./run.sh
         return $?
     fi

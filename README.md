@@ -6,6 +6,13 @@
                          ██║     ██║  ██║██║███████║╚██████╗ ╚████╔╝
                          ╚═╝     ╚═╝  ╚═╝╚═╝╚══════╝ ╚═════╝  ╚═══╝
 
+[![GitHub license](https://img.shields.io/github/license/dpretet/friscv)](https://github.com/dpretet/friscv/blob/master/LICENSE)
+![Github Actions](https://github.com/dpretet/friscv/actions/workflows/ci.yaml/badge.svg)
+[![GitHub issues](https://img.shields.io/github/issues/dpretet/friscv)](https://github.com/dpretet/friscv/issues)
+[![GitHub stars](https://img.shields.io/github/stars/dpretet/friscv)](https://github.com/dpretet/friscv/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/dpretet/friscv)](https://github.com/dpretet/friscv/network)
+[![Twitter](https://img.shields.io/twitter/url/https/github.com/dpretet/friscv?style=social)](https://twitter.com/intent/tweet?text=Wow:&url=https%3A%2F%2Fgithub.com%2Fdpretet%2Ffriscv)
+
 # Overview
 
 FRISCV is a SystemVerilog implementation of the [RISCV ISA](https://riscv.org):

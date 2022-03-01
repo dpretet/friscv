@@ -60,7 +60,7 @@ module friscv_registers
     genvar i;
     integer u, s;
 
-    for (i=0; i<REGNUM; i++) begin: RegisterFFD
+    for (i=0; i<REGNUM; i=i+1) begin: RegisterFFD
 
         logic [XLEN-1:0] _reg;
 
@@ -118,9 +118,9 @@ module friscv_registers
         assign ctrl_rs2_val = regs[ctrl_rs2_addr];
         assign csr_rs1_val = regs[csr_rs1_addr];
 
-        for (genvar u=0;u<NB_ALU_UNIT;u=u+1) begin: PROCESSING_COMB_REG_IFS
-            assign proc_rs1_val[u*XLEN+:XLEN] = regs[proc_rs1_addr[u*5+:5]];
-            assign proc_rs2_val[u*XLEN+:XLEN] = regs[proc_rs2_addr[u*5+:5]];
+        for (i=0;i<NB_ALU_UNIT;i=i+1) begin: PROCESSING_COMB_REG_IFS
+            assign proc_rs1_val[i*XLEN+:XLEN] = regs[proc_rs1_addr[i*5+:5]];
+            assign proc_rs2_val[i*XLEN+:XLEN] = regs[proc_rs2_addr[i*5+:5]];
         end
 
     end else begin: SYNCHRO_READ
@@ -130,25 +130,25 @@ module friscv_registers
                 ctrl_rs1_val <= {XLEN{1'b0}};
                 ctrl_rs2_val <= {XLEN{1'b0}};
                 csr_rs1_val <= {XLEN{1'b0}};
-                for (u=0;u<NB_ALU_UNIT;u=u+1) begin: PROCESING_ARESETN_REG_IFS
-                    proc_rs1_val[u*XLEN+:XLEN] <= {XLEN{1'b0}};
-                    proc_rs2_val[u*XLEN+:XLEN] <= {XLEN{1'b0}};
+                for (i=0;i<NB_ALU_UNIT;i=i+1) begin: PROCESING_ARESETN_REG_IFS
+                    proc_rs1_val[i*XLEN+:XLEN] <= {XLEN{1'b0}};
+                    proc_rs2_val[i*XLEN+:XLEN] <= {XLEN{1'b0}};
                 end
             end else if (srst) begin
                 ctrl_rs1_val <= {XLEN{1'b0}};
                 ctrl_rs2_val <= {XLEN{1'b0}};
                 csr_rs1_val <= {XLEN{1'b0}};
-                for (u=0;u<NB_ALU_UNIT;u=u+1) begin: PROCESING_SRST_REG_IFS
-                    proc_rs1_val[u*XLEN+:XLEN] <= {XLEN{1'b0}};
-                    proc_rs2_val[u*XLEN+:XLEN] <= {XLEN{1'b0}};
+                for (i=0;i<NB_ALU_UNIT;i=i+1) begin: PROCESING_SRST_REG_IFS
+                    proc_rs1_val[i*XLEN+:XLEN] <= {XLEN{1'b0}};
+                    proc_rs2_val[i*XLEN+:XLEN] <= {XLEN{1'b0}};
                 end
             end else begin
                 ctrl_rs1_val <= regs[ctrl_rs1_addr];
                 ctrl_rs2_val <= regs[ctrl_rs2_addr];
                 csr_rs1_val <= regs[csr_rs1_addr];
-                for (u=0;u<NB_ALU_UNIT;u=u+1) begin: PROCESING_SYNC_REG_IFS
-                    proc_rs1_val[u*XLEN+:XLEN] <= regs[proc_rs1_addr[u*5+:5]];
-                    proc_rs2_val[u*XLEN+:XLEN] <= regs[proc_rs2_addr[u*5+:5]];
+                for (i=0;i<NB_ALU_UNIT;i=i+1) begin: PROCESING_SYNC_REG_IFS
+                    proc_rs1_val[i*XLEN+:XLEN] <= regs[proc_rs1_addr[i*5+:5]];
+                    proc_rs2_val[i*XLEN+:XLEN] <= regs[proc_rs2_addr[i*5+:5]];
                 end
             end
         end
