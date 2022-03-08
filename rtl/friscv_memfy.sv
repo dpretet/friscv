@@ -11,9 +11,6 @@
 // This module doesn't handle unaligned transfer, which are detected by the
 // central controller raising an exception in these situations. the memory
 // accesses are handled by an AXI4-lite interface.
-//
-// TODO: handle 4 KB boundary crossing
-//
 ///////////////////////////////////////////////////////////////////////////////
 
 module friscv_memfy
@@ -356,7 +353,6 @@ module friscv_memfy
                     if (awready) awvalid <= 1'b0;
                     if (wready) wvalid <= 1'b0;
                     // Wait until the data has been received
-                    // TODO: Study of last condition is possible and useful (data acked before addr)
                     if (awready && wready || ~awvalid && wready || awready && ~wvalid) begin
                         memfy_ready <= 1'b1;
                     end
@@ -417,7 +413,7 @@ module friscv_memfy
         end else begin
             // Write into RD once the read data channel handshakes
             memfy_rd_wr <= (~memfy_ready && (opcode_r==`LOAD) &&
-                             rvalid && rready 
+                             rvalid && rready
                            ) ? 1'b1 : 1'b0;
             memfy_rd_strb <= get_rd_strb(funct3_r, offset, ~two_phases);
             memfy_rd_val <= get_rd_val(funct3_r, rdata, offset);

@@ -1,6 +1,5 @@
 # DOING
 
-- [ ] Review WARL CSR implementation
 - [ ] enhance processing unit
     - control checks registers under use in an instruction
     - processing clear the tickets once instruction is finished
@@ -20,21 +19,21 @@ Misc.
       https://danielmangum.com/posts/risc-v-bytes-privilege-levels/
 - [ ] Support MMU extension
 - [ ] JTAG interface / GDB Usage
-      https://github.com/BLangOS/VexRiscV_with_HW-GDB_Server
+        - https://tomverbeure.github.io/2021/07/18/VexRiscv-OpenOCD-and-Traps.html
+        - https://tomverbeure.github.io/2022/02/20/GDBWave-Post-Simulation-RISCV-SW-Debugging.html
+        - https://github.com/BLangOS/VexRiscV_with_HW-GDB_Server
+- Processor profiling
+    - https://github.com/LucasKl/riscv-function-profiling
 - [ ] Removed the 2 LSBs in instruction cache while always 2'b11 (6.25% saving)
 - [ ] AXI4 Infrastructure
     - [ ] Check des IDs de control sent. Should be incremented in memory
           controller and not used directly
     - [ ] Write completion usage in memfy or dcache? Could raise an exception?
     - [ ] Support different clock for AXI4 memory interface, cache and internal core
-- [ ] Support PLIC (Only for multi-core)
+- [ ] Support PLIC (only for multi-core)
 - [ ] Support CLIC controller
 
 Control:
-- [ ] Optimize control unit by removing dead cycles on jump
-    - Study how to reduce jump/branch time
-    - Don't increment araddr when received branch?
-- [ ] Support branch prediction & out-of-order execution
 - [ ] [Multiple issue processor](https://www.youtube.com/watch?v=wGpkiNb_V9c)
 
 Processing:
@@ -51,8 +50,17 @@ https://www.youtube.com/channel/UCPSsA8oxlSBjidJsSPdpjsQ/videos
     - Detect IO requests to forward info for FENCE execution
 - [ ] Support floating point
 - [ ] Support FENCE if AXI4-lite & OR support
+- Division
+    - [ ] Save bandwidth by removing dead cycles
+    - [ ] Manage pow2 division by shifting
+    - [ ] Start division from first non-zero digit
 
 Cache Stages:
+- Merge FETCH and MISS states in iCache
+- Support outstanding requests
+- Manage RRESP/BRESP
+- Support wrap mode
+- Support width adaptation in iCache
 - [ ] Support prefetch: if no jump/branch detected in fetched instructions
       grab the next line, else give a try to fetch the branch address
 - [ ] Implement a data cache stage
@@ -67,6 +75,7 @@ Cache Stages:
 
 To finalize:
 - [ ] Ensure interrupt and trap are correctly supported
+    - race condition when CSR is written and interrupt arrives
 - [ ] UART: Support 9/10 bits & parity
 - [-] VPI for UART:
     - [X] update SVUT to pass extra string to vvp

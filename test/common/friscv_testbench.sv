@@ -7,7 +7,15 @@
 `include "svut_h.sv"
 `include "../../rtl/friscv_h.sv"
 
-module friscv_testbench();
+module friscv_testbench(
+`ifndef USE_ICARUS
+    input  wire         aclk,
+    input  wire         aresetn,
+    input  wire         srst,
+    output logic [63:0] pc,
+    output logic        error_status_reg
+`endif
+);
 
     `SVUT_SETUP
 
@@ -40,16 +48,12 @@ module friscv_testbench();
     `define TCNAME "program"
     `endif
 
-    // Architecture selection: 32 or 64 bits
+    // Top level selection: CORE or PLATFORM
     `ifndef TB_CHOICE
-    `define TB_CHOICE "CORE"
+    `define TB_CHOICE 0 // 0="CORE", 1="PLATFORM"
     `endif
 
-`ifdef USE_ICARUS
-    parameter TB_CHOICE = ``TB_CHOICE;
-`else
-    parameter TB_CHOICE = `TB_CHOICE;
-`endif
+    parameter TB_CHOICE = (`TB_CHOICE==0) ? "CORE" : "PLATFORM";
 
     // Instruction length
     parameter ILEN = 32;
@@ -111,7 +115,6 @@ module friscv_testbench();
 
     // timeout used in the testbench to break the simulation
     parameter TIMEOUT = `TIMEOUT;
-    integer timeout = TIMEOUT;
     // Variable latency setup the AXI4-lite RAM model
     parameter VARIABLE_LATENCY = 0;
 
@@ -119,15 +122,20 @@ module friscv_testbench();
     integer                    timer;
     string                     tcname;
 
+`ifdef USE_ICARUS
     logic                      aclk;
     logic                      aresetn;
     logic                      srst;
+    logic [XLEN          -1:0] pc;
+`endif
+    logic [8             -1:0] status;
     logic                      ext_irq;
     logic                      sw_irq;
     logic                      timer_irq;
     logic                      rtc;
-    logic [8             -1:0] status;
+`ifdef USE_ICARUS
     logic                      error_status_reg;
+`endif
     logic                      imem_awvalid;
     logic                      imem_awready;
     logic [AXI_ADDR_W    -1:0] imem_awaddr;
@@ -201,13 +209,16 @@ module friscv_testbench();
 
     logic [XLEN          -1:0] gpio_in;
     logic [XLEN          -1:0] gpio_out;
-    logic [XLEN          -1:0] pc;
     logic                      uart_rx;
     logic                      uart_tx;
     logic                      uart_rts;
     logic                      uart_cts;
     string                     stop_msg;
 
+    // iCache write channels driven to 0 while unused
+    assign imem_awvalid = 1'b0;
+    assign imem_wvalid = 1'b0;
+    assign imem_bready = 1'b1;
 
     // Run the testbench by using only the CPU core
     generate
@@ -497,30 +508,71 @@ module friscv_testbench();
     end
     endgenerate
 
+
+    // Dump VCD, for both Verilator and Icarus
+    initial begin
+        `INFO("Tracing to friscv_testbench.vcd");
+        $dumpfile("friscv_testbench.vcd");
+        $dumpvars(0, friscv_testbench);
+        `INFO("Model running...");
+    end
+
+
+    // Time format for $time / $realtime printing
+    initial $timeformat(-9, 1, "ns", 8);
+
+
+    // Boot address, passed from bash flow
+    initial begin
+        string msg;
+        $sformat(msg, "Boot address: 0x%x", `BOOT_ADDR);
+        `INFO(msg);
+    end
+
+
+    // Task checking the testcase results and prints its status
+    task check_test(input logic [63:0] test_start_addr);
+
+        $sformat(stop_msg, "PC=0x%0x", pc);
+        `INFO(stop_msg);
+        `ASSERT((pc>test_start_addr), "Program stopped too early");
+
+        $sformat(stop_msg, "X31=0x%0x", error_status_reg);
+        `INFO(stop_msg);
+        `ASSERT((error_status_reg==0), "X31 != 0");
+
+        // status[0] = ECALL
+        if (status[0]) `INFO("Halt on ECALL");
+        // status[1] = EBREAK
+        if (status[1]) `INFO("Halt on EBREAK");
+        // status[2] = MRET
+        if (status[2]) `INFO("Halt on MRET");
+        // status[3] = Decoding error
+        if (status[3]) `INFO("Halt on an unsupported instruction");
+        // status[4] = CSR write in read-only register
+        if (status[4]) `INFO("Halt on a read-only write register event");
+
+        if (timer>=TIMEOUT) `ERROR("Halt on timeout");
+
+    endtask
+
+
+//-------------------------------------------------------------------------------------------------
+// This sections is used for Icarus Verilog based simulation, relying on SVUT system verilog
+// framework. The structure is minimal while we only assert/deassert reset and wait for the end of
+// execution
+//-------------------------------------------------------------------------------------------------
 `ifdef USE_ICARUS
 
     initial aclk = 0;
     always #1 aclk = ~aclk;
 
     initial begin
-        $dumpfile("friscv_testbench.vcd");
-        $dumpvars(0, friscv_testbench);
-    end
-
-    initial begin
         $sformat(tcname, "%s", ``TCNAME);
     end
 
-    initial begin
-        $display("Boot address: 0x%x", `BOOT_ADDR);
-    end
-    initial $timeformat(-9, 1, "ns", 8);
-
     task setup(msg="");
     begin
-        imem_awvalid = 1'b0;
-        imem_wvalid = 1'b0;
-        imem_bready = 1'b0;
         aresetn = 1'b0;
         srst = 1'b0;
         timer = 0;
@@ -532,43 +584,53 @@ module friscv_testbench();
 
     task teardown(msg="");
     begin
+        check_test(64'h10174);
     end
     endtask
 
-    `TEST_SUITE("RISCV Compliance Testsuite")
+
+    `TEST_SUITE("FRISCV Testbench")
 
     `UNIT_TEST(tcname)
 
-        // status[0] = ECALL
-        // status[1] = EBREAK
-        // status[2] = MRET
-        // status[3] = Decoding error
-        // status[4] = CSR write in read-only register
         while (status[1]==1'b0 && status[4]==1'b0 && timer<TIMEOUT) begin
             timer = timer + 1;
             @(posedge aclk);
         end
 
-        `ASSERT((error_status_reg==0), "TEST FAILED, X31 != 0");
-        $sformat(stop_msg, "TEST FAILED, PC=%x", pc);
-        `ASSERT((pc>64'h10174), stop_msg);
-
-        if (timer<TIMEOUT) begin
-            if (status[0])
-                `INFO("Testbench: Halt on ECALL");
-            if (status[1])
-                `INFO("Testbench: Halt on EBREAK");
-            if (status[3])
-                `INFO("Testbench: Halt on an unsupported instruction");
-            if (status[4])
-                `INFO("Testbench: Halt on a read-only write register event");
-        end else begin
-            `ERROR("Testbench: Halt on timeout");
-        end
 
     `UNIT_TEST_END
 
     `TEST_SUITE_END
 
 `endif
+
+
+//-------------------------------------------------------------------------------------------------
+// This sections is used for Verilator based simulation, and simply implements a timer to
+// detect any timeout. The simulation is finished here to trig Verilator context, testcase
+// is also checked here.
+//-------------------------------------------------------------------------------------------------
+`ifndef USE_ICARUS
+
+    always @ (posedge aclk or negedge aresetn) begin
+
+        if (!aresetn) begin
+            timer <= 0;
+        end else if (srst) begin
+            timer <= 0;
+        end else begin
+            timer <= timer + 1;
+        end
+
+        if (timer>10) begin
+            if (status[1]!=1'b0 || timer>TIMEOUT) begin
+                check_test(64'h10174);
+                $finish();
+            end
+        end
+    end
+
+`endif
+
 endmodule

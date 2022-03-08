@@ -137,7 +137,7 @@ main() {
         printinfo "Start ASM Simulation flow"
         cd "${FRISCV_DIR}/test/asm_testsuite"
 
-        ./run.sh
+        ./run.sh --simulator verilator --tb PLATFORM
         ret=$((ret+$?))
 
         if [ $ret != 0 ] ; then
@@ -148,7 +148,7 @@ main() {
         printinfo "Start RISCV Compliance flow"
         cd "${FRISCV_DIR}/test/riscv-tests"
 
-        ./run.sh
+        ./run.sh --simulator icarus --tb CORE
         ret=$((ret+$?))
 
         if [ $ret != 0 ] ; then

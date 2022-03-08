@@ -854,7 +854,7 @@ module friscv_control
     // yet. The mandatory condition is processing unit doesn't target a register used by
     // a jump or a branch instruction. This mode consumes for area but can significatly
     // enhance performanbce due to the number of cycles a jump/branch needs to apply.
-    end else begin: EXPRESS_MODE_OFF
+    end else begin: EXPRESS_MODE_ON
         assign cant_jump = (jal | jalr | branching) && (proc_busy || ~csr_ready);
     end
     endgenerate
@@ -961,7 +961,7 @@ module friscv_control
     // PC is not aligned with XLEN boundary
     assign inst_addr_misaligned = (pc[1:0]!=2'b0) ? jump_branch : 1'b0;
 
-    // TODO:
+    // TODO: Support correctly TW with prividge mode
     // When TW=1, if WFI is executed in any less-privileged mode, and it
     // does not complete within an implementation-specific, bounded time
     // limit, the WFI instruction causes an illegal instruction exception

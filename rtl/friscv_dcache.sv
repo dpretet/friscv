@@ -142,7 +142,7 @@ module friscv_dcache
     localparam ADDR_LSB = $clog2(XLEN/8);
     localparam SCALE = AXI_DATA_W / XLEN;
     localparam SCALE_W = $clog2(SCALE);
-    
+
     logic [AXI_ADDR_W    -1:0] awaddr_w;
     logic [AXI_ADDR_W    -1:0] araddr_w;
     logic [SCALE_W-1:0] wr_position;
@@ -165,10 +165,8 @@ module friscv_dcache
     // Write Address channel
     ///////////////////////////////////////////////////////////////////////////
 
-    // This FIFO stores the address for write data alignement 
-    // NB: UNUSED
-    // TODO: Evaluate if it could be needed
-    friscv_scfifo 
+    // This FIFO stores the address for write data alignement
+    friscv_scfifo
     #(
     .PASS_THRU  (0),
     .ADDR_WIDTH ($clog2(OSTDREQ_NUM)),
@@ -238,8 +236,8 @@ module friscv_dcache
     // Read Address channel
     ///////////////////////////////////////////////////////////////////////////
 
-    // This FIFO stores the address for read data alignement 
-    friscv_scfifo 
+    // This FIFO stores the address for read data alignement
+    friscv_scfifo
     #(
     .PASS_THRU  (0),
     .ADDR_WIDTH ($clog2(OSTDREQ_NUM)),

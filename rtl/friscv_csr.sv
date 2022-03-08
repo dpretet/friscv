@@ -55,7 +55,6 @@ module friscv_csr
     // ------------------------------------------------------------------------
     // TODO: Ensure CSRRW/CSRRWI read doesn't indude side effect on read if
     //       rd=0 as specified in chapter 9 Zicsr
-    // TODO: Print CSR implemented at startup
     // ------------------------------------------------------------------------
 
     // ------------------------------------------------------------------------
@@ -158,10 +157,35 @@ module friscv_csr
 
 
     //////////////////////////////////////////////////////////////////////////
+    // Print implemented CSRs
+    //////////////////////////////////////////////////////////////////////////
+
+    `ifdef FRISCV_SIM
+        initial begin
+            $display("");
+            $display("FRISCV implemented CSRs:");
+            $display("  - mhartid    : 0xF14 - MRO");
+            $display("  - mstatus    : 0x300 - MRW");
+            $display("  - misa       : 0x301 - MRW");
+            $display("  - medeleg    : 0x302 - MRW");
+            $display("  - mideleg    : 0x303 - MRW");
+            $display("  - mie        : 0x304 - MRW");
+            $display("  - mtvec      : 0x305 - MRW");
+            $display("  - mcounteren : 0x306 - MRW");
+            $display("  - mscratch   : 0x340 - MRW");
+            $display("  - mepc       : 0x341 - MRW");
+            $display("  - mcause     : 0x342 - MRW");
+            $display("  - mtval      : 0x343 - MRW");
+            $display("  - mip        : 0x344 - MRW");
+            $display("");
+        end
+    `endif
+
+    //////////////////////////////////////////////////////////////////////////
     // Synchronize the IRQs in the core's clock domain
     //////////////////////////////////////////////////////////////////////////
 
-    friscv_bit_sync 
+    friscv_bit_sync
     #(
         .DEPTH (2)
     )
@@ -174,7 +198,7 @@ module friscv_csr
         .bit_o   (ext_irq_sync)
     );
 
-    friscv_bit_sync 
+    friscv_bit_sync
     #(
         .DEPTH (2)
     )
@@ -187,7 +211,7 @@ module friscv_csr
         .bit_o   (timer_irq_sync)
     );
 
-    friscv_bit_sync 
+    friscv_bit_sync
     #(
         .DEPTH (2)
     )
@@ -379,7 +403,7 @@ module friscv_csr
 
     ///////////////////////////////////////////////////////////////////////////
     // MSTATUS - 0x300
-    // 
+    //
     // 31:      SD related to XS FS, 0 for the moment
     // 30:23:   (WPRI)
     // 22:      TSR Supervisor mode, 0 N/A
@@ -421,7 +445,7 @@ module friscv_csr
                 end
             end
         end
-    end 
+    end
 
     ///////////////////////////////////////////////////////////////////////////
     // MIE - 0x304
@@ -438,7 +462,7 @@ module friscv_csr
                 end
             end
         end
-    end 
+    end
 
     ///////////////////////////////////////////////////////////////////////////
     // MTVEC - 0x305
@@ -455,7 +479,7 @@ module friscv_csr
                 end
             end
         end
-    end 
+    end
 
     ///////////////////////////////////////////////////////////////////////////
     // MSCRATCH - 0x340
@@ -472,7 +496,7 @@ module friscv_csr
                 end
             end
         end
-    end 
+    end
 
     ///////////////////////////////////////////////////////////////////////////
     // MEPC, only support IALIGN=32 - 0x341
@@ -484,14 +508,14 @@ module friscv_csr
             mepc <= {XLEN{1'b0}};
         end else begin
             if (ctrl_mepc_wr) begin
-                mepc <= {ctrl_mepc[XLEN-1:2], 2'b0}; 
+                mepc <= {ctrl_mepc[XLEN-1:2], 2'b0};
             end else if (csr_wren) begin
                 if (csr_r==12'h341) begin
                     mepc <= {newval[XLEN-1:2], 2'b0};
                 end
             end
         end
-    end 
+    end
 
     ///////////////////////////////////////////////////////////////////////////
     // MCAUSE - 0x342
@@ -510,7 +534,7 @@ module friscv_csr
                 end
             end
         end
-    end 
+    end
 
     ///////////////////////////////////////////////////////////////////////////
     // MTVAL - 0x343
@@ -529,7 +553,7 @@ module friscv_csr
                 end
             end
         end
-    end 
+    end
 
     ///////////////////////////////////////////////////////////////////////////
     // MIP - 0x344
@@ -541,17 +565,17 @@ module friscv_csr
         end else if (srst) begin
             mip <= {XLEN{1'b0}};
         end else begin
-            if (ext_irq_sync || timer_irq_sync || sw_irq_sync) begin    
+            if (ext_irq_sync || timer_irq_sync || sw_irq_sync) begin
                 // external interrupt enable && external interrupt pin asserted
-                if (mie[11] && ext_irq_sync) begin      
+                if (mie[11] && ext_irq_sync) begin
                     mip[11] <= 1'b1;
                 end
                 // software interrupt enable && software interrupt pin asserted
-                if (mie[3] && sw_irq_sync) begin      
+                if (mie[3] && sw_irq_sync) begin
                     mip[3] <= 1'b1;
                 end
                 // timer interrupt enable && timer interrupt pin asserted
-                if (mie[7] && timer_irq_sync) begin      
+                if (mie[7] && timer_irq_sync) begin
                     mip[7] <= 1'b1;
                 end
             end else if (csr_wren) begin
@@ -560,7 +584,7 @@ module friscv_csr
                 end
             end
         end
-    end 
+    end
 
     //////////////////////////////////////////////////////////////////////////
     // Read circuit

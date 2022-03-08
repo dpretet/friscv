@@ -29,7 +29,7 @@ BOOT_ADDR=0
 # Timeout upon which the simulation is ran
 TIMEOUT=10000
 # Testbench configuration
-TB_CHOICE='CORE'
+TB_CHOICE=0     # 0="CORE", 1="PLATFORM"
 # Specific testcase(s) to run
 TC=
 # Use Icarus Verilog simulator
@@ -97,7 +97,7 @@ run_tests() {
         echo "  - BOOT_ADDR:     $BOOT_ADDR"
         echo "  - CACHE_BLOCK_W: $CACHE_BLOCK_W"
         echo "  - TIMEOUT:       $TIMEOUT"
-        echo "  - TB_CHOICE:     $TB_CHOICE"
+        echo "  - TB_CHOICE:     $TB_CHOICE (0=CORE, 1=PLATFORM)"
         echo "  - TCNAME:        ${test_name}"
         echo "  - SIMULATOR:     $SIM"
 
@@ -127,8 +127,9 @@ run_tests() {
         test_ret=$((test_ret+$?))
 
         # Copy the VCD generated for further debug
-        cp ./friscv_testbench.vcd "./tests/$test_name.vcd"
-
+        if [ -f "./friscv_testbench.vcd" ]; then
+            cp ./friscv_testbench.vcd "./tests/$test_name.vcd"
+        fi
     done
 
     # Check status of the execution
@@ -200,10 +201,10 @@ get_args() {
             ;;
             --tb )
                 shift
-                if [ $1=="CORE" ]; then
-                    TB_CHOICE=$1
-                elif [ $1=="PLATFORM" ]; then
-                    TB_CHOICE=$1
+                if [ "$1" == "CORE" ]; then
+                    TB_CHOICE=0
+                elif [ "$1" == "PLATFORM" ]; then
+                    TB_CHOICE=1
                 else
                     usage
                     exit 1
