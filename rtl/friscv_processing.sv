@@ -93,7 +93,7 @@ module friscv_processing
     logic [`RS1_W          -1:0] rs1;
     logic [`RS2_W          -1:0] rs2;
     logic [`RD_W           -1:0] rd;
-    logic [`RD_W           -1:0] rd_pre;
+    logic [`RD_W           -1:0] rd_i;
     logic                        memfy_valid;
     logic                        alu_valid;
     logic                        m_valid;
@@ -134,7 +134,7 @@ module friscv_processing
 
     if (EXPRESS_MODE) begin: EXPRESS_MODE_ON
 
-        assign rd_pre = proc_instbus[`RD+:`RD_W];
+        assign rd_i = proc_instbus[`RD+:`RD_W];
 
         always @ (posedge aclk or negedge aresetn) begin
             if (!aresetn) begin
@@ -149,13 +149,13 @@ module friscv_processing
                 for (regi=0;regi<NB_INT_REG;regi=regi+1) begin
                     for (itfi=0;itfi<NB_UNIT;itfi=itfi+1) begin
                         // If new instruction will target this instruction, increment
-                        if ((proc_valid && rd_pre==regi[4:0]) &&
+                        if ((proc_valid && rd_i==regi[4:0]) &&
                             ((proc_rd_wr[itfi] && proc_rd_addr[itfi]!=regi[4:0]) ||
                              &proc_rd_wr==1'b0)
                         ) begin
                             proc_rsvd_regs_cnt[regi] <= proc_rsvd_regs_cnt[regi] + 1;
                         // Else if releasing the register, decrement
-                        end else if ((proc_valid && rd_pre!=regi[4:0]) &&
+                        end else if ((proc_valid && rd_i!=regi[4:0]) &&
                             ((proc_rd_wr[itfi] && proc_rd_addr[itfi]==regi[4:0]) ||
                              &proc_rd_wr==1'b0)
                         ) begin

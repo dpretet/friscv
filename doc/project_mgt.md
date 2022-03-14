@@ -1,15 +1,17 @@
 # DOING
 
-- [ ] enhance processing unit
-    - control checks registers under use in an instruction
-    - processing clear the tickets once instruction is finished
-    - processing knows if a ALU can be used based register targeted
-    - control knows if it can branch
-    - could speed up the execution and could branch even if ALUs are running
+- [ ] Enhance processing unit
+        - control checks registers under use in an instruction and knows if can branch, LUI, AUIPC
+        - processing clear the tickets once instruction is finished
+        - processing knows if a ALU can be used based register targeted
+- [ ] Support multiple ALUs in parallel, differents extensions (float, mult/div, ...)
+      Processing scheduler to assert readiness according the instruction and
+      ISA regs accessed. Could be reused in control to avoid blocking AUIPC
+      and LUI. Use Tomasulo algorithm and reservation station
 
 # BACKLOG
 
-Any new feature and ISA should be carefully study to ensure a proper
+N.B. : Any new feature and ISA should be carefully study to ensure a proper
 exception and interrupt handling
 
 Misc.
@@ -22,7 +24,7 @@ Misc.
         - https://tomverbeure.github.io/2021/07/18/VexRiscv-OpenOCD-and-Traps.html
         - https://tomverbeure.github.io/2022/02/20/GDBWave-Post-Simulation-RISCV-SW-Debugging.html
         - https://github.com/BLangOS/VexRiscV_with_HW-GDB_Server
-- Processor profiling
+- [ ] Processor profiling
     - https://github.com/LucasKl/riscv-function-profiling
 - [ ] Removed the 2 LSBs in instruction cache while always 2'b11 (6.25% saving)
 - [ ] AXI4 Infrastructure
@@ -34,26 +36,22 @@ Misc.
 - [ ] Support CLIC controller
 
 Control:
-- [ ] [Multiple issue processor](https://www.youtube.com/watch?v=wGpkiNb_V9c)
+- [ ] [Multiple instruction issue](https://www.youtube.com/watch?v=wGpkiNb_V9c)
 
 Processing:
-https://www.youtube.com/channel/UCPSsA8oxlSBjidJsSPdpjsQ/videos
-- [ ] Support multiple ALUs in parallel, differents extensions (float, mult/div, ...)
-      Processing scheduler to assert readiness according the instruction and
-      ISA regs accessed. Could be reused in control to avoid blocking AUIPC
-      and LUI. Use Tomasulo algorithm and reservation station
-- [ ] Out-of-order execution
+- https://www.youtube.com/channel/UCPSsA8oxlSBjidJsSPdpjsQ/videos
 - [ ] Memfy enhancement
     - Support outstanding requests
     - Write completion: how to support BRESP error
     - Read completion: how to support RRESP error
     - Detect IO requests to forward info for FENCE execution
-- [ ] Support floating point
-- [ ] Support FENCE if AXI4-lite & OR support
+- [ ] Support F extension
+- [ ] Support FENCE if AXI4-lite + OR support
 - Division
     - [ ] Save bandwidth by removing dead cycles
     - [ ] Manage pow2 division by shifting
     - [ ] Start division from first non-zero digit
+- [ ] Out-of-order execution
 
 Cache Stages:
 - Merge FETCH and MISS states in iCache
@@ -94,7 +92,6 @@ Verification/Validation:
     - add a IRQ generation in the testbench
 - [ ] Port to LiteX
 - [ ] Define the hardware platform to use
-- [ ] Port simulation flow to Verilator
 - [ ] Update synthesis flow
     - [ ] Standard cells library for Yosys
     - [ ] https://github.com/dpretet/ascend-freepdk45/tree/master/lib
@@ -109,8 +106,6 @@ Verification/Validation:
 - [ ] Develop C testuite: test pointers with int, char & function
 - [ ] Prepare a hardware execution environment for preliminary testing
 - [ ] Prepare a hardware execution environment for OS testing
-- [ ] Mettre en place de la CI (Need Iverilog v11 and RISCV toolchain)
-    https://github.com/vortexgpgpu/vortex/blob/master/ci/toolchain_install.sh
 
 
 # Ideas / Applications
@@ -140,14 +135,20 @@ Verification/Validation:
 
 # DONE
 
-- [X] Pass vivado synthesis (rework sim-only constructs)
+- [X] Better print control status when branching and trapping (MAUSE info)
+- [X] Add Github Actions and deploy CI flow
+- [X] Support both Icarus and Verilator in simulation flow
+- [X] Support both Icarus and Verilator in simulation flow
 - [X] Add M extension
+- [X] Share common sources between ASM and Compliance testsuite
+- [X] Testbench supports both CORE and platform configuration
+- [X] Develop FRISCV platform including the core, an AXI4 crossbar and peripherals
 - [X] Simplifier les r/w de CSR, save one cycle to execute an op
 - [X] Option to read ISA registers on falling edge, not combinatorial read
 - [X] Design a generic pipeline stage for processing front-end
 - [X] Support trap and interupts
 - [X] Add clint controller
-- [X] first documentation
+- [X] First documentation
 - [X] Add external IRQ
 - [X] Add software IRQ
 - [X] Add timer IRQ

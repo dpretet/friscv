@@ -272,8 +272,8 @@ function automatic string get_inst_desc(
         text = {temp, " / ", text};
     end
     if (opcode==`SYS) begin
-        if (funct3==3'b000 && funct7==7'b0000000) text = "ECALL - I-type";
-        else if (funct3==3'b000 && funct7==7'b0000001) text = "EBREAK - I-type";
+        if (csr==12'h0 && funct3==3'b0) text = "ECALL - I-type";
+        else if (csr==12'h1 && funct3==3'b0) text = "EBREAK - I-type";
         else if (funct3==3'b000 && csr==12'h105) text = "WFI - I-type";
         else if (funct3==3'b000 && csr==12'h102) text = "SRET - I-type";
         else if (funct3==3'b000 && csr==12'h302) text = "MRET - I-type";
@@ -284,7 +284,11 @@ function automatic string get_inst_desc(
         text = {temp, " / ", text};
         $sformat(temp, "Rs1: %x", rs1);
         text = {temp, " / ", text};
-        $sformat(temp, "Csr: %x", csr);
+        if (funct3==3'b0 && (csr==12'h0 || csr==12'h1)) begin
+            $sformat(temp, "Imm12: %x", csr);
+        end else begin
+            $sformat(temp, "Csr: %x", csr);
+        end
         text = {temp, " / ", text};
     end
     if (opcode==`JAL) begin
@@ -331,8 +335,7 @@ function automatic string get_inst_desc(
         text = {temp, " / ", text};
     end
 
-    text = {"PC=", pc, " - ", instruction, " / ", text};
-    get_inst_desc = text;
+    get_inst_desc = {"PC=", pc, " - ", instruction, " / ", text};
 
 endfunction
 

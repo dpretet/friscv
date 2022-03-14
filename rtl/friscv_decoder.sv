@@ -127,6 +127,7 @@ module friscv_decoder
             // - mret   : sys[3]
             // - sret   : sys[4]
             // - wfi    : sys[5]
+            // TODO: possibly an issue in decoding, RD/RS1/FUNCT3 may be to check
             7'b1110011: begin
                 lui = 1'b0;
                 auipc = 1'b0;
