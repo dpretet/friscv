@@ -104,7 +104,7 @@ module friscv_csr
 
     // Machine Trap Status
     logic [XLEN-1:0] mstatus;       // 0x300    MRW
-    logic [XLEN-1:0] misa;          // 0x301    MRW
+    logic [XLEN-1:0] misa;          // 0x301    MRO
     logic [XLEN-1:0] medeleg;       // 0x302    MRW
     logic [XLEN-1:0] mideleg;       // 0x303    MRW
     logic [XLEN-1:0] mie;           // 0x304    MRW
@@ -166,7 +166,7 @@ module friscv_csr
             $display("FRISCV implemented CSRs:");
             $display("  - mhartid    : 0xF14 - MRO");
             $display("  - mstatus    : 0x300 - MRW");
-            $display("  - misa       : 0x301 - MRW");
+            $display("  - misa       : 0x301 - MRO");
             $display("  - medeleg    : 0x302 - MRW");
             $display("  - mideleg    : 0x303 - MRW");
             $display("  - mie        : 0x304 - MRW");

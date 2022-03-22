@@ -11,10 +11,10 @@
 [pos] -1 -1
 *-13.533281 722360 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] control.
-[treeopen] dut.
-[treeopen] dut.USE_ICACHE.
-[treeopen] dut.USE_ICACHE.fetcher.
-[treeopen] dut.USE_ICACHE.icache.
+[treeopen] friscv_testbench.friscv_testbench.genblk1.dut.
+[treeopen] friscv_testbench.friscv_testbench.genblk1.dut.USE_ICACHE.
+[treeopen] friscv_testbench.friscv_testbench.genblk1.dut.USE_ICACHE.fetcher.
+[treeopen] friscv_testbench.friscv_testbench.genblk1.dut.USE_ICACHE.icache.
 [treeopen] processing.
 [treeopen] processing.INPUT_PIPELINE_ON.
 [treeopen] processing.M_EXTENSION_SUPPORT.
@@ -26,60 +26,60 @@
 @c00200
 -iCache
 @28
-dut.USE_ICACHE.fetcher.aclk
-dut.USE_ICACHE.fetcher.aresetn
+friscv_testbench.friscv_testbench.genblk1.dut.USE_ICACHE.fetcher.aclk
+friscv_testbench.friscv_testbench.genblk1.dut.USE_ICACHE.fetcher.aresetn
 @200
 -
 @24
-dut.USE_ICACHE.fetcher.seq[2:0]
+friscv_testbench.friscv_testbench.genblk1.dut.USE_ICACHE.fetcher.seq[2:0]
 @28
-dut.USE_ICACHE.fetcher.reboot
+friscv_testbench.friscv_testbench.genblk1.dut.USE_ICACHE.fetcher.reboot
 @200
 -
 @28
-dut.USE_ICACHE.fetcher.fifo_empty_if
-dut.USE_ICACHE.fetcher.fifo_full_if
+friscv_testbench.friscv_testbench.genblk1.dut.USE_ICACHE.fetcher.fifo_empty_if
+friscv_testbench.friscv_testbench.genblk1.dut.USE_ICACHE.fetcher.fifo_full_if
 [color] 1
-dut.USE_ICACHE.fetcher.fifo_empty_mf
+friscv_testbench.friscv_testbench.genblk1.dut.USE_ICACHE.fetcher.fifo_empty_mf
 [color] 1
-dut.USE_ICACHE.fetcher.fifo_full_mf
+friscv_testbench.friscv_testbench.genblk1.dut.USE_ICACHE.fetcher.fifo_full_mf
 @200
 -
 -
 @28
-dut.USE_ICACHE.fetcher.pull_addr_if
+friscv_testbench.friscv_testbench.genblk1.dut.USE_ICACHE.fetcher.pull_addr_if
 [color] 2
-dut.USE_ICACHE.fetcher.pull_addr_mf
+friscv_testbench.friscv_testbench.genblk1.dut.USE_ICACHE.fetcher.pull_addr_mf
 [color] 2
-dut.USE_ICACHE.fetcher.ctrl_rready
+friscv_testbench.friscv_testbench.genblk1.dut.USE_ICACHE.fetcher.ctrl_rready
 [color] 1
-dut.USE_ICACHE.fetcher.cache_ren
+friscv_testbench.friscv_testbench.genblk1.dut.USE_ICACHE.fetcher.cache_ren
 @22
-dut.USE_ICACHE.fetcher.cache_raddr[31:0]
+friscv_testbench.friscv_testbench.genblk1.dut.USE_ICACHE.fetcher.cache_raddr[31:0]
 @28
-dut.USE_ICACHE.fetcher.cache_hit
-dut.USE_ICACHE.fetcher.cache_miss
+friscv_testbench.friscv_testbench.genblk1.dut.USE_ICACHE.fetcher.cache_hit
+friscv_testbench.friscv_testbench.genblk1.dut.USE_ICACHE.fetcher.cache_miss
 @200
 -
 @28
-dut.USE_ICACHE.fetcher.ctrl_arvalid
-dut.USE_ICACHE.fetcher.ctrl_arready
+friscv_testbench.friscv_testbench.genblk1.dut.USE_ICACHE.fetcher.ctrl_arvalid
+friscv_testbench.friscv_testbench.genblk1.dut.USE_ICACHE.fetcher.ctrl_arready
 @22
-dut.USE_ICACHE.fetcher.ctrl_araddr[31:0]
-dut.USE_ICACHE.fetcher.ctrl_arid[7:0]
+friscv_testbench.friscv_testbench.genblk1.dut.USE_ICACHE.fetcher.ctrl_araddr[31:0]
+friscv_testbench.friscv_testbench.genblk1.dut.USE_ICACHE.fetcher.ctrl_arid[7:0]
 @28
-dut.USE_ICACHE.fetcher.ctrl_arprot[2:0]
+friscv_testbench.friscv_testbench.genblk1.dut.USE_ICACHE.fetcher.ctrl_arprot[2:0]
 @200
 -
 -
 @28
-dut.USE_ICACHE.fetcher.ctrl_rvalid
-dut.USE_ICACHE.fetcher.ctrl_rready
+friscv_testbench.friscv_testbench.genblk1.dut.USE_ICACHE.fetcher.ctrl_rvalid
+friscv_testbench.friscv_testbench.genblk1.dut.USE_ICACHE.fetcher.ctrl_rready
 @22
-dut.USE_ICACHE.fetcher.ctrl_rdata[31:0]
-dut.USE_ICACHE.fetcher.ctrl_rid[7:0]
+friscv_testbench.friscv_testbench.genblk1.dut.USE_ICACHE.fetcher.ctrl_rdata[31:0]
+friscv_testbench.friscv_testbench.genblk1.dut.USE_ICACHE.fetcher.ctrl_rid[7:0]
 @28
-dut.USE_ICACHE.fetcher.ctrl_rresp[1:0]
+friscv_testbench.friscv_testbench.genblk1.dut.USE_ICACHE.fetcher.ctrl_rresp[1:0]
 @1401200
 -iCache
 @c00200

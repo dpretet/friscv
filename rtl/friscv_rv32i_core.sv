@@ -41,8 +41,8 @@ module friscv_rv32i_core
         parameter PROCESSING_BUS_PIPELINE = 0,
         // FIFO depth of processing unit, buffering the instruction to execute
         parameter PROCESSING_QUEUE_DEPTH = 0,
-        // Express mode track the register usage and avoid wait state in control unit
-        parameter EXPRESS_MODE = 0,
+        // Fast jump mode tracks the register usage and avoid wait state in control unit
+        parameter FAST_JUMP = 0,
 
         ////////////////////////////////////////////////////////////////////////
         // AXI4 / AXI4-lite interface setup
@@ -140,6 +140,7 @@ module friscv_rv32i_core
     //////////////////////////////////////////////////////////////////////////
 
     localparam NB_ALU_UNIT = 2 + M_EXTENSION + F_EXTENSION;
+    localparam MAX_ALU_UNIT = 4;
 
     logic [5                   -1:0] ctrl_rs1_addr;
     logic [XLEN                -1:0] ctrl_rs1_val;
@@ -269,10 +270,10 @@ module friscv_rv32i_core
 
     friscv_registers
     #(
-        .RV32E       (RV32E),
-        .XLEN        (XLEN),
-        .SYNC_READ   (0),
-        .NB_ALU_UNIT (NB_ALU_UNIT)
+        .RV32E        (RV32E),
+        .XLEN         (XLEN),
+        .SYNC_READ    (0),
+        .NB_ALU_UNIT  (NB_ALU_UNIT)
     )
     isa_registers
     (
@@ -311,15 +312,15 @@ module friscv_rv32i_core
 
     friscv_control
     #(
-        .ILEN         (ILEN),
-        .XLEN         (XLEN),
-        .RV32E        (RV32E),
-        .EXPRESS_MODE (EXPRESS_MODE),
-        .AXI_ADDR_W   (AXI_ADDR_W),
-        .AXI_ID_W     (AXI_ID_W),
-        .AXI_DATA_W   (XLEN),
-        .OSTDREQ_NUM  (INST_OSTDREQ_NUM),
-        .BOOT_ADDR    (BOOT_ADDR)
+        .ILEN           (ILEN),
+        .XLEN           (XLEN),
+        .RV32E          (RV32E),
+        .FAST_JUMP      (FAST_JUMP),
+        .AXI_ADDR_W     (AXI_ADDR_W),
+        .AXI_ID_W       (AXI_ID_W),
+        .AXI_DATA_W     (XLEN),
+        .OSTDREQ_NUM    (INST_OSTDREQ_NUM),
+        .BOOT_ADDR      (BOOT_ADDR)
     )
     control
     (
@@ -488,8 +489,8 @@ module friscv_rv32i_core
 
 
     //////////////////////////////////////////////////////////////////////////
-    // All ISA enxtensions supported: 
-    //  - standard integer arithmetic 
+    // All ISA enxtensions supported:
+    //  - standard integer arithmetic
     //  - memory LOAD/STORE
     //  - multiply / divide
     //  - atomic
@@ -502,12 +503,13 @@ module friscv_rv32i_core
         .F_EXTENSION       (F_EXTENSION),
         .M_EXTENSION       (M_EXTENSION),
         .RV32E             (RV32E),
-        .EXPRESS_MODE      (EXPRESS_MODE),
+        .FAST_JUMP         (FAST_JUMP),
         .AXI_ADDR_W        (AXI_ADDR_W),
         .AXI_ID_W          (AXI_ID_W),
         .AXI_DATA_W        (XLEN),
         .AXI_ID_MASK       (AXI_DMEM_MASK),
         .NB_UNIT           (NB_ALU_UNIT),
+        .MAX_UNIT          (MAX_ALU_UNIT),
         .INST_BUS_PIPELINE (PROCESSING_BUS_PIPELINE),
         .INST_QUEUE_DEPTH  (PROCESSING_QUEUE_DEPTH)
     )

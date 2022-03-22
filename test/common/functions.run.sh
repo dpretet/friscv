@@ -35,6 +35,7 @@ TC=
 # Use Icarus Verilog simulator
 SIM="icarus"
 
+
 #------------------------------------------------------------------------------
 # Clean compiled programs
 #------------------------------------------------------------------------------
@@ -50,30 +51,12 @@ clean() {
 
 
 #------------------------------------------------------------------------------
-# Helper
-#------------------------------------------------------------------------------
-usage()
-{
-cat << EOF
-usage: bash ./run.sh ...
--l    | --cache_block       (optional)            cache line width in bits (128 by default)
--x    | --xlen              (optional)            XLEN, 32 or 64 bits (32 by default)
--t    | --timeout           (optional)            Timeout in number of cycles (10000 by default)
--c    | --clean                                   Clean-up and exit
-        --tb                                      Choose the testbench configuration (CORE or PLATFORM)
--h    | --help                                    Brings up this menu
-EOF
-}
-#------------------------------------------------------------------------------
-
-
-#------------------------------------------------------------------------------
 # Tests execution
 #------------------------------------------------------------------------------
 run_tests() {
 
     if [ -n "$(find tests/ -maxdepth 1 -name \*.v -print -quit)" ] ; then
-        echo "Found compiled programs, execute ./run -C to rebuild from scratch"
+        echo "INFO: Found compiled programs, execute ./run -C to rebuild from scratch"
     else
         make -C ./tests XLEN=$XLEN
     fi
@@ -87,7 +70,6 @@ run_tests() {
         # Get test name by removing the extension
         test_file=$(basename $test)
         test_name=${test_file%%.*}
-        gtk_file="./${test_name}.gtkw"
 
         # Print testcase description and its configuration
         echo ""
@@ -109,6 +91,7 @@ run_tests() {
             DEFINES=""
             SIM="verilator"
         fi
+
         DEFINES="${DEFINES}CACHE_BLOCK_W=$CACHE_BLOCK_W;"
         DEFINES="${DEFINES}BOOT_ADDR=$BOOT_ADDR;"
         DEFINES="${DEFINES}XLEN=$XLEN;"
@@ -235,3 +218,25 @@ get_args() {
         shift
     done
 }
+#------------------------------------------------------------------------------
+
+
+#------------------------------------------------------------------------------
+# Helper
+#------------------------------------------------------------------------------
+usage()
+{
+cat << EOF
+usage: bash ./run.sh ...
+-l    | --cache_block       (optional)            cache line width in bits (128 by default)
+-x    | --xlen              (optional)            XLEN, 32 or 64 bits (32 by default)
+-t    | --timeout           (optional)            Timeout in number of cycles (10000 by default)
+-c    | --clean                                   Clean-up and exit
+        --tb                                      Choose the testbench configuration (CORE or PLATFORM)
+-h    | --help                                    Brings up this menu
+        --tb                (optional)            CORE or PLATFORM, CORE is optional. Platform embbeds a core + an AXI4 crossbar
+        --tc                (optional)            A specific testcase to launch, can use wildcard
+        --simulator         (optional)            Choose between icarus or verilator. icarus is default
+EOF
+}
+#------------------------------------------------------------------------------

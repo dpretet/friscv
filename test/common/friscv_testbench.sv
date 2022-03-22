@@ -48,9 +48,9 @@ module friscv_testbench(
     `define TCNAME "program"
     `endif
 
-    // Top level selection: CORE or PLATFORM
+    // Top level selection: 0="CORE", 1="PLATFORM"
     `ifndef TB_CHOICE
-    `define TB_CHOICE 0 // 0="CORE", 1="PLATFORM"
+    `define TB_CHOICE 0
     `endif
 
     parameter TB_CHOICE = (`TB_CHOICE==0) ? "CORE" : "PLATFORM";
@@ -77,7 +77,7 @@ module friscv_testbench(
     // FIFO depth of processing unit, buffering the instruction to execute
     parameter PROCESSING_QUEUE_DEPTH = 0;
     // Express mode track the register usage and avoid wait state in control unit
-    parameter EXPRESS_MODE = 0;
+    parameter FAST_JUMP = 0;
 
     // Address buses width
     parameter AXI_ADDR_W = XLEN;
@@ -113,7 +113,7 @@ module friscv_testbench(
     // Number of blocks in the cache
     parameter DCACHE_DEPTH = 512;
 
-    // timeout used in the testbench to break the simulation
+    // Timeout used in the testbench to break the simulation
     parameter TIMEOUT = `TIMEOUT;
     // Variable latency setup the AXI4-lite RAM model
     parameter VARIABLE_LATENCY = 0;
@@ -240,7 +240,7 @@ module friscv_testbench(
         .F_EXTENSION (F_EXTENSION),
         .PROCESSING_QUEUE_DEPTH (PROCESSING_QUEUE_DEPTH),
         .PROCESSING_BUS_PIPELINE (PROCESSING_BUS_PIPELINE),
-        .EXPRESS_MODE (EXPRESS_MODE),
+        .FAST_JUMP (FAST_JUMP),
         .AXI_ADDR_W (AXI_ADDR_W),
         .AXI_ID_W (AXI_ID_W),
         .AXI_IMEM_W (AXI_IMEM_W),
@@ -387,7 +387,7 @@ module friscv_testbench(
         .F_EXTENSION (F_EXTENSION),
         .PROCESSING_QUEUE_DEPTH (PROCESSING_QUEUE_DEPTH),
         .PROCESSING_BUS_PIPELINE (PROCESSING_BUS_PIPELINE),
-        .EXPRESS_MODE (EXPRESS_MODE),
+        .FAST_JUMP (FAST_JUMP),
         .AXI_ADDR_W (AXI_ADDR_W),
         .AXI_ID_W (AXI_ID_W),
         .AXI_DATA_W (AXI_DATA_W),
@@ -597,7 +597,6 @@ module friscv_testbench(
             timer = timer + 1;
             @(posedge aclk);
         end
-
 
     `UNIT_TEST_END
 

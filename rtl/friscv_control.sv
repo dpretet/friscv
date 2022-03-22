@@ -8,7 +8,7 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 // Central controller of the processor, fetching instruction and driving
-// the ALU, the data memory controller and CSR manager
+// the processing (ALU & data controller) and CSR manager.
 ///////////////////////////////////////////////////////////////////////////////
 
 module friscv_control
@@ -26,11 +26,11 @@ module friscv_control
         parameter AXI_ID_W = 8,
         // AXI4 data width, independant of control unit width
         parameter AXI_DATA_W = XLEN,
-        // Express mode track the register usage and avoid wait state in control unit
-        parameter EXPRESS_MODE = 0,
+        // Fast jump mode tracks the register usage and avoid wait state in control unit
+        parameter FAST_JUMP = 0,
         // Number of outstanding requests supported
         parameter OSTDREQ_NUM = 4,
-        // Primary address to boot to load the firmware [0:2**ADDRW-1]
+        // Primary address to boot to load the firmware
         parameter BOOT_ADDR = 0
     )(
         // clock & reset
@@ -162,6 +162,7 @@ module friscv_control
     logic                   cant_process;
     logic                   cant_lui_auipc;
     logic                   cant_sys;
+    logic                   regs_rsvd;
     // FIFO signals
     logic [ILEN       -1:0] instruction;
     logic                   flush_fifo;
@@ -204,7 +205,7 @@ module friscv_control
     // Used to print instruction during execution, relies on SVLogger
     /////////////////////////////////////////////////////////////////
 
-    task print_instruction(input logic a);
+    task print_instruction;
         `ifdef USE_SVL
         string inst_str;
         string pc_str;
@@ -228,12 +229,12 @@ module friscv_control
     /////////////////////////////////////////////////////////////////////
     // Get a description of a synchronous exception when handling a trap
     /////////////////////////////////////////////////////////////////////
-    function automatic string get_mcause_desc(input integer mcause);
-        if (mcause==1) get_mcause_desc = "Read-only CSR write access";
-        if (mcause==0) get_mcause_desc = "Instruction address misaligned";
-        if (mcause==4) get_mcause_desc = "LOAD address misaligned";
-        if (mcause==6) get_mcause_desc = "STORE address misaligned";
-        if (mcause==2) get_mcause_desc = "Instruction decoding error";
+    function automatic string get_mcause_desc(input integer cause);
+        if (cause==1) get_mcause_desc = "Read-only CSR write access";
+        if (cause==0) get_mcause_desc = "Instruction address misaligned";
+        if (cause==4) get_mcause_desc = "LOAD address misaligned";
+        if (cause==6) get_mcause_desc = "STORE address misaligned";
+        if (cause==2) get_mcause_desc = "Instruction decoding error";
     endfunction
 
 
@@ -242,15 +243,15 @@ module friscv_control
     /////////////////////////////////////////////////////////////////////
     task print_mcause(
         input string           msg,
-        input logic [XLEN-1:0] mcause
+        input logic [XLEN-1:0] cause
     );
         `ifdef USE_SVL
-        string mcause_str;
-        $sformat(mcause_str, "%x", mcause);
+        string cause_str;
+        $sformat(cause_str, "%x", cause);
         log.warning({msg,
-                     mcause_str,
+                     cause_str,
                      " (",
-                     get_mcause_desc(mcause),
+                     get_mcause_desc(cause),
                      ")"
                    });
         `endif
@@ -331,7 +332,7 @@ module friscv_control
     // Processing is handled by ALU & Memfy, responsible of data memory access,
     // registers management and arithmetic/logic operations
     //
-    // CSR is handled by the CSR dedicated module
+    // CSR is handled by a dedicated module
     //
     // All the other flags are handled in this module.
     //
@@ -600,7 +601,7 @@ module friscv_control
 
                             `ifdef USE_SVL
                             print_mcause("Handling a trap -> MCAUSE=0x", mcause_code);
-                            print_instruction(0);
+                            print_instruction;
                             `endif
                             traps[3] <= 1'b1;
                             flush_fifo <= 1'b1;
@@ -624,14 +625,15 @@ module friscv_control
 
                             if (~cant_jump) begin
                                 `ifdef USE_SVL
-                                print_instruction(0);
+                                print_instruction;
                                 `endif
                                 pc_reg <= pc;
                             end
 
                             if (jump_branch & ~cant_jump) begin
                                 `ifdef USE_SVL
-                                log.info("Jump/Branch");
+                                if (jal | jalr) log.info("Jumping");
+                                else log.info("Branching");
                                 `endif
                             end
 
@@ -650,7 +652,7 @@ module friscv_control
                             if (sys[`IS_ECALL] && ~proc_busy && csr_ready) begin
 
                                 `ifdef USE_SVL
-                                print_instruction(0);
+                                print_instruction;
                                 log.info("ECALL -> Jump to trap handler");
                                 `endif
                                 traps[0] <= 1'b1;
@@ -668,7 +670,7 @@ module friscv_control
                             end else if (sys[`IS_EBREAK]) begin
 
                                 `ifdef USE_SVL
-                                print_instruction(0);
+                                print_instruction;
                                 log.info("EBREAK -> Stop the processor");
                                 `endif
                                 flush_fifo <= 1'b1;
@@ -679,7 +681,7 @@ module friscv_control
                             end else if (sys[`IS_MRET] && ~proc_busy && csr_ready) begin
 
                                 `ifdef USE_SVL
-                                print_instruction(0);
+                                print_instruction;
                                 log.info("MRET -> Return from trap");
                                 `endif
                                 flush_fifo <= 1'b1;
@@ -696,7 +698,7 @@ module friscv_control
                             end else if (fence[`IS_FENCEI]) begin
 
                                 `ifdef USE_SVL
-                                print_instruction(0);
+                                print_instruction;
                                 log.info("FENCE.i -> Start iCache flushing");
                                 `endif
                                 flush_fifo <= 1'b1;
@@ -710,7 +712,7 @@ module friscv_control
                             end else if (sys[`IS_WFI] && ~proc_busy && csr_ready) begin
 
                                 `ifdef USE_SVL
-                                print_instruction(0);
+                                print_instruction;
                                 log.info("WFI -> Stall and wait for interrupt");
                                 `endif
                                 traps[0] <= 1'b1;
@@ -727,7 +729,7 @@ module friscv_control
                             end else if (sys[`IS_CSR] && ~cant_sys) begin
 
                                 `ifdef USE_SVL
-                                print_instruction(0);
+                                print_instruction;
                                 `endif
                                 pc_reg <= pc;
 
@@ -735,7 +737,7 @@ module friscv_control
                             end else if (~proc_busy && csr_ready) begin
 
                                 `ifdef USE_SVL
-                                print_instruction(0);
+                                print_instruction;
                                 `endif
                                 pc_reg <= pc;
                             end
@@ -744,7 +746,7 @@ module friscv_control
                         end else if (lui_auipc && ~cant_lui_auipc) begin
 
                             `ifdef USE_SVL
-                            print_instruction(0);
+                            print_instruction;
                             `endif
                             pc_reg <= pc;
 
@@ -753,7 +755,7 @@ module friscv_control
 
                             if (~cant_process) begin
                                 `ifdef USE_SVL
-                                print_instruction(0);
+                                print_instruction;
                                 `endif
                                 pc_reg <= pc;
                             end
@@ -844,18 +846,27 @@ module friscv_control
 
     generate
 
-    // When express mode is not activated, the control unit always waits for the
+    // When FAST_JUMP mode is not activated, the control unit always waits for the
     // processing unit finished to compute its batch of instruction. The mode is slow when
     // jumping but save gate count.
-    if (EXPRESS_MODE==0) begin: EXPRESS_MODE_OFF
-        assign cant_jump = (jal | jalr | branching) && (proc_busy | ~csr_ready);
+    if (FAST_JUMP==0) begin: FAST_JUMP_OFF
 
-    // When express mode is activated, the jump is done even if processing didn't finish
+        assign regs_rsvd = 1'b0;
+
+        assign cant_jump = (jal | jalr | branching) && (proc_busy || ~csr_ready);
+
+    // When FAST_JUMP mode is activated, the jump is done even if processing didn't finish
     // yet. The mandatory condition is processing unit doesn't target a register used by
     // a jump or a branch instruction. This mode consumes for area but can significatly
     // enhance performanbce due to the number of cycles a jump/branch needs to apply.
-    end else begin: EXPRESS_MODE_ON
-        assign cant_jump = (jal | jalr | branching) && (proc_busy || ~csr_ready);
+    end else begin: FAST_JUMP_ON
+
+        assign regs_rsvd = proc_rsvd_regs[rs1] |
+                           proc_rsvd_regs[rs2] |
+                           proc_rsvd_regs[rd]  ;
+
+        assign cant_jump = (jal | jalr | branching) && (regs_rsvd | ~csr_ready);
+
     end
     endgenerate
 

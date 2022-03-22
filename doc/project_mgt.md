@@ -1,13 +1,5 @@
 # DOING
 
-- [ ] Enhance processing unit
-        - control checks registers under use in an instruction and knows if can branch, LUI, AUIPC
-        - processing clear the tickets once instruction is finished
-        - processing knows if a ALU can be used based register targeted
-- [ ] Support multiple ALUs in parallel, differents extensions (float, mult/div, ...)
-      Processing scheduler to assert readiness according the instruction and
-      ISA regs accessed. Could be reused in control to avoid blocking AUIPC
-      and LUI. Use Tomasulo algorithm and reservation station
 
 # BACKLOG
 
@@ -135,6 +127,14 @@ Verification/Validation:
 
 # DONE
 
+- [X] Enhance processing unit
+        - control checks registers under use in an instruction and knows if can branch, LUI, AUIPC
+        - processing clear the tickets once instruction is finished
+        - processing knows if a ALU can be used based register targeted
+- [X] Support multiple ALUs in parallel, differents extensions (float, mult/div, ...)
+      Processing scheduler to assert readiness according the instruction and
+      ISA regs accessed. Could be reused in control to avoid blocking AUIPC
+      and LUI. Use Tomasulo algorithm and reservation station
 - [X] Better print control status when branching and trapping (MAUSE info)
 - [X] Add Github Actions and deploy CI flow
 - [X] Support both Icarus and Verilator in simulation flow

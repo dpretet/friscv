@@ -41,8 +41,8 @@ module friscv_rv32i_platform
         parameter PROCESSING_BUS_PIPELINE = 0,
         // FIFO depth of processing unit, buffering the instruction to execute
         parameter PROCESSING_QUEUE_DEPTH = 0,
-        // Express mode track the register usage and avoid wait state in control unit
-        parameter EXPRESS_MODE = 0,
+        // Fast jump mode tracks the register usage and avoid wait state in control unit
+        parameter FAST_JUMP = 0,
 
         ////////////////////////////////////////////////////////////////////////
         // AXI4 / AXI4-lite interface setup
@@ -299,7 +299,7 @@ module friscv_rv32i_platform
     .F_EXTENSION (F_EXTENSION),
     .PROCESSING_QUEUE_DEPTH (PROCESSING_QUEUE_DEPTH),
     .PROCESSING_BUS_PIPELINE (PROCESSING_BUS_PIPELINE),
-    .EXPRESS_MODE (EXPRESS_MODE),
+    .FAST_JUMP (FAST_JUMP),
     .BOOT_ADDR (BOOT_ADDR),
     .INST_OSTDREQ_NUM (INST_OSTDREQ_NUM),
     .MHART_ID (MHART_ID),

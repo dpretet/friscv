@@ -26,10 +26,11 @@ module friscv_processing
         parameter AXI_DATA_W        = XLEN,
         // ID used to identify the dta abus in the infrastructure
         parameter AXI_ID_MASK       = 'h20,
-        // Express mode track the register usage and avoid wait state in control unit
-        parameter EXPRESS_MODE      = 0,
+        // Fast jump mode tracks the register usage and avoid wait state in control unit
+        parameter FAST_JUMP         = 0,
         // Number of extension supported in processing unit
         parameter NB_UNIT           = 2,
+        parameter MAX_UNIT          = 4,
         // Insert a pipeline on instruction bus coming from the controller
         parameter INST_BUS_PIPELINE = 0,
         // Internal FIFO depth, buffering the instruction to execute
@@ -88,12 +89,13 @@ module friscv_processing
     //
     ///////////////////////////////////////////////////////////////////////////
 
+    parameter RSVD_CNT_W = (INST_QUEUE_DEPTH>0) ? $clog2(INST_QUEUE_DEPTH) : 3;
+
     logic [`OPCODE_W       -1:0] opcode;
     logic [`FUNCT7_W       -1:0] funct7;
     logic [`RS1_W          -1:0] rs1;
     logic [`RS2_W          -1:0] rs2;
     logic [`RD_W           -1:0] rd;
-    logic [`RD_W           -1:0] rd_i;
     logic                        memfy_valid;
     logic                        alu_valid;
     logic                        m_valid;
@@ -103,27 +105,22 @@ module friscv_processing
     logic                        i_inst;
     logic                        ls_inst;
     logic                        m_inst;
-    // Bus on pipeline output
     logic                        proc_valid_p;
     logic                        proc_ready_p;
     logic [`INST_BUS_W     -1:0] proc_instbus_p;
-    // Bus on FIFO output (optional)
     logic                        proc_valid_q;
     logic                        proc_ready_q;
     logic [`INST_BUS_W     -1:0] proc_instbus_q;
-    logic [32              -1:0] proc_rsvd_regs_cnt[$clog2(INST_QUEUE_DEPTH)-1:0];
     logic [2               -1:0] memfy_exceptions;
+    logic [RSVD_CNT_W      -1:0] proc_rsvd_regs_cnt[32-1:0];
+    logic [MAX_UNIT        -1:0] itf_rsvd_dec[32-1:0];
+    logic [32              -1:0] proc_rsvd_inc;
 
     // Assignment of M extension on integer registers' interface
     localparam M_IX = 2;
 
     // Number of integer registers really used based on RV32E arch
     localparam NB_INT_REG = (RV32E) ? 16 : 32;
-
-    // Used to parse all the integer registers
-    integer regi;
-    // Used to parse all the integer registers' interfaces
-    integer itfi;
 
 
     ///////////////////////////////////////////////////////////////////////////
@@ -132,45 +129,55 @@ module friscv_processing
 
     generate
 
-    if (EXPRESS_MODE) begin: EXPRESS_MODE_ON
+    if (FAST_JUMP>0) begin: FAST_JUMP_ON
 
-        assign rd_i = proc_instbus[`RD+:`RD_W];
+        // Increment bit, activated when a new incoming instruction target a RD register
+        for (genvar regi=0;regi<NB_INT_REG;regi=regi+1) begin
+            assign proc_rsvd_inc[regi] = (proc_instbus[`RD+:`RD_W]==regi) & proc_valid & proc_ready;
+        end
 
-        always @ (posedge aclk or negedge aresetn) begin
-            if (!aresetn) begin
-                for (regi=0;regi<NB_INT_REG;regi=regi+1) begin
-                    proc_rsvd_regs_cnt[regi] <= 0;
-                end
-            end else if (srst) begin
-                for (regi=0;regi<NB_INT_REG;regi=regi+1) begin
-                    proc_rsvd_regs_cnt[regi] <= 0;
-                end
-            end else begin
-                for (regi=0;regi<NB_INT_REG;regi=regi+1) begin
-                    for (itfi=0;itfi<NB_UNIT;itfi=itfi+1) begin
-                        // If new instruction will target this instruction, increment
-                        if ((proc_valid && rd_i==regi[4:0]) &&
-                            ((proc_rd_wr[itfi] && proc_rd_addr[itfi]!=regi[4:0]) ||
-                             &proc_rd_wr==1'b0)
-                        ) begin
-                            proc_rsvd_regs_cnt[regi] <= proc_rsvd_regs_cnt[regi] + 1;
-                        // Else if releasing the register, decrement
-                        end else if ((proc_valid && rd_i!=regi[4:0]) &&
-                            ((proc_rd_wr[itfi] && proc_rd_addr[itfi]==regi[4:0]) ||
-                             &proc_rd_wr==1'b0)
-                        ) begin
-                            proc_rsvd_regs_cnt[regi] <= proc_rsvd_regs_cnt[regi] - 1;
-                        end
-                    end
+        // Decrement bit for each extension interface, activated when a regsiter is written/released
+        for (genvar regi=0;regi<NB_INT_REG;regi=regi+1) begin
+            for (genvar itfi=0;itfi<NB_UNIT;itfi=itfi+1) begin
+                assign itf_rsvd_dec[regi][itfi] = (proc_rd_addr[5*itfi+:5]==regi) & proc_rd_wr[itfi];
+            end
+        end
+
+        // Initialize unused bit in case for instance F extension is disabled
+        for (genvar regi=0;regi<NB_INT_REG;regi=regi+1) begin
+            if (NB_UNIT<MAX_UNIT) 
+                assign itf_rsvd_dec[regi][MAX_UNIT-1:NB_UNIT] = {MAX_UNIT-NB_UNIT{1'b0}};
+        end
+
+        for (genvar regi=0;regi<NB_INT_REG;regi=regi+1) begin
+
+            always @ (posedge aclk or negedge aresetn) begin
+                if (!aresetn) begin
+                    proc_rsvd_regs_cnt[regi] <= {RSVD_CNT_W{1'b0}};
+                end else if (srst) begin
+                    proc_rsvd_regs_cnt[regi] <= {RSVD_CNT_W{1'b0}};
+                end else begin
+                    if (regi==0) 
+                        proc_rsvd_regs_cnt[regi] <= {RSVD_CNT_W{1'b0}};
+                    else
+                        proc_rsvd_regs_cnt[regi] <= proc_rsvd_regs_cnt[regi]
+                                                    + proc_rsvd_inc[regi]
+                                                    - itf_rsvd_dec[regi][0]
+                                                    - itf_rsvd_dec[regi][1]
+                                                    - itf_rsvd_dec[regi][2]
+                                                    - itf_rsvd_dec[regi][3]; 
                 end
             end
+
+            assign proc_rsvd_regs[regi] = |proc_rsvd_regs_cnt[regi];
+
         end
 
         if (RV32E) begin
             assign proc_rsvd_regs[16+:16] = 16'b0;
         end
 
-    end else begin: EXPRESS_MODE_OFF
+    end else begin: FAST_JUMP_OFF
         assign proc_rsvd_regs = 32'b0;
     end
     endgenerate
