@@ -31,6 +31,7 @@ Control:
 - [ ] [Multiple instruction issue](https://www.youtube.com/watch?v=wGpkiNb_V9c)
 
 Processing:
+- [ ] Scheduler to run multiple operations in parallel
 - https://www.youtube.com/channel/UCPSsA8oxlSBjidJsSPdpjsQ/videos
 - [ ] Memfy enhancement
     - Support outstanding requests
@@ -127,14 +128,11 @@ Verification/Validation:
 
 # DONE
 
-- [X] Enhance processing unit
+- [X] Enhance processing unit (CANCELLED: implementation is too big for too few benefits)
         - control checks registers under use in an instruction and knows if can branch, LUI, AUIPC
         - processing clear the tickets once instruction is finished
         - processing knows if a ALU can be used based register targeted
 - [X] Support multiple ALUs in parallel, differents extensions (float, mult/div, ...)
-      Processing scheduler to assert readiness according the instruction and
-      ISA regs accessed. Could be reused in control to avoid blocking AUIPC
-      and LUI. Use Tomasulo algorithm and reservation station
 - [X] Better print control status when branching and trapping (MAUSE info)
 - [X] Add Github Actions and deploy CI flow
 - [X] Support both Icarus and Verilator in simulation flow

@@ -26,8 +26,6 @@ module friscv_processing
         parameter AXI_DATA_W        = XLEN,
         // ID used to identify the dta abus in the infrastructure
         parameter AXI_ID_MASK       = 'h20,
-        // Fast jump mode tracks the register usage and avoid wait state in control unit
-        parameter FAST_JUMP         = 0,
         // Number of extension supported in processing unit
         parameter NB_UNIT           = 2,
         parameter MAX_UNIT          = 4,
@@ -44,7 +42,6 @@ module friscv_processing
         input  wire                         proc_valid,
         output logic                        proc_ready,
         input  wire  [`INST_BUS_W     -1:0] proc_instbus,
-        output logic [32              -1:0] proc_rsvd_regs,
         output logic [4               -1:0] proc_fenceinfo,
         output logic                        proc_busy,
         output logic [2               -1:0] proc_exceptions,
@@ -112,9 +109,7 @@ module friscv_processing
     logic                        proc_ready_q;
     logic [`INST_BUS_W     -1:0] proc_instbus_q;
     logic [2               -1:0] memfy_exceptions;
-    logic [RSVD_CNT_W      -1:0] proc_rsvd_regs_cnt[32-1:0];
-    logic [MAX_UNIT        -1:0] itf_rsvd_dec[32-1:0];
-    logic [32              -1:0] proc_rsvd_inc;
+
 
     // Assignment of M extension on integer registers' interface
     localparam M_IX = 2;
@@ -122,65 +117,6 @@ module friscv_processing
     // Number of integer registers really used based on RV32E arch
     localparam NB_INT_REG = (RV32E) ? 16 : 32;
 
-
-    ///////////////////////////////////////////////////////////////////////////
-    // Indicate to the control unit the integer registers under use
-    ///////////////////////////////////////////////////////////////////////////
-
-    generate
-
-    if (FAST_JUMP>0) begin: FAST_JUMP_ON
-
-        // Increment bit, activated when a new incoming instruction target a RD register
-        for (genvar regi=0;regi<NB_INT_REG;regi=regi+1) begin
-            assign proc_rsvd_inc[regi] = (proc_instbus[`RD+:`RD_W]==regi) & proc_valid & proc_ready;
-        end
-
-        // Decrement bit for each extension interface, activated when a regsiter is written/released
-        for (genvar regi=0;regi<NB_INT_REG;regi=regi+1) begin
-            for (genvar itfi=0;itfi<NB_UNIT;itfi=itfi+1) begin
-                assign itf_rsvd_dec[regi][itfi] = (proc_rd_addr[5*itfi+:5]==regi) & proc_rd_wr[itfi];
-            end
-        end
-
-        // Initialize unused bit in case for instance F extension is disabled
-        for (genvar regi=0;regi<NB_INT_REG;regi=regi+1) begin
-            if (NB_UNIT<MAX_UNIT) 
-                assign itf_rsvd_dec[regi][MAX_UNIT-1:NB_UNIT] = {MAX_UNIT-NB_UNIT{1'b0}};
-        end
-
-        for (genvar regi=0;regi<NB_INT_REG;regi=regi+1) begin
-
-            always @ (posedge aclk or negedge aresetn) begin
-                if (!aresetn) begin
-                    proc_rsvd_regs_cnt[regi] <= {RSVD_CNT_W{1'b0}};
-                end else if (srst) begin
-                    proc_rsvd_regs_cnt[regi] <= {RSVD_CNT_W{1'b0}};
-                end else begin
-                    if (regi==0) 
-                        proc_rsvd_regs_cnt[regi] <= {RSVD_CNT_W{1'b0}};
-                    else
-                        proc_rsvd_regs_cnt[regi] <= proc_rsvd_regs_cnt[regi]
-                                                    + proc_rsvd_inc[regi]
-                                                    - itf_rsvd_dec[regi][0]
-                                                    - itf_rsvd_dec[regi][1]
-                                                    - itf_rsvd_dec[regi][2]
-                                                    - itf_rsvd_dec[regi][3]; 
-                end
-            end
-
-            assign proc_rsvd_regs[regi] = |proc_rsvd_regs_cnt[regi];
-
-        end
-
-        if (RV32E) begin
-            assign proc_rsvd_regs[16+:16] = 16'b0;
-        end
-
-    end else begin: FAST_JUMP_OFF
-        assign proc_rsvd_regs = 32'b0;
-    end
-    endgenerate
 
     generate
     if (INST_BUS_PIPELINE || INST_QUEUE_DEPTH) begin: BUSY_FLAG_WITH_PIPE

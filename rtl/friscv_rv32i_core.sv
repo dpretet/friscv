@@ -41,8 +41,6 @@ module friscv_rv32i_core
         parameter PROCESSING_BUS_PIPELINE = 0,
         // FIFO depth of processing unit, buffering the instruction to execute
         parameter PROCESSING_QUEUE_DEPTH = 0,
-        // Fast jump mode tracks the register usage and avoid wait state in control unit
-        parameter FAST_JUMP = 0,
 
         ////////////////////////////////////////////////////////////////////////
         // AXI4 / AXI4-lite interface setup
@@ -170,7 +168,6 @@ module friscv_rv32i_core
     logic [`INST_BUS_W         -1:0] proc_instbus;
     logic                            proc_ready;
     logic                            proc_busy;
-    logic [32                  -1:0] proc_rsvd_regs;
     logic [4                   -1:0] proc_fenceinfo;
     logic [2                   -1:0] proc_exceptions;
 
@@ -315,7 +312,6 @@ module friscv_rv32i_core
         .ILEN           (ILEN),
         .XLEN           (XLEN),
         .RV32E          (RV32E),
-        .FAST_JUMP      (FAST_JUMP),
         .AXI_ADDR_W     (AXI_ADDR_W),
         .AXI_ID_W       (AXI_ID_W),
         .AXI_DATA_W     (XLEN),
@@ -343,7 +339,6 @@ module friscv_rv32i_core
         .rdata              (inst_rdata_s),
         .proc_valid         (proc_valid),
         .proc_ready         (proc_ready),
-        .proc_rsvd_regs     (proc_rsvd_regs),
         .proc_fenceinfo     (proc_fenceinfo),
         .proc_exceptions    (proc_exceptions),
         .proc_instbus       (proc_instbus),
@@ -503,7 +498,6 @@ module friscv_rv32i_core
         .F_EXTENSION       (F_EXTENSION),
         .M_EXTENSION       (M_EXTENSION),
         .RV32E             (RV32E),
-        .FAST_JUMP         (FAST_JUMP),
         .AXI_ADDR_W        (AXI_ADDR_W),
         .AXI_ID_W          (AXI_ID_W),
         .AXI_DATA_W        (XLEN),
@@ -520,7 +514,6 @@ module friscv_rv32i_core
         .srst               (srst),
         .proc_valid         (proc_valid),
         .proc_ready         (proc_ready),
-        .proc_rsvd_regs     (proc_rsvd_regs),
         .proc_fenceinfo     (proc_fenceinfo),
         .proc_exceptions    (proc_exceptions),
         .proc_instbus       (proc_instbus),

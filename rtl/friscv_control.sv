@@ -59,7 +59,6 @@ module friscv_control
         output logic                      proc_valid,
         input  wire                       proc_ready,
         output logic [`INST_BUS_W   -1:0] proc_instbus,
-        input  wire  [32            -1:0] proc_rsvd_regs,
         input  wire  [4             -1:0] proc_fenceinfo,
         input  wire  [2             -1:0] proc_exceptions,
         input  wire                       proc_busy,
@@ -844,31 +843,7 @@ module friscv_control
     // LUI and AUIPC are executed internally, not in processing
     assign lui_auipc = lui | auipc;
 
-    generate
-
-    // When FAST_JUMP mode is not activated, the control unit always waits for the
-    // processing unit finished to compute its batch of instruction. The mode is slow when
-    // jumping but save gate count.
-    if (FAST_JUMP==0) begin: FAST_JUMP_OFF
-
-        assign regs_rsvd = 1'b0;
-
-        assign cant_jump = (jal | jalr | branching) && (proc_busy || ~csr_ready);
-
-    // When FAST_JUMP mode is activated, the jump is done even if processing didn't finish
-    // yet. The mandatory condition is processing unit doesn't target a register used by
-    // a jump or a branch instruction. This mode consumes for area but can significatly
-    // enhance performanbce due to the number of cycles a jump/branch needs to apply.
-    end else begin: FAST_JUMP_ON
-
-        assign regs_rsvd = proc_rsvd_regs[rs1] |
-                           proc_rsvd_regs[rs2] |
-                           proc_rsvd_regs[rd]  ;
-
-        assign cant_jump = (jal | jalr | branching) && (regs_rsvd | ~csr_ready);
-
-    end
-    endgenerate
+    assign cant_jump = (jal | jalr | branching) && (proc_busy || ~csr_ready);
 
     assign cant_process = processing & (~proc_ready || ~csr_ready);
 

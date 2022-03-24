@@ -76,8 +76,6 @@ module friscv_testbench(
     parameter PROCESSING_BUS_PIPELINE = 1;
     // FIFO depth of processing unit, buffering the instruction to execute
     parameter PROCESSING_QUEUE_DEPTH = 0;
-    // Express mode track the register usage and avoid wait state in control unit
-    parameter FAST_JUMP = 0;
 
     // Address buses width
     parameter AXI_ADDR_W = XLEN;
@@ -240,7 +238,6 @@ module friscv_testbench(
         .F_EXTENSION (F_EXTENSION),
         .PROCESSING_QUEUE_DEPTH (PROCESSING_QUEUE_DEPTH),
         .PROCESSING_BUS_PIPELINE (PROCESSING_BUS_PIPELINE),
-        .FAST_JUMP (FAST_JUMP),
         .AXI_ADDR_W (AXI_ADDR_W),
         .AXI_ID_W (AXI_ID_W),
         .AXI_IMEM_W (AXI_IMEM_W),
@@ -387,7 +384,6 @@ module friscv_testbench(
         .F_EXTENSION (F_EXTENSION),
         .PROCESSING_QUEUE_DEPTH (PROCESSING_QUEUE_DEPTH),
         .PROCESSING_BUS_PIPELINE (PROCESSING_BUS_PIPELINE),
-        .FAST_JUMP (FAST_JUMP),
         .AXI_ADDR_W (AXI_ADDR_W),
         .AXI_ID_W (AXI_ID_W),
         .AXI_DATA_W (AXI_DATA_W),
