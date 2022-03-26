@@ -279,6 +279,7 @@ module friscv_memfy
     logic [2           -1:0] offset;
     logic                    load_misaligned;
     logic                    store_misaligned;
+    logic                    state;
 
 
     ///////////////////////////////////////////////////////////////////////////
@@ -319,6 +320,7 @@ module friscv_memfy
             rd_r <= 5'b0;
             two_phases <= 1'b0;
             offset <= 2'b0;
+            state <= 1'b0;
         end else if (srst == 1'b1) begin
             memfy_ready <= 1'b0;
             opcode_r <= 7'b0;
@@ -335,10 +337,11 @@ module friscv_memfy
             rd_r <= 5'b0;
             two_phases <= 1'b0;
             offset <= 2'b0;
+            state <= 1'b0;
         end else begin
 
             // LOAD or STORE completion: memory accesses span over multiple
-            if (memfy_ready==1'b0) begin
+            if (state) begin
                 // LOAD
                 if (opcode_r==`LOAD) begin
                     // Stop the request once accepted
@@ -346,6 +349,7 @@ module friscv_memfy
                     if (rvalid) rready <= 1'b0;
                     if (rvalid && arready || rvalid && ~arvalid) begin
                         memfy_ready <= 1'b1;
+                        state <= 1'b0;
                     end
                 // STORE
                 end else begin
@@ -353,8 +357,10 @@ module friscv_memfy
                     if (awready) awvalid <= 1'b0;
                     if (wready) wvalid <= 1'b0;
                     // Wait until the data has been received
-                    if (awready && wready || ~awvalid && wready || awready && ~wvalid) begin
+                    // if (awready && wready || ~awvalid && wready || awready && ~wvalid) begin
+                    if (bvalid) begin
                         memfy_ready <= 1'b1;
+                        state <= 1'b0;
                     end
                 end
 
@@ -363,6 +369,7 @@ module friscv_memfy
 
                 // Control flow
                 memfy_ready <= 1'b0;
+                state <= 1'b1;
                 opcode_r <= opcode;
                 funct3_r <= funct3;
                 rd_r <= rd;

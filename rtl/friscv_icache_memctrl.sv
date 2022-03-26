@@ -141,7 +141,7 @@ module friscv_icache_memctrl
     ///////////////////////////////////////////////////////////////////////////
 
     assign mem_arvalid = ctrl_arvalid;
-    assign ctrl_arready = !full;
+    assign ctrl_arready = mem_arready && !full;
 
     // TODO: Fetch the address rounded to cache line boundary
     assign mem_araddr = {ctrl_araddr[AXI_ADDR_W-1:ADDR_LSB_W],{ADDR_LSB_W{1'b0}}};
@@ -162,7 +162,7 @@ module friscv_icache_memctrl
         .srst     (srst),
         .flush    (1'b0),
         .data_in  (ctrl_araddr),
-        .push     (ctrl_arvalid),
+        .push     (ctrl_arvalid & ctrl_arready),
         .full     (full),
         .data_out (araddr),
         .pull     (mem_rvalid),

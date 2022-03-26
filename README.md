@@ -21,7 +21,6 @@ FRISCV is a SystemVerilog implementation of the [RISCV ISA](https://riscv.org):
 - Support Zifencei
 - Support Zicsr
 - Support M extension (multiply/divide)
-- Support F extension with Berkeley Hardfloat core
 - Machine-mode only
 - Implement a 3-stage pipeline
 - Support global and software interrupts
@@ -81,18 +80,17 @@ The core has not been yet tested on hardware, but a synthesis flow based in [Yos
 is available in [syn](./syn) folder.
 
 
-# Development plan
+# [Development plan](doc/project_mgt.md)
 
 Ongoing:
 
-- interrupts
-- timers
+- Development of ASM and C programs to test the processor with real use cases and benchmark it
 
 Next:
 
 - Counters
 - Supervisor & user mode
-- New ISA extensions (mult/div, FP, ...)
+- Support F extension with Berkeley Hardfloat core
 - Data cache stage
 - 64 bits architecture
 - JTAG interface for debugging purpose

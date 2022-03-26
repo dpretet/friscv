@@ -129,7 +129,7 @@ module friscv_processing
             end else begin
                 if (proc_valid) begin
                     proc_busy <= 1'b1;
-                end else if (|proc_rd_wr || (!proc_valid_q  && proc_ready_q)) begin
+                end else if (!proc_valid_q && proc_ready_q) begin
                     proc_busy <= 1'b0;
                 end
             end

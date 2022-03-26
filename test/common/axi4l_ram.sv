@@ -141,6 +141,19 @@ module axi4l_ram
     logic [AXI2_DATA_W-1:0  ] p2_wdata_s;
     logic [AXI2_DATA_W/8-1:0] p2_wstrb_s;
 
+    logic [32            -1:0] p1_awready_lfsr;
+    logic [32            -1:0] p2_awready_lfsr;
+    logic [32            -1:0] p1_aw_lfsr;
+    logic [32            -1:0] p2_aw_lfsr;
+    logic [32            -1:0] p1_arready_lfsr;
+    logic [32            -1:0] p2_arready_lfsr;
+    logic [32            -1:0] p1_ar_lfsr;
+    logic [32            -1:0] p2_ar_lfsr;
+
+    logic [32            -1:0] p1_r_lfsr;
+    logic [32            -1:0] p1_rvalid_lfsr;
+    logic [32            -1:0] p2_r_lfsr;
+    logic [32            -1:0] p2_rvalid_lfsr;
 
     ///////////////////////////////////////////////////////////////////////////
     // Read address channels, store info to perform the read accesses
@@ -158,16 +171,47 @@ module axi4l_ram
         .srst     (srst),
         .flush    (1'b0),
         .data_in  ({p1_arid, p1_araddr}),
-        .push     (p1_arvalid),
+        .push     (p1_arvalid & p1_arready),
         .full     (p1_raddr_full),
         .data_out ({p1_arid_s, p1_araddr_s}),
         .pull     (p1_raddr_pull),
         .empty    (p1_raddr_empty)
     );
 
-    assign p1_arready = ~p1_raddr_full;
+    always @ (posedge aclk or negedge aresetn) begin
 
-    assign p1_raddr_pull = p1_rvalid & p1_rready;
+        if (~aresetn) begin
+            p1_arready_lfsr <= 32'b0;
+        end else if (srst) begin
+            p1_arready_lfsr <= 32'b0;
+        end else begin
+            // At startup init with LFSR default value
+            if (p1_arready_lfsr==32'b0) begin
+                p1_arready_lfsr <= p1_ar_lfsr;
+            // Use to randomly assert arready
+            end else if (~p1_arready) begin
+                p1_arready_lfsr <= p1_arready_lfsr >> 1;
+            end else if (p1_arvalid) begin
+                p1_arready_lfsr <= p1_ar_lfsr;
+            end
+        end
+    end
+
+    assign p1_arready = p1_arready_lfsr[0] & ~p1_raddr_full;
+
+    lfsr32
+    #(
+        .KEY ('hCCCCCCCC)
+    )
+    p1_arch_lfsr
+    (
+        .aclk    (aclk),
+        .aresetn (aresetn),
+        .srst    (srst),
+        .en      (p1_arvalid & p1_arready),
+        .lfsr    (p1_ar_lfsr)
+    );
+
 
     friscv_scfifo
     #(
@@ -188,43 +232,82 @@ module axi4l_ram
         .empty    (p2_raddr_empty)
     );
 
-    assign p2_arready = ~p2_raddr_full;
+    always @ (posedge aclk or negedge aresetn) begin
 
-    assign p2_raddr_pull = p2_rvalid & p2_rready;
+        if (~aresetn) begin
+            p2_arready_lfsr <= 32'b0;
+        end else if (srst) begin
+            p2_arready_lfsr <= 32'b0;
+        end else begin
+            // At startup init with LFSR default value
+            if (p2_arready_lfsr==32'b0) begin
+                p2_arready_lfsr <= p2_ar_lfsr;
+            // Use to randomly assert arready
+            end else if (~p2_arready) begin
+                p2_arready_lfsr <= p2_arready_lfsr >> 1;
+            end else if (p2_arvalid) begin
+                p2_arready_lfsr <= p2_ar_lfsr;
+            end
+        end
+    end
+
+    assign p2_arready = p2_arready_lfsr[0] & ~p2_raddr_full;
+
+    lfsr32
+    #(
+        .KEY ('h1C6CDCC5)
+    )
+    p2_arch_lfsr
+    (
+        .aclk    (aclk),
+        .aresetn (aresetn),
+        .srst    (srst),
+        .en      (p2_arvalid & p2_arready),
+        .lfsr    (p2_ar_lfsr)
+    );
+
 
 
     ///////////////////////////////////////////////////////////////////////////
     // Read data channels, complete the read requets
     ///////////////////////////////////////////////////////////////////////////
 
+    assign p1_raddr_pull = p1_rvalid & p1_rready;
+    assign p2_raddr_pull = p2_rvalid & p2_rready;
+
     always @ (posedge aclk or negedge aresetn) begin
+
         if (~aresetn) begin
-            p1_random <= $urandom() % 5;
-            p1_rcounter <= 0;
-            p1_rvalid <= 1'b0;
+            p1_rvalid_lfsr <= 32'b0;
         end else if (srst) begin
-            p1_random <= $urandom() % 5;
-            p1_rcounter <= 0;
-            p1_rvalid <= 1'b0;
+            p1_rvalid_lfsr <= 32'b0;
         end else begin
-            if (~p1_raddr_empty && ~p1_rvalid) begin
-                if (p1_random==p1_rcounter) begin
-                    p1_rvalid <= 1'b1;
-                    if (p1_rready) begin
-                        if (VARIABLE_LATENCY>0) p1_random <= $urandom() % 5;
-                        else p1_random <= 0;
-                        p1_rcounter <= 0;
-                    end
-                end else begin
-                    p1_rvalid <= 1'b0;
-                    p1_rcounter <= p1_rcounter + 1;
-                end
-            end else begin
-                p1_rvalid <= 1'b0;
-                p1_rcounter <= 0;
+            // At startup init with LFSR default value
+            if (p1_rvalid_lfsr==32'b0) begin
+                p1_rvalid_lfsr <= p1_r_lfsr;
+            // Use to randomly assert bvalid/wready
+            end else if (~p1_rvalid) begin
+                p1_rvalid_lfsr <= p1_rvalid_lfsr >> 1;
+            end else if (p1_rready) begin
+                p1_rvalid_lfsr <= p1_r_lfsr;
             end
         end
     end
+
+    lfsr32
+    #(
+    .KEY (32'h986A23CC)
+    )
+    p1_rch_lfsr
+    (
+    .aclk    (aclk),
+    .aresetn (aresetn),
+    .srst    (srst),
+    .en      (p1_rvalid & p1_rready),
+    .lfsr    (p1_r_lfsr)
+    );
+
+    assign p1_rvalid = p1_rvalid_lfsr[0] & ~p1_raddr_empty;
 
     // Get the position in the RAM line in bits:
     //  - p1_araddr_s[0+:ADDR_LSB_W] : get the start address in byte
@@ -244,33 +327,38 @@ module axi4l_ram
     assign p1_rresp = 2'b0;
 
     always @ (posedge aclk or negedge aresetn) begin
+
         if (~aresetn) begin
-            p2_random <= $urandom() % 5;
-            p2_rcounter <= 0;
-            p2_rvalid <= 1'b0;
+            p2_rvalid_lfsr <= 32'b0;
         end else if (srst) begin
-            p2_random <= $urandom() % 5;
-            p2_rcounter <= 0;
-            p2_rvalid <= 1'b0;
+            p2_rvalid_lfsr <= 32'b0;
         end else begin
-            if (~p2_raddr_empty && ~p2_rvalid) begin
-                if (p2_random==p2_rcounter) begin
-                    p2_rvalid <= 1'b1;
-                    if (p2_rready) begin
-                        if (VARIABLE_LATENCY>0) p2_random <= $urandom() % 5;
-                        else p2_random <= 0;
-                        p2_rcounter <= 0;
-                    end
-                end else begin
-                    p2_rvalid <= 1'b0;
-                    p2_rcounter <= p2_rcounter + 1;
-                end
-            end else begin
-                p2_rvalid <= 1'b0;
-                p2_rcounter <= 0;
+            // At startup init with LFSR default value
+            if (p2_rvalid_lfsr==32'b0) begin
+                p2_rvalid_lfsr <= p2_r_lfsr;
+            // Use to randomly assert bvalid/wready
+            end else if (~p2_rvalid) begin
+                p2_rvalid_lfsr <= p2_rvalid_lfsr >> 1;
+            end else if (p2_rready) begin
+                p2_rvalid_lfsr <= p2_r_lfsr;
             end
         end
     end
+
+    lfsr32
+    #(
+    .KEY (32'h4567CCA0)
+    )
+    p2_rch_lfsr
+    (
+    .aclk    (aclk),
+    .aresetn (aresetn),
+    .srst    (srst),
+    .en      (p2_rvalid & p2_rready),
+    .lfsr    (p2_r_lfsr)
+    );
+
+    assign p2_rvalid = p2_rvalid_lfsr[0] & ~p2_raddr_empty;
 
     // Get the position in the RAM line in bits:
     //  - p2_araddr_s[0+:ADDR_LSB_W] : get the start address in byte
@@ -306,15 +394,46 @@ module axi4l_ram
         .srst     (srst),
         .flush    (1'b0),
         .data_in  ({p1_awid, p1_awaddr}),
-        .push     (p1_awvalid),
+        .push     (p1_awvalid & p1_awready),
         .full     (p1_awaddr_full),
         .data_out ({p1_awid_s, p1_awaddr_s}),
         .pull     (p1_wpull),
         .empty    (p1_awaddr_empty)
     );
 
-    assign p1_awready = ~p1_awaddr_full;
+    always @ (posedge aclk or negedge aresetn) begin
 
+        if (~aresetn) begin
+            p1_awready_lfsr <= 32'b0;
+        end else if (srst) begin
+            p1_awready_lfsr <= 32'b0;
+        end else begin
+            // At startup init with LFSR default value
+            if (p1_awready_lfsr==32'b0) begin
+                p1_awready_lfsr <= p1_aw_lfsr;
+            // Use to randomly assert awready/wready
+            end else if (~p1_awready) begin
+                p1_awready_lfsr <= p1_awready_lfsr >> 1;
+            end else if (p1_awvalid) begin
+                p1_awready_lfsr <= p1_aw_lfsr;
+            end
+        end
+    end
+
+    lfsr32
+    #(
+        .KEY (32'h8711CBAA)
+    )
+    p1_awch_lfsr
+    (
+        .aclk    (aclk),
+        .aresetn (aresetn),
+        .srst    (srst),
+        .en      (p1_awvalid & p1_awready),
+        .lfsr    (p1_aw_lfsr)
+    );
+
+    assign p1_awready = p1_awready_lfsr[0] & ~p1_wdata_full & ~p1_awaddr_full;
 
     friscv_scfifo
     #(
@@ -328,14 +447,46 @@ module axi4l_ram
         .srst     (srst),
         .flush    (1'b0),
         .data_in  ({p2_awid, p2_awaddr}),
-        .push     (p2_awvalid),
+        .push     (p2_awvalid & p2_awready),
         .full     (p2_awaddr_full),
         .data_out ({p2_awid_s, p2_awaddr_s}),
         .pull     (p2_wpull),
         .empty    (p2_awaddr_empty)
     );
 
-    assign p2_awready = ~p2_awaddr_full;
+    always @ (posedge aclk or negedge aresetn) begin
+
+        if (~aresetn) begin
+            p2_awready_lfsr <= 32'b0;
+        end else if (srst) begin
+            p2_awready_lfsr <= 32'b0;
+        end else begin
+            // At startup init with LFSR default value
+            if (p2_awready_lfsr==32'b0) begin
+                p2_awready_lfsr <= p2_aw_lfsr;
+            // Use to randomly assert awready/wready
+            end else if (~p2_awready) begin
+                p2_awready_lfsr <= p2_awready_lfsr >> 1;
+            end else if (p2_awvalid) begin
+                p2_awready_lfsr <= p2_aw_lfsr;
+            end
+        end
+    end
+
+    lfsr32
+    #(
+        .KEY (32'h12349876)
+    )
+    p2_awch_lfsr
+    (
+        .aclk    (aclk),
+        .aresetn (aresetn),
+        .srst    (srst),
+        .en      (p2_awvalid & p2_awready),
+        .lfsr    (p2_aw_lfsr)
+    );
+
+    assign p2_awready = p2_awready_lfsr[0] & ~p2_wdata_full & ~p2_awaddr_full;
 
 
     friscv_scfifo
@@ -350,14 +501,14 @@ module axi4l_ram
         .srst     (srst),
         .flush    (1'b0),
         .data_in  ({p1_wstrb,p1_wdata}),
-        .push     (p1_wvalid),
+        .push     (p1_wvalid & p1_wready),
         .full     (p1_wdata_full),
         .data_out ({p1_wstrb_s,p1_wdata_s}),
         .pull     (p1_wpull),
         .empty    (p1_wdata_empty)
     );
 
-    assign p1_wready = ~p1_wdata_full;
+    assign p1_wready = p1_awready;
 
 
     friscv_scfifo
@@ -372,14 +523,14 @@ module axi4l_ram
         .srst     (srst),
         .flush    (1'b0),
         .data_in  ({p2_wstrb,p2_wdata}),
-        .push     (p2_wvalid),
+        .push     (p2_wvalid & p2_wready),
         .full     (p2_wdata_full),
         .data_out ({p2_wstrb_s,p2_wdata_s}),
         .pull     (p2_wpull),
         .empty    (p2_wdata_empty)
     );
 
-    assign p2_wready = ~p2_wdata_full;
+    assign p2_wready = p2_awready;
 
 
     ///////////////////////////////////////////////////////////////////////////

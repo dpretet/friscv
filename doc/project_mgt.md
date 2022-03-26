@@ -1,5 +1,11 @@
 # DOING
 
+- [ ] Develop some ASM programs
+    - Benchmark (Dhrystone or others)
+    - Binary tree
+    - Matrix computation
+    - mean of an array
+- [ ] Develop C testuite: test pointers with int, char & function
 
 # BACKLOG
 
@@ -32,7 +38,6 @@ Control:
 
 Processing:
 - [ ] Scheduler to run multiple operations in parallel
-- https://www.youtube.com/channel/UCPSsA8oxlSBjidJsSPdpjsQ/videos
 - [ ] Memfy enhancement
     - Support outstanding requests
     - Write completion: how to support BRESP error
@@ -45,6 +50,7 @@ Processing:
     - [ ] Manage pow2 division by shifting
     - [ ] Start division from first non-zero digit
 - [ ] Out-of-order execution
+- [ ] https://www.youtube.com/channel/UCPSsA8oxlSBjidJsSPdpjsQ/videos
 
 Cache Stages:
 - Merge FETCH and MISS states in iCache
@@ -79,7 +85,6 @@ To finalize:
 
 Verification/Validation:
 
-- [ ] Rework AXI4-lite RAM model to throttle valid/ready handshakes
 - [ ] Testcases to write in ASM testsuite
     - IRQ & WFI
     - add a IRQ generation in the testbench
@@ -91,12 +96,6 @@ Verification/Validation:
     - [ ] https://github.com/chipsalliance/Surelog
     - [ ] https://stackoverflow.com/questions/65534532/how-to-estimation-a-chip-size-with-standard-cell-library
 - [ ] Formal verification tutorial https://zipcpu.com/tutorial/
-- [ ] Develop some ASM programs
-    - Benchmark (Dhrystone or others)
-    - Binary tree
-    - Matrix computation
-    - mean of an array
-- [ ] Develop C testuite: test pointers with int, char & function
 - [ ] Prepare a hardware execution environment for preliminary testing
 - [ ] Prepare a hardware execution environment for OS testing
 
@@ -128,6 +127,7 @@ Verification/Validation:
 
 # DONE
 
+- [X] Make AXI4-lite RAM throtteling
 - [X] Enhance processing unit (CANCELLED: implementation is too big for too few benefits)
         - control checks registers under use in an instruction and knows if can branch, LUI, AUIPC
         - processing clear the tickets once instruction is finished

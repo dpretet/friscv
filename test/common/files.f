@@ -1,6 +1,7 @@
 +incdir+../../rtl+../../dep/svlogger+../../dep/axi-crossbar/rtl
 +define+FRISCV_SIM
 ../common/axi4l_ram.sv
+../common/lfsr.sv
 ../../rtl/friscv_rv32i_core.sv
 ../../rtl/friscv_control.sv
 ../../rtl/friscv_decoder.sv
