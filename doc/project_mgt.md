@@ -1,11 +1,15 @@
 # DOING
 
-- [ ] Develop some ASM programs
+- [ ] Develop some C/ASM programs
+    - all types of variables what about float double w/ the F extension?
+    - how to link putchar, printf, getchar
+    - function call by value or by address
+    - test return
+    - pointers on int, char & function, pointer to pointer
     - Benchmark (Dhrystone or others)
     - Binary tree
     - Matrix computation
     - mean of an array
-- [ ] Develop C testuite: test pointers with int, char & function
 
 # BACKLOG
 
@@ -18,7 +22,7 @@ Misc.
 - [ ] Support privileged instructions, supervisor mode & user mode
       https://danielmangum.com/posts/risc-v-bytes-privilege-levels/
 - [ ] Support MMU extension
-- [ ] JTAG interface / GDB Usage
+- [ ] JTAG interface / GDB Usage / OpenOCD
         - https://tomverbeure.github.io/2021/07/18/VexRiscv-OpenOCD-and-Traps.html
         - https://tomverbeure.github.io/2022/02/20/GDBWave-Post-Simulation-RISCV-SW-Debugging.html
         - https://github.com/BLangOS/VexRiscV_with_HW-GDB_Server

@@ -10,16 +10,12 @@
 //
 // Limitations:
 // - assume only a power of two ratio between ports' data width
-// - VARIABLE_LATENCY is not yet implemented
-//
 ///////////////////////////////////////////////////////////////////////////////
 
 module axi4l_ram
 
     #(
         parameter INIT  = "init.v",
-        // Enable variation in RRESP and BRESP channels to handshake
-        parameter VARIABLE_LATENCY = 0,
         // Address bus width defined for both control and AXI4 address signals
         parameter AXI_ADDR_W = 8,
         // AXI ID width, setup by default to 8 and unused

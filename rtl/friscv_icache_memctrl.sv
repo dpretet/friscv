@@ -50,6 +50,7 @@ module friscv_icache_memctrl
         input  wire                       flush_req,
         output logic                      flush_ack,
         output logic                      flush,
+        output logic                      cache_loading,
         // ctrlruction memory interface
         input  wire                       ctrl_arvalid,
         output logic                      ctrl_arready,
@@ -179,6 +180,24 @@ module friscv_icache_memctrl
     assign cache_waddr = (cfsm==IDLE) ? araddr : erase_addr[AXI_ADDR_W-1:0];
     assign cache_wdata = mem_rdata;
 
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Flag indicating a memory read request is occuring, waiting for a 
+    // completion
+    ///////////////////////////////////////////////////////////////////////////
+    
+    always @ (posedge aclk or negedge aresetn) begin
+
+        if (aresetn == 1'b0) begin
+            cache_loading <= 1'b0;
+        end else if (srst == 1'b1) begin
+            cache_loading <= 1'b0;
+        end else begin
+            if (mem_arready && mem_arvalid) cache_loading <= 1'b1;
+            else if (mem_rvalid && mem_rready) cache_loading <= 1'b0;
+        end
+    end
+    
 
     ///////////////////////////////////////////////////////////////////////////
     // Flush support on FENCE.i instruction execution

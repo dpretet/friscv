@@ -63,7 +63,8 @@ module friscv_csr
 
     typedef enum logic [1:0] {
         IDLE,
-        COMPUTE
+        COMPUTE,
+        STORE
     } fsm;
 
     fsm cfsm;
@@ -283,8 +284,7 @@ module friscv_csr
                 // the ISA register
                 COMPUTE: begin
 
-                    cfsm <= IDLE;
-                    ready <= 1'b1;
+                    cfsm <= STORE;
 
                     // Swap RS1 and CSR
                     if (funct3_r==`CSRRW) begin
@@ -337,6 +337,11 @@ module friscv_csr
                         end
 
                     end
+                end
+                
+                STORE: begin
+                    cfsm <= IDLE;
+                    ready <= 1'b1;
                 end
 
             endcase

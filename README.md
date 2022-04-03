@@ -60,19 +60,19 @@ More details of the architecture can be found in the:
 
 The core is verified with Assembler within two testsuites, present in
 [test](./test) folder:
-- [In-house Assembler Testsuite](./test/asm_testsuite/README.md)
+- [White-BoxAssembler Testsuite](./test/wba_testsuite/README.md)
 - [RISCV Compliance Testsuite](./test/riscv-tests/README.md)
 
  The flow relies on:
 
-- [Icarus Verilog 11](https://github.com/steveicarus/iverilog) as simulator
+- [Icarus Verilog 11](https://github.com/steveicarus/iverilog)
+- [Verilator 4.2](https://github.com/verilator)
 - [SVUT](https://github.com/dpretet/svut) to configure and execute Icarus
 
 The RISCV compliance testsuite is the official testsuite provided by RISCV
-foundation, adapted the core and its environment platform. The in-house ASM
+foundation, adapted the core and its environment platform. The White-Box ASM
 testsuite has been developed for the purpose of this project and targets
-specific instructions sequence. This testuite is startegically white-box
-oriented.
+specific instructions sequence.
 
 ## Validation environment
 

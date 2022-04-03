@@ -80,9 +80,9 @@ int main(int argc, char** argv, char** env) {
         ret = 1;
     }
 
-    if (top->pc < 0x10174) {
-        ret = 1;
-    }
+    // if (top->pc < 0x10174) {
+        // ret = 1;
+    // }
 
     // Final model cleanup
     top->final();

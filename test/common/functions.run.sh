@@ -27,14 +27,15 @@ INST_PER_BLOCK=$(($CACHE_BLOCK_W/$ILEN))
 # Boot address
 BOOT_ADDR=0
 # Timeout upon which the simulation is ran
-TIMEOUT=10000
+[[ -z $TIMEOUT ]] && TIMEOUT=10000
 # Testbench configuration
 TB_CHOICE=0     # 0="CORE", 1="PLATFORM"
 # Specific testcase(s) to run
 TC=
 # Use Icarus Verilog simulator
 SIM="icarus"
-
+# Minimum program counter value a test needs to reach, in bytes
+[[ -z $MIN_PC ]] && MIN_PC=65908
 
 #------------------------------------------------------------------------------
 # Clean compiled programs
@@ -96,6 +97,7 @@ run_tests() {
         DEFINES="${DEFINES}BOOT_ADDR=$BOOT_ADDR;"
         DEFINES="${DEFINES}XLEN=$XLEN;"
         DEFINES="${DEFINES}TIMEOUT=$TIMEOUT;"
+        DEFINES="${DEFINES}MIN_PC=$MIN_PC;"
         DEFINES="${DEFINES}TB_CHOICE=$TB_CHOICE;"
         DEFINES="${DEFINES}TCNAME=${test_name}"
 

@@ -114,19 +114,18 @@ module friscv_icache
     logic [ILEN         -1:0] cache_rdata;
     logic                     cache_hit;
     logic                     cache_miss;
-
-    // Signal to control the flush operation
-    logic                     is_flushing;
-
+    logic                     cache_loading;
+    // Memory controller interface
     logic                     memctrl_arvalid;
     logic                     memctrl_arready;
     logic [AXI_ADDR_W   -1:0] memctrl_araddr;
     logic [3            -1:0] memctrl_arprot;
     logic [AXI_ID_W     -1:0] memctrl_arid;
 
-
-    logic flush_ack_fetcher;
-    logic flush_ack_memctrl;
+    // Signal to control the flush operation
+    logic                     is_flushing;
+    logic                     flush_ack_fetcher;
+    logic                     flush_ack_memctrl;
 
     ///////////////////////////////////////////////////////////////////////////
     // Cache sequencer
@@ -165,6 +164,7 @@ module friscv_icache
     .memctrl_arprot  (memctrl_arprot),
     .memctrl_arid    (memctrl_arid),
     .cache_writing   (cache_wen),
+    .cache_loading   (cache_loading),
     .cache_ren       (cache_ren),
     .cache_raddr     (cache_raddr),
     .cache_rdata     (cache_rdata),
@@ -221,6 +221,7 @@ module friscv_icache
     .flush_req      (flush_req),
     .flush_ack      (flush_ack_memctrl),
     .flush          (is_flushing),
+    .cache_loading  (cache_loading),
     .ctrl_arvalid   (memctrl_arvalid),
     .ctrl_arready   (memctrl_arready),
     .ctrl_araddr    (memctrl_araddr),

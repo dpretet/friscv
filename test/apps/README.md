@@ -1,6 +1,6 @@
-# ASM Tetsuite
+# White-Box Assembler Tetsuite
 
-ASM testsuite is an example of integration of the processor cor in a complete env.
+WBA testsuite is an example of integration of the processor core in a complete environment.
 
 The testbench provides two configurations:
 
@@ -13,8 +13,7 @@ For both setup, the test vectors are created from ASM programs, built and then
 converted into files to initialize the RAMs.
 
 The intent of this flow is to create programs to stress the IP's core
-integration and check the behavior's correctness based on real program.
-It's startegy is "white-box" oriented.
+with a white-box strategy.
 
 To execute the flow:
 

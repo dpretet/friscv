@@ -74,6 +74,7 @@ module friscv_icache_fetcher
         output logic [AXI_ID_W      -1:0] memctrl_arid,
         // Cache line read interface
         input  wire                       cache_writing,
+        input  wire                       cache_loading,
         output logic                      cache_ren,
         output logic [AXI_ADDR_W    -1:0] cache_raddr,
         input  wire  [ILEN          -1:0] cache_rdata,
@@ -171,7 +172,7 @@ module friscv_icache_fetcher
         .push     (ctrl_arvalid),
         .full     (fifo_full_if),
         .data_out ({arid_if, araddr_if}),
-        .pull     (pull_addr_if & ctrl_rready),
+        .pull     (pull_addr_if & ctrl_rready & !cache_loading),
         .empty    (fifo_empty_if)
     );
 
@@ -214,7 +215,7 @@ module friscv_icache_fetcher
 
     // Read cache when the FIFO is filled or when missed-fetch instruction
     // occured, but never if the cache is rebooting.
-    assign cache_ren = ((~fifo_empty_if && (seq==IDLE || seq==SERVE)) ||
+    assign cache_ren = ((~fifo_empty_if && (seq==IDLE && !cache_loading || seq==SERVE)) ||
                         (~fifo_empty_mf && (seq==MISSED))
                        ) ? ~reboot & ctrl_rready : 1'b0;
 
@@ -274,7 +275,7 @@ module friscv_icache_fetcher
                     default: begin
                         pull_addr_if <= 1'b1;
                         pull_addr_mf <= 1'b0;
-                        if (~fifo_empty_if) begin
+                        if (~fifo_empty_if && !cache_loading) begin
                             `ifdef USE_SVL
                             log.debug("Start to serve");
                             `endif

@@ -134,8 +134,8 @@ main() {
         fi
 
         echo ""
-        printinfo "Start ASM Simulation flow"
-        cd "${FRISCV_DIR}/test/asm_testsuite"
+        printinfo "Start WBA Simulation flow"
+        cd "${FRISCV_DIR}/test/wba_testsuite"
 
         ./run.sh --simulator verilator --tb PLATFORM
         ret=$((ret+$?))

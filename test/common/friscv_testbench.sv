@@ -28,6 +28,11 @@ module friscv_testbench(
     `define TIMEOUT 10000
     `endif
 
+    // Minimum program counter value a test needs to reach, in bytes
+    `ifndef MIN_PC
+    `define MIN_PC 65904
+    `endif
+
     // Instruction RAM boot address
     `ifndef BOOT_ADDR
     `define BOOT_ADDR 0
@@ -113,8 +118,8 @@ module friscv_testbench(
 
     // Timeout used in the testbench to break the simulation
     parameter TIMEOUT = `TIMEOUT;
-    // Variable latency setup the AXI4-lite RAM model
-    parameter VARIABLE_LATENCY = 0;
+    // Minimum program counter value a test needs to reach
+    parameter MIN_PC = `MIN_PC;
 
 
     integer                    timer;
@@ -303,7 +308,6 @@ module friscv_testbench(
     axi4l_ram
     #(
         .INIT             ("test.v"),
-        .VARIABLE_LATENCY (VARIABLE_LATENCY),
         .AXI_ADDR_W       (AXI_ADDR_W),
         .AXI_ID_W         (AXI_ID_W),
         .AXI1_DATA_W      (AXI_IMEM_W),
@@ -442,7 +446,6 @@ module friscv_testbench(
     axi4l_ram
     #(
         .INIT             ("test.v"),
-        .VARIABLE_LATENCY (VARIABLE_LATENCY),
         .AXI_ADDR_W       (AXI_ADDR_W),
         .AXI_ID_W         (AXI_ID_W),
         .AXI1_DATA_W      (AXI_DATA_W),
@@ -527,11 +530,11 @@ module friscv_testbench(
 
 
     // Task checking the testcase results and prints its status
-    task check_test(input logic [63:0] test_start_addr);
+    task check_test(input logic [63:0] testcase_start_addr);
 
         $sformat(stop_msg, "PC=0x%0x", pc);
         `INFO(stop_msg);
-        `ASSERT((pc>test_start_addr), "Program stopped too early");
+        `ASSERT((pc>testcase_start_addr), "Program stopped too early");
 
         $sformat(stop_msg, "X31=0x%0x", error_status_reg);
         `INFO(stop_msg);
@@ -580,7 +583,7 @@ module friscv_testbench(
 
     task teardown(msg="");
     begin
-        check_test(64'h10174);
+        check_test(MIN_PC);
     end
     endtask
 
@@ -620,7 +623,7 @@ module friscv_testbench(
 
         if (timer>10) begin
             if (status[1]!=1'b0 || timer>TIMEOUT) begin
-                check_test(64'h10174);
+                check_test(MIN_PC);
                 $finish();
             end
         end

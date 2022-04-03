@@ -681,7 +681,7 @@ module friscv_control
 
                                 `ifdef USE_SVL
                                 print_instruction;
-                                log.info("MRET -> Return from trap");
+                                log.info("MRET -> Machine Return");
                                 `endif
                                 flush_fifo <= 1'b1;
                                 traps[2] <= 1'b1;

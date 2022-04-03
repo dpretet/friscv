@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
 # coding: utf-8
 
+# FIXME: if a line is not fully filled with instruction and a new code
+# section occured, the next section will not be correctly placed.
+# A nex code section needs to be placed by the linker at a correct
+# position to avoid the bug
+
 import sys
 
 # Read the memory content dropped by the compilation and pack it
@@ -10,14 +15,11 @@ import sys
 def main(argv0, in_name, out_name, inst_per_line=4):
 
     opcodes = []
-    bootaddr=''
-    newaddr=0
-    linew=0
-    bytecount=0
-    linebytecount = 0
+    bootaddr = ''
+    newaddr = 0
+    bytecount = 0
 
     hexmem = open(in_name, 'r')
-    # print(hexmem.read())
     for strings in hexmem.read().split("\n"):
 
         # If just empty pass to the next
@@ -25,7 +27,7 @@ def main(argv0, in_name, out_name, inst_per_line=4):
             continue
 
         # If boot address not found yet, store it
-        if "@" in strings and bootaddr=='':
+        if "@" in strings and bootaddr == '':
             bootaddr = int(strings[1:], base=16)
             # print("Boot address: ", str(bootaddr))
             opcodes = bootaddr * ["00"]
@@ -34,18 +36,10 @@ def main(argv0, in_name, out_name, inst_per_line=4):
 
         linedata = strings.split(" ")
 
-        # Grab the line byte count right after the first address
-        if bootaddr!='' and linebytecount==0:
-            linebytecount = len(linedata)
-            # print("Line byte count: ", linebytecount)
-            # print(strings)
-
         # Store new bytes until a new address section
         if "@" not in strings:
             opcodes.extend(linedata)
-            opcodes.extend((linebytecount-len(linedata))*["00"])
-            bytecount += linebytecount
-            # print("Byte count (cntd): ", bytecount)
+            bytecount += len(linedata)
 
         # Reached a new address section, fills the gap with 0
         else:
@@ -61,8 +55,6 @@ def main(argv0, in_name, out_name, inst_per_line=4):
     inst_num = 0
     i = 0
 
-    # print(opcodes)
-
     # Parse one by one the bytes composing the instructions
     for count, code in enumerate(opcodes):
         instr += code
@@ -74,10 +66,10 @@ def main(argv0, in_name, out_name, inst_per_line=4):
             i = 0
             inst_num += 1
         # If reached the end of the cache line, store in the list and continue
-        if inst_num == int(inst_per_line) or count==len(opcodes)-1:
+        if inst_num == int(inst_per_line) or count == len(opcodes)-1:
             instrs.append(instr_line)
-            instr_line=""
-            inst_num=0
+            instr_line = ""
+            inst_num = 0
 
     # Write the memory content
     verimem = open(out_name, 'w')

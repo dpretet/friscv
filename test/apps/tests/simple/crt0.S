@@ -1,0 +1,1 @@
+../common/crt0.S

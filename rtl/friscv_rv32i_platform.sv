@@ -95,7 +95,7 @@ module friscv_rv32i_platform
         output logic                      error,
         output logic [XLEN          -1:0] pc_val,
         `endif
-        // Central Memeory interface
+        // Central Memory interface
         output logic                      mem_awvalid,
         input  wire                       mem_awready,
         output logic [AXI_ADDR_W    -1:0] mem_awaddr,
