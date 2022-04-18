@@ -6,6 +6,7 @@
                          ██║     ██║  ██║██║███████║╚██████╗ ╚████╔╝
                          ╚═╝     ╚═╝  ╚═╝╚═╝╚══════╝ ╚═════╝  ╚═══╝
 
+![CI](https://github.com/dpretet/friscv/actions/workflows/ci.yaml/badge.svg?branch=master)
 [![GitHub license](https://img.shields.io/github/license/dpretet/friscv)](https://github.com/dpretet/friscv/blob/master/LICENSE)
 [![GitHub issues](https://img.shields.io/github/issues/dpretet/friscv)](https://github.com/dpretet/friscv/issues)
 [![GitHub stars](https://img.shields.io/github/stars/dpretet/friscv)](https://github.com/dpretet/friscv/stargazers)
