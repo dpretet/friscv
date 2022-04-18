@@ -1,4 +1,4 @@
-# White-Box Assembler Tetsuite
+# White-Box Assembler Testsuite
 
 WBA testsuite is an example of integration of the processor core in a complete environment.
 
@@ -26,12 +26,18 @@ This will make all programs in tests\* folders, copy the RAM content generated,
 convert it to Verilog format then execute SVUT to run the testbench on each
 testcase.
 
-All the testcases rely on [SVUT](https://github.com/dpretet/svut) to and
-[Icarus Verilog 11](http://iverilog.icarus.com).
+All the testcases rely on [SVUT](https://github.com/dpretet/svut) and use
+[Icarus Verilog](http://iverilog.icarus.com) or [Verilator](https://github.com/verilator).
+
+For more information about the bash front-end flow:
+
+```bash
+./run.sh -h
+```
 
 [Common](../common) folder contains a Makefile and a linker setup shared between
 all the testcases and symlinked into each test folder. A folder can contain
-one or more ASM/C file and a markdown file describing the testcase scenario.
+one or more ASM/C file.
 
 The compilation flow is derivated from RISCV official compliance testsuite,
 relying on its C flow to do unit testing.
@@ -75,6 +81,11 @@ to failure in control unit.
 
 This testcase tries to catch up interrupts, external, software and timer interrupts.
 
+To be written.
+
 ## Test 7: Traps - Synchronous Interrupts
 
 This testcase tries to catch up synchronous interrupts
+
+To be written.
+

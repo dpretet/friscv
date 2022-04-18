@@ -7,7 +7,6 @@
                          ╚═╝     ╚═╝  ╚═╝╚═╝╚══════╝ ╚═════╝  ╚═══╝
 
 [![GitHub license](https://img.shields.io/github/license/dpretet/friscv)](https://github.com/dpretet/friscv/blob/master/LICENSE)
-![Github Actions](https://github.com/dpretet/friscv/actions/workflows/ci.yaml/badge.svg?branch=master)
 [![GitHub issues](https://img.shields.io/github/issues/dpretet/friscv)](https://github.com/dpretet/friscv/issues)
 [![GitHub stars](https://img.shields.io/github/stars/dpretet/friscv)](https://github.com/dpretet/friscv/stargazers)
 [![GitHub forks](https://img.shields.io/github/forks/dpretet/friscv)](https://github.com/dpretet/friscv/network)
@@ -60,8 +59,9 @@ More details of the architecture can be found in the:
 
 The core is verified with Assembler within two testsuites, present in
 [test](./test) folder:
-- [White-BoxAssembler Testsuite](./test/wba_testsuite/README.md)
+- [White-Box Assembler Testsuite](./test/wba_testsuite/README.md)
 - [RISCV Compliance Testsuite](./test/riscv-tests/README.md)
+- [Apps Testsuite](./test/apps/README.md)
 
  The flow relies on:
 
