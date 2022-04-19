@@ -2,6 +2,7 @@
 
 int fibonacci(int n);
 void inc_error();
+static int get_status();
 
 int main() {
 
@@ -15,13 +16,17 @@ int main() {
     int res7 = 13;
     int temp = 0;
 
+    /*
+     *  Test Fibonnaci, a recursive function
+     */
+
     temp = fibonacci(0);
     if (res0 != temp)
         asm("addi t6,t6,1");
 
     temp = fibonacci(1);
     if (res1 != temp)
-        asm("addi t6,t6,1");
+        inc_error();
 
     temp = fibonacci(2);
     if (res2 != temp)
@@ -47,6 +52,26 @@ int main() {
     if (res7 != temp)
         asm("addi t6,t6,1");
 
+    /*
+     *  Test status, a static variable of get_status()
+     */
+
+    temp = get_status();
+    if (temp == 0)
+        asm("addi t6,t6,1");
+
+    temp = get_status();
+    if (temp == 1)
+        inc_error();
+
+    temp = get_status();
+    if (temp == 0)
+        asm("addi t6,t6,1");
+
+    temp = get_status();
+    if (temp == 1)
+        asm("addi t6,t6,1");
+
     asm("ebreak");
 }
 
@@ -57,7 +82,19 @@ int fibonacci(int n) {
     else return fibonacci(n-1) + fibonacci(n-2);
 }
 
-void inc_error() {
+inline void inc_error() {
     asm("addi t6,t6,1");
 }
 
+static int get_status() {
+
+    static int status = 0;
+
+    if (status == 1) {
+        status = 0;
+    } else {
+        status = 1;
+    }
+
+    return status;
+};

@@ -1,6 +1,9 @@
 # Apps Tetsuite
 
-This testsuite is composed by several small and basic applications
+## Overview
+
+This testsuite is composed by several applications, stressing out C toolchain and
+benchmarking the core.
 
 The testbench provides two configurations:
 

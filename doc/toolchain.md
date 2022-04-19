@@ -1,18 +1,4 @@
-# Install RISCV Toolchain
-
-On MacOs:
-
-```bash
-brew install gawk gnu-sed gmp mpfr libmpc isl zlib expat
-git clone --recursive https://github.com/riscv/riscv-gnu-toolchain
-cd riscv-gnu-toolchain
-./configure --prefix=/opt/riscv #-enable-multilib to compile also RV32I
-sudo make
-```
-
-Don't use brew pre-built packages, they are broken
-
-# Utilities
+# RISCV Toolchain
 
 - riscv64-unkown-elf-addr2line: convert addresses into line / filename pair
 - riscv64-unkown-elf-ar: creates, modifies, and extracts from archives

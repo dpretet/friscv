@@ -36,6 +36,8 @@ TC=
 SIM="icarus"
 # Minimum program counter value a test needs to reach, in bytes
 [[ -z $MIN_PC ]] && MIN_PC=65908
+# Don't dump VCD during simulation
+[[ -z $NO_VCD ]] && NO_VCD=0
 
 #------------------------------------------------------------------------------
 # Clean compiled programs
@@ -100,6 +102,7 @@ run_tests() {
         DEFINES="${DEFINES}MIN_PC=$MIN_PC;"
         DEFINES="${DEFINES}TB_CHOICE=$TB_CHOICE;"
         DEFINES="${DEFINES}TCNAME=${test_name}"
+        DEFINES="${DEFINES}NO_VCD=${NO_VCD}"
 
         # Execute the testcase with SVUT
         svutRun -t ./friscv_testbench.sv \
@@ -207,7 +210,10 @@ get_args() {
                 shift
                 SIM=$1
             ;;
-
+            --novcd )
+                shift
+                NO_VCD=1
+            ;;
             -h | --help )
                 usage
                 exit 0
@@ -239,6 +245,7 @@ usage: bash ./run.sh ...
         --tb                (optional)            CORE or PLATFORM, CORE is optional. Platform embbeds a core + an AXI4 crossbar
         --tc                (optional)            A specific testcase to launch, can use wildcard
         --simulator         (optional)            Choose between icarus or verilator. icarus is default
+        --novcd             (optional)            Don't dump VCD during simulation
 EOF
 }
 #------------------------------------------------------------------------------

@@ -508,13 +508,17 @@ module friscv_testbench(
     endgenerate
 
 
-    // Dump VCD, for both Verilator and Icarus
-    initial begin
-        `INFO("Tracing to friscv_testbench.vcd");
-        $dumpfile("friscv_testbench.vcd");
-        $dumpvars(0, friscv_testbench);
-        `INFO("Model running...");
-    end
+    `ifdef NO_VCD
+        if (`NO_VCD == 0) begin
+            // Dump VCD, for both Verilator and Icarus
+            initial begin
+                `INFO("Tracing to friscv_testbench.vcd");
+                $dumpfile("friscv_testbench.vcd");
+                $dumpvars(0, friscv_testbench);
+                `INFO("Model running...");
+            end
+        endif
+    `endif
 
 
     // Time format for $time / $realtime printing
