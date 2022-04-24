@@ -508,17 +508,15 @@ module friscv_testbench(
     endgenerate
 
 
-    `ifdef NO_VCD
-        if (`NO_VCD == 0) begin
-            // Dump VCD, for both Verilator and Icarus
-            initial begin
-                `INFO("Tracing to friscv_testbench.vcd");
-                $dumpfile("friscv_testbench.vcd");
-                $dumpvars(0, friscv_testbench);
-                `INFO("Model running...");
-            end
-        endif
-    `endif
+    if (`NO_VCD == 0) begin
+        // Dump VCD, for both Verilator and Icarus
+        initial begin
+            `INFO("Tracing to friscv_testbench.vcd");
+            $dumpfile("friscv_testbench.vcd");
+            $dumpvars(0, friscv_testbench);
+            `INFO("Model running...");
+        end
+    end
 
 
     // Time format for $time / $realtime printing
@@ -536,10 +534,12 @@ module friscv_testbench(
     // Task checking the testcase results and prints its status
     task check_test(input logic [63:0] testcase_start_addr);
 
+        // Check program hasn't been aborted to early
         $sformat(stop_msg, "PC=0x%0x", pc);
         `INFO(stop_msg);
         `ASSERT((pc>testcase_start_addr), "Program stopped too early");
 
+        // Detect errors with X31
         $sformat(stop_msg, "X31=0x%0x", error_status_reg);
         `INFO(stop_msg);
         `ASSERT((error_status_reg==0), "X31 != 0");
@@ -554,8 +554,8 @@ module friscv_testbench(
         if (status[3]) `INFO("Halt on an unsupported instruction");
         // status[4] = CSR write in read-only register
         if (status[4]) `INFO("Halt on a read-only write register event");
-
-        if (timer>=TIMEOUT) `ERROR("Halt on timeout");
+        // Timeout occured
+        if (TIMEOUT>0 && timer>=TIMEOUT) `ERROR("Halt on timeout");
 
     endtask
 
@@ -596,7 +596,8 @@ module friscv_testbench(
 
     `UNIT_TEST(tcname)
 
-        while (status[1]==1'b0 && status[4]==1'b0 && timer<TIMEOUT) begin
+        // Stop the simulation if executing EBREAK or if reached the timeout
+        while (status[1]==1'b0 && timer<TIMEOUT) begin
             timer = timer + 1;
             @(posedge aclk);
         end
@@ -626,7 +627,9 @@ module friscv_testbench(
         end
 
         if (timer>10) begin
-            if (status[1]!=1'b0 || timer>TIMEOUT) begin
+            // Stop the simulation if executing EBREAK
+            // With Verilator only, the testbench can run infinitly with TIMEOUT=0
+            if (status[1]!=1'b0 || (TIMEOUT>0 && timer>TIMEOUT)) begin
                 check_test(MIN_PC);
                 $finish();
             end

@@ -1,0 +1,1 @@
+../common/friscv_testbench.sv

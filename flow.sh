@@ -155,6 +155,16 @@ main() {
         return $ret
         fi
 
+        echo ""
+        printinfo "Start C Simulation flow"
+        cd "${FRISCV_DIR}/test/c_testsuite"
+
+        ./run.sh --simulator verilator --tb PLATFORM
+        ret=$((ret+$?))
+
+        if [ $ret != 0 ] ; then
+            return $ret
+        fi
         exit 0
     fi
 

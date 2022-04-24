@@ -86,7 +86,7 @@ int main(int argc, char** argv, char** env) {
 
     // Final model cleanup
     top->final();
-    
+
     if (!ret) VL_PRINTF("INFO: Verilator executed successfully\n");
 
     return ret;

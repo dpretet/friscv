@@ -21,6 +21,9 @@ Misc.
 - [ ] 64 bits support
 - [ ] Support privileged instructions, supervisor mode & user mode
       https://danielmangum.com/posts/risc-v-bytes-privilege-levels/
+      https://mobile.twitter.com/hasheddan/status/1514581031092899843?s=12&t=MMNTY_iRC48CjykLQBdTkQ
+      https://man7.org/linux/man-pages/man2/syscall.2.html
+      https://www.youtube.com/watch?app=desktop&v=1-8oYzL_Thk
 - [ ] Support MMU extension
 - [ ] JTAG interface / GDB Usage / OpenOCD
         - https://tomverbeure.github.io/2021/07/18/VexRiscv-OpenOCD-and-Traps.html

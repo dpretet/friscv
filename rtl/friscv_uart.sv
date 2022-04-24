@@ -42,8 +42,7 @@ module friscv_uart
     typedef enum logic[3:0] {
         IDLE = 0,
         XFER = 1,
-        RW = 2,
-        WAIT = 3
+        RWFIFO = 2
     } xfer_fsm;
 
     xfer_fsm rxfsm;
@@ -297,16 +296,17 @@ module friscv_uart
             tx_data_srr <= 8'b0;
             tx_bit_cnt <= 4'b0;
             tx_baud_cnt <= 16'b0;
-            uart_tx <= 1'b0;
+            uart_tx <= 1'b1;
             txfsm <= IDLE;
         end else if (srst) begin
             tx_pull <= 1'b0;
             tx_data_srr <= 8'b0;
             tx_bit_cnt <= 4'b0;
             tx_baud_cnt <= 16'b0;
-            uart_tx <= 1'b0;
+            uart_tx <= 1'b1;
             txfsm <= IDLE;
         end else begin
+
             case (txfsm)
 
                 default: begin
@@ -323,6 +323,7 @@ module friscv_uart
                         txfsm <= XFER;
                     end
                 end
+
                 XFER: begin
 
                     tx_pull <= 1'b0;
@@ -336,10 +337,10 @@ module friscv_uart
                             tx_pull <= 1'b1;
                         end else if (tx_bit_cnt==4'h9 && stop_mode==1'b0) begin
                             uart_tx <= 1'b1;
-                            txfsm <= RW;
+                            txfsm <= RWFIFO;
                         end else if (tx_bit_cnt==4'hA && stop_mode==1'b1) begin
                             uart_tx <= 1'b1;
-                            txfsm <= RW;
+                            txfsm <= RWFIFO;
                         end else begin
                             uart_tx <= tx_data_srr[0];
                             tx_data_srr <= tx_data_srr >> 1;
@@ -347,10 +348,11 @@ module friscv_uart
                     end
                 end
 
-                RW: begin
+                RWFIFO: begin
                     tx_pull <= 1'b0;
                     txfsm <= IDLE;
                 end
+
             endcase
         end
     end
@@ -389,6 +391,7 @@ module friscv_uart
         end else begin
 
             case (rxfsm)
+
                 default: begin
                     rx_push <= 1'b0;
                     rx_bit_cnt <= 4'b1;
@@ -400,6 +403,7 @@ module friscv_uart
                         rxfsm <= XFER;
                     end
                 end
+
                 XFER: begin
 
                     rx_baud_cnt <= rx_baud_cnt + 1;
@@ -410,16 +414,17 @@ module friscv_uart
                         rx_data <= {uart_rx_sync, rx_data[7:1]};
                         if (rx_bit_cnt==4'h8) begin
                             rx_push <= 1'b1;
-                            rxfsm <= RW;
+                            rxfsm <= RWFIFO;
                         end
                     end
-
                 end
-                RW: begin
+
+                RWFIFO: begin
                     rx_push <= 1'b0;
                     rx_data <= 8'b0;
                     rxfsm <= IDLE;
                 end
+
             endcase
         end
     end

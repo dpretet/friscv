@@ -13,6 +13,15 @@
 `include "friscv_h.sv"
 `include "friscv_checkers.sv"
 
+//////////////////////////////////////
+// Memory Mapping:
+//
+// RAM  : 0x000000-0x100000
+// GPIOs: 0x100000-0x100007
+// UART : 0x100008-0x100017
+// CLINT: 0x100018-0x100027
+//////////////////////////////////////
+
 module friscv_rv32i_platform
 
     #(
@@ -178,10 +187,11 @@ module friscv_rv32i_platform
 
     parameter IO_SLV0_ADDR       = 0;
     parameter IO_SLV0_SIZE       = 8;
-    parameter IO_SLV1_ADDR       = 8;
+    parameter IO_SLV1_ADDR       = IO_SLV0_ADDR + IO_SLV0_SIZE;
     parameter IO_SLV1_SIZE       = 16;
-    parameter IO_SLV2_ADDR       = 32;
+    parameter IO_SLV2_ADDR       = IO_SLV1_ADDR + IO_SLV1_SIZE;
     parameter IO_SLV2_SIZE       = 16;
+
     parameter IO_UART_FIFO_DEPTH = 4;
 
     logic                      ios_awvalid;

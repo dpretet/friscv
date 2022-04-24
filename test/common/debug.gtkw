@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.107 (w)1999-2020 BSI
-[*] Sun Apr 17 13:51:01 2022
+[*] Fri Apr 22 06:05:51 2022
 [*]
 [dumpfile] "/Users/damien/workspace/hdl/friscv/test/apps/tests/functions.vcd"
-[dumpfile_mtime] "Sun Apr 17 13:50:30 2022"
-[dumpfile_size] 27886604
+[dumpfile_mtime] "Tue Apr 19 19:21:38 2022"
+[dumpfile_size] 20989697
 [savefile] "/Users/damien/workspace/hdl/friscv/test/common/debug.gtkw"
-[timestart] 17507
-[size] 2560 1440
+[timestart] 22696
+[size] 1440 900
 [pos] -1 -1
-*-8.150327 18055 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-8.522240 25362 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] friscv_testbench.
 [treeopen] friscv_testbench.friscv_testbench.
 [treeopen] friscv_testbench.friscv_testbench.genblk1.
@@ -30,7 +30,7 @@
 [sst_width] 320
 [signals_width] 423
 [sst_expanded] 1
-[sst_vpaned_height] 439
+[sst_vpaned_height] 661
 @800200
 -AXI4-lite RAM
 @28
@@ -404,7 +404,7 @@ friscv_testbench.friscv_testbench.genblk1.dut.cpu0.DCACHE_ON.dcache.dcache_bresp
 friscv_testbench.friscv_testbench.genblk1.dut.cpu0.DCACHE_ON.dcache.dcache_bvalid
 @1401200
 -dCache
-@c00200
+@800200
 -memfy
 @28
 friscv_testbench.friscv_testbench.genblk1.dut.cpu0.processing.memfy.aclk
@@ -450,7 +450,9 @@ friscv_testbench.friscv_testbench.genblk1.dut.cpu0.processing.memfy.wvalid
 friscv_testbench.friscv_testbench.genblk1.dut.cpu0.processing.memfy.bid[7:0]
 @28
 friscv_testbench.friscv_testbench.genblk1.dut.cpu0.processing.memfy.bready
+@29
 friscv_testbench.friscv_testbench.genblk1.dut.cpu0.processing.memfy.bresp[1:0]
+@28
 friscv_testbench.friscv_testbench.genblk1.dut.cpu0.processing.memfy.bvalid
 @200
 -
@@ -474,7 +476,7 @@ friscv_testbench.friscv_testbench.genblk1.dut.cpu0.processing.memfy.memfy_rd_str
 friscv_testbench.friscv_testbench.genblk1.dut.cpu0.processing.memfy.memfy_rd_val[31:0]
 @200
 -
-@1401200
+@1000200
 -memfy
 @800200
 -control
@@ -485,7 +487,7 @@ friscv_testbench.friscv_testbench.genblk1.dut.cpu0.control.aresetn
 -
 @22
 friscv_testbench.friscv_testbench.genblk1.dut.cpu0.control.cfsm[3:0]
-@29
+@28
 [color] 1
 (3)friscv_testbench.friscv_testbench.genblk1.dut.cpu0.control.traps[4:0]
 @200
@@ -545,7 +547,7 @@ friscv_testbench.friscv_testbench.genblk1.dut.cpu0.control.rs2[4:0]
 friscv_testbench.friscv_testbench.genblk1.dut.cpu0.control.rd[4:0]
 @1000200
 -control
-@800200
+@c00200
 -ISA Registers
 @22
 friscv_testbench.friscv_testbench.genblk1.dut.cpu0.isa_registers.x1[31:0]
@@ -579,7 +581,7 @@ friscv_testbench.friscv_testbench.genblk1.dut.cpu0.isa_registers.x28[31:0]
 friscv_testbench.friscv_testbench.genblk1.dut.cpu0.isa_registers.x29[31:0]
 friscv_testbench.friscv_testbench.genblk1.dut.cpu0.isa_registers.x30[31:0]
 friscv_testbench.friscv_testbench.genblk1.dut.cpu0.isa_registers.x31[31:0]
-@1000200
+@1401200
 -ISA Registers
 [pattern_trace] 1
 [pattern_trace] 0

@@ -101,8 +101,8 @@ run_tests() {
         DEFINES="${DEFINES}TIMEOUT=$TIMEOUT;"
         DEFINES="${DEFINES}MIN_PC=$MIN_PC;"
         DEFINES="${DEFINES}TB_CHOICE=$TB_CHOICE;"
+        DEFINES="${DEFINES}NO_VCD=$NO_VCD;"
         DEFINES="${DEFINES}TCNAME=${test_name}"
-        DEFINES="${DEFINES}NO_VCD=${NO_VCD}"
 
         # Execute the testcase with SVUT
         svutRun -t ./friscv_testbench.sv \
