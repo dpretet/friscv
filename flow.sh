@@ -132,39 +132,38 @@ main() {
             printerror "Icarus-Verilog is not installed"
             exit 1
         fi
+        if [[ ! $(type verialtor) ]]; then
+            printerror "Verilator is not installed"
+            exit 1
+        fi
 
         echo ""
         printinfo "Start WBA Simulation flow"
         cd "${FRISCV_DIR}/test/wba_testsuite"
 
-        ./run.sh --simulator verilator --tb PLATFORM
-        ret=$((ret+$?))
-
-        if [ $ret != 0 ] ; then
-            return $ret
-        fi
+        ./run.sh --simulator verilator --tb CORE --nocompile 1
+        ./run.sh --simulator verilator --tb PLATFORM --nocompile 1
+        ./run.sh --simulator icarus --tb CORE --nocompile 1
+        ./run.sh --simulator icarus --tb PLATFORM --nocompile 1
 
         echo ""
         printinfo "Start RISCV Compliance flow"
         cd "${FRISCV_DIR}/test/riscv-tests"
 
-        ./run.sh --simulator icarus --tb CORE
-        ret=$((ret+$?))
-
-        if [ $ret != 0 ] ; then
-        return $ret
-        fi
+        ./run.sh --simulator verilator --tb CORE --nocompile 1
+        ./run.sh --simulator verilator --tb PLATFORM --nocompile 1
+        ./run.sh --simulator icarus --tb CORE --nocompile 1
+        ./run.sh --simulator icarus --tb PLATFORM --nocompile 1
 
         echo ""
         printinfo "Start C Simulation flow"
         cd "${FRISCV_DIR}/test/c_testsuite"
 
-        ./run.sh --simulator verilator --tb PLATFORM
-        ret=$((ret+$?))
+        ./run.sh --simulator verilator --tb CORE --nocompile 1
+        ./run.sh --simulator verilator --tb PLATFORM --nocompile 1
+        ./run.sh --simulator icarus --tb CORE --nocompile 1
+        ./run.sh --simulator icarus --tb PLATFORM --nocompile 1
 
-        if [ $ret != 0 ] ; then
-            return $ret
-        fi
         exit 0
     fi
 

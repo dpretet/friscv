@@ -9,8 +9,7 @@ set -e
 # Variables and setup
 #------------------------------------------------------------------------------
 
-# Timeout upon which the simulation is ran
-TIMEOUT=200000
+TIMEOUT=0
 # Minumum value the program counter should reach in bytes
 MIN_PC=65692
 NO_VCD=0
@@ -29,6 +28,13 @@ main() {
     echo "PID: $PID"
 
     get_args "$@"
+
+    # Use Verilator only
+    [[ $SIM == "icarus" ]] && echo "Apps support Verilator only. Will use it"
+    SIM="verilator"
+    # No timeout for apps while it it's interactive with user inputs
+    [[ $TIMEOUT -gt 0 ]] && echo "Deactivate timeout while testbench is in interactive mode"
+    TIMEOUT=0
 
     # Clean up compiled applications and exit
     if [ $do_clean -eq 1 ]; then

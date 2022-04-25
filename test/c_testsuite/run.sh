@@ -24,7 +24,7 @@ source ../common/functions.run.sh
 
 main() {
 
-    echo "INFO: Start Apps Testsuite"
+    echo "INFO: Start C Testsuite"
     PID=$$
     echo "PID: $PID"
 
@@ -42,13 +42,15 @@ main() {
     fi
 
     # Build all applications
-    echo "INFO: Compile applications"
-    for dir in tests/*/; do
-        if [ "$dir" != "tests/common/" ]; then
-            echo "INFO: Compile $dir"
-            make -C "$dir";
-        fi
-    done
+    if [ $NO_COMPILE -eq 0 ]; then
+        echo "INFO: C tests"
+        for dir in tests/*/; do
+            if [ "$dir" != "tests/common/" ]; then
+                echo "INFO: Compile $dir"
+                make -C "$dir";
+            fi
+        done
+    fi
 
     # If user specified a testcase, or a testsuite, use it
     if [[ -n $TC ]]; then
@@ -60,7 +62,7 @@ main() {
     fi
 
     # OK, sounds good, exit gently
-    echo -e "${GREEN}SUCCESS: Apps testsuite successfully terminated ^^${NC}"
+    echo -e "${GREEN}SUCCESS: C testsuite successfully terminated ^^${NC}"
 
     exit 0
 }

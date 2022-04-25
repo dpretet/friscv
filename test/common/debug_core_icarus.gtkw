@@ -1,0 +1,29 @@
+[*]
+[*] GTKWave Analyzer v3.3.107 (w)1999-2020 BSI
+[*] Mon Apr 25 15:30:50 2022
+[*]
+[dumpfile] "/Users/damien/workspace/hdl/friscv/test/wba_testsuite/tests/rv32ui-p-test4.vcd"
+[dumpfile_mtime] "Mon Apr 25 15:30:06 2022"
+[dumpfile_size] 803824
+[savefile] "/Users/damien/workspace/hdl/friscv/test/wba_testsuite/debug_core_icarus.gtkw"
+[timestart] 610800
+[size] 2560 1440
+[pos] -1 -1
+*-14.374160 615000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] control.
+[treeopen] dut.
+[sst_width] 458
+[signals_width] 334
+[sst_expanded] 1
+[sst_vpaned_height] 453
+@28
+control.fifo_empty
+@22
+control.instruction[31:0]
+control.pc_reg[31:0]
+@28
+control.pull_inst
+@420
+friscv_testbench.timer
+[pattern_trace] 1
+[pattern_trace] 0

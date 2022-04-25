@@ -12,7 +12,7 @@ import sys
 # into a cache line. Can have any number of instructions per line, from 1 to N
 # Print in stdout the boot address detected in the dumped file
 
-def main(argv0, in_name, out_name, inst_per_line=4):
+def main(argv0, in_name, out_name, inst_per_line=4, length=1048576):
 
     opcodes = []
     bootaddr = ''
@@ -48,6 +48,9 @@ def main(argv0, in_name, out_name, inst_per_line=4):
             opcodes.extend((newaddr-bytecount)*["00"])
             # print("Bytecount to append: ", newaddr-bytecount)
             bytecount += (newaddr-bytecount)
+
+    if bytecount < length:
+        opcodes.extend((length-bytecount)*["00"])
 
     instrs = []
     instr = ""

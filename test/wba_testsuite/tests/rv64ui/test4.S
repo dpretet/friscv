@@ -20,7 +20,7 @@ TEST:
 addi x1, x1, 1
 addi x3, x3, 1
 
-# Gegisters used to compare the results
+# Registers used to compare the results
 addi x11, x11, 3
 addi x12, x12, 3
 addi x13, x13, 4

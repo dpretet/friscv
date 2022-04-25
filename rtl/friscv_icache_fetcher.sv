@@ -285,7 +285,7 @@ module friscv_icache_fetcher
                     // State to serve the instruction read request from the
                     // core controller
                     SERVE: begin
-                        // Move back to IDLE if ARID changed, meaning the 
+                        // Move back to IDLE if ARID changed, meaning the
                         // control is jumping to another memory location
                         if (reboot) begin
                             pull_addr_if <= 1'b0;
@@ -316,7 +316,7 @@ module friscv_icache_fetcher
                     // Equivalent behavior than SERVE state.
                     // TODO: Try to merge FETCH and MISS states
                     MISSED: begin
-                        // Move back to IDLE if ARID changed, meaning the 
+                        // Move back to IDLE if ARID changed, meaning the
                         // control is jumping to another memory location
                         if (reboot) begin
                             pull_addr_if <= 1'b0;
@@ -365,10 +365,11 @@ module friscv_icache_fetcher
                         end
 
                         // If a reboot has been initiated, move back to IDLE
-                        // to avoid a race condition which will fetch twice 
+                        // to avoid a race condition which will fetch twice
                         // the next first instruction
                         if (reboot) begin
                             seq <= IDLE;
+                            memctrl_arvalid <= 1'b0;
                         // Go to read the cache lines once the memory controller
                         // wrote a new cache line, the read completion
                         end else if (cache_writing) begin

@@ -38,6 +38,8 @@ SIM="icarus"
 [[ -z $MIN_PC ]] && MIN_PC=65908
 # Don't dump VCD during simulation
 [[ -z $NO_VCD ]] && NO_VCD=0
+# Force run without trying to compile again C or ASM programs
+NO_COMPILE=0
 
 #------------------------------------------------------------------------------
 # Clean compiled programs
@@ -57,12 +59,6 @@ clean() {
 # Tests execution
 #------------------------------------------------------------------------------
 run_tests() {
-
-    if [ -n "$(find tests/ -maxdepth 1 -name \*.v -print -quit)" ] ; then
-        echo "INFO: Found compiled programs, execute ./run -C to rebuild from scratch"
-    else
-        make -C ./tests XLEN=$XLEN
-    fi
 
     # Execute one by one the available tests
     for test in $1; do
@@ -106,7 +102,7 @@ run_tests() {
 
         # Execute the testcase with SVUT
         svutRun -t ./friscv_testbench.sv \
-                -define $DEFINES \
+                -define "$DEFINES" \
                 -sim $SIM \
                 -include ../../dep/svlogger ../../rtl ../../dep/axi-crossbar/rtl \
                 | tee -a simulation.log
@@ -143,8 +139,8 @@ run_testsuite() {
     run_tests "$@"
 
     # Clean-up before exiting
-    rm -f *.vcd
-    rm -f *.out
+    rm -f ./*.vcd
+    rm -f ./*.out
 
     # Check status of the execution
     check_status
@@ -160,7 +156,7 @@ check_status() {
     # Double check the execution status by parsing the log
     ec=$(grep -c "ERROR:" simulation.log)
     if [[ $ec != 0 || $test_ret != 0 ]]; then
-        echo -e "${RED}ERROR: RISCV compliance testsuite failed!${NC}"
+        echo -e "${RED}ERROR: Testsuite failed!${NC}"
         grep -i "Failling" simulation.log
         exit 1
     fi
@@ -214,6 +210,10 @@ get_args() {
                 shift
                 NO_VCD=1
             ;;
+            --nocompile )
+                shift
+                NO_COMPILE=$1
+            ;;
             -h | --help )
                 usage
                 exit 0
@@ -236,16 +236,17 @@ usage()
 {
 cat << EOF
 usage: bash ./run.sh ...
--l    | --cache_block       (optional)            cache line width in bits (128 by default)
--x    | --xlen              (optional)            XLEN, 32 or 64 bits (32 by default)
--t    | --timeout           (optional)            Timeout in number of cycles (10000 by default)
--c    | --clean                                   Clean-up and exit
-        --tb                                      Choose the testbench configuration (CORE or PLATFORM)
--h    | --help                                    Brings up this menu
-        --tb                (optional)            CORE or PLATFORM, CORE is optional. Platform embbeds a core + an AXI4 crossbar
-        --tc                (optional)            A specific testcase to launch, can use wildcard
-        --simulator         (optional)            Choose between icarus or verilator. icarus is default
-        --novcd             (optional)            Don't dump VCD during simulation
+-l    | --cache_block       cache line width in bits (128 by default)
+-x    | --xlen              XLEN, 32 or 64 bits (32 by default)
+-t    | --timeout           Timeout in number of cycles (10000 by default)
+-c    | --clean             Clean-up and exit
+        --tb                Choose the testbench configuration (CORE or PLATFORM)
+-h    | --help              Brings up this menu
+        --tb                CORE or PLATFORM, CORE is optional. Platform embbeds a core + an AXI4 crossbar
+        --tc                A specific testcase to launch, can use wildcard
+        --simulator         Choose between icarus or verilator. icarus is default
+        --novcd             Don't dump VCD during simulation
+        --nocompile         Don't try to compile C or assembler (CI tests only)
 EOF
 }
 #------------------------------------------------------------------------------

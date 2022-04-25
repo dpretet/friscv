@@ -91,8 +91,11 @@ module axi4l_ram
     parameter ADDRW = AXI_ADDR_W-ADDR_LSB_W;
 
     logic [AXI_DATA_W-1:0] mem [2**ADDRW-1:0];
+    integer f;
 
     initial $readmemh(INIT, mem, 0, 2**ADDRW-1);
+
+    initial f = $fopen("axi4lite_ram.txt","w");
 
     integer                   p1_random;
     integer                   p1_rcounter;
@@ -286,6 +289,7 @@ module axi4l_ram
                 p1_rvalid_lfsr <= p1_rvalid_lfsr >> 1;
             end else if (p1_rready) begin
                 p1_rvalid_lfsr <= p1_r_lfsr;
+                $fwrite(f, "(@ %0t) Port 1 - Read  Addr=%x Data=%x\n", $realtime, p1_araddr_s, p1_rdata);
             end
         end
     end
@@ -337,6 +341,7 @@ module axi4l_ram
                 p2_rvalid_lfsr <= p2_rvalid_lfsr >> 1;
             end else if (p2_rready) begin
                 p2_rvalid_lfsr <= p2_r_lfsr;
+                $fwrite(f, "(@ %0t) Port 2 - Read  Addr=%x Data=%x\n", $realtime, p1_araddr_s, p1_rdata);
             end
         end
     end
@@ -563,6 +568,8 @@ module axi4l_ram
                 p1_bvalid <= 1'b1;
                 p1_bid <= p1_awid_s;
 
+                $fwrite(f, "(@ %0t) Port 1 - Write Addr=%x Data=%x\n", $realtime, p1_awaddr_s, p1_wdata_s);
+
                 if (AXI1_DATA_W<AXI_DATA_W) begin
                     for (int i=0;i<AXI1_DATA_W/8;i++) begin
                         if (p1_wstrb_s[i]) begin
@@ -612,6 +619,8 @@ module axi4l_ram
                 p2_wpull <= 1'b1;
                 p2_bvalid <= 1'b1;
                 p2_bid <= p2_awid_s;
+
+                $fwrite(f, "(@ %0t) Port 2 - Write Addr=%x Data=%x\n", $realtime, p1_awaddr_s, p1_wdata_s);
 
                 if (AXI2_DATA_W<AXI_DATA_W) begin
                     for (int i=0;i<AXI2_DATA_W/8;i++) begin
