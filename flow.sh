@@ -132,37 +132,43 @@ main() {
             printerror "Icarus-Verilog is not installed"
             exit 1
         fi
-        if [[ ! $(type verialtor) ]]; then
+        if [[ ! $(type verilator) ]]; then
             printerror "Verilator is not installed"
             exit 1
         fi
 
-        echo ""
-        printinfo "Start WBA Simulation flow"
-        cd "${FRISCV_DIR}/test/wba_testsuite"
+        if [ $2 == "wba-testsuite" ]; then
+            echo ""
+            printinfo "Start WBA Simulation flow"
+            cd "${FRISCV_DIR}/test/wba_testsuite"
 
-        ./run.sh --simulator verilator --tb CORE --nocompile 1
-        ./run.sh --simulator verilator --tb PLATFORM --nocompile 1
-        ./run.sh --simulator icarus --tb CORE --nocompile 1
-        ./run.sh --simulator icarus --tb PLATFORM --nocompile 1
+            ./run.sh --simulator verilator --tb CORE --nocompile 1
+            ./run.sh --simulator verilator --tb PLATFORM --nocompile 1
+            ./run.sh --simulator icarus --tb CORE --nocompile 1
+            ./run.sh --simulator icarus --tb PLATFORM --nocompile 1
+        fi
 
-        echo ""
-        printinfo "Start RISCV Compliance flow"
-        cd "${FRISCV_DIR}/test/riscv-tests"
+        if [ $2 == "riscv-testsuite" ]; then
+            echo ""
+            printinfo "Start RISCV Compliance flow"
+            cd "${FRISCV_DIR}/test/riscv-tests"
 
-        ./run.sh --simulator verilator --tb CORE --nocompile 1
-        ./run.sh --simulator verilator --tb PLATFORM --nocompile 1
-        ./run.sh --simulator icarus --tb CORE --nocompile 1
-        ./run.sh --simulator icarus --tb PLATFORM --nocompile 1
+            ./run.sh --simulator verilator --tb CORE --nocompile 1
+            ./run.sh --simulator verilator --tb PLATFORM --nocompile 1
+            ./run.sh --simulator icarus --tb CORE --nocompile 1
+            ./run.sh --simulator icarus --tb PLATFORM --nocompile 1
+        fi
 
-        echo ""
-        printinfo "Start C Simulation flow"
-        cd "${FRISCV_DIR}/test/c_testsuite"
+        if [ $2 == "c-testsuite" ]; then
+            echo ""
+            printinfo "Start C Simulation flow"
+            cd "${FRISCV_DIR}/test/c_testsuite"
 
-        ./run.sh --simulator verilator --tb CORE --nocompile 1
-        ./run.sh --simulator verilator --tb PLATFORM --nocompile 1
-        ./run.sh --simulator icarus --tb CORE --nocompile 1
-        ./run.sh --simulator icarus --tb PLATFORM --nocompile 1
+            ./run.sh --simulator verilator --tb CORE --nocompile 1
+            ./run.sh --simulator verilator --tb PLATFORM --nocompile 1
+            ./run.sh --simulator icarus --tb CORE --nocompile 1
+            ./run.sh --simulator icarus --tb PLATFORM --nocompile 1
+        fi
 
         exit 0
     fi

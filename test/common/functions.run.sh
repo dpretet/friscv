@@ -109,15 +109,13 @@ run_tests() {
 
         # Grab the return code used later to determine the compliance status
         test_ret=$((test_ret+$?))
+        echo "Test return code: $test_ret"
 
         # Copy the VCD generated for further debug
         if [ -f "./friscv_testbench.vcd" ]; then
             cp ./friscv_testbench.vcd "./tests/$test_name.vcd"
         fi
     done
-
-    # Check status of the execution
-    check_status
 
 }
 #------------------------------------------------------------------------------
@@ -127,6 +125,8 @@ run_tests() {
 #------------------------------------------------------------------------------
 
 run_testsuite() {
+
+    echo "Start testsuite execution"
 
     # Erase first the temporary files
     rm -f ./test*.v
@@ -152,9 +152,13 @@ run_testsuite() {
 # Check the execution ran well
 #------------------------------------------------------------------------------
 check_status() {
+
+    echo "Check status"
+
     # Exit if execution failed.
     # Double check the execution status by parsing the log
     ec=$(grep -c "ERROR:" simulation.log)
+
     if [[ $ec != 0 || $test_ret != 0 ]]; then
         echo -e "${RED}ERROR: Testsuite failed!${NC}"
         grep -i "Failling" simulation.log

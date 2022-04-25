@@ -224,7 +224,7 @@ module axi4l_ram
         .srst     (srst),
         .flush    (1'b0),
         .data_in  ({p2_arid, p2_araddr}),
-        .push     (p2_arvalid),
+        .push     (p2_arvalid & p2_arready),
         .full     (p2_raddr_full),
         .data_out ({p2_arid_s, p2_araddr_s}),
         .pull     (p2_raddr_pull),
@@ -360,6 +360,16 @@ module axi4l_ram
     );
 
     assign p2_rvalid = p2_rvalid_lfsr[0] & ~p2_raddr_empty;
+    // always @ (posedge aclk or negedge aresetn) begin
+//
+        // if (~aresetn) begin
+            // p2_rvalid <= 1'b0;
+        // end else if (srst) begin
+            // p2_rvalid <= 1'b0;
+        // end else begin
+            // p2_rvalid <= p2_rvalid_lfsr[0] & ~p2_raddr_empty;
+        // end
+    // end
 
     // Get the position in the RAM line in bits:
     //  - p2_araddr_s[0+:ADDR_LSB_W] : get the start address in byte

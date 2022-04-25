@@ -3,7 +3,6 @@
 # -e: exit if one command fails
 # -o pipefail: causes a pipeline to fail if any command fails
 # set -e -o pipefail
-set -e
 
 #------------------------------------------------------------------------------
 # Variables and setup
