@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+# distributed under the mit license
+# https://opensource.org/licenses/mit-license.php
+
 # -e: exit if one command fails
 # -o pipefail: causes a pipeline to fail if any command fails
 # set -e -o pipefail

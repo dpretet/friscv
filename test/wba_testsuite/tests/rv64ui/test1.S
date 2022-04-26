@@ -1,11 +1,17 @@
+# distributed under the mit license
+# https://opensource.org/licenses/mit-license.php
+
+# distributed under the mit license
+# https://opensource.org/licenses/mit-license.php
+
 #include "riscv_test.h"
 #include "test_macros.h"
 
 # Test 1: Sequence of LUI / AUIPC / Arithmetic instructions
-# 
+#
 # Injects a set of alternating LUI / AUIPC / Aritmetic instructions to ensure the
 # control unit correctly handles this kind of situation.
-# 
+#
 # All these instructions are handled in one cycle and shouldn't introduce any
 # wait cycles between each others.
 

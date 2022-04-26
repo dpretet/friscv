@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
 # coding: utf-8
 
-# FIXME: if a line is not fully filled with instruction and a new code
-# section occured, the next section will not be correctly placed.
-# A nex code section needs to be placed by the linker at a correct
-# position to avoid the bug
+# distributed under the mit license
+# https://opensource.org/licenses/mit-license.php
 
 import sys
 

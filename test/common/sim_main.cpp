@@ -1,3 +1,6 @@
+// distributed under the mit license
+// https://opensource.org/licenses/mit-license.php
+
 #include "build/Vfriscv_testbench.h"
 // For std::unique_ptr
 #include <memory>

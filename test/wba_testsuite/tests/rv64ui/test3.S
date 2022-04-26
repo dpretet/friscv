@@ -1,3 +1,6 @@
+# distributed under the mit license
+# https://opensource.org/licenses/mit-license.php
+
 #include "riscv_test.h"
 #include "test_macros.h"
 
