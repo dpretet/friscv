@@ -46,12 +46,14 @@ main() {
     # Build all applications
     if [ $NO_COMPILE -eq 0 ]; then
         echo "INFO: C tests"
+        set -e
         for dir in tests/*/; do
             if [ "$dir" != "tests/common/" ]; then
                 echo "INFO: Compile $dir"
                 make -C "$dir";
             fi
         done
+        set +e
     fi
 
     # If user specified a testcase, or a testsuite, use it
