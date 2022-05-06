@@ -71,8 +71,8 @@ module friscv_uart
     logic            rx_pull;
     logic            rx_empty;
     logic [8   -1:0] rx_data;
-    logic [2   -1:0] uart_rx_cdc;
     logic            uart_rx_sync;
+    logic            uart_cts_sync;
     logic [16  -1:0] rx_baud_cnt;
     logic [4   -1:0] rx_bit_cnt;
     logic [16  -1:0] tx_baud_cnt;
@@ -82,7 +82,7 @@ module friscv_uart
     //
     // # Register Map Description
     //
-    // ## Register 0: Control and Status [RW] - Address 0 - 16 bits wide
+    // ## Register 0: Control and Status [RW] - Address 0x0 - 16 bits wide
     //
     // - bit 0     : Enable the UART engine (both RX and TX) [RW]
     // - bit 1     : Loopback mode, every received data will be stored in RX
@@ -101,7 +101,7 @@ module friscv_uart
     // - bit 15    : Parity error of the last RX transaction [RO]
     // - bit 31:16 : Reserved
     //
-    // ## Register 1: UART Clock Divider [RW] - Address 1 - 16 bits wide
+    // ## Register 1: UART Clock Divider [RW] - Address 0x4 - 16 bits wide
     //
     // The number of CPU core cycles to divide down to get the UART data bit
     // rate (baud rate).
@@ -110,7 +110,7 @@ module friscv_uart
     // - Bit 31:16 : Reserved
     //
     //
-    // ## Register 2: TX FIFO [RW] - Address 1 - 8 bits wide
+    // ## Register 2: TX FIFO [RW] - Address 0x8 - 8 bits wide
     //
     // Push data into TX FIFO. Writing into this register will block the APB
     // write request if TX FIFO is full, until the engine transmit a new word.
@@ -119,7 +119,7 @@ module friscv_uart
     // - Bit 31:8 : Reserved
     //
     //
-    // ## Register 3: RX FIFO [RO] - Address 1 - 8 bits wide
+    // ## Register 3: RX FIFO [RO] - Address 0xC - 8 bits wide
     //
     // Pull data from RX FIFO. Reading into this register will block the APB
     // read request if FIFO is empty, until the engine receives a new word.
@@ -154,7 +154,7 @@ module friscv_uart
     //////////////////////////////////////////////////////////////////////////
 
     assign register0 = {{XLEN-16{1'b0}},
-                        1'b0, uart_cts, uart_rts, rx_full, rx_empty, tx_full, tx_empty, busy,
+                        1'b0, uart_cts_sync, uart_rts, rx_full, rx_empty, tx_full, tx_empty, busy,
                         3'b0, stop_mode, parity_mode, parity_en, loopback_mode, enable};
 
     assign busy = (rxfsm!=IDLE) || (txfsm!=IDLE);
@@ -168,7 +168,7 @@ module friscv_uart
     always @ (posedge aclk or negedge aresetn) begin
 
         if (~aresetn) begin
-            enable <= 1'b0;
+            enable <= 1'b1;
             loopback_mode <= 1'b0;
             parity_en <= 1'b0;
             parity_mode <= 1'b0;
@@ -180,7 +180,7 @@ module friscv_uart
             slv_rdata <= {XLEN{1'b0}};
             slv_ready <= 1'b0;
         end else if (srst) begin
-            enable <= 1'b0;
+            enable <= 1'b1;
             loopback_mode <= 1'b0;
             parity_en <= 1'b0;
             parity_mode <= 1'b0;
@@ -201,9 +201,14 @@ module friscv_uart
 
             // Serve a new request
             end else if (slv_en) begin
+                
+                // Unmapped address
+                if (slv_addr > {{(ADDRW-4){1'b0}},4'hC}) begin
+                    slv_ready <= 1'b1;
+                    slv_rdata <= {XLEN{1'b1}};
 
                 // Register 0: Control and Status
-                if (slv_addr=={ADDRW{1'b0}}) begin
+                end else if (slv_addr=={{(ADDRW-4){1'b0}},4'h0}) begin
                     if (slv_wr) begin
                         if (slv_strb[0]) begin
                             enable <= slv_wdata[0];
@@ -212,25 +217,21 @@ module friscv_uart
                             parity_mode <= slv_wdata[3];
                             stop_mode <= slv_wdata[4];
                         end
-                        slv_ready <= 1'b1;
-                    end else begin
-                        slv_rdata <= register0;
-                        slv_ready <= 1'b1;
                     end
+                    slv_rdata <= register0;
+                    slv_ready <= 1'b1;
 
                 // Register 1: baud rate
-                end else if (slv_addr=={{ADDRW-1{1'b0}}, 1'b1}) begin
+                end else if (slv_addr=={{(ADDRW-4){1'b0}},4'h4}) begin
                     if (slv_wr) begin
                         if (slv_strb[0]) clock_divider[0+:8] <= slv_wdata[0+:8];
                         if (slv_strb[1]) clock_divider[8+:8] <= slv_wdata[8+:8];
-                        slv_ready <= 1'b1;
-                    end else begin
-                        slv_rdata <= {16'b0, clock_divider};
-                        slv_ready <= 1'b1;
                     end
+                    slv_rdata <= {16'b0, clock_divider};
+                    slv_ready <= 1'b1;
 
                 // Register 2: TX FIFO
-                end else if (slv_addr=={{ADDRW-2{1'b0}}, 2'b10}) begin
+                end else if (slv_addr=={{(ADDRW-4){1'b0}},4'h8}) begin
                     if (slv_wr) begin
                         // Wait until the FIFO can store a new word
                         if (~tx_full) begin
@@ -238,26 +239,18 @@ module friscv_uart
                             tx_push <= 1'b1;
                             slv_ready <= 1'b1;
                         end
-                    end else begin
-                        slv_rdata <= {24'b0, register2};
-                        slv_ready <= 1'b1;
                     end
+                    slv_rdata <= {24'b0, register2};
 
                 // Register 3: RX FIFO
-                end else if (slv_addr=={{ADDRW-2{1'b0}}, 2'b11}) begin
+                end else if (slv_addr=={{(ADDRW-4){1'b0}},4'hC}) begin
                     // Wait until the FIFO is filled
-                    if (~rx_empty) begin
+                    if (!rx_empty) begin
                         rx_pull <= 1'b1;
-                        slv_rdata <= {24'b0, register3};
                         slv_ready <= 1'b1;
                     end
+                    slv_rdata <= {24'b0, register3};
                 end
-
-            // Just wait for the next APB request
-            end else begin
-                tx_push <= 1'b0;
-                rx_pull <= 1'b0;
-                slv_ready <= 1'b0;
             end
         end
     end
@@ -311,7 +304,7 @@ module friscv_uart
 
                 default: begin
                     tx_pull <= 1'b0;
-                    tx_bit_cnt <= 4'b1;
+                    tx_bit_cnt <= 4'b0;
                     tx_baud_cnt <= 16'b0;
                     tx_data_srr <= 8'b0;
                     uart_tx <= 1'b1;
@@ -364,15 +357,36 @@ module friscv_uart
     //
     //////////////////////////////////////////////////////////////////////////
 
+    /*
+    friscv_bit_sync 
+    #(
+    .DEPTH (2)
+    )
+    rx_sync 
+    (
+    .aclk    (aclk),
+    .aresetn (aresetn),
+    .srst    (srst),
+    .bit_i   (uart_rx),
+    .bit_o   (uart_rx_sync)
+    );
 
-    // Synchronize the incoming bitstream in the interface domain
-    always @ (posedge aclk or negedge aresetn) begin
-        if (~aresetn) uart_rx_cdc <= 2'b0;
-        else if (srst) uart_rx_cdc <= 2'b0;
-        else uart_rx_cdc <= {uart_rx_cdc[0], uart_rx};
-    end
+    friscv_bit_sync 
+    #(
+    .DEPTH (2)
+    )
+    cts_sync 
+    (
+    .aclk    (aclk),
+    .aresetn (aresetn),
+    .srst    (srst),
+    .bit_i   (uart_cts),
+    .bit_o   (uart_cts_sync)
+    );
+    */
 
-    assign uart_rx_sync = uart_rx_cdc[1];
+    assign uart_rx_sync = uart_rx;
+    assign uart_cts_sync = uart_cts;
 
     always @ (posedge aclk or negedge aresetn) begin
 
@@ -394,7 +408,7 @@ module friscv_uart
 
                 default: begin
                     rx_push <= 1'b0;
-                    rx_bit_cnt <= 4'b1;
+                    rx_bit_cnt <= 4'b0;
                     rx_baud_cnt <= 16'b0;
                     rx_data <= 8'b0;
                     // if the engine is enabled:
@@ -411,10 +425,11 @@ module friscv_uart
                     if (rx_baud_cnt==clock_divider) begin
                         rx_baud_cnt <= 16'b0;
                         rx_bit_cnt <= rx_bit_cnt + 1'b1;
-                        rx_data <= {uart_rx_sync, rx_data[7:1]};
                         if (rx_bit_cnt==4'h8) begin
                             rx_push <= 1'b1;
                             rxfsm <= RWFIFO;
+                        end else begin
+                            rx_data <= {uart_rx_sync, rx_data[7:1]};
                         end
                     end
                 end

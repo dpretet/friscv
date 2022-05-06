@@ -43,6 +43,10 @@ SIM="icarus"
 [[ -z $NO_VCD ]] && NO_VCD=0
 # Force run without trying to compile again C or ASM programs
 NO_COMPILE=0
+# INTERACTIVE enable a UART to read/write from Verilator
+[[ -z $INTERACTIVE ]] && INTERACTIVE=0
+#------------------------------------------------------------------------------
+
 
 #------------------------------------------------------------------------------
 # Clean compiled programs
@@ -84,6 +88,7 @@ run_tests() {
         echo "  - TB_CHOICE:     $TB_CHOICE (0=CORE, 1=PLATFORM)"
         echo "  - TCNAME:        ${test_name}"
         echo "  - SIMULATOR:     $SIM"
+        echo "  - INTERACTIVE:   $INTERACTIVE"
 
         # Defines passed to the testbench
         if [[ $SIM == "icarus" ]]; then
@@ -101,6 +106,7 @@ run_tests() {
         DEFINES="${DEFINES}MIN_PC=$MIN_PC;"
         DEFINES="${DEFINES}TB_CHOICE=$TB_CHOICE;"
         DEFINES="${DEFINES}NO_VCD=$NO_VCD;"
+        DEFINES="${DEFINES}INTERACTIVE=$INTERACTIVE;"
         DEFINES="${DEFINES}TCNAME=${test_name}"
 
         # Execute the testcase with SVUT
@@ -122,6 +128,7 @@ run_tests() {
 
 }
 #------------------------------------------------------------------------------
+
 
 #------------------------------------------------------------------------------
 # Execute a testsuite

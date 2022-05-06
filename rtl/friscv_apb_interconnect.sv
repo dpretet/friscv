@@ -117,6 +117,7 @@ module friscv_apb_interconnect
 
                     if (mst0_ready) begin
                         mst0_en <= 1'b0;
+                        mst0_wr <= 1'b0;
                     end
 
                 // Slave 1 access
@@ -132,6 +133,7 @@ module friscv_apb_interconnect
 
                     if (mst1_ready) begin
                         mst1_en <= 1'b0;
+                        mst1_wr <= 1'b0;
                     end
 
                 // Slave 1 access
@@ -147,6 +149,7 @@ module friscv_apb_interconnect
 
                     if (mst2_ready) begin
                         mst2_en <= 1'b0;
+                        mst2_wr <= 1'b0;
                     end
 
 
@@ -171,8 +174,8 @@ module friscv_apb_interconnect
                 mst1_wdata <= {XLEN{1'b0}};
                 mst1_strb <= {XLEN/8{1'b0}};
 
-                mst2_en <= 2'b0;
-                mst2_wr <= 2'b0;
+                mst2_en <= 1'b0;
+                mst2_wr <= 1'b0;
                 mst2_addr <= {ADDRW{1'b0}};
                 mst2_wdata <= {XLEN{1'b0}};
                 mst2_strb <= {XLEN/8{1'b0}};

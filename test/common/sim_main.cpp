@@ -17,8 +17,6 @@ int main(int argc, char** argv, char** env) {
     // Prevent unused variable warnings
     if (false && argc && argv && env) {}
 
-    // Create logs/ directory in case we have traces to put under it
-    Verilated::mkdir("logs");
     // Construct a VerilatedContext to hold simulation time, etc.
     // Multiple modules (made later below with Vtop) may share the same
     // context to share time, or modules may have different contexts if

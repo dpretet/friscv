@@ -1,3 +1,6 @@
+# distributed under the mit license
+# https://opensource.org/licenses/mit-license.php
+
 .section .text.init;
 .global _start
 
@@ -35,20 +38,21 @@ _start:
     li x29, 0
     li x30, 0
     li x31, 0
-    
+
+
     # Init the max boundary of the stack section
     # __stack_top will be linked later with the linker file symbols
     la sp, _estack
-    
+
     # Init MEPC and set back t0 to 0
     auipc   t0,0x0
     addi    t0,t0,20 # main()
     csrw    mepc,t0
     li      t0, 0
-    
+
     # Jump to the main
     mret
-    
+
 # Add vector tables for exceptions and interrupts
 # https://www.youtube.com/watch?v=2Hm8eEHsgls&list=PLERTijJOmYrDiiWd10iRHY0VRHdJwUH4g&index=3
 # https://gcc.gnu.org/onlinedocs/gcc/Common-Variable-Attributes.html#Common-Variable-Attributes

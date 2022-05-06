@@ -24,13 +24,13 @@ module friscv_bit_sync
 
     generate
 
-    if (DEPTH<=2) begin: DEPTH_2
+    if (DEPTH<=2) begin: DEPTH_EQ_2
         always @ (posedge aclk or negedge aresetn) begin
             if (~aresetn) sync <= {DEPTH{1'b0}};
             else if (srst) sync <= {DEPTH{1'b0}};
             else sync <= {sync[0],bit_i};
         end
-    end else begin: DEPTH_SUP_2
+    end else begin: DEPTH_GT_2
         always @ (posedge aclk or negedge aresetn) begin
 
             if (~aresetn) sync <= {DEPTH{1'b0}};

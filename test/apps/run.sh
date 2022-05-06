@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+# distributed under the mit license
+# https://opensource.org/licenses/mit-license.php
+
 # -e: exit if one command fails
 # -o pipefail: causes a pipeline to fail if any command fails
 # set -e -o pipefail
@@ -12,7 +15,10 @@ set -e
 TIMEOUT=0
 # Minumum value the program counter should reach in bytes
 MIN_PC=65692
-NO_VCD=0
+# Don't drop VCD, to avoid storing GB of raw data
+NO_VCD=1
+# Enable UART link to the processor (Platform only)
+INTERACTIVE=1
 
 source ../common/functions.run.sh
 

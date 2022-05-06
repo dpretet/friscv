@@ -17,7 +17,7 @@ module friscv_io_subsystem
 
     #(
         parameter ADDRW           = 16,
-        parameter DATAW           = 16,
+        parameter DATAW           = 32,
         parameter IDW             = 16,
         parameter XLEN            = 32,
         parameter SLV0_ADDR       = 0,
@@ -120,6 +120,8 @@ module friscv_io_subsystem
 
     axi4l_fsm cfsm;
 
+    localparam DSCALE = DATAW / XLEN;
+
 
     ///////////////////////////////////////////////////////////////////////////
     // FSM converting AXI4-lite to APB
@@ -154,6 +156,7 @@ module friscv_io_subsystem
             slv_rvalid <= 1'b0;
             slv_bvalid <= 1'b0;
             mst_en <= 1'b0;
+            mst_wr <= 1'b0;
             mst_addr <= {ADDRW{1'b0}};
             mst_wdata <= {XLEN{1'b0}};
             mst_strb <= {XLEN/8{1'b0}};
@@ -168,6 +171,7 @@ module friscv_io_subsystem
             slv_rvalid <= 1'b0;
             slv_bvalid <= 1'b0;
             mst_en <= 1'b0;
+            mst_wr <= 1'b0;
             mst_addr <= {ADDRW{1'b0}};
             mst_wdata <= {XLEN{1'b0}};
             mst_strb <= {XLEN/8{1'b0}};
@@ -189,12 +193,16 @@ module friscv_io_subsystem
                             cfsm <= WAIT_WDATA;
                         end else begin
                             mst_en <= 1'b1;
+                            mst_wr <= 1'b1;
                             mst_wdata <= slv_wdata;
                             mst_strb <= slv_wstrb;
                             cfsm <= WAIT_BRESP;
                         end
 
-                    end else if (slv_arready) begin
+                    end else if (slv_arvalid) begin
+                        mst_en <= 1'b1;
+                        mst_wr <= 1'b0;
+                        mst_addr <= slv_araddr;
                         slv_arready <= 1'b1;
                         slv_rid <= slv_arid;
                         cfsm <= WAIT_RRESP;
@@ -211,6 +219,7 @@ module friscv_io_subsystem
                     if (slv_wvalid) begin
                         slv_wready <= 1'b0;
                         mst_en <= 1'b1;
+                        mst_wr <= 1'b1;
                         mst_wdata <= slv_wdata;
                         mst_strb <= slv_wstrb;
                     end
@@ -218,6 +227,7 @@ module friscv_io_subsystem
                     if (mst_en && mst_ready) begin
                         slv_bvalid <= 1'b1;
                         mst_en <= 1'b0;
+                        mst_wr <= 1'b0;
                         cfsm <= WAIT_BRESP;
                     end
                 end
@@ -242,7 +252,7 @@ module friscv_io_subsystem
                     if (mst_en && mst_ready) begin
                         mst_en <= 1'b0;
                         slv_rvalid <= 1'b1;
-                        slv_rdata <= mst_rdata;
+                        slv_rdata <= {DSCALE{mst_rdata}};
                     end
 
                     if (slv_rvalid && slv_rready) begin

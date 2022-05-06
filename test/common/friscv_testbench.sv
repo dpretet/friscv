@@ -9,11 +9,23 @@
 
 module friscv_testbench(
 `ifndef USE_ICARUS
-    input  wire         aclk,
-    input  wire         aresetn,
-    input  wire         srst,
-    output logic [63:0] pc,
-    output logic        error_status_reg
+    // Interface to UART to communicate with the processor
+    `ifdef INTERACTIVE
+    input  wire                     slv_en,
+    input  wire                     slv_wr,
+    input  wire  [8           -1:0] slv_addr,
+    input  wire  [XLEN        -1:0] slv_wdata,
+    input  wire  [XLEN/8      -1:0] slv_strb,
+    output logic [XLEN        -1:0] slv_rdata,
+    output logic                    slv_ready,
+    `endif
+    // clock & reset
+    input  wire                     aclk,
+    input  wire                     aresetn,
+    input  wire                     srst,
+    // testbench status
+    output logic [64          -1:0] pc,
+    output logic                    error_status_reg
 `endif
 );
 
@@ -56,6 +68,10 @@ module friscv_testbench(
     // Top level selection: 0="CORE", 1="PLATFORM"
     `ifndef TB_CHOICE
     `define TB_CHOICE 0
+    `endif
+
+    `ifndef NO_VCD
+    `define NO_VCD = 0
     `endif
 
     parameter TB_CHOICE = (`TB_CHOICE==0) ? "CORE" : "PLATFORM";
@@ -227,283 +243,321 @@ module friscv_testbench(
     generate
     if (TB_CHOICE=="CORE") begin
 
-    assign timer_irq = 1'b0;
-    assign sw_irq = 1'b0;
-    assign ext_irq = 1'b0;
+        assign timer_irq = 1'b0;
+        assign sw_irq = 1'b0;
+        assign ext_irq = 1'b0;
 
-    friscv_rv32i_core
-    #(
-        .ILEN (ILEN),
-        .XLEN (XLEN),
-        .BOOT_ADDR (BOOT_ADDR),
-        .INST_OSTDREQ_NUM (INST_OSTDREQ_NUM),
-        .MHART_ID (MHART_ID),
-        .RV32E (RV32E),
-        .M_EXTENSION (M_EXTENSION),
-        .F_EXTENSION (F_EXTENSION),
-        .PROCESSING_QUEUE_DEPTH (PROCESSING_QUEUE_DEPTH),
-        .PROCESSING_BUS_PIPELINE (PROCESSING_BUS_PIPELINE),
-        .AXI_ADDR_W (AXI_ADDR_W),
-        .AXI_ID_W (AXI_ID_W),
-        .AXI_IMEM_W (AXI_IMEM_W),
-        .AXI_DMEM_W (AXI_DMEM_W),
-        .AXI_IMEM_MASK (AXI_IMEM_MASK),
-        .AXI_DMEM_MASK (AXI_DMEM_MASK),
-        .ICACHE_EN (ICACHE_EN),
-        .ICACHE_BLOCK_W (ICACHE_BLOCK_W),
-        .ICACHE_PREFETCH_EN (ICACHE_PREFETCH_EN),
-        .ICACHE_DEPTH (ICACHE_DEPTH),
-        .DCACHE_EN (DCACHE_EN),
-        .DCACHE_BLOCK_W (DCACHE_BLOCK_W),
-        .DCACHE_PREFETCH_EN (DCACHE_PREFETCH_EN),
-        .DCACHE_DEPTH (DCACHE_DEPTH)
-    )
-    dut
-    (
-        .aclk         (aclk),
-        .aresetn      (aresetn),
-        .srst         (srst),
-        .timer_irq    (timer_irq),
-        .ext_irq      (ext_irq),
-        .sw_irq       (sw_irq),
-        .status       (status),
-        .error        (error_status_reg),
-        .pc_val       (pc),
-        .imem_arvalid (imem_arvalid),
-        .imem_arready (imem_arready),
-        .imem_araddr  (imem_araddr),
-        .imem_arprot  (imem_arprot),
-        .imem_arid    (imem_arid),
-        .imem_rvalid  (imem_rvalid),
-        .imem_rready  (imem_rready),
-        .imem_rid     (imem_rid),
-        .imem_rresp   (imem_rresp),
-        .imem_rdata   (imem_rdata),
-        .dmem_awvalid (dmem_awvalid),
-        .dmem_awready (dmem_awready),
-        .dmem_awaddr  (dmem_awaddr),
-        .dmem_awprot  (dmem_awprot),
-        .dmem_awid    (dmem_awid),
-        .dmem_wvalid  (dmem_wvalid),
-        .dmem_wready  (dmem_wready),
-        .dmem_wdata   (dmem_wdata),
-        .dmem_wstrb   (dmem_wstrb),
-        .dmem_bvalid  (dmem_bvalid),
-        .dmem_bready  (dmem_bready),
-        .dmem_bid     (dmem_bid),
-        .dmem_bresp   (dmem_bresp),
-        .dmem_arvalid (dmem_arvalid),
-        .dmem_arready (dmem_arready),
-        .dmem_araddr  (dmem_araddr),
-        .dmem_arprot  (dmem_arprot),
-        .dmem_arid    (dmem_arid),
-        .dmem_rvalid  (dmem_rvalid),
-        .dmem_rready  (dmem_rready),
-        .dmem_rid     (dmem_rid),
-        .dmem_rresp   (dmem_rresp),
-        .dmem_rdata   (dmem_rdata)
-    );
+        friscv_rv32i_core
+        #(
+            .ILEN (ILEN),
+            .XLEN (XLEN),
+            .BOOT_ADDR (BOOT_ADDR),
+            .INST_OSTDREQ_NUM (INST_OSTDREQ_NUM),
+            .MHART_ID (MHART_ID),
+            .RV32E (RV32E),
+            .M_EXTENSION (M_EXTENSION),
+            .F_EXTENSION (F_EXTENSION),
+            .PROCESSING_QUEUE_DEPTH (PROCESSING_QUEUE_DEPTH),
+            .PROCESSING_BUS_PIPELINE (PROCESSING_BUS_PIPELINE),
+            .AXI_ADDR_W (AXI_ADDR_W),
+            .AXI_ID_W (AXI_ID_W),
+            .AXI_IMEM_W (AXI_IMEM_W),
+            .AXI_DMEM_W (AXI_DMEM_W),
+            .AXI_IMEM_MASK (AXI_IMEM_MASK),
+            .AXI_DMEM_MASK (AXI_DMEM_MASK),
+            .ICACHE_EN (ICACHE_EN),
+            .ICACHE_BLOCK_W (ICACHE_BLOCK_W),
+            .ICACHE_PREFETCH_EN (ICACHE_PREFETCH_EN),
+            .ICACHE_DEPTH (ICACHE_DEPTH),
+            .DCACHE_EN (DCACHE_EN),
+            .DCACHE_BLOCK_W (DCACHE_BLOCK_W),
+            .DCACHE_PREFETCH_EN (DCACHE_PREFETCH_EN),
+            .DCACHE_DEPTH (DCACHE_DEPTH)
+        )
+        dut
+        (
+            .aclk         (aclk),
+            .aresetn      (aresetn),
+            .srst         (srst),
+            .timer_irq    (timer_irq),
+            .ext_irq      (ext_irq),
+            .sw_irq       (sw_irq),
+            .status       (status),
+            .error        (error_status_reg),
+            .pc_val       (pc),
+            .imem_arvalid (imem_arvalid),
+            .imem_arready (imem_arready),
+            .imem_araddr  (imem_araddr),
+            .imem_arprot  (imem_arprot),
+            .imem_arid    (imem_arid),
+            .imem_rvalid  (imem_rvalid),
+            .imem_rready  (imem_rready),
+            .imem_rid     (imem_rid),
+            .imem_rresp   (imem_rresp),
+            .imem_rdata   (imem_rdata),
+            .dmem_awvalid (dmem_awvalid),
+            .dmem_awready (dmem_awready),
+            .dmem_awaddr  (dmem_awaddr),
+            .dmem_awprot  (dmem_awprot),
+            .dmem_awid    (dmem_awid),
+            .dmem_wvalid  (dmem_wvalid),
+            .dmem_wready  (dmem_wready),
+            .dmem_wdata   (dmem_wdata),
+            .dmem_wstrb   (dmem_wstrb),
+            .dmem_bvalid  (dmem_bvalid),
+            .dmem_bready  (dmem_bready),
+            .dmem_bid     (dmem_bid),
+            .dmem_bresp   (dmem_bresp),
+            .dmem_arvalid (dmem_arvalid),
+            .dmem_arready (dmem_arready),
+            .dmem_araddr  (dmem_araddr),
+            .dmem_arprot  (dmem_arprot),
+            .dmem_arid    (dmem_arid),
+            .dmem_rvalid  (dmem_rvalid),
+            .dmem_rready  (dmem_rready),
+            .dmem_rid     (dmem_rid),
+            .dmem_rresp   (dmem_rresp),
+            .dmem_rdata   (dmem_rdata)
+        );
 
 
-    axi4l_ram
-    #(
-        .INIT             ("test.v"),
-        .AXI_ADDR_W       (AXI_ADDR_W),
-        .AXI_ID_W         (AXI_ID_W),
-        .AXI1_DATA_W      (AXI_IMEM_W),
-        .AXI2_DATA_W      (AXI_DMEM_W),
-        .OSTDREQ_NUM      (INST_OSTDREQ_NUM)
-    )
-    axi4l_ram
-    (
-        .aclk       (aclk        ),
-        .aresetn    (aresetn     ),
-        .srst       (srst        ),
-        .p1_awvalid (imem_awvalid),
-        .p1_awready (imem_awready),
-        .p1_awaddr  (imem_awaddr ),
-        .p1_awprot  (imem_awprot ),
-        .p1_awid    (imem_awid   ),
-        .p1_wvalid  (imem_wvalid ),
-        .p1_wready  (imem_wready ),
-        .p1_wdata   (imem_wdata  ),
-        .p1_wstrb   (imem_wstrb  ),
-        .p1_bid     (imem_bid    ),
-        .p1_bresp   (imem_bresp  ),
-        .p1_bvalid  (imem_bvalid ),
-        .p1_bready  (imem_bready ),
-        .p1_arvalid (imem_arvalid),
-        .p1_arready (imem_arready),
-        .p1_araddr  (imem_araddr ),
-        .p1_arprot  (imem_arprot ),
-        .p1_arid    (imem_arid   ),
-        .p1_rvalid  (imem_rvalid ),
-        .p1_rready  (imem_rready ),
-        .p1_rid     (imem_rid    ),
-        .p1_rresp   (imem_rresp  ),
-        .p1_rdata   (imem_rdata  ),
-        .p2_awvalid (dmem_awvalid),
-        .p2_awready (dmem_awready),
-        .p2_awaddr  (dmem_awaddr ),
-        .p2_awprot  (dmem_awprot ),
-        .p2_awid    (dmem_awid   ),
-        .p2_wvalid  (dmem_wvalid ),
-        .p2_wready  (dmem_wready ),
-        .p2_wdata   (dmem_wdata  ),
-        .p2_wstrb   (dmem_wstrb  ),
-        .p2_bid     (dmem_bid    ),
-        .p2_bresp   (dmem_bresp  ),
-        .p2_bvalid  (dmem_bvalid ),
-        .p2_bready  (dmem_bready ),
-        .p2_arvalid (dmem_arvalid),
-        .p2_arready (dmem_arready),
-        .p2_araddr  (dmem_araddr ),
-        .p2_arprot  (dmem_arprot ),
-        .p2_arid    (dmem_arid   ),
-        .p2_rvalid  (dmem_rvalid ),
-        .p2_rready  (dmem_rready ),
-        .p2_rid     (dmem_rid    ),
-        .p2_rresp   (dmem_rresp  ),
-        .p2_rdata   (dmem_rdata  )
-    );
+        axi4l_ram
+        #(
+            .INIT             ("test.v"),
+            .AXI_ADDR_W       (AXI_ADDR_W),
+            .AXI_ID_W         (AXI_ID_W),
+            .AXI1_DATA_W      (AXI_IMEM_W),
+            .AXI2_DATA_W      (AXI_DMEM_W),
+            .OSTDREQ_NUM      (INST_OSTDREQ_NUM)
+        )
+        axi4l_ram
+        (
+            .aclk       (aclk        ),
+            .aresetn    (aresetn     ),
+            .srst       (srst        ),
+            .p1_awvalid (imem_awvalid),
+            .p1_awready (imem_awready),
+            .p1_awaddr  (imem_awaddr ),
+            .p1_awprot  (imem_awprot ),
+            .p1_awid    (imem_awid   ),
+            .p1_wvalid  (imem_wvalid ),
+            .p1_wready  (imem_wready ),
+            .p1_wdata   (imem_wdata  ),
+            .p1_wstrb   (imem_wstrb  ),
+            .p1_bid     (imem_bid    ),
+            .p1_bresp   (imem_bresp  ),
+            .p1_bvalid  (imem_bvalid ),
+            .p1_bready  (imem_bready ),
+            .p1_arvalid (imem_arvalid),
+            .p1_arready (imem_arready),
+            .p1_araddr  (imem_araddr ),
+            .p1_arprot  (imem_arprot ),
+            .p1_arid    (imem_arid   ),
+            .p1_rvalid  (imem_rvalid ),
+            .p1_rready  (imem_rready ),
+            .p1_rid     (imem_rid    ),
+            .p1_rresp   (imem_rresp  ),
+            .p1_rdata   (imem_rdata  ),
+            .p2_awvalid (dmem_awvalid),
+            .p2_awready (dmem_awready),
+            .p2_awaddr  (dmem_awaddr ),
+            .p2_awprot  (dmem_awprot ),
+            .p2_awid    (dmem_awid   ),
+            .p2_wvalid  (dmem_wvalid ),
+            .p2_wready  (dmem_wready ),
+            .p2_wdata   (dmem_wdata  ),
+            .p2_wstrb   (dmem_wstrb  ),
+            .p2_bid     (dmem_bid    ),
+            .p2_bresp   (dmem_bresp  ),
+            .p2_bvalid  (dmem_bvalid ),
+            .p2_bready  (dmem_bready ),
+            .p2_arvalid (dmem_arvalid),
+            .p2_arready (dmem_arready),
+            .p2_araddr  (dmem_araddr ),
+            .p2_arprot  (dmem_arprot ),
+            .p2_arid    (dmem_arid   ),
+            .p2_rvalid  (dmem_rvalid ),
+            .p2_rready  (dmem_rready ),
+            .p2_rid     (dmem_rid    ),
+            .p2_rresp   (dmem_rresp  ),
+            .p2_rdata   (dmem_rdata  )
+        );
 
     end else if (TB_CHOICE=="PLATFORM") begin
 
-    assign timer_irq = 1'b0;
-    assign sw_irq = 1'b0;
-    assign ext_irq = 1'b0;
-    assign rtc = 1'b0;
-    assign uart_rx = 1'b0;
-    assign uart_cts = 1'b0;
+        assign timer_irq = 1'b0;
+        assign sw_irq = 1'b0;
+        assign ext_irq = 1'b0;
+        assign rtc = aclk;
 
-    friscv_rv32i_platform
+        // Can't use interactive mode with Icarus
+        `ifdef USE_ICARUS
+
+        assign uart_rx = 1'b0;
+        assign uart_cts = 1'b0;
+
+        `else
+
+        `ifdef INTERACTIVE
+        friscv_uart
         #(
-        .ILEN (ILEN),
-        .XLEN (XLEN),
-        .BOOT_ADDR (BOOT_ADDR),
-        .INST_OSTDREQ_NUM (INST_OSTDREQ_NUM),
-        .MHART_ID (MHART_ID),
-        .RV32E (RV32E),
-        .M_EXTENSION (M_EXTENSION),
-        .F_EXTENSION (F_EXTENSION),
-        .PROCESSING_QUEUE_DEPTH (PROCESSING_QUEUE_DEPTH),
-        .PROCESSING_BUS_PIPELINE (PROCESSING_BUS_PIPELINE),
-        .AXI_ADDR_W (AXI_ADDR_W),
-        .AXI_ID_W (AXI_ID_W),
-        .AXI_DATA_W (AXI_DATA_W),
-        .AXI_IMEM_MASK (AXI_IMEM_MASK),
-        .AXI_DMEM_MASK (AXI_DMEM_MASK),
-        .ICACHE_EN (ICACHE_EN),
-        .ICACHE_PREFETCH_EN (ICACHE_PREFETCH_EN),
-        .ICACHE_BLOCK_W (ICACHE_BLOCK_W),
-        .ICACHE_DEPTH (ICACHE_DEPTH),
-        .DCACHE_EN (DCACHE_EN),
-        .DCACHE_BLOCK_W (DCACHE_BLOCK_W),
-        .DCACHE_PREFETCH_EN (DCACHE_PREFETCH_EN),
-        .DCACHE_DEPTH (DCACHE_DEPTH)
-    )
-    dut
-    (
-        .aclk        (aclk),
-        .aresetn     (aresetn),
-        .srst        (srst),
-        .rtc         (rtc),
-        .ext_irq     (ext_irq),
-        .status      (status),
-        .error       (error_status_reg),
-        .pc_val      (pc),
-        .mem_awvalid (mem_awvalid),
-        .mem_awready (mem_awready),
-        .mem_awaddr  (mem_awaddr),
-        .mem_awprot  (mem_awprot),
-        .mem_awid    (mem_awid),
-        .mem_wvalid  (mem_wvalid),
-        .mem_wready  (mem_wready),
-        .mem_wdata   (mem_wdata),
-        .mem_wstrb   (mem_wstrb),
-        .mem_bvalid  (mem_bvalid),
-        .mem_bready  (mem_bready),
-        .mem_bid     (mem_bid),
-        .mem_bresp   (mem_bresp),
-        .mem_arvalid (mem_arvalid),
-        .mem_arready (mem_arready),
-        .mem_araddr  (mem_araddr),
-        .mem_arprot  (mem_arprot),
-        .mem_arid    (mem_arid),
-        .mem_rvalid  (mem_rvalid),
-        .mem_rready  (mem_rready),
-        .mem_rid     (mem_rid),
-        .mem_rresp   (mem_rresp),
-        .mem_rdata   (mem_rdata),
-        .gpio_in     (gpio_in),
-        .gpio_out    (gpio_out),
-        .uart_rx     (uart_rx),
-        .uart_tx     (uart_tx),
-        .uart_rts    (uart_rts),
-        .uart_cts    (uart_cts)
-    );
+        .ADDRW           (8),
+        .XLEN            (XLEN),
+        .RXTX_FIFO_DEPTH (16),
+        .CLK_DIVIDER     (4)
+        )
+        uartlink
+        (
+        .aclk      (aclk),
+        .aresetn   (aresetn),
+        .srst      (srst),
+        .slv_en    (slv_en),
+        .slv_wr    (slv_wr),
+        .slv_addr  (slv_addr),
+        .slv_wdata (slv_wdata),
+        .slv_strb  (slv_strb),
+        .slv_rdata (slv_rdata),
+        .slv_ready (slv_ready),
+        .uart_rx   (uart_tx),
+        .uart_tx   (uart_rx),
+        .uart_rts  (uart_cts),
+        .uart_cts  (uart_rts)
+        );
 
-    axi4l_ram
-    #(
-        .INIT             ("test.v"),
-        .AXI_ADDR_W       (AXI_ADDR_W),
-        .AXI_ID_W         (AXI_ID_W),
-        .AXI1_DATA_W      (AXI_DATA_W),
-        .AXI2_DATA_W      (AXI_DATA_W),
-        .OSTDREQ_NUM      (INST_OSTDREQ_NUM)
-    )
-    axi4l_ram
-    (
-        .aclk       (aclk       ),
-        .aresetn    (aresetn    ),
-        .srst       (srst       ),
-        .p1_awvalid (mem_awvalid),
-        .p1_awready (mem_awready),
-        .p1_awaddr  (mem_awaddr ),
-        .p1_awprot  (mem_awprot ),
-        .p1_awid    (mem_awid   ),
-        .p1_wvalid  (mem_wvalid ),
-        .p1_wready  (mem_wready ),
-        .p1_wdata   (mem_wdata  ),
-        .p1_wstrb   (mem_wstrb  ),
-        .p1_bid     (mem_bid    ),
-        .p1_bresp   (mem_bresp  ),
-        .p1_bvalid  (mem_bvalid ),
-        .p1_bready  (mem_bready ),
-        .p1_arvalid (mem_arvalid),
-        .p1_arready (mem_arready),
-        .p1_araddr  (mem_araddr ),
-        .p1_arprot  (mem_arprot ),
-        .p1_arid    (mem_arid   ),
-        .p1_rvalid  (mem_rvalid ),
-        .p1_rready  (mem_rready ),
-        .p1_rid     (mem_rid    ),
-        .p1_rresp   (mem_rresp  ),
-        .p1_rdata   (mem_rdata  ),
-        .p2_awvalid (1'b0),
-        .p2_awready (),
-        .p2_awaddr  ({AXI_ADDR_W{1'b0}}),
-        .p2_awprot  (3'h0),
-        .p2_awid    ({AXI_ID_W{1'b0}}),
-        .p2_wvalid  (1'b0),
-        .p2_wready  (),
-        .p2_wdata   ({AXI_DATA_W{1'b0}}),
-        .p2_wstrb   ({AXI_DATA_W/8{1'b0}}),
-        .p2_bid     (),
-        .p2_bresp   (),
-        .p2_bvalid  (),
-        .p2_bready  (1'h0),
-        .p2_arvalid (1'b0),
-        .p2_arready (),
-        .p2_araddr  ({AXI_ADDR_W{1'b0}}),
-        .p2_arprot  (3'h0),
-        .p2_arid    ({AXI_ID_W{1'b0}}),
-        .p2_rvalid  (),
-        .p2_rready  (1'h0),
-        .p2_rid     (),
-        .p2_rresp   (),
-        .p2_rdata   ()
-    );
+        `else
+        assign uart_rx = 1'b0;
+        assign uart_cts = 1'b0;
+        `endif
+        `endif
+
+        friscv_rv32i_platform
+        #(
+            .ILEN (ILEN),
+            .XLEN (XLEN),
+            .BOOT_ADDR (BOOT_ADDR),
+            .INST_OSTDREQ_NUM (INST_OSTDREQ_NUM),
+            .MHART_ID (MHART_ID),
+            .RV32E (RV32E),
+            .M_EXTENSION (M_EXTENSION),
+            .F_EXTENSION (F_EXTENSION),
+            .PROCESSING_QUEUE_DEPTH (PROCESSING_QUEUE_DEPTH),
+            .PROCESSING_BUS_PIPELINE (PROCESSING_BUS_PIPELINE),
+            .AXI_ADDR_W (AXI_ADDR_W),
+            .AXI_ID_W (AXI_ID_W),
+            .AXI_DATA_W (AXI_DATA_W),
+            .AXI_IMEM_MASK (AXI_IMEM_MASK),
+            .AXI_DMEM_MASK (AXI_DMEM_MASK),
+            .ICACHE_EN (ICACHE_EN),
+            .ICACHE_PREFETCH_EN (ICACHE_PREFETCH_EN),
+            .ICACHE_BLOCK_W (ICACHE_BLOCK_W),
+            .ICACHE_DEPTH (ICACHE_DEPTH),
+            .DCACHE_EN (DCACHE_EN),
+            .DCACHE_BLOCK_W (DCACHE_BLOCK_W),
+            .DCACHE_PREFETCH_EN (DCACHE_PREFETCH_EN),
+            .DCACHE_DEPTH (DCACHE_DEPTH)
+        )
+        dut
+        (
+            .aclk        (aclk),
+            .aresetn     (aresetn),
+            .srst        (srst),
+            .rtc         (rtc),
+            .ext_irq     (ext_irq),
+            .status      (status),
+            .error       (error_status_reg),
+            .pc_val      (pc),
+            .mem_awvalid (mem_awvalid),
+            .mem_awready (mem_awready),
+            .mem_awaddr  (mem_awaddr),
+            .mem_awprot  (mem_awprot),
+            .mem_awid    (mem_awid),
+            .mem_wvalid  (mem_wvalid),
+            .mem_wready  (mem_wready),
+            .mem_wdata   (mem_wdata),
+            .mem_wstrb   (mem_wstrb),
+            .mem_bvalid  (mem_bvalid),
+            .mem_bready  (mem_bready),
+            .mem_bid     (mem_bid),
+            .mem_bresp   (mem_bresp),
+            .mem_arvalid (mem_arvalid),
+            .mem_arready (mem_arready),
+            .mem_araddr  (mem_araddr),
+            .mem_arprot  (mem_arprot),
+            .mem_arid    (mem_arid),
+            .mem_rvalid  (mem_rvalid),
+            .mem_rready  (mem_rready),
+            .mem_rid     (mem_rid),
+            .mem_rresp   (mem_rresp),
+            .mem_rdata   (mem_rdata),
+            .gpio_in     (gpio_in),
+            .gpio_out    (gpio_out),
+            .uart_rx     (uart_rx),
+            .uart_tx     (uart_tx),
+            .uart_rts    (uart_rts),
+            .uart_cts    (uart_cts)
+        );
+
+        axi4l_ram
+        #(
+            .INIT             ("test.v"),
+            .AXI_ADDR_W       (AXI_ADDR_W),
+            .AXI_ID_W         (AXI_ID_W),
+            .AXI1_DATA_W      (AXI_DATA_W),
+            .AXI2_DATA_W      (AXI_DATA_W),
+            .OSTDREQ_NUM      (INST_OSTDREQ_NUM)
+        )
+        axi4l_ram
+        (
+            .aclk       (aclk       ),
+            .aresetn    (aresetn    ),
+            .srst       (srst       ),
+            .p1_awvalid (mem_awvalid),
+            .p1_awready (mem_awready),
+            .p1_awaddr  (mem_awaddr ),
+            .p1_awprot  (mem_awprot ),
+            .p1_awid    (mem_awid   ),
+            .p1_wvalid  (mem_wvalid ),
+            .p1_wready  (mem_wready ),
+            .p1_wdata   (mem_wdata  ),
+            .p1_wstrb   (mem_wstrb  ),
+            .p1_bid     (mem_bid    ),
+            .p1_bresp   (mem_bresp  ),
+            .p1_bvalid  (mem_bvalid ),
+            .p1_bready  (mem_bready ),
+            .p1_arvalid (mem_arvalid),
+            .p1_arready (mem_arready),
+            .p1_araddr  (mem_araddr ),
+            .p1_arprot  (mem_arprot ),
+            .p1_arid    (mem_arid   ),
+            .p1_rvalid  (mem_rvalid ),
+            .p1_rready  (mem_rready ),
+            .p1_rid     (mem_rid    ),
+            .p1_rresp   (mem_rresp  ),
+            .p1_rdata   (mem_rdata  ),
+            .p2_awvalid (1'b0),
+            .p2_awready (),
+            .p2_awaddr  ({AXI_ADDR_W{1'b0}}),
+            .p2_awprot  (3'h0),
+            .p2_awid    ({AXI_ID_W{1'b0}}),
+            .p2_wvalid  (1'b0),
+            .p2_wready  (),
+            .p2_wdata   ({AXI_DATA_W{1'b0}}),
+            .p2_wstrb   ({AXI_DATA_W/8{1'b0}}),
+            .p2_bid     (),
+            .p2_bresp   (),
+            .p2_bvalid  (),
+            .p2_bready  (1'h0),
+            .p2_arvalid (1'b0),
+            .p2_arready (),
+            .p2_araddr  ({AXI_ADDR_W{1'b0}}),
+            .p2_arprot  (3'h0),
+            .p2_arid    ({AXI_ID_W{1'b0}}),
+            .p2_rvalid  (),
+            .p2_rready  (1'h0),
+            .p2_rid     (),
+            .p2_rresp   (),
+            .p2_rdata   ()
+        );
     end
     endgenerate
 

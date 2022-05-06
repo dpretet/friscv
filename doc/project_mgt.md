@@ -17,6 +17,8 @@ N.B. : Any new feature and ISA should be carefully study to ensure a proper
 exception and interrupt handling
 
 Misc.
+- [ ] Minimalistic Unix
+    - tool to trace: https://github.com/janestreet/magic-trace
 - [ ] Add counters
 - [ ] 64 bits support
 - [ ] Support privileged instructions, supervisor mode & user mode
@@ -24,6 +26,7 @@ Misc.
       https://mobile.twitter.com/hasheddan/status/1514581031092899843?s=12&t=MMNTY_iRC48CjykLQBdTkQ
       https://man7.org/linux/man-pages/man2/syscall.2.html
       https://www.youtube.com/watch?app=desktop&v=1-8oYzL_Thk
+      https://jborza.com/emulation/2021/04/22/ecalls-and-syscalls.html
 - [ ] Support MMU extension
 - [ ] JTAG interface / GDB Usage / OpenOCD
         - https://tomverbeure.github.io/2021/07/18/VexRiscv-OpenOCD-and-Traps.html

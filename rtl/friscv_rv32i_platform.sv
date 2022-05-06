@@ -182,17 +182,21 @@ module friscv_rv32i_platform
     logic [AXI_DMEM_W    -1:0] dmem_rdata;
 
     ///////////////////////////////////////////////////////////////////////////
-    // IO subsytem configuration
+    // IO subsytem configuration (APB interconnect), connected as slave 1
+    // of the AXI4-lite interconnect
     ///////////////////////////////////////////////////////////////////////////
 
+    // GPIOs
     parameter IO_SLV0_ADDR       = 0;
     parameter IO_SLV0_SIZE       = 8;
+    // UART
     parameter IO_SLV1_ADDR       = IO_SLV0_ADDR + IO_SLV0_SIZE;
     parameter IO_SLV1_SIZE       = 16;
+    // CLINT
     parameter IO_SLV2_ADDR       = IO_SLV1_ADDR + IO_SLV1_SIZE;
     parameter IO_SLV2_SIZE       = 16;
 
-    parameter IO_UART_FIFO_DEPTH = 4;
+    parameter IO_UART_FIFO_DEPTH = 8;
 
     logic                      ios_awvalid;
     logic                      ios_awready;
@@ -221,7 +225,7 @@ module friscv_rv32i_platform
     logic                      timer_irq;
 
     ///////////////////////////////////////////////////////////////////////////
-    // AXI4 Crossbar parameters and signals
+    // AXI4-lite Crossbar parameters and signals
     ///////////////////////////////////////////////////////////////////////////
 
     parameter MST_NB = 4;
@@ -698,10 +702,13 @@ module friscv_rv32i_platform
     .DATAW           (AXI_DATA_W),
     .IDW             (AXI_ID_W),
     .XLEN            (XLEN),
+    // GPIOs
     .SLV0_ADDR       (IO_SLV0_ADDR),
     .SLV0_SIZE       (IO_SLV0_SIZE),
+    // UART
     .SLV1_ADDR       (IO_SLV1_ADDR),
     .SLV1_SIZE       (IO_SLV1_SIZE),
+    // CLINT
     .SLV2_ADDR       (IO_SLV2_ADDR),
     .SLV2_SIZE       (IO_SLV2_SIZE),
     .UART_FIFO_DEPTH (IO_UART_FIFO_DEPTH)

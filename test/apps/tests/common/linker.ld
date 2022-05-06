@@ -1,3 +1,6 @@
+/* distributed under the mit license */
+/* https://opensource.org/licenses/mit-license.php */
+
 OUTPUT_ARCH( "riscv" )
 ENTRY(_start)
 

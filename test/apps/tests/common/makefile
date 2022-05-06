@@ -1,3 +1,6 @@
+# distributed under the mit license
+# https://opensource.org/licenses/mit-license.php
+
 PROJ_NAME=$(shell basename $(CURDIR))
 
 RISCV_NAME = riscv64-unknown-elf
