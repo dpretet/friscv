@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.107 (w)1999-2020 BSI
-[*] Tue May 10 20:26:59 2022
+[*] Sat May 14 14:00:48 2022
 [*]
 [dumpfile] "/Users/damien/workspace/hdl/friscv/test/apps/friscv_testbench.vcd"
-[dumpfile_mtime] "Tue May 10 19:35:38 2022"
-[dumpfile_size] 2474676002
+[dumpfile_mtime] "Wed May 11 19:36:45 2022"
+[dumpfile_size] 8899377
 [savefile] "/Users/damien/workspace/hdl/friscv/test/common/debug_platform_verilator.gtkw"
-[timestart] 6342
+[timestart] 2635
 [size] 2560 1440
 [pos] -1 -1
-*-7.544987 6562 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-7.544987 4255 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] friscv_testbench.
 [treeopen] friscv_testbench.friscv_testbench.
 [treeopen] friscv_testbench.friscv_testbench.genblk1.
@@ -343,7 +343,7 @@ friscv_testbench.friscv_testbench.genblk1.dut.cpu0.control.rs2[4:0]
 friscv_testbench.friscv_testbench.genblk1.dut.cpu0.control.rd[4:0]
 @1000200
 -control
-@800200
+@c00200
 -ISA Registers
 @22
 friscv_testbench.friscv_testbench.genblk1.dut.cpu0.isa_registers.x1[31:0]
@@ -377,7 +377,7 @@ friscv_testbench.friscv_testbench.genblk1.dut.cpu0.isa_registers.x28[31:0]
 friscv_testbench.friscv_testbench.genblk1.dut.cpu0.isa_registers.x29[31:0]
 friscv_testbench.friscv_testbench.genblk1.dut.cpu0.isa_registers.x30[31:0]
 friscv_testbench.friscv_testbench.genblk1.dut.cpu0.isa_registers.x31[31:0]
-@1000200
+@1401200
 -ISA Registers
 @c00200
 -memfy
@@ -818,54 +818,59 @@ friscv_testbench.friscv_testbench.genblk1.dut.io_subsystem.uart.uart_cts
 friscv_testbench.friscv_testbench.genblk1.dut.io_subsystem.uart.uart_rts
 @1401200
 -UART Platform
-@800201
+@800200
 -UART Link
-@29
+@28
 friscv_testbench.friscv_testbench.genblk1.dut.io_subsystem.uart.aclk
 [color] 3
 friscv_testbench.friscv_testbench.genblk1.uartlink.uart_cts
 [color] 3
 friscv_testbench.friscv_testbench.genblk1.uartlink.uart_rts
-@201
+@200
 -
-@29
+@28
 friscv_testbench.friscv_testbench.genblk1.uartlink.slv_en
 friscv_testbench.friscv_testbench.genblk1.uartlink.slv_wr
-@23
+@22
 friscv_testbench.friscv_testbench.genblk1.uartlink.slv_addr[7:0]
 friscv_testbench.friscv_testbench.genblk1.uartlink.slv_strb[3:0]
 friscv_testbench.friscv_testbench.genblk1.uartlink.slv_wdata[31:0]
+@820
+friscv_testbench.friscv_testbench.genblk1.uartlink.slv_wdata[31:0]
+@22
 friscv_testbench.friscv_testbench.genblk1.uartlink.slv_rdata[31:0]
-@29
+@820
+friscv_testbench.friscv_testbench.genblk1.uartlink.slv_rdata[31:0]
+@28
 friscv_testbench.friscv_testbench.genblk1.uartlink.slv_ready
-@201
+@200
 -
-@23
+@22
 friscv_testbench.friscv_testbench.genblk1.uartlink.rx_bit_cnt[3:0]
-@29
+@28
 friscv_testbench.friscv_testbench.genblk1.uartlink.uart_rx
 friscv_testbench.friscv_testbench.genblk1.uartlink.rx_empty
 friscv_testbench.friscv_testbench.genblk1.uartlink.rx_full
 friscv_testbench.friscv_testbench.genblk1.uartlink.rx_pull
 friscv_testbench.friscv_testbench.genblk1.uartlink.rx_push
-@23
+@22
 friscv_testbench.friscv_testbench.genblk1.uartlink.rx_data[7:0]
-@201
+@200
 -
-@23
+@22
 friscv_testbench.friscv_testbench.genblk1.uartlink.tx_baud_cnt[15:0]
 friscv_testbench.friscv_testbench.genblk1.uartlink.tx_bit_cnt[3:0]
 friscv_testbench.friscv_testbench.genblk1.uartlink.tx_data[7:0]
 friscv_testbench.friscv_testbench.genblk1.uartlink.tx_data_srr[7:0]
-@29
+@28
 friscv_testbench.friscv_testbench.genblk1.uartlink.tx_empty
 friscv_testbench.friscv_testbench.genblk1.uartlink.tx_full
 friscv_testbench.friscv_testbench.genblk1.uartlink.tx_pull
 friscv_testbench.friscv_testbench.genblk1.uartlink.tx_push
 friscv_testbench.friscv_testbench.genblk1.uartlink.uart_tx
-@201
+@200
 -
-@1000201
+@1000200
 -UART Link
 [pattern_trace] 1
 [pattern_trace] 0

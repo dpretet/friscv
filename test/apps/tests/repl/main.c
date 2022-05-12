@@ -3,11 +3,8 @@
 
 #include <stdio.h>
 
-extern void uart_putchar(char c);
-extern char uart_getchar();
-extern int uart_is_empty();
-extern int uart_is_full();
-extern void break_exe();
+#include "uart.h"
+extern void shutdown();
 
 
 int main() {
@@ -27,6 +24,8 @@ int main() {
     uart_putchar(prompt[0]);
 
     // Event loop of REPL
+    // TODO: Put in place a protocol with SOT / EOT flags,
+    // possibly needing an error management and retry mechanism
     while (1) {
 
         is_empty = uart_is_empty();
@@ -45,6 +44,6 @@ int main() {
     }
 
     // Stop the SOC
-    break_exe();
+    shutdown();
 }
 

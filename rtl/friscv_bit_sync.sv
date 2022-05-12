@@ -9,7 +9,8 @@
 module friscv_bit_sync
 
     #(
-        parameter DEPTH  = 2
+        parameter DEFAULT_LEVEL = 0,
+        parameter DEPTH = 2
     )(
         // clock & reset
         input  wire                       aclk,
@@ -26,15 +27,15 @@ module friscv_bit_sync
 
     if (DEPTH<=2) begin: DEPTH_EQ_2
         always @ (posedge aclk or negedge aresetn) begin
-            if (~aresetn) sync <= {DEPTH{1'b0}};
-            else if (srst) sync <= {DEPTH{1'b0}};
+            if (~aresetn) sync <= {DEPTH{DEFAULT_LEVEL[0]}};
+            else if (srst) sync <= {DEPTH{DEFAULT_LEVEL[0]}};
             else sync <= {sync[0],bit_i};
         end
     end else begin: DEPTH_GT_2
         always @ (posedge aclk or negedge aresetn) begin
 
-            if (~aresetn) sync <= {DEPTH{1'b0}};
-            else if (srst) sync <= {DEPTH{1'b0}};
+            if (~aresetn) sync <= {DEPTH{DEFAULT_LEVEL[0]}};
+            else if (srst) sync <= {DEPTH{DEFAULT_LEVEL[0]}};
             else sync <= {sync[DEPTH-2:0],bit_i};
         end
     end

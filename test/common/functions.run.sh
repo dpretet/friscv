@@ -31,12 +31,12 @@ INST_PER_BLOCK=$(($CACHE_BLOCK_W/$ILEN))
 BOOT_ADDR=0
 # Timeout upon which the simulation is ran
 [[ -z $TIMEOUT ]] && TIMEOUT=10000
-# Testbench configuration
-TB_CHOICE=0     # 0="CORE", 1="PLATFORM"
+# Testbench configuration: 0="CORE", 1="PLATFORM"
+[[ -z $TB_CHOICE ]] && TB_CHOICE=0
 # Specific testcase(s) to run
 TC=
 # Use Icarus Verilog simulator
-SIM="icarus"
+[[ -z $SIM ]] && SIM="icarus"
 # Minimum program counter value a test needs to reach, in bytes
 [[ -z $MIN_PC ]] && MIN_PC=65908
 # Don't dump VCD during simulation
@@ -45,6 +45,7 @@ SIM="icarus"
 NO_COMPILE=0
 # INTERACTIVE enable a UART to read/write from Verilator
 [[ -z $INTERACTIVE ]] && INTERACTIVE=0
+
 #------------------------------------------------------------------------------
 
 
@@ -89,6 +90,9 @@ run_tests() {
         echo "  - TCNAME:        ${test_name}"
         echo "  - SIMULATOR:     $SIM"
         echo "  - INTERACTIVE:   $INTERACTIVE"
+        if [[ -n $NO_RAM_LOG ]]; then
+            echo "  - NO_RAM_LOG:    $NO_RAM_LOG"
+        fi
 
         # Defines passed to the testbench
         if [[ $SIM == "icarus" ]]; then
@@ -107,6 +111,9 @@ run_tests() {
         DEFINES="${DEFINES}TB_CHOICE=$TB_CHOICE;"
         DEFINES="${DEFINES}NO_VCD=$NO_VCD;"
         DEFINES="${DEFINES}INTERACTIVE=$INTERACTIVE;"
+        if [[ -n $NO_RAM_LOG ]]; then
+            DEFINES="${DEFINES}NO_RAM_LOG=$NO_RAM_LOG;"
+        fi
         DEFINES="${DEFINES}TCNAME=${test_name}"
 
         # Execute the testcase with SVUT

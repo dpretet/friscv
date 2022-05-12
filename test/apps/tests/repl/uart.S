@@ -21,18 +21,26 @@
 
 
 #-------------------------------------------------------------
+# UART registers address
+#-------------------------------------------------------------
+
+.equ UART_STATUS, 0x100008
+.equ UART_CLKDIV, 0x10000C
+.equ UART_TX,     0x100010
+.equ UART_RX,     0x100014
+
+
+#-------------------------------------------------------------
 # Push a char into UART TX FIFO
 #
-# Argument:
+# Arguments:
 #   - a0: a 8 bits char
 #
 # Returns:
 #   - Nothing
 #-------------------------------------------------------------
 uart_putchar:
-    # UART TX FIFO address
-    li t0, 0x100010
-    # Write to
+    li t0, UART_TX
     sw a0, 0(t0)
     ret
 
@@ -44,13 +52,13 @@ uart_putchar:
 #   - Nothing
 #
 # Returns:
-#   - a 8 bit char
+#   - a 8 bits char
 #-------------------------------------------------------------
 uart_getchar:
-    # UART RX FIFO address
-    li t0, 0x100014
+    li t0, UART_RX
     lw a0, 0(t0)
     ret
+
 
 #-------------------------------------------------------------
 # Read UART status register to know if RX FIFO is empty
@@ -62,8 +70,7 @@ uart_getchar:
 #   - 1 if RX FIFO is empty, 0 if full or partially filled
 #-------------------------------------------------------------
 uart_is_empty:
-    # UART Status register
-    li t0, 0x100008
+    li t0, UART_STATUS
     # Read status register
     lw t1, 0(t0)
     # Extract empty bit
@@ -82,8 +89,7 @@ uart_is_empty:
 #   - 1 if TX FIFO is full, 0 if empty or partially filled
 #-------------------------------------------------------------
 uart_is_full:
-    # UART Status register
-    li t0, 0x100008
+    li t0, UART_STATUS
     # Read status register
     lw t1, 0(t0)
     # Extract full bit

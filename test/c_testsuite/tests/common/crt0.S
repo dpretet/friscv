@@ -43,14 +43,28 @@ _start:
     # __stack_top will be linked later with the linker file symbols
     la sp, _estack
 
-    # Init MEPC and set back t0 to 0
-    auipc   t0,0x0
-    addi    t0,t0,20 # main()
-    csrw    mepc,t0
-    li      t0, 0
+    # Setup ecall
+    la t0, _syscall
+    csrw    mtvec,t0
 
     # Jump to the main
+    j _stext
+
+_syscall:
+    # a7 = 214
+    li t3, 214
+    bne a7, t3, ret_syscall
+    # Fake sbrk
+    la a0, _edata
+
+ret_syscall:
+    # Consider everything was fine, we'll move to the next instruction
+    csrr t0, mepc
+	addi t0, t0, 4
+	csrw mepc, t0
     mret
+
+
 
 # Add vector tables for exceptions and interrupts
 # https://www.youtube.com/watch?v=2Hm8eEHsgls&list=PLERTijJOmYrDiiWd10iRHY0VRHdJwUH4g&index=3

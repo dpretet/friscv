@@ -11,6 +11,7 @@ RISCV_OBJDUMP = $(RISCV_NAME)-objdump
 RISCV_CLIB="/opt/homebrew/Cellar/riscv-gnu-toolchain/main/riscv64-unknown-elf/include/"
 
 SRCS =	$(wildcard *.c) \
+        $(wildcard *.h) \
         $(wildcard *.S)
 
 

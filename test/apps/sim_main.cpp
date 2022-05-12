@@ -149,10 +149,9 @@ int main(int argc, char** argv, char** env) {
 
                             if (std::cin.rdbuf() && std::cin.rdbuf()->in_avail() >= 0) {
 
-                                cin >> cin_str;
+                                std::getline(std::cin, cin_str);
                                 str_ix = 0;
                                 str_size = cin_str.size();
-
                                 top->slv_addr = TX_FIFO_ADDR;
                                 top->slv_strb = 15;
                                 top->slv_wdata = cin_str[0];

@@ -7,12 +7,12 @@
 # Export functions' symbols for C call
 #-------------------------------------------------------------
 
-.global break_exe
-.type break_exe, @function
+.global shutdown
+.type shutdown, @function
 
 
 #-------------------------------------------------------------
 # Stop the processor with EBREAK
 #-------------------------------------------------------------
-break_exe:
+shutdown:
     ebreak

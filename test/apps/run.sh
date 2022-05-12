@@ -12,13 +12,23 @@ set -e
 # Variables and setup
 #------------------------------------------------------------------------------
 
+# Disable runtime timeout check for this testbench
 TIMEOUT=0
+
 # Minumum value the program counter should reach in bytes
 MIN_PC=65692
+
 # Don't drop VCD, to avoid storing GB of raw data
 NO_VCD=1
+
 # Enable UART link to the processor (Platform only)
 INTERACTIVE=1
+
+# Disable AXI4-lite RAM logging
+# NO_RAM_LOG=1
+
+# Testbench configuration
+TB_CHOICE=1 # PLATFORM
 
 source ../common/functions.run.sh
 
@@ -38,6 +48,11 @@ main() {
     # Use Verilator only
     [[ $SIM == "icarus" ]] && echo "Apps support Verilator only. Will use it"
     SIM="verilator"
+
+    # Use PLATFORM testbench only
+    [[ $TB_CHOICE == 0 ]] && echo "Apps support only PLATFORM. Will use it"
+    TB_CHOICE=1
+
     # No timeout for apps while it it's interactive with user inputs
     [[ $TIMEOUT -gt 0 ]] && echo "Deactivate timeout while testbench is in interactive mode"
     TIMEOUT=0

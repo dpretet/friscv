@@ -357,9 +357,9 @@ module friscv_uart
     //
     //////////////////////////////////////////////////////////////////////////
 
-    /*
     friscv_bit_sync 
     #(
+    .DEFAULT_LEVEL (1),
     .DEPTH (2)
     )
     rx_sync 
@@ -373,6 +373,7 @@ module friscv_uart
 
     friscv_bit_sync 
     #(
+    .DEFAULT_LEVEL (1),
     .DEPTH (2)
     )
     cts_sync 
@@ -383,10 +384,7 @@ module friscv_uart
     .bit_i   (uart_cts),
     .bit_o   (uart_cts_sync)
     );
-    */
 
-    assign uart_rx_sync = uart_rx;
-    assign uart_cts_sync = uart_cts;
 
     always @ (posedge aclk or negedge aresetn) begin
 
