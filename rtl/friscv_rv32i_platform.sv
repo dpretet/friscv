@@ -194,7 +194,7 @@ module friscv_rv32i_platform
     parameter IO_SLV1_SIZE       = 16;
     // CLINT
     parameter IO_SLV2_ADDR       = IO_SLV1_ADDR + IO_SLV1_SIZE;
-    parameter IO_SLV2_SIZE       = 16;
+    parameter IO_SLV2_SIZE       = 20;
 
     parameter IO_UART_FIFO_DEPTH = 8;
 
@@ -282,7 +282,7 @@ module friscv_rv32i_platform
 
     parameter SLV1_CDC = 0;
     parameter SLV1_START_ADDR = 1048576;
-    parameter SLV1_END_ADDR = 1048607;
+    parameter SLV1_END_ADDR = 1048639;
     parameter SLV1_OSTDREQ_NUM = 0;
     parameter SLV1_KEEP_BASE_ADDR = 0;
 

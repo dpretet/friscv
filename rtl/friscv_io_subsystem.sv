@@ -76,6 +76,18 @@ module friscv_io_subsystem
     // Logic declaration
     ///////////////////////////////////////////////////////////////////////////
 
+    // Control fsm
+    typedef enum logic[1:0] {
+        IDLE = 0,
+        WAIT_WDATA = 1,
+        WAIT_BRESP = 2,
+        WAIT_RRESP = 3
+    } axi4l_fsm;
+
+
+    localparam DSCALE = DATAW / XLEN;
+    localparam DWIX = $clog2(DSCALE);
+
     logic              mst_en;
     logic              mst_wr;
     logic [ADDRW -1:0] mst_addr;
@@ -108,19 +120,10 @@ module friscv_io_subsystem
     logic [XLEN  -1:0] slv2_rdata;
     logic              slv2_ready;
 
+    logic [DWIX  -1:0] ix;
     logic              misroute;
+    axi4l_fsm          cfsm;
 
-    // Control fsm
-    typedef enum logic[1:0] {
-        IDLE = 0,
-        WAIT_WDATA = 1,
-        WAIT_BRESP = 2,
-        WAIT_RRESP = 3
-    } axi4l_fsm;
-
-    axi4l_fsm cfsm;
-
-    localparam DSCALE = DATAW / XLEN;
 
 
     ///////////////////////////////////////////////////////////////////////////
@@ -139,7 +142,7 @@ module friscv_io_subsystem
             misroute = 1'b1;
         end
     end
-
+    assign ix = slv_awaddr[2+:DWIX];
     assign slv_rresp = (misroute) ? 2'h3 : 2'b0;
     assign slv_bresp = (misroute) ? 2'h3 : 2'b0;
 
@@ -194,8 +197,8 @@ module friscv_io_subsystem
                         end else begin
                             mst_en <= 1'b1;
                             mst_wr <= 1'b1;
-                            mst_wdata <= slv_wdata;
-                            mst_strb <= slv_wstrb;
+                            mst_wdata <= slv_wdata[ix*XLEN+:XLEN];
+                            mst_strb <= slv_wstrb[ix*XLEN/8+:XLEN/8];
                             cfsm <= WAIT_BRESP;
                         end
 
@@ -220,8 +223,8 @@ module friscv_io_subsystem
                         slv_wready <= 1'b0;
                         mst_en <= 1'b1;
                         mst_wr <= 1'b1;
-                        mst_wdata <= slv_wdata;
-                        mst_strb <= slv_wstrb;
+                        mst_wdata <= slv_wdata[ix*XLEN+:XLEN];
+                        mst_strb <= slv_wstrb[ix*XLEN/8+:XLEN/8];
                     end
 
                     if (mst_en && mst_ready) begin
