@@ -1,7 +1,7 @@
 # distributed under the mit license
 # https://opensource.org/licenses/mit-license.php
 
-.section .text.init;
+.section .text.init
 .global _start
 
 _start:
@@ -39,19 +39,13 @@ _start:
     li x30, 0
     li x31, 0
 
+    # Setup system call function address
+    la t0, _syscall
+    csrw    mtvec,t0
 
     # Init the max boundary of the stack section
-    # __stack_top will be linked later with the linker file symbols
+    # _estack will be linked later with the linker file symbols
     la sp, _estack
 
     # Jump to the main
     j _stext
-
-# Add vector tables for exceptions and interrupts
-# https://www.youtube.com/watch?v=2Hm8eEHsgls&list=PLERTijJOmYrDiiWd10iRHY0VRHdJwUH4g&index=3
-# https://gcc.gnu.org/onlinedocs/gcc/Common-Variable-Attributes.html#Common-Variable-Attributes
-# Check existing processor for inspiration
-
-
-# The BSS section reserves RAM space for declared but uninitialized variables.
-# TODO: intialize with startup

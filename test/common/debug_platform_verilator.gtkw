@@ -1,21 +1,25 @@
 [*]
 [*] GTKWave Analyzer v3.3.107 (w)1999-2020 BSI
-[*] Sun May 15 18:01:38 2022
+[*] Sun May 15 18:37:18 2022
 [*]
 [dumpfile] "/Users/damien/workspace/hdl/friscv/test/apps/friscv_testbench.vcd"
-[dumpfile_mtime] "Sun May 15 18:01:32 2022"
-[dumpfile_size] 10130441
+[dumpfile_mtime] "Sun May 15 18:12:56 2022"
+[dumpfile_size] 7325095
 [savefile] "/Users/damien/workspace/hdl/friscv/test/common/debug_platform_verilator.gtkw"
-[timestart] 5923
+[timestart] 6765
 [size] 2560 1440
 [pos] -1 -1
-*-3.988492 5998 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-3.996195 6815 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] friscv_testbench.
 [treeopen] friscv_testbench.friscv_testbench.
 [treeopen] friscv_testbench.friscv_testbench.genblk1.
 [treeopen] friscv_testbench.friscv_testbench.genblk1.dut.
+[treeopen] friscv_testbench.friscv_testbench.genblk1.dut.axi4lite_crossbar.
+[treeopen] friscv_testbench.friscv_testbench.genblk1.dut.axi4lite_crossbar.axi4lite_crossbar_inst.
+[treeopen] friscv_testbench.friscv_testbench.genblk1.dut.axi4lite_crossbar.axi4lite_crossbar_inst.switchs.
 [treeopen] friscv_testbench.friscv_testbench.genblk1.dut.axi4lite_crossbar.axi4lite_crossbar_inst.switchs.MST_SWITCHS_GEN[0].arch_mst_pipe.
 [treeopen] friscv_testbench.friscv_testbench.genblk1.dut.axi4lite_crossbar.axi4lite_crossbar_inst.switchs.MST_SWITCHS_GEN[0].awch_mst_pipe.
+[treeopen] friscv_testbench.friscv_testbench.genblk1.dut.axi4lite_crossbar.axi4lite_crossbar_inst.switchs.SLV_SWITCHS_GEN[1].
 [treeopen] friscv_testbench.friscv_testbench.genblk1.dut.cpu0.
 [treeopen] friscv_testbench.friscv_testbench.genblk1.dut.cpu0.control.
 [treeopen] friscv_testbench.friscv_testbench.genblk1.dut.cpu0.DCACHE_ON.
@@ -274,7 +278,7 @@ friscv_testbench.friscv_testbench.genblk1.dut.cpu0.USE_ICACHE.icache.cache_block
 @1401200
 -Cache Blocks
 -iCache
-@800200
+@c00200
 -control
 @28
 friscv_testbench.friscv_testbench.genblk1.dut.cpu0.control.aclk
@@ -341,7 +345,7 @@ friscv_testbench.friscv_testbench.genblk1.dut.cpu0.control.cant_sys
 friscv_testbench.friscv_testbench.genblk1.dut.cpu0.control.rs1[4:0]
 friscv_testbench.friscv_testbench.genblk1.dut.cpu0.control.rs2[4:0]
 friscv_testbench.friscv_testbench.genblk1.dut.cpu0.control.rd[4:0]
-@1000200
+@1401200
 -control
 @c00200
 -ISA Registers
@@ -379,7 +383,7 @@ friscv_testbench.friscv_testbench.genblk1.dut.cpu0.isa_registers.x30[31:0]
 friscv_testbench.friscv_testbench.genblk1.dut.cpu0.isa_registers.x31[31:0]
 @1401200
 -ISA Registers
-@800200
+@c00200
 -memfy
 @28
 friscv_testbench.friscv_testbench.genblk1.dut.cpu0.processing.memfy.aclk
@@ -421,7 +425,7 @@ friscv_testbench.friscv_testbench.genblk1.dut.cpu0.processing.memfy.awready
 friscv_testbench.friscv_testbench.genblk1.dut.cpu0.processing.memfy.awvalid
 @200
 -
-@23
+@22
 friscv_testbench.friscv_testbench.genblk1.dut.cpu0.processing.memfy.wdata[31:0]
 @28
 friscv_testbench.friscv_testbench.genblk1.dut.cpu0.processing.memfy.wready
@@ -459,7 +463,7 @@ friscv_testbench.friscv_testbench.genblk1.dut.cpu0.processing.memfy.memfy_rd_str
 friscv_testbench.friscv_testbench.genblk1.dut.cpu0.processing.memfy.memfy_rd_val[31:0]
 @200
 -
-@1000200
+@1401200
 -memfy
 @c00200
 -IO Subsystem
@@ -733,7 +737,7 @@ friscv_testbench.friscv_testbench.genblk1.dut.cpu0.DCACHE_ON.dcache.dcache_bresp
 friscv_testbench.friscv_testbench.genblk1.dut.cpu0.DCACHE_ON.dcache.dcache_bvalid
 @1401200
 -dCache
-@c00200
+@800200
 -Clint
 @22
 friscv_testbench.friscv_testbench.genblk1.dut.io_subsystem.clint.ADDRW[31:0]
@@ -770,7 +774,7 @@ friscv_testbench.friscv_testbench.genblk1.dut.io_subsystem.clint.slv_rdata[31:0]
 friscv_testbench.friscv_testbench.genblk1.dut.io_subsystem.clint.slv_ready
 friscv_testbench.friscv_testbench.genblk1.dut.io_subsystem.clint.sw_irq
 friscv_testbench.friscv_testbench.genblk1.dut.io_subsystem.clint.timer_irq
-@1401200
+@1000200
 -Clint
 @c00200
 -UART Platform

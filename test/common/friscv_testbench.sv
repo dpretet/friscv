@@ -6,6 +6,7 @@
 
 `include "svut_h.sv"
 `include "../../rtl/friscv_h.sv"
+`include "../../rtl/friscv_debug_h.sv"
 
 module friscv_testbench(
 `ifndef USE_ICARUS
@@ -147,6 +148,7 @@ module friscv_testbench(
     logic                      srst;
     logic [XLEN          -1:0] pc;
 `endif
+    logic [XLEN*32       -1:0] dbg_regs;
     logic [8             -1:0] status;
     logic                      ext_irq;
     logic                      sw_irq;
@@ -283,8 +285,7 @@ module friscv_testbench(
             .ext_irq      (ext_irq),
             .sw_irq       (sw_irq),
             .status       (status),
-            .error        (error_status_reg),
-            .pc_val       (pc),
+            .dbg_regs     (dbg_regs),
             .imem_arvalid (imem_arvalid),
             .imem_arready (imem_arready),
             .imem_araddr  (imem_araddr),
@@ -464,8 +465,7 @@ module friscv_testbench(
             .rtc         (rtc),
             .ext_irq     (ext_irq),
             .status      (status),
-            .error       (error_status_reg),
-            .pc_val      (pc),
+            .dbg_regs    (dbg_regs),
             .mem_awvalid (mem_awvalid),
             .mem_awready (mem_awready),
             .mem_awaddr  (mem_awaddr),
@@ -613,7 +613,16 @@ module friscv_testbench(
 
     endtask
 
+    assign pc = dbg_regs[`PC*XLEN+:XLEN];
 
+    `ifdef ERROR_STATUS_X31
+        if (`ERROR_STATUS_X31)
+            assign error_status_reg = (dbg_regs[`X31*XLEN+:XLEN] > 0) ? 1'b1 : 1'b0;
+        else
+            assign error_status_reg = 1'b0;
+    `else
+        assign error_status_reg = 1'b0;
+    `endif
 //-------------------------------------------------------------------------------------------------
 // This sections is used for Icarus Verilog based simulation, relying on SVUT system verilog
 // framework. The structure is minimal while we only assert/deassert reset and wait for the end of

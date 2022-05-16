@@ -38,9 +38,7 @@ module friscv_control
         input  wire                       aresetn,
         input  wire                       srst,
         output logic [5             -1:0] traps,
-        `ifdef FRISCV_SIM
         output logic [XLEN          -1:0] pc_val,
-        `endif
         // Flush control
         output logic                      flush_req,
         input  wire                       flush_ack,
@@ -661,6 +659,8 @@ module friscv_control
                                 pc_reg <= mtvec;
                                 mepc_wr <= 1'b1;
                                 mepc <= pc_reg;
+                                mcause_wr <= 1'b1;
+                                mcause <= mcause_code;
                                 mtval_wr <= 1'b1;
                                 mtval <= mtval_info;
                                 cfsm <= RELOAD;
@@ -672,6 +672,8 @@ module friscv_control
                                 print_instruction;
                                 log.info("EBREAK -> Stop the processor");
                                 `endif
+                                mcause_wr <= 1'b1;
+                                mcause <= mcause_code;
                                 flush_fifo <= 1'b1;
                                 traps[1] <= 1'b1;
                                 cfsm <= EBREAK;
@@ -826,6 +828,7 @@ module friscv_control
                     traps <= 5'b0;
                     arvalid <= 1'b0;
                     flush_fifo <= 1'b0;
+                    mcause_wr <= 1'b0;
                     cfsm <= EBREAK;
                 end
 
@@ -1037,7 +1040,7 @@ module friscv_control
 
     // Trigger the trap handling execution in main FSM
 
-    assign async_trap_occuring = sb_mstatus[3] & (
+    assign async_trap_occuring = sb_mstatus[3] & (  // IRQ enabled
                                    csr_sb[`MSIP] |
                                    csr_sb[`MTIP] |
                                    csr_sb[`MEIP] );

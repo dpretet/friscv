@@ -30,6 +30,9 @@ INTERACTIVE=1
 # Testbench configuration
 TB_CHOICE=1 # PLATFORM
 
+# Don't assert a testbench error if X31 is asserted
+ERROR_STATUS_X31=0
+
 source ../common/functions.run.sh
 
 

@@ -82,14 +82,15 @@ run_tests() {
         echo ""
         echo -e "${BLUE}INFO: Execute ${test}${NC}"
         echo ""
-        echo "  - XLEN:          $XLEN"
-        echo "  - BOOT_ADDR:     $BOOT_ADDR"
-        echo "  - CACHE_BLOCK_W: $CACHE_BLOCK_W"
-        echo "  - TIMEOUT:       $TIMEOUT"
-        echo "  - TB_CHOICE:     $TB_CHOICE (0=CORE, 1=PLATFORM)"
-        echo "  - TCNAME:        ${test_name}"
-        echo "  - SIMULATOR:     $SIM"
-        echo "  - INTERACTIVE:   $INTERACTIVE"
+        echo "  - XLEN:             $XLEN"
+        echo "  - BOOT_ADDR:        $BOOT_ADDR"
+        echo "  - CACHE_BLOCK_W:    $CACHE_BLOCK_W"
+        echo "  - TIMEOUT:          $TIMEOUT"
+        echo "  - TB_CHOICE:        $TB_CHOICE (0=CORE, 1=PLATFORM)"
+        echo "  - TCNAME:           ${test_name}"
+        echo "  - SIMULATOR:        $SIM"
+        echo "  - INTERACTIVE:      $INTERACTIVE"
+        echo "  - ERROR_STATUS_X31: $ERROR_STATUS_X31"
         if [[ -n $NO_RAM_LOG ]]; then
             echo "  - NO_RAM_LOG:    $NO_RAM_LOG"
         fi
@@ -111,6 +112,7 @@ run_tests() {
         DEFINES="${DEFINES}TB_CHOICE=$TB_CHOICE;"
         DEFINES="${DEFINES}NO_VCD=$NO_VCD;"
         DEFINES="${DEFINES}INTERACTIVE=$INTERACTIVE;"
+        DEFINES="${DEFINES}ERROR_STATUS_X31=$ERROR_STATUS_X31;"
         if [[ -n $NO_RAM_LOG ]]; then
             DEFINES="${DEFINES}NO_RAM_LOG=$NO_RAM_LOG;"
         fi

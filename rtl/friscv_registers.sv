@@ -20,9 +20,37 @@ module friscv_registers
         input  wire                             aclk,
         input  wire                             aresetn,
         input  wire                             srst,
-        `ifdef FRISCV_SIM
-        output logic                            error,
-        `endif
+        output logic [XLEN                -1:0] x1_ra,
+        output logic [XLEN                -1:0] x2_sp,
+        output logic [XLEN                -1:0] x3_gp,
+        output logic [XLEN                -1:0] x4_tp,
+        output logic [XLEN                -1:0] x5_t0,
+        output logic [XLEN                -1:0] x6_t1,
+        output logic [XLEN                -1:0] x7_t2,
+        output logic [XLEN                -1:0] x8_s0_fp,
+        output logic [XLEN                -1:0] x9_s1,
+        output logic [XLEN                -1:0] x10_a0,
+        output logic [XLEN                -1:0] x11_a1,
+        output logic [XLEN                -1:0] x12_a2,
+        output logic [XLEN                -1:0] x13_a3,
+        output logic [XLEN                -1:0] x14_a4,
+        output logic [XLEN                -1:0] x15_a5,
+        output logic [XLEN                -1:0] x16_a6,
+        output logic [XLEN                -1:0] x17_a7,
+        output logic [XLEN                -1:0] x18_s2,
+        output logic [XLEN                -1:0] x19_s3,
+        output logic [XLEN                -1:0] x20_s4,
+        output logic [XLEN                -1:0] x21_s5,
+        output logic [XLEN                -1:0] x22_s6,
+        output logic [XLEN                -1:0] x23_s7,
+        output logic [XLEN                -1:0] x24_s8,
+        output logic [XLEN                -1:0] x25_s9,
+        output logic [XLEN                -1:0] x26_s10,
+        output logic [XLEN                -1:0] x27_s11,
+        output logic [XLEN                -1:0] x28_t3,
+        output logic [XLEN                -1:0] x29_t4,
+        output logic [XLEN                -1:0] x30_t5,
+        output logic [XLEN                -1:0] x31_t6,
         // Control interface
         input  wire  [5                   -1:0] ctrl_rs1_addr,
         output logic [XLEN                -1:0] ctrl_rs1_val,
@@ -156,79 +184,37 @@ module friscv_registers
     end
     endgenerate
 
-    `ifdef FRISCV_SIM
-
-    logic [XLEN-1:0] x0;
-    logic [XLEN-1:0] x1;
-    logic [XLEN-1:0] x2;
-    logic [XLEN-1:0] x3;
-    logic [XLEN-1:0] x4;
-    logic [XLEN-1:0] x5;
-    logic [XLEN-1:0] x6;
-    logic [XLEN-1:0] x7;
-    logic [XLEN-1:0] x8;
-    logic [XLEN-1:0] x9;
-    logic [XLEN-1:0] x10;
-    logic [XLEN-1:0] x11;
-    logic [XLEN-1:0] x12;
-    logic [XLEN-1:0] x13;
-    logic [XLEN-1:0] x14;
-    logic [XLEN-1:0] x15;
-    logic [XLEN-1:0] x16;
-    logic [XLEN-1:0] x17;
-    logic [XLEN-1:0] x18;
-    logic [XLEN-1:0] x19;
-    logic [XLEN-1:0] x20;
-    logic [XLEN-1:0] x21;
-    logic [XLEN-1:0] x22;
-    logic [XLEN-1:0] x23;
-    logic [XLEN-1:0] x24;
-    logic [XLEN-1:0] x25;
-    logic [XLEN-1:0] x26;
-    logic [XLEN-1:0] x27;
-    logic [XLEN-1:0] x28;
-    logic [XLEN-1:0] x29;
-    logic [XLEN-1:0] x30;
-    logic [XLEN-1:0] x31;
-
-    assign x0  = regs[ 0];
-    assign x1  = regs[ 1];
-    assign x2  = regs[ 2];
-    assign x3  = regs[ 3];
-    assign x4  = regs[ 4];
-    assign x5  = regs[ 5];
-    assign x6  = regs[ 6];
-    assign x7  = regs[ 7];
-    assign x8  = regs[ 8];
-    assign x9  = regs[ 9];
-    assign x10 = regs[10];
-    assign x11 = regs[11];
-    assign x12 = regs[12];
-    assign x13 = regs[13];
-    assign x14 = regs[14];
-    assign x15 = regs[15];
-    assign x16 = regs[16];
-    assign x17 = regs[17];
-    assign x18 = regs[18];
-    assign x19 = regs[19];
-    assign x20 = regs[20];
-    assign x21 = regs[21];
-    assign x22 = regs[22];
-    assign x23 = regs[23];
-    assign x24 = regs[24];
-    assign x25 = regs[25];
-    assign x26 = regs[26];
-    assign x27 = regs[27];
-    assign x28 = regs[28];
-    assign x29 = regs[29];
-    assign x30 = regs[30];
-    assign x31 = regs[31];
-
-    `endif
-
-    `ifdef FRISCV_SIM
-    assign error = (regs[31]>0) ? 1'b1 :1'b0;
-    `endif
+    assign x1_ra     = regs[1];
+    assign x2_sp     = regs[2];
+    assign x3_gp     = regs[3];
+    assign x4_tp     = regs[4];
+    assign x5_t0     = regs[5];
+    assign x6_t1     = regs[6];
+    assign x7_t2     = regs[7];
+    assign x8_s0_fp  = regs[8];
+    assign x9_s1     = regs[9];
+    assign x10_a0    = regs[10];
+    assign x11_a1    = regs[11];
+    assign x12_a2    = regs[12];
+    assign x13_a3    = regs[13];
+    assign x14_a4    = regs[14];
+    assign x15_a5    = regs[15];
+    assign x16_a6    = regs[16];
+    assign x17_a7    = regs[17];
+    assign x18_s2    = regs[18];
+    assign x19_s3    = regs[19];
+    assign x20_s4    = regs[20];
+    assign x21_s5    = regs[21];
+    assign x22_s6    = regs[22];
+    assign x23_s7    = regs[23];
+    assign x24_s8    = regs[24];
+    assign x25_s9    = regs[25];
+    assign x26_s10   = regs[26];
+    assign x27_s11   = regs[27];
+    assign x28_t3    = regs[28];
+    assign x29_t4    = regs[29];
+    assign x30_t5    = regs[30];
+    assign x31_t6    = regs[31];
 
 endmodule
 

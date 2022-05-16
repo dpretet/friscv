@@ -98,12 +98,9 @@ module friscv_rv32i_platform
         input  wire                       rtc,
         // Interrupts
         input  wire                       ext_irq,
-        // Internal core status
+        // Internal core debug
         output logic [8             -1:0] status,
-        `ifdef FRISCV_SIM
-        output logic                      error,
-        output logic [XLEN          -1:0] pc_val,
-        `endif
+        output logic [32*XLEN       -1:0] dbg_regs,
         // Central Memory interface
         output logic                      mem_awvalid,
         input  wire                       mem_awready,
@@ -276,24 +273,24 @@ module friscv_rv32i_platform
 
     parameter SLV0_CDC = 0;
     parameter SLV0_START_ADDR = 0;
-    parameter SLV0_END_ADDR = 1048575;
+    parameter SLV0_END_ADDR = 1048575; // 0x000FFFFF
     parameter SLV0_OSTDREQ_NUM = 0;
     parameter SLV0_KEEP_BASE_ADDR = 0;
 
     parameter SLV1_CDC = 0;
-    parameter SLV1_START_ADDR = 1048576;
-    parameter SLV1_END_ADDR = 1048639;
+    parameter SLV1_START_ADDR = 1048576; // 0x00100000
+    parameter SLV1_END_ADDR = 1048639;   // 0x0010003F
     parameter SLV1_OSTDREQ_NUM = 0;
     parameter SLV1_KEEP_BASE_ADDR = 0;
 
     parameter SLV2_CDC = 0;
-    parameter SLV2_START_ADDR = 1050000;
+    parameter SLV2_START_ADDR = 1050000; // Random value
     parameter SLV2_END_ADDR = 1050003;
     parameter SLV2_OSTDREQ_NUM = 0;
     parameter SLV2_KEEP_BASE_ADDR = 0;
 
     parameter SLV3_CDC = 0;
-    parameter SLV3_START_ADDR = 1050004;
+    parameter SLV3_START_ADDR = 1050004; // Random value
     parameter SLV3_END_ADDR = 1050007;
     parameter SLV3_OSTDREQ_NUM = 0;
     parameter SLV3_KEEP_BASE_ADDR = 0;
@@ -339,10 +336,7 @@ module friscv_rv32i_platform
     .sw_irq       (1'b0),
     .timer_irq    (timer_irq),
     .status       (status),
-    `ifdef FRISCV_SIM
-    .error        (error),
-    .pc_val       (pc_val),
-    `endif
+    .dbg_regs     (dbg_regs),
     .imem_arvalid (imem_arvalid),
     .imem_arready (imem_arready),
     .imem_araddr  (imem_araddr),
