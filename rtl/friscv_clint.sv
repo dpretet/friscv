@@ -50,7 +50,6 @@ module friscv_clint
 
     logic [64   -1:0] mtime;
     logic [64   -1:0] mtimecmp;
-    logic [32   -1:0] msip;
     logic             rtc_sync;
     logic             mtime_en;
 

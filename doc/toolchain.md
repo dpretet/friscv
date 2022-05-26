@@ -20,7 +20,7 @@
 - riscv64-unkown-elf-ld: linker
 - riscv64-unkown-elf-ld-bfd: ?
 - riscv64-unkown-elf-lto-dump: ?
-- riscv64-unkown-elf-nm: list symbols in files (a.ouy by default)
+- riscv64-unkown-elf-nm: list linker symbols in files (a.out by default)
 - riscv64-unkown-elf-objcopy: copy a binary, possibly transforming during the process
 - riscv64-unkown-elf-objdump: display information from object(s)
 - riscv64-unkown-elf-ranlib: generate an index to speed access of archives

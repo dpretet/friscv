@@ -40,7 +40,7 @@ _start:
     li x31, 0
 
     # Setup system call function address
-    la t0, _syscall
+    la t0, trap_entry
     csrw    mtvec,t0
 
     # Init the max boundary of the stack section
@@ -48,4 +48,4 @@ _start:
     la sp, _estack
 
     # Jump to the main
-    j _stext
+    call main

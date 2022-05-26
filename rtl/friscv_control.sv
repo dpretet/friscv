@@ -119,6 +119,7 @@ module friscv_control
     logic [2    -1:0] fence;
     logic [6    -1:0] sys;
     logic             dec_error;
+    logic             inst_dec_error;
 
     // Control fsm
     typedef enum logic[3:0] {
@@ -197,6 +198,8 @@ module friscv_control
                       `CONTROL_ROUTE);
     `endif
 
+    integer f;
+    initial f = $fopen("trace.csv","w");
 
     /////////////////////////////////////////////////////////////////
     // Used to print instruction during execution, relies on SVLogger
@@ -537,6 +540,7 @@ module friscv_control
                     priv_mode <= 2'b11;
 
                     if (arready) begin
+                        $fwrite(f, "@ %0t,%x\n", $realtime, BOOT_ADDR);
                         `ifdef USE_SVL
                         log.info("IDLE -> Boot the processor");
                         `endif
@@ -772,6 +776,7 @@ module friscv_control
                 // a new origin
                 ///////////////////////////////////////////////////////////////
                 RELOAD: begin
+                    $fwrite(f, "@ %0t,%x\n", $realtime, araddr);
                     traps <= 5'b0;
                     mepc_wr <= 1'b0;
                     mstatus_wr <= 1'b0;
@@ -896,7 +901,7 @@ module friscv_control
     ///////////////////////////////////////////////////////////////////////////
 
     // MSTATUS CSR to write when executing MRET
-    assign mstatus_for_mret = {sb_mstatus[XLEN-1:12],  // WPRI
+    assign mstatus_for_mret = {sb_mstatus[XLEN-1:13],  // WPRI
                                priv_mode,              // MPP
                                sb_mstatus[10:9],       // WPRI
                                1'b0,                   // SPP
@@ -910,7 +915,7 @@ module friscv_control
                                1'b0};                  // UIE
 
     // MSTATUS CSR when handling a trap
-    assign mstatus_for_trap = {sb_mstatus[XLEN-1:12],  // WPRI
+    assign mstatus_for_trap = {sb_mstatus[XLEN-1:13],  // WPRI
                                priv_mode,              // MPP
                                sb_mstatus[10:9],       // WPRI
                                1'b0,                   // SPP
@@ -1023,7 +1028,7 @@ module friscv_control
                          // then follow sync exceptions
                          (inst_addr_misaligned) ? {XLEN{1'b0}} :
                          (csr_ro_wr)            ? {{XLEN-4{1'b0}}, 4'h1} :
-                         (dec_error)            ? {{XLEN-4{1'b0}}, 4'h2} :
+                         (inst_dec_error)       ? {{XLEN-4{1'b0}}, 4'h2} :
                          (sys[`IS_ECALL])       ? {{XLEN-4{1'b0}}, 4'hB} :
                          (sys[`IS_EBREAK])      ? {{XLEN-4{1'b0}}, 4'h3} :
                          (store_misaligned)     ? {{XLEN-4{1'b0}}, 4'h6} :
@@ -1031,7 +1036,7 @@ module friscv_control
                                                   {XLEN{1'b0}};
 
     // MTVAL: exception-specific information
-    assign mtval_info = (dec_error)            ? instruction :
+    assign mtval_info = (inst_dec_error)       ? instruction :
                         (wfi_not_allowed)      ? instruction :
                         (inst_addr_misaligned) ? pc_reg      :
                         (sys[`IS_ECALL])       ? pc_reg      :
@@ -1040,18 +1045,19 @@ module friscv_control
 
     // Trigger the trap handling execution in main FSM
 
-    assign async_trap_occuring = sb_mstatus[3] & (  // IRQ enabled
-                                   csr_sb[`MSIP] |
-                                   csr_sb[`MTIP] |
-                                   csr_sb[`MEIP] );
+    assign async_trap_occuring = csr_sb[`MSIP] |
+                                 csr_sb[`MTIP] |
+                                 csr_sb[`MEIP] ;
 
     assign sync_trap_occuring = csr_ro_wr |
                                 inst_addr_misaligned |
                                 load_misaligned |
                                 store_misaligned |
-                                dec_error;
+                                inst_dec_error;
 
     assign trap_occuring = async_trap_occuring | sync_trap_occuring;
+
+    assign inst_dec_error = dec_error & (cfsm==FETCH) & !fifo_empty;
 
 endmodule
 

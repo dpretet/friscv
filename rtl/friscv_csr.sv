@@ -572,16 +572,22 @@ module friscv_csr
         end else begin
             if (ext_irq_sync || timer_irq_sync || sw_irq_sync) begin
                 // external interrupt enable && external interrupt pin asserted
-                if (mie[11] && ext_irq_sync) begin
+                if (mstatus[3] && mie[11] && ext_irq_sync) begin
                     mip[11] <= 1'b1;
+                end else begin
+                    mip[11] <= 1'b0;
                 end
                 // software interrupt enable && software interrupt pin asserted
-                if (mie[3] && sw_irq_sync) begin
+                if (mstatus[3] && mie[3] && sw_irq_sync) begin
                     mip[3] <= 1'b1;
+                end else begin
+                    mip[3] <= 1'b0;
                 end
                 // timer interrupt enable && timer interrupt pin asserted
-                if (mie[7] && timer_irq_sync) begin
+                if (mstatus[3] && mie[7] && timer_irq_sync) begin
                     mip[7] <= 1'b1;
+                end else begin
+                    mip[7] <= 1'b0;
                 end
             end else if (csr_wren) begin
                 if (csr_r==12'h344) begin

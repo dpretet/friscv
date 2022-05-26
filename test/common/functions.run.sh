@@ -95,8 +95,9 @@ run_tests() {
             echo "  - NO_RAM_LOG:    $NO_RAM_LOG"
         fi
 
-        # Defines passed to the testbench
+        # build defines list passed to the testbench
         if [[ $SIM == "icarus" ]]; then
+            # Use SVlogger only with Icarus, Verilator sv support being too limited
             DEFINES="USE_ICARUS=1;USE_SVL=1;"
             SIM="icarus"
         else
@@ -132,6 +133,12 @@ run_tests() {
         # Copy the VCD generated for further debug
         if [ -f "./friscv_testbench.vcd" ]; then
             cp ./friscv_testbench.vcd "./tests/$test_name.vcd"
+        fi
+        # Create the trace of the execution
+        if [ -f "./trace.csv" ] && [ -f "tests/${test_name}.symbols" ]; then
+            ../common/trace.py --itrace trace.csv \
+                               --otrace "./tests/${test_name}_trace.csv" \
+                               --symbols "tests/${test_name}.symbols"
         fi
     done
 
@@ -259,12 +266,11 @@ usage()
 {
 cat << EOF
 usage: bash ./run.sh ...
+-h    | --help              Brings up this menu
 -l    | --cache_block       cache line width in bits (128 by default)
 -x    | --xlen              XLEN, 32 or 64 bits (32 by default)
--t    | --timeout           Timeout in number of cycles (10000 by default)
+-t    | --timeout           Timeout in number of cycles (10000 by default, 0 inactivate it)
 -c    | --clean             Clean-up and exit
-        --tb                Choose the testbench configuration (CORE or PLATFORM)
--h    | --help              Brings up this menu
         --tb                CORE or PLATFORM, CORE is optional. Platform embbeds a core + an AXI4 crossbar
         --tc                A specific testcase to launch, can use wildcard
         --simulator         Choose between icarus or verilator. icarus is default

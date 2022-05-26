@@ -178,6 +178,8 @@ module friscv_rv32i_platform
     logic [2             -1:0] dmem_rresp;
     logic [AXI_DMEM_W    -1:0] dmem_rdata;
 
+    logic                      sw_irq;
+
     ///////////////////////////////////////////////////////////////////////////
     // IO subsytem configuration (APB interconnect), connected as slave 1
     // of the AXI4-lite interconnect
@@ -193,7 +195,7 @@ module friscv_rv32i_platform
     parameter IO_SLV2_ADDR       = IO_SLV1_ADDR + IO_SLV1_SIZE;
     parameter IO_SLV2_SIZE       = 20;
 
-    parameter IO_UART_FIFO_DEPTH = 8;
+    parameter IO_UART_FIFO_DEPTH = 64;
 
     logic                      ios_awvalid;
     logic                      ios_awready;
@@ -327,7 +329,7 @@ module friscv_rv32i_platform
     .DCACHE_BLOCK_W (DCACHE_BLOCK_W),
     .DCACHE_DEPTH (DCACHE_DEPTH)
     )
-    cpu0 
+    cpu0
     (
     .aclk         (aclk),
     .aresetn      (aresetn),
@@ -373,7 +375,7 @@ module friscv_rv32i_platform
     );
 
 
-    axicb_crossbar_lite_top 
+    axicb_crossbar_lite_top
     #(
     .AXI_ADDR_W          (AXI_ADDR_W),
     .AXI_ID_W            (AXI_ID_W),
@@ -690,7 +692,7 @@ module friscv_rv32i_platform
     .mst3_ruser   (1'h0)
     );
 
-    friscv_io_subsystem 
+    friscv_io_subsystem
     #(
     .ADDRW           (AXI_ADDR_W),
     .DATAW           (AXI_DATA_W),
@@ -742,7 +744,7 @@ module friscv_rv32i_platform
     .uart_tx     (uart_tx),
     .uart_rts    (uart_rts),
     .uart_cts    (uart_cts),
-    .sw_irq      (),
+    .sw_irq      (sw_irq),
     .timer_irq   (timer_irq)
     );
 

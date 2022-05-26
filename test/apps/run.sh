@@ -25,7 +25,7 @@ NO_VCD=0
 INTERACTIVE=1
 
 # Disable AXI4-lite RAM logging
-# NO_RAM_LOG=1
+NO_RAM_LOG=1
 
 # Testbench configuration
 TB_CHOICE=1 # PLATFORM

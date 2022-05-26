@@ -2,47 +2,78 @@
 // https://opensource.org/licenses/mit-license.php
 
 #include <stdio.h>
+#include <string.h>
 
 #include "uart.h"
 #include "system.h"
+#include "irq.h"
 #include "clint.h"
+#include "tty.h"
+
+
 
 int main() {
 
     // Print welcome message and print the "shell"
-    const char prompt[1] = ">";
-    const char nl[1] = "\n";
-    const char welcome[20] = "\n\nWelcome to FRISCV\n";
-    int is_empty;
+    const char * sleep = "sleep\0";
+    const char * echo = "echo\0";
+    const char * prompt = ">";
+    const char * nl = "\n";
+    const char * welcome = "\n\nWelcome to FRISCV\n";
+    char cmdline[128];
+    int cmdsize = 0;
     int inChar;
-    int was_writing = 0;
+    int eot = 0;
+    int i=0;
 
-    for (int i=0;i<20;i=i+1) {
-        uart_putchar(welcome[i]);
-    }
+    print_s(welcome);
+    uart_putchar(*prompt);
 
-    uart_putchar(prompt[0]);
+    // irq_on();
+    // msip_irq_on();
+    // mtip_irq_on();
 
     // Event loop of REPL
-    // TODO: Put in place a protocol with SOT / EOT flags,
-    // possibly needing an error management and retry mechanism
+    // Made of a simple FSM, alternating between reception and transmission
     while (1) {
 
-        is_empty = uart_is_empty();
+        // Reading the input command line
+        if (!eot) {
 
-        // Loop over the FIFO to return back the data
-        if (!is_empty) {
-            inChar = uart_getchar();
-            uart_putchar(inChar);
-            was_writing = 1;
+            if (uart_is_empty() == 0) {
+
+                inChar = uart_getchar();
+
+                // EOT
+                if (inChar==4) {
+                    eot = 1;
+                } else {
+                    cmdline[cmdsize] = inChar;
+                    cmdsize += 1;
+                }
+            }
+
         // Once finish to empty the FIFO, post a new prompt
-        } else if (was_writing) {
-            was_writing = 0;
-            uart_putchar(nl[0]);
-            uart_putchar(prompt[0]);
-            clint_set_msip(1);
-            clint_set_msip(0);
-            clint_set_mtimecmp_lsb(10);
+        } else {
+
+            // Echo
+            if (strncmp(cmdline, echo, 4) >= 0) {
+                for (int i=5; i<cmdsize; i++)
+                    uart_putchar(cmdline[i]);
+            // Sleep
+            } else if (strncmp(cmdline, sleep, 5) >= 0) {
+                for (i=0; i<cmdsize; i++)
+                    uart_putchar(cmdline[i]);
+            }
+            eot = 0;
+            cmdsize = 0;
+            uart_putchar(*nl);
+            uart_putchar(*prompt);
+
+            // Interrupt tests
+            // clint_set_msip(1);
+            // clint_set_msip(0);
+            // clint_set_mtimecmp(10, 0);
         }
     }
 

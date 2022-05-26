@@ -404,7 +404,7 @@ module friscv_testbench(
         #(
         .ADDRW           (8),
         .XLEN            (XLEN),
-        .RXTX_FIFO_DEPTH (16),
+        .RXTX_FIFO_DEPTH (128),
         .CLK_DIVIDER     (4)
         )
         uartlink
@@ -574,7 +574,11 @@ module friscv_testbench(
 
 
     // Time format for $time / $realtime printing
+    `ifdef USE_ICARUS
     initial $timeformat(-9, 1, "ns", 8);
+    `else
+    initial $timeformat(-12, 1, "ps", 8);
+    `endif
 
 
     // Boot address, passed from bash flow

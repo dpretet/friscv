@@ -23,6 +23,9 @@ using namespace std;
 
 #define TX_TIMER_ON 500
 
+// ASCII code for End Of Transmission
+#define EOT 4
+
 // Legacy function required only so linking works on Cygwin and MSVC++
 double sc_time_stamp() { return 0; }
 
@@ -145,17 +148,22 @@ int main(int argc, char** argv, char** env) {
                             uart_fsm = READ;
                             break;
 
+                        // Prevent transmission as long the ore didn't send a new prompt (EOT)
+                        // txtimer prevent to read CIN too often, which slow the simulation
                         } else if (!txfifo_full && can_write && txtimer==TX_TIMER_ON) {
 
                             if (std::cin.rdbuf() && std::cin.rdbuf()->in_avail() >= 0) {
-
                                 std::getline(std::cin, cin_str);
-                                str_ix = 0;
                                 str_size = cin_str.size();
-                                top->slv_addr = TX_FIFO_ADDR;
-                                top->slv_strb = 15;
-                                top->slv_wdata = cin_str[0];
-                                uart_fsm = WRITE;
+                                str_ix = 0;
+                                if (str_size > 0) {
+                                    top->slv_addr = TX_FIFO_ADDR;
+                                    top->slv_strb = 15;
+                                    top->slv_wdata = cin_str[0];
+                                    uart_fsm = WRITE;
+                                } else {
+                                    uart_fsm = IDLE;
+                                }
                                 break;
                             } else {
                                 uart_fsm = IDLE;
@@ -175,6 +183,7 @@ int main(int argc, char** argv, char** env) {
 
                         cout << static_cast<char>(top->slv_rdata);
 
+                        // The core sends '>' as a prompt, so being the end of its transmission
                         if (static_cast<char>(top->slv_rdata)=='>')
                             can_write = 1;
                         else
@@ -198,13 +207,22 @@ int main(int argc, char** argv, char** env) {
 
                         top->slv_en = 0;
                         str_ix += 1;
-                        top->slv_wdata = cin_str[str_ix];
 
-                        if (str_ix >= str_size) {
+                        // Once reach the end of line, insert "End of Transmission"
+                        // We never send neither read <CR>, so EOT is mandatory for the core
+                        if (str_ix == str_size)
+                            top->slv_wdata = 4;
+                        // Else continue to transmit the line's character
+                        else
+                            top->slv_wdata = cin_str[str_ix];
+
+                        // Once reach end of line and EOT is transmitted, stop to write
+                        if (str_ix > str_size) {
                             top->slv_en = 0;
                             top->slv_wr = 0;
                             top->slv_strb = 0;
                             uart_fsm = IDLE;
+                            can_write = 0;
                             break;
                         } else {
                             break;

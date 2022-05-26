@@ -2,3 +2,5 @@
 test.v
 *.vcd
 *.su
+*.csv
+*.symbols
