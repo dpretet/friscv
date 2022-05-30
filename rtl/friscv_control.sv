@@ -725,7 +725,7 @@ module friscv_control
                                 arvalid <= 1'b0;
                                 pc_reg <= mtvec;
                                 mepc_wr <= 1'b1;
-                                mepc <= pc_reg;
+                                mepc <= pc_plus4;
                                 mtval_wr <= 1'b1;
                                 mtval <= mtval_info;
                                 cfsm <= WFI;
@@ -812,16 +812,23 @@ module friscv_control
                 WFI: begin
                     if (csr_sb[`MSIP] || csr_sb[`MTIP] || csr_sb[`MEIP]) begin
                         `ifdef USE_SVL
-                        log.info("WFI -> received an interrupt");
+                        print_mcause("WFI -> MCAUSE=0x", mcause_code);
                         `endif
-                        arvalid <= 1'b1;
-                        mepc_wr <= 1'b1;
-                        mepc <= pc_reg;
+                        traps[3] <= 1'b1;
+                        flush_fifo <= 1'b1;
+                        arvalid <= 1'b0;
+                        arid <= next_id(arid);
+                        araddr <= mtvec;
+                        pc_reg <= mtvec;
+                        // mepc_wr <= 1'b1;
+                        // mepc <= mepc + {{XLEN-4{1'b0}}, 4'b100};
                         mcause_wr <= 1'b1;
                         mcause <= mcause_code;
                         mtval_wr <= 1'b1;
                         mtval <= mtval_info;
-                        cfsm <= FETCH;
+                        mstatus_wr <= 1'b1;
+                        mstatus <= mstatus_for_trap;
+                        cfsm <= RELOAD;
                     end
                 end
 

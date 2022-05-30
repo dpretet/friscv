@@ -338,7 +338,7 @@ module friscv_csr
 
                     end
                 end
-                
+
                 STORE: begin
                     cfsm <= IDLE;
                     ready <= 1'b1;

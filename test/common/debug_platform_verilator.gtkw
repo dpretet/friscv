@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.107 (w)1999-2020 BSI
-[*] Wed May 25 14:16:08 2022
+[*] Mon May 30 15:07:25 2022
 [*]
 [dumpfile] "/Users/damien/workspace/hdl/friscv/test/apps/friscv_testbench.vcd"
-[dumpfile_mtime] "Wed May 25 08:58:54 2022"
-[dumpfile_size] 790079387
+[dumpfile_mtime] "Mon May 30 14:53:23 2022"
+[dumpfile_size] 1373846276
 [savefile] "/Users/damien/workspace/hdl/friscv/test/common/debug_platform_verilator.gtkw"
-[timestart] 26784
+[timestart] 4795
 [size] 2560 1440
 [pos] -1 -1
-*-6.732521 27219 28721 11799 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-5.996756 5017 28721 11799 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] friscv_testbench.
 [treeopen] friscv_testbench.friscv_testbench.
 [treeopen] friscv_testbench.friscv_testbench.genblk1.
@@ -29,7 +29,7 @@
 [sst_width] 320
 [signals_width] 423
 [sst_expanded] 1
-[sst_vpaned_height] 640
+[sst_vpaned_height] 1122
 @c00200
 -AXI4-lite RAM
 @28
@@ -289,9 +289,9 @@ friscv_testbench.friscv_testbench.genblk1.dut.cpu0.control.cfsm[3:0]
 @28
 [color] 1
 (3)friscv_testbench.friscv_testbench.genblk1.dut.cpu0.control.traps[4:0]
-@200
+@201
 -
-@c00200
+@800200
 -axi4-lite
 @22
 friscv_testbench.friscv_testbench.genblk1.dut.cpu0.control.arid[7:0]
@@ -311,7 +311,7 @@ friscv_testbench.friscv_testbench.genblk1.dut.cpu0.control.rid[7:0]
 friscv_testbench.friscv_testbench.genblk1.dut.cpu0.control.rready
 friscv_testbench.friscv_testbench.genblk1.dut.cpu0.control.rresp[1:0]
 friscv_testbench.friscv_testbench.genblk1.dut.cpu0.control.rvalid
-@1401200
+@1000200
 -axi4-lite
 @200
 -
@@ -453,6 +453,29 @@ friscv_testbench.friscv_testbench.genblk1.dut.cpu0.isa_registers.x30_t5[31:0]
 friscv_testbench.friscv_testbench.genblk1.dut.cpu0.isa_registers.x31_t6[31:0]
 @1401200
 -ISA Registers
+@c00200
+-CSRs
+@22
+friscv_testbench.friscv_testbench.genblk1.dut.cpu0.csrs.mstatus[31:0]
+friscv_testbench.friscv_testbench.genblk1.dut.cpu0.csrs.mcause[31:0]
+friscv_testbench.friscv_testbench.genblk1.dut.cpu0.csrs.mie[31:0]
+friscv_testbench.friscv_testbench.genblk1.dut.cpu0.csrs.mip[31:0]
+friscv_testbench.friscv_testbench.genblk1.dut.cpu0.csrs.mepc[31:0]
+friscv_testbench.friscv_testbench.genblk1.dut.cpu0.csrs.misa[31:0]
+friscv_testbench.friscv_testbench.genblk1.dut.cpu0.csrs.mscratch[31:0]
+friscv_testbench.friscv_testbench.genblk1.dut.cpu0.csrs.mtval[31:0]
+friscv_testbench.friscv_testbench.genblk1.dut.cpu0.csrs.mtvec[31:0]
+@200
+-
+@28
+[color] 2
+friscv_testbench.friscv_testbench.genblk1.dut.cpu0.csrs.ext_irq
+[color] 2
+friscv_testbench.friscv_testbench.genblk1.dut.cpu0.csrs.sw_irq
+[color] 2
+friscv_testbench.friscv_testbench.genblk1.dut.cpu0.csrs.timer_irq
+@1401200
+-CSRs
 @c00200
 -memfy
 @28
@@ -927,6 +950,9 @@ friscv_testbench.friscv_testbench.genblk1.dut.io_subsystem.uart.slv_addr[31:0]
 friscv_testbench.friscv_testbench.genblk1.dut.io_subsystem.uart.slv_strb[3:0]
 [color] 3
 friscv_testbench.friscv_testbench.genblk1.dut.io_subsystem.uart.slv_wdata[31:0]
+@24
+[color] 3
+friscv_testbench.friscv_testbench.genblk1.dut.io_subsystem.uart.slv_wdata[31:0]
 @820
 [color] 3
 friscv_testbench.friscv_testbench.genblk1.dut.io_subsystem.uart.slv_wdata[31:0]
@@ -946,8 +972,11 @@ friscv_testbench.friscv_testbench.genblk1.dut.io_subsystem.uart.rx_bit_cnt[3:0]
 friscv_testbench.friscv_testbench.genblk1.dut.io_subsystem.uart.rx_empty
 friscv_testbench.friscv_testbench.genblk1.dut.io_subsystem.uart.rx_full
 friscv_testbench.friscv_testbench.genblk1.dut.io_subsystem.uart.rx_pull
+[color] 1
 friscv_testbench.friscv_testbench.genblk1.dut.io_subsystem.uart.rx_push
 @820
+friscv_testbench.friscv_testbench.genblk1.dut.io_subsystem.uart.rx_data[7:0]
+@24
 friscv_testbench.friscv_testbench.genblk1.dut.io_subsystem.uart.rx_data[7:0]
 @28
 friscv_testbench.friscv_testbench.genblk1.dut.io_subsystem.uart.uart_rx
@@ -1040,24 +1069,5 @@ friscv_testbench.friscv_testbench.genblk1.uartlink.uart_tx
 -
 @1401200
 -UART Link
-@22
-friscv_testbench.friscv_testbench.genblk1.dut.cpu0.csrs.mstatus[31:0]
-friscv_testbench.friscv_testbench.genblk1.dut.cpu0.csrs.mcause[31:0]
-friscv_testbench.friscv_testbench.genblk1.dut.cpu0.csrs.mie[31:0]
-friscv_testbench.friscv_testbench.genblk1.dut.cpu0.csrs.mip[31:0]
-friscv_testbench.friscv_testbench.genblk1.dut.cpu0.csrs.mepc[31:0]
-friscv_testbench.friscv_testbench.genblk1.dut.cpu0.csrs.misa[31:0]
-friscv_testbench.friscv_testbench.genblk1.dut.cpu0.csrs.mscratch[31:0]
-friscv_testbench.friscv_testbench.genblk1.dut.cpu0.csrs.mtval[31:0]
-friscv_testbench.friscv_testbench.genblk1.dut.cpu0.csrs.mtvec[31:0]
-@200
--
-@29
-[color] 2
-friscv_testbench.friscv_testbench.genblk1.dut.cpu0.csrs.ext_irq
-[color] 2
-friscv_testbench.friscv_testbench.genblk1.dut.cpu0.csrs.sw_irq
-[color] 2
-friscv_testbench.friscv_testbench.genblk1.dut.cpu0.csrs.timer_irq
 [pattern_trace] 1
 [pattern_trace] 0

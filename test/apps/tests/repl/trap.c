@@ -13,6 +13,8 @@ int mtime = 0;
 int mie;
 
 void handle_interrupt(int mcause) {
+    
+    irq_off();
 
     // MSIP
     if (mcause == 0x80000003) {
@@ -21,15 +23,8 @@ void handle_interrupt(int mcause) {
     
     // MTIP
     } else if (mcause == 0x80000007) {
-        print_s("Timer interrupt: ");
-        print_i(++count);
-        print_s("\n");
-
-        mtime = clint_get_mtime_lsb();
-        clint_set_mtimecmp(mtime + 100, 0);
-        if (count == 10) {
-            mtip_irq_off();
-        }
+        print_s("Timer interrupt\n");
+        mtip_irq_off();
 
     // MEIP
     } else if (mcause == 0x8000000B) {

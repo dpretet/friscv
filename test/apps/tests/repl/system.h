@@ -4,7 +4,13 @@
 #ifndef SYSTEM_INCLUDE
 #define SYSTEM_INCLUDE
 
-extern void shutdown();
+static inline void shutdown() {
+    asm volatile("ebreak");
+}
+
+static inline void wfi() {
+    asm volatile("wfi");
+}
 
 #endif // SYSTEM_INCLUDE
 

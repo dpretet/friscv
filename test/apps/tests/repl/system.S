@@ -7,17 +7,8 @@
 # Export functions' symbols for C call
 #------------------------------------------------------------------------------
 
-.global shutdown
-.type shutdown, @function
-
 .global _syscall
 .global trap_entry
-
-#------------------------------------------------------------------------------
-# Stop the processor with EBREAK
-#------------------------------------------------------------------------------
-shutdown:
-    ebreak
 
 
 #------------------------------------------------------------------------------
@@ -37,6 +28,7 @@ ret_syscall:
 	addi t0, t0, 4
 	csrw mepc, t0
     mret
+
 
 #------------------------------------------------------------------------------
 # Entry point to handle a trap, either ecall(), an interrupt or an exception
