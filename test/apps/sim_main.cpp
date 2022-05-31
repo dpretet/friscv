@@ -8,7 +8,7 @@
 #include <verilated.h>
 #include <iostream>
 #include <thread>
-#include <queue>
+#include <fstream>
 
 #include <string.h>
 
@@ -25,9 +25,18 @@ using namespace std;
 
 // ASCII code for End Of Transmission
 #define EOT 4
+// Maximum file line we can handle
+#define MAX_FILE_LINE 1024
 
 // Legacy function required only so linking works on Cygwin and MSVC++
 double sc_time_stamp() { return 0; }
+
+
+bool fileExists(const char* fileName)
+{
+  std::ifstream test(fileName); 
+  return (test) ? true : false;
+}
 
 
 int main(int argc, char** argv, char** env) {
@@ -37,10 +46,15 @@ int main(int argc, char** argv, char** env) {
     int rxfifo_empty = 0;
     int txfifo_full = 0;
     std::string cin_str;
+    std::string cmd_line;
+    std::string file_lines[MAX_FILE_LINE];
+    int current_line = 0;
+    int num_lines = 0;
     setbuf(stdout, NULL);
     int str_ix = 0;
     int str_size = 0;
     int txtimer = 0;
+    int reading_script = 0;
 
     enum State {IDLE = 0, STATUS = 1, READ = 2, WRITE = 3};
     int uart_fsm = IDLE;
@@ -148,18 +162,69 @@ int main(int argc, char** argv, char** env) {
                             uart_fsm = READ;
                             break;
 
-                        // Prevent transmission as long the ore didn't send a new prompt (EOT)
-                        // txtimer prevent to read CIN too often, which slow the simulation
-                        } else if (!txfifo_full && can_write && txtimer==TX_TIMER_ON) {
+                        } else if (!txfifo_full && reading_script && can_write) {
 
-                            if (std::cin.rdbuf() && std::cin.rdbuf()->in_avail() >= 0) {
-                                std::getline(std::cin, cin_str);
-                                str_size = cin_str.size();
+                            current_line += 1;
+
+                            if (current_line==num_lines) {
+                                uart_fsm = IDLE;
+                                reading_script = 0;
+                                current_line = 0;
+                                num_lines = 0;
+                                break;
+                            } else {
+                                if (current_line==(num_lines-1)) 
+                                    reading_script = 0;
+                                cmd_line = file_lines[current_line];
+                                cout << cmd_line << endl;
+                                str_size = cmd_line.size();
                                 str_ix = 0;
                                 if (str_size > 0) {
                                     top->slv_addr = TX_FIFO_ADDR;
                                     top->slv_strb = 15;
-                                    top->slv_wdata = cin_str[0];
+                                    top->slv_wdata = cmd_line[0];
+                                    uart_fsm = WRITE;
+                                }
+                                uart_fsm = WRITE;
+                                break;
+                            }
+
+                        // Prevent transmission as long the ore didn't send a new prompt (EOT)
+                        // txtimer prevent to read CIN too often, which slow the simulation
+                        } else if (!txfifo_full && !reading_script && can_write && txtimer==TX_TIMER_ON) {
+
+                            if (std::cin.rdbuf() && std::cin.rdbuf()->in_avail() >= 0) {
+
+                                std::getline(std::cin, cin_str);
+
+                                // cast string to const char * to check the string is a valid path
+                                if (fileExists(cin_str.c_str())) {
+
+                                    reading_script = 1;
+                                    cout << "Executing " << cin_str << endl;
+
+                                    int i = 0;
+                                    std::ifstream file(cin_str.c_str());
+                                    if (file.is_open()) {
+                                        while (std::getline(file, file_lines[i])) {
+                                            i++;
+                                        }
+                                        file.close();
+
+                                    }
+                                    num_lines = i;
+                                    cmd_line = file_lines[0];
+                                    cout << cmd_line << endl;
+                                } else {
+                                    cmd_line = cin_str;
+                                }
+
+                                str_size = cmd_line.size();
+                                str_ix = 0;
+                                if (str_size > 0) {
+                                    top->slv_addr = TX_FIFO_ADDR;
+                                    top->slv_strb = 15;
+                                    top->slv_wdata = cmd_line[0];
                                     uart_fsm = WRITE;
                                 } else {
                                     uart_fsm = IDLE;
@@ -181,13 +246,18 @@ int main(int argc, char** argv, char** env) {
                     top->slv_en = 1;
                     if (top->slv_ready) {
 
-                        cout << static_cast<char>(top->slv_rdata);
 
-                        // The core sends '>' as a prompt, so being the end of its transmission
-                        if (static_cast<char>(top->slv_rdata)=='>')
+                        // Waits for End Of Transmission to send again a command
+                        if (top->slv_rdata==EOT) {
+                            if (!reading_script)
+                                cout << endl << "> ";
+                            else
+                                cout << endl;
                             can_write = 1;
-                        else
+                        } else {
+                            cout << static_cast<char>(top->slv_rdata);
                             can_write = 0;
+                        }
 
                         top->slv_en = 0;
                         top->slv_wr = 0;
@@ -211,10 +281,10 @@ int main(int argc, char** argv, char** env) {
                         // Once reach the end of line, insert "End of Transmission"
                         // We never send neither read <CR>, so EOT is mandatory for the core
                         if (str_ix == str_size)
-                            top->slv_wdata = 4;
+                            top->slv_wdata = EOT;
                         // Else continue to transmit the line's character
                         else
-                            top->slv_wdata = cin_str[str_ix];
+                            top->slv_wdata = cmd_line[str_ix];
 
                         // Once reach end of line and EOT is transmitted, stop to write
                         if (str_ix > str_size) {

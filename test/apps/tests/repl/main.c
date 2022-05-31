@@ -10,6 +10,7 @@
 #include "clint.h"
 #include "tty.h"
 
+#define EOT 4
 
 int main() {
 
@@ -24,7 +25,8 @@ int main() {
     int eot = 0;
     int i=0;
 
-    print_s("\n\nWelcome to FRISCV\n>");
+    print_s("\n\nWelcome to FRISCV\n");
+    uart_putchar(EOT);
 
     // Event loop of REPL
     // Made of a simple FSM, alternating between reception and transmission
@@ -37,7 +39,7 @@ int main() {
 
                 inChar = uart_getchar();
 
-                if (inChar==4) {
+                if (inChar==EOT) {
                     eot = 1;
                 } else {
                     cmdline[cmdsize] = inChar;
@@ -82,7 +84,7 @@ int main() {
 
             eot = 0;
             cmdsize = 0;
-            print_s("\n>");
+            uart_putchar(EOT);
         }
     }
 
