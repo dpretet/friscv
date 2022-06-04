@@ -627,6 +627,44 @@ module friscv_testbench(
     `else
         assign error_status_reg = 1'b0;
     `endif
+
+    task print_isa_regs;
+    begin
+        $display("pc:       %x", dbg_regs[ 0*XLEN+:XLEN]);
+        $display("x1/ra:    %x", dbg_regs[ 1*XLEN+:XLEN]);
+        $display("x2/sp:    %x", dbg_regs[ 2*XLEN+:XLEN]);
+        $display("x3/gp:    %x", dbg_regs[ 3*XLEN+:XLEN]);
+        $display("x4/tp:    %x", dbg_regs[ 4*XLEN+:XLEN]);
+        $display("x5/t0:    %x", dbg_regs[ 5*XLEN+:XLEN]);
+        $display("x6/t1:    %x", dbg_regs[ 6*XLEN+:XLEN]);
+        $display("x7/t2:    %x", dbg_regs[ 7*XLEN+:XLEN]);
+        $display("x8/s0/fp: %x", dbg_regs[ 8*XLEN+:XLEN]);
+        $display("x9/s1:    %x", dbg_regs[ 9*XLEN+:XLEN]);
+        $display("x10/a0:   %x", dbg_regs[10*XLEN+:XLEN]);
+        $display("x11/a1:   %x", dbg_regs[11*XLEN+:XLEN]);
+        $display("x12/a2:   %x", dbg_regs[12*XLEN+:XLEN]);
+        $display("x13/a3:   %x", dbg_regs[13*XLEN+:XLEN]);
+        $display("x14/a4:   %x", dbg_regs[14*XLEN+:XLEN]);
+        $display("x15/a5:   %x", dbg_regs[15*XLEN+:XLEN]);
+        $display("x16/a6:   %x", dbg_regs[16*XLEN+:XLEN]);
+        $display("x17/a7:   %x", dbg_regs[17*XLEN+:XLEN]);
+        $display("x18/s2:   %x", dbg_regs[18*XLEN+:XLEN]);
+        $display("x19/s3:   %x", dbg_regs[19*XLEN+:XLEN]);
+        $display("x20/s4:   %x", dbg_regs[20*XLEN+:XLEN]);
+        $display("x21/s5:   %x", dbg_regs[21*XLEN+:XLEN]);
+        $display("x22/s6:   %x", dbg_regs[22*XLEN+:XLEN]);
+        $display("x23/s7:   %x", dbg_regs[23*XLEN+:XLEN]);
+        $display("x24/s8:   %x", dbg_regs[24*XLEN+:XLEN]);
+        $display("x25/s9:   %x", dbg_regs[25*XLEN+:XLEN]);
+        $display("x26/s10:  %x", dbg_regs[26*XLEN+:XLEN]);
+        $display("x27/s11:  %x", dbg_regs[27*XLEN+:XLEN]);
+        $display("x28/t3:   %x", dbg_regs[28*XLEN+:XLEN]);
+        $display("x29/t4:   %x", dbg_regs[29*XLEN+:XLEN]);
+        $display("x30/t5:   %x", dbg_regs[30*XLEN+:XLEN]);
+        $display("x31/t6:   %x", dbg_regs[31*XLEN+:XLEN]);
+    end
+    endtask
+
 //-------------------------------------------------------------------------------------------------
 // This sections is used for Icarus Verilog based simulation, relying on SVUT system verilog
 // framework. The structure is minimal while we only assert/deassert reset and wait for the end of
@@ -655,6 +693,7 @@ module friscv_testbench(
     task teardown(msg="");
     begin
         check_test(MIN_PC);
+        print_isa_regs;
     end
     endtask
 
@@ -698,6 +737,7 @@ module friscv_testbench(
             // With Verilator only, the testbench can run infinitly with TIMEOUT=0
             if (status[1]!=1'b0 || (TIMEOUT>0 && timer>TIMEOUT)) begin
                 check_test(MIN_PC);
+                print_isa_regs;
                 $finish();
             end
         end

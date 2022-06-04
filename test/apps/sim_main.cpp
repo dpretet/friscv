@@ -34,7 +34,7 @@ double sc_time_stamp() { return 0; }
 
 bool fileExists(const char* fileName)
 {
-  std::ifstream test(fileName); 
+  std::ifstream test(fileName);
   return (test) ? true : false;
 }
 
@@ -173,7 +173,7 @@ int main(int argc, char** argv, char** env) {
                                 num_lines = 0;
                                 break;
                             } else {
-                                if (current_line==(num_lines-1)) 
+                                if (current_line==(num_lines-1))
                                     reading_script = 0;
                                 cmd_line = file_lines[current_line];
                                 cout << cmd_line << endl;

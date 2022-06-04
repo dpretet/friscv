@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.107 (w)1999-2020 BSI
-[*] Mon May 30 15:07:25 2022
+[*] Sat Jun  4 13:05:00 2022
 [*]
 [dumpfile] "/Users/damien/workspace/hdl/friscv/test/apps/friscv_testbench.vcd"
-[dumpfile_mtime] "Mon May 30 14:53:23 2022"
-[dumpfile_size] 1373846276
+[dumpfile_mtime] "Tue May 31 19:50:11 2022"
+[dumpfile_size] 10241456
 [savefile] "/Users/damien/workspace/hdl/friscv/test/common/debug_platform_verilator.gtkw"
-[timestart] 4795
+[timestart] 4517
 [size] 2560 1440
 [pos] -1 -1
-*-5.996756 5017 28721 11799 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-5.996756 4714 28721 11799 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] friscv_testbench.
 [treeopen] friscv_testbench.friscv_testbench.
 [treeopen] friscv_testbench.friscv_testbench.genblk1.
@@ -29,7 +29,7 @@
 [sst_width] 320
 [signals_width] 423
 [sst_expanded] 1
-[sst_vpaned_height] 1122
+[sst_vpaned_height] 474
 @c00200
 -AXI4-lite RAM
 @28
@@ -289,9 +289,9 @@ friscv_testbench.friscv_testbench.genblk1.dut.cpu0.control.cfsm[3:0]
 @28
 [color] 1
 (3)friscv_testbench.friscv_testbench.genblk1.dut.cpu0.control.traps[4:0]
-@201
+@200
 -
-@800200
+@c00200
 -axi4-lite
 @22
 friscv_testbench.friscv_testbench.genblk1.dut.cpu0.control.arid[7:0]
@@ -311,7 +311,7 @@ friscv_testbench.friscv_testbench.genblk1.dut.cpu0.control.rid[7:0]
 friscv_testbench.friscv_testbench.genblk1.dut.cpu0.control.rready
 friscv_testbench.friscv_testbench.genblk1.dut.cpu0.control.rresp[1:0]
 friscv_testbench.friscv_testbench.genblk1.dut.cpu0.control.rvalid
-@1000200
+@1401200
 -axi4-lite
 @200
 -
@@ -323,6 +323,9 @@ friscv_testbench.friscv_testbench.genblk1.dut.cpu0.control.pull_inst
 @22
 [color] 3
 friscv_testbench.friscv_testbench.genblk1.dut.cpu0.control.pc_reg[31:0]
+@23
+friscv_testbench.friscv_testbench.genblk1.dut.cpu0.control.pc_plus4[31:0]
+@22
 [color] 3
 friscv_testbench.friscv_testbench.genblk1.dut.cpu0.control.instruction[31:0]
 @200
@@ -398,6 +401,11 @@ friscv_testbench.friscv_testbench.genblk1.dut.cpu0.csrs.mstatus[31:0]
 friscv_testbench.friscv_testbench.genblk1.dut.cpu0.csrs.mie[31:0]
 [color] 2
 friscv_testbench.friscv_testbench.genblk1.dut.cpu0.csrs.mip[31:0]
+@28
+friscv_testbench.friscv_testbench.genblk1.dut.cpu0.control.mepc_wr
+@22
+friscv_testbench.friscv_testbench.genblk1.dut.cpu0.control.mepc[31:0]
+friscv_testbench.friscv_testbench.genblk1.dut.cpu0.control.mepc[31:0]
 @200
 -
 @22
@@ -909,7 +917,7 @@ friscv_testbench.friscv_testbench.genblk1.dut.io_subsystem.clint.slv_ready
 -
 @1401200
 -Clint
-@c00200
+@800200
 -UART Platform
 @28
 friscv_testbench.friscv_testbench.genblk1.dut.io_subsystem.uart.aclk
@@ -1007,7 +1015,7 @@ friscv_testbench.friscv_testbench.genblk1.dut.io_subsystem.uart.uart_tx
 friscv_testbench.friscv_testbench.genblk1.dut.io_subsystem.uart.uart_cts
 [color] 1
 friscv_testbench.friscv_testbench.genblk1.dut.io_subsystem.uart.uart_rts
-@1401200
+@1000200
 -UART Platform
 @c00200
 -UART Link
