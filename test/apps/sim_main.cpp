@@ -27,6 +27,7 @@ using namespace std;
 #define EOT 4
 // Maximum file line we can handle
 #define MAX_FILE_LINE 1024
+#define COMMENT 35
 
 // Legacy function required only so linking works on Cygwin and MSVC++
 double sc_time_stamp() { return 0; }
@@ -166,27 +167,40 @@ int main(int argc, char** argv, char** env) {
 
                             current_line += 1;
 
+                            // Reaching the end of the script
                             if (current_line==num_lines) {
                                 uart_fsm = IDLE;
                                 reading_script = 0;
                                 current_line = 0;
                                 num_lines = 0;
                                 break;
+
+                            // Moving to next line
                             } else {
+
+                                // A flag used in READ to insert or not a new prompt
                                 if (current_line==(num_lines-1))
                                     reading_script = 0;
+
+                                // Load a new line/commmand and prepare it
                                 cmd_line = file_lines[current_line];
-                                cout << cmd_line << endl;
                                 str_size = cmd_line.size();
                                 str_ix = 0;
+
+                                // If the line is not empty, continue transmission
                                 if (str_size > 0) {
+                                    // print the command and load the UART interface
+                                    cout << cmd_line << endl;
                                     top->slv_addr = TX_FIFO_ADDR;
                                     top->slv_strb = 15;
                                     top->slv_wdata = cmd_line[0];
                                     uart_fsm = WRITE;
+                                    break;
+                                // If not filled with a command, move to the next line
+                                } else {
+                                    uart_fsm = STATUS;
+                                    break;
                                 }
-                                uart_fsm = WRITE;
-                                break;
                             }
 
                         // Prevent transmission as long the ore didn't send a new prompt (EOT)
@@ -249,8 +263,10 @@ int main(int argc, char** argv, char** env) {
 
                         // Waits for End Of Transmission to send again a command
                         if (top->slv_rdata==EOT) {
+                            // If not parsing/passing a script, print a new prompt
                             if (!reading_script)
                                 cout << endl << "> ";
+                            // else simply insert a new line
                             else
                                 cout << endl;
                             can_write = 1;
@@ -277,17 +293,15 @@ int main(int argc, char** argv, char** env) {
 
                         top->slv_en = 0;
                         str_ix += 1;
+                        top->slv_wdata = cmd_line[str_ix];
 
-                        // Once reach the end of line, insert "End of Transmission"
+                        // Once reach the end of line or a comment, insert "End of Transmission"
                         // We never send neither read <CR>, so EOT is mandatory for the core
-                        if (str_ix == str_size)
+                        if (str_ix == str_size || top->slv_wdata==COMMENT)
                             top->slv_wdata = EOT;
-                        // Else continue to transmit the line's character
-                        else
-                            top->slv_wdata = cmd_line[str_ix];
 
                         // Once reach end of line and EOT is transmitted, stop to write
-                        if (str_ix > str_size) {
+                        if (str_ix > str_size || top->slv_wdata==COMMENT) {
                             top->slv_en = 0;
                             top->slv_wr = 0;
                             top->slv_strb = 0;
