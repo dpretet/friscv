@@ -692,6 +692,7 @@ module friscv_testbench(
 
     task teardown(msg="");
     begin
+        $display("");
         check_test(MIN_PC);
         print_isa_regs;
     end
@@ -736,6 +737,7 @@ module friscv_testbench(
             // Stop the simulation if executing EBREAK
             // With Verilator only, the testbench can run infinitly with TIMEOUT=0
             if (status[1]!=1'b0 || (TIMEOUT>0 && timer>TIMEOUT)) begin
+                $display("");
                 check_test(MIN_PC);
                 print_isa_regs;
                 $finish();

@@ -17,6 +17,8 @@ int main() {
     const char * c_sleep = "sleep\0";
     const char * c_echo = "echo\0";
     const char * c_shutdown = "shutdown\0";
+    const char * c_exit = "exit\0";
+    const char * c_ebreak = "ebreak\0";
     const char * c_help = "help\0";
 
     char cmdline[128];
@@ -25,7 +27,7 @@ int main() {
     int eot = 0;
     int i=0;
 
-    print_s("\n\nWelcome to FRISCV\n");
+    SUCCESS("\n\nWelcome to FRISCV\n");
     uart_putchar(EOT);
 
     // Event loop of REPL
@@ -63,23 +65,26 @@ int main() {
                 mtip_irq_on();
                 wfi();
                 mtip_irq_off();
-                print_s("Slept!\n");
+                INFO("Slept!\n");
 
-            // Shutdown / ebreak
-            } else if (strncmp(cmdline, c_shutdown, 8) == 0) {
-                print_s("Exiting... See you!");
+            // Shutdown / ebreak / exit
+            } else if (strncmp(cmdline, c_shutdown, 8) == 0 ||
+                        strncmp(cmdline, c_exit, 4) == 0 ||
+                        strncmp(cmdline, c_ebreak, 6) == 0
+            ) {
+                SUCCESS("Exiting... See you!");
                 shutdown();
 
             // Help menu
             } else if (strncmp(cmdline, c_help, 4) == 0) {
-                print_s("FRISCV help:\n");
-                print_s("   help: print this menu\n");
-                print_s("   echo: print the chars passed\n");
-                print_s("   sleep: pause during the time specified\n");
-                print_s("   shutdown: stop the processor (EBREAK)\n");
+                MSG("FRISCV help:\n");
+                MSG("   help: print this menu\n");
+                MSG("   echo: print the chars passed\n");
+                MSG("   sleep: pause during the time specified\n");
+                MSG("   shutdown: stop the processor (EBREAK)\n");
 
             } else {
-                print_s("Unrecognized command");
+                ERROR("Unrecognized command");
             }
 
             eot = 0;
