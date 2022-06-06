@@ -9,29 +9,42 @@
 #include "irq.h"
 #include "clint.h"
 #include "tty.h"
+#include "coreutils.h"
 
+// ASCII code for End Of Transmission
 #define EOT 4
+// Two variables to setup max args / max arg's size when extracting the command
+#define MAX_ARGS 8
+#define MAX_ARGS_SIZE 40
+// Max command size receivable from UART
+#define MAX_CMD_SIZE 128
 
 int main() {
 
-    const char * c_sleep = "sleep\0";
-    const char * c_echo = "echo\0";
-    const char * c_shutdown = "shutdown\0";
-    const char * c_exit = "exit\0";
-    const char * c_ebreak = "ebreak\0";
-    const char * c_help = "help\0";
+    // Supported command
+    const char * c_sleep = "sleep";
+    const char * c_echo = "echo";
+    const char * c_shutdown = "shutdown";
+    const char * c_exit = "exit";
+    const char * c_ebreak = "ebreak";
+    const char * c_help = "help";
 
-    char cmdline[128];
-    int cmdsize = 0;
+    // command line received from UART
     int inChar;
     int eot = 0;
-    int i=0;
+    char cmdline[MAX_CMD_SIZE];
+    int cmdsize = 0;
+
+    // command decomposed by separating by space
+    int argc;
+    char *cmd_argv[MAX_ARGS_SIZE];
+
 
     SUCCESS("\n\nWelcome to FRISCV\n");
     uart_putchar(EOT);
 
     // Event loop of REPL
-    // Made of a simple FSM, alternating between reception and transmission
+    // Made of a simple FSM, moving between reception and transmission
     while (1) {
 
         // Reading the input command line until receiving a EOT (ASCII=4)
@@ -42,6 +55,7 @@ int main() {
                 inChar = uart_getchar();
 
                 if (inChar==EOT) {
+                    cmdline[cmdsize] = 0;
                     eot = 1;
                 } else {
                     cmdline[cmdsize] = inChar;
@@ -52,13 +66,16 @@ int main() {
         // Once finish to empty the FIFO, execute the command and print a new prompt
         } else {
 
+            argc = 0;
+            argc = get_args(cmdline, cmd_argv);
+
             // Echo
-            if (strncmp(cmdline, c_echo, 4) == 0) {
-                for (i=5; i<cmdsize; i++)
-                    uart_putchar(cmdline[i]);
+            if (strncmp(cmd_argv[0], c_echo, 4) == 0) {
+                echo(argc, cmd_argv);
+
 
             // Sleep during N cycles
-            } else if (strncmp(cmdline, c_sleep, 5) == 0) {
+            } else if (strncmp(cmd_argv[0], c_sleep, 5) == 0) {
                 irq_on();
                 clint_set_mtime(0, 0);
                 clint_set_mtimecmp(100, 0);
@@ -68,20 +85,22 @@ int main() {
                 INFO("Slept!\n");
 
             // Shutdown / ebreak / exit
-            } else if (strncmp(cmdline, c_shutdown, 8) == 0 ||
-                        strncmp(cmdline, c_exit, 4) == 0 ||
-                        strncmp(cmdline, c_ebreak, 6) == 0
+            } else if (strncmp(cmd_argv[0], c_shutdown, 8) == 0 ||
+                        strncmp(cmd_argv[0], c_exit, 4) == 0 ||
+                        strncmp(cmd_argv[0], c_ebreak, 6) == 0
             ) {
                 SUCCESS("Exiting... See you!");
                 shutdown();
 
             // Help menu
-            } else if (strncmp(cmdline, c_help, 4) == 0) {
+            } else if (strncmp(cmd_argv[0], c_help, 4) == 0) {
                 MSG("FRISCV help:\n");
                 MSG("   help: print this menu\n");
                 MSG("   echo: print the chars passed\n");
                 MSG("   sleep: pause during the time specified\n");
-                MSG("   shutdown: stop the processor (EBREAK)\n");
+                MSG("   exit: stop the processor (execute EBREAK)\n");
+                MSG("   ebreak: same than exit\n");
+                MSG("   shutdown: same than exit\n");
 
             } else {
                 ERROR("Unrecognized command");
