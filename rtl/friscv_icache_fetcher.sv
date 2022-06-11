@@ -52,8 +52,10 @@ module friscv_icache_fetcher
         input  wire                       aclk,
         input  wire                       aresetn,
         input  wire                       srst,
-        // Flush control
-        input  wire                       flush_req,
+        // Flush control to clear outstanding request in buffers
+        input  wire                       flush_reqs,
+        // Flush control to execute FENCE.i
+        input  wire                       flush_blocks,
         output logic                      flush_ack,
         // Control unit interface
         input  wire                       ctrl_arvalid,
@@ -103,9 +105,6 @@ module friscv_icache_fetcher
 
     // Sync reset controlled on flush request
     logic                     flush_fifo;
-    // Synch reset asserted when core controller changes the ARID
-    logic                     reboot;
-    logic [AXI_ID_W     -1:0] arid_reboot;
 
     // Signals driving the FIFO buffering the to-fetch instruction
     logic                     fifo_full_if;
@@ -131,6 +130,12 @@ module friscv_icache_fetcher
     logic [AXI_ADDR_W   -1:0] araddr_ffd;
     logic [AXI_ID_W     -1:0] arid_ffd;
     logic [AXI_ID_W     -1:0] cache_rid;
+    logic [ILEN         -1:0] rdata_r;
+    logic [AXI_ID_W     -1:0] rid_r;
+
+    // A flag to drive all request to miss fetch FIFO in case a first
+    // read in the block in a burst read
+    logic                     cache_miss_r;
 
     // Logger setup
     `ifdef USE_SVL
@@ -145,16 +150,6 @@ module friscv_icache_fetcher
     // Buffering stage
     ///////////////////////////////////////////////////////////////////////////
 
-    // Reboot is asserted when core controller is jumping/branching and so
-    // change the ARID. Flush the FIFOs on this event
-    always @ (posedge aclk or negedge aresetn) begin
-        if (~aresetn) arid_reboot <= {AXI_ID_W{1'b0}};
-        else if (srst) arid_reboot <= {AXI_ID_W{1'b0}};
-        else arid_reboot <= ctrl_arid;
-    end
-
-    assign reboot = (ctrl_arid!=arid_reboot) ? 1'b1 : 1'b0;
-
     // FIFO buffering the instruction to fetch from the controller
     friscv_scfifo
     #(
@@ -167,13 +162,15 @@ module friscv_icache_fetcher
         .aclk     (aclk),
         .aresetn  (aresetn),
         .srst     (srst),
-        .flush    (flush_fifo | reboot),
+        .flush    (flush_fifo | flush_reqs),
         .data_in  ({ctrl_arid, ctrl_araddr}),
         .push     (ctrl_arvalid),
         .full     (fifo_full_if),
+        .afull    (),
         .data_out ({arid_if, araddr_if}),
         .pull     (pull_addr_if & ctrl_rready & !cache_loading),
-        .empty    (fifo_empty_if)
+        .empty    (fifo_empty_if),
+        .aempty   ()
     );
 
     // FFD stage to propagate potential addr/id to fetch
@@ -182,7 +179,7 @@ module friscv_icache_fetcher
         if (~aresetn) begin
             araddr_ffd <= {AXI_ADDR_W{1'b0}};
             arid_ffd <= {AXI_ID_W{1'b0}};
-        end else if (srst || reboot) begin
+        end else if (srst || flush_reqs) begin
             araddr_ffd <= {AXI_ADDR_W{1'b0}};
             arid_ffd <= {AXI_ID_W{1'b0}};
         end else begin
@@ -204,20 +201,22 @@ module friscv_icache_fetcher
         .aclk     (aclk),
         .aresetn  (aresetn),
         .srst     (srst),
-        .flush    (flush_fifo | reboot),
+        .flush    (flush_fifo | flush_reqs),
         .data_in  ({arid_ffd, araddr_ffd}),
-        .push     (cache_miss),
+        .push     (cache_miss | cache_miss_r & cache_hit),
         .full     (fifo_full_mf),
+        .afull    (),
         .data_out ({arid_mf, araddr_mf}),
         .pull     (pull_addr_mf & ctrl_rready),
-        .empty    (fifo_empty_mf)
+        .empty    (fifo_empty_mf),
+        .aempty   ()
     );
 
     // Read cache when the FIFO is filled or when missed-fetch instruction
     // occured, but never if the cache is rebooting.
     assign cache_ren = ((~fifo_empty_if && (seq==IDLE && !cache_loading || seq==SERVE)) ||
                         (~fifo_empty_mf && (seq==MISSED))
-                       ) ? ~reboot & ctrl_rready : 1'b0;
+                       ) ? ~flush_reqs & ctrl_rready : 1'b0;
 
     // Multiplexer stage to drive missed-fetch or to-fetch requests
     assign cache_raddr = (~fifo_empty_mf) ? araddr_mf : araddr_if;
@@ -239,6 +238,7 @@ module friscv_icache_fetcher
             memctrl_arid <= {AXI_ID_W{1'b0}};
             flush_fifo <= 1'b0;
             flush_ack <= 1'b0;
+            cache_miss_r <= 1'b0;
             seq <= IDLE;
         end else if (srst) begin
             pull_addr_if <= 1'b0;
@@ -248,6 +248,7 @@ module friscv_icache_fetcher
             memctrl_arid <= {AXI_ID_W{1'b0}};
             flush_fifo <= 1'b0;
             flush_ack <= 1'b0;
+            cache_miss_r <= 1'b0;
             seq <= IDLE;
         end else begin
 
@@ -255,7 +256,7 @@ module friscv_icache_fetcher
                 // flush is done in 1 cycle in fetcher, wait req
                 // deassertion then go back to IDLE to reboot
                 flush_fifo <= 1'b0;
-                if (flush_req==1'b0) begin
+                if (flush_blocks==1'b0) begin
                     `ifdef USE_SVL
                     log.debug("Finished flush procedure");
                     `endif
@@ -263,7 +264,7 @@ module friscv_icache_fetcher
                     flush_ack <= 1'b0;
                     seq <= IDLE;
                 end
-            end else if (flush_req) begin
+            end else if (flush_blocks) begin
                 pull_addr_if <= 1'b0;
                 pull_addr_mf <= 1'b0;
                 flush_fifo <= 1'b1;
@@ -275,6 +276,7 @@ module friscv_icache_fetcher
                     default: begin
                         pull_addr_if <= 1'b1;
                         pull_addr_mf <= 1'b0;
+                        cache_miss_r <= 1'b0;
                         if (~fifo_empty_if && !cache_loading) begin
                             `ifdef USE_SVL
                             log.debug("Start to serve");
@@ -287,7 +289,7 @@ module friscv_icache_fetcher
                     SERVE: begin
                         // Move back to IDLE if ARID changed, meaning the
                         // control is jumping to another memory location
-                        if (reboot) begin
+                        if (flush_reqs) begin
                             pull_addr_if <= 1'b0;
                             pull_addr_mf <= 1'b0;
                             seq <= IDLE;
@@ -298,6 +300,7 @@ module friscv_icache_fetcher
                             `ifdef USE_SVL
                             log.debug("Cache miss");
                             `endif
+                            cache_miss_r <= 1'b1;
                             pull_addr_if <= 1'b0;
                             memctrl_arvalid <= 1'b1;
                             memctrl_araddr <= araddr_ffd;
@@ -318,7 +321,7 @@ module friscv_icache_fetcher
                     MISSED: begin
                         // Move back to IDLE if ARID changed, meaning the
                         // control is jumping to another memory location
-                        if (reboot) begin
+                        if (flush_reqs) begin
                             pull_addr_if <= 1'b0;
                             pull_addr_mf <= 1'b0;
                             seq <= IDLE;
@@ -329,6 +332,7 @@ module friscv_icache_fetcher
                             `ifdef USE_SVL
                             log.debug("Cache miss");
                             `endif
+                            cache_miss_r <= 1'b1;
                             pull_addr_mf <= 1'b0;
                             memctrl_arvalid <= 1'b1;
                             memctrl_araddr <= araddr_ffd;
@@ -367,8 +371,9 @@ module friscv_icache_fetcher
                         // If a reboot has been initiated, move back to IDLE
                         // to avoid a race condition which will fetch twice
                         // the next first instruction
-                        if (reboot) begin
+                        if (flush_reqs) begin
                             seq <= IDLE;
+                            cache_miss_r <= 1'b0;
                             memctrl_arvalid <= 1'b0;
                         // Go to read the cache lines once the memory controller
                         // wrote a new cache line, the read completion
@@ -377,6 +382,7 @@ module friscv_icache_fetcher
                             log.debug("Go to missed-fetch state");
                             `endif
                             pull_addr_mf <= 1'b1;
+                            cache_miss_r <= 1'b0;
                             seq <= MISSED;
                         end
                     end
@@ -392,7 +398,7 @@ module friscv_icache_fetcher
 
 
     // Read address request handshake if able to receive
-    assign ctrl_arready = (~fifo_full_if && ~reboot) ? 1'b1 : 1'b0;
+    assign ctrl_arready = (~fifo_full_if && ~flush_reqs) ? 1'b1 : 1'b0;
 
     // Manage read data channel back-pressure in case RVALID has been
     // asserted but RREADY wasn't asserted. RDATA stay stable, even after
@@ -400,18 +406,27 @@ module friscv_icache_fetcher
     always @ (posedge aclk or negedge aresetn) begin
         if (!aresetn) begin
             rvalid_r <= 1'b0;
+            rid_r <= {AXI_ID_W{1'b0}};
+            rdata_r <= {ILEN{1'b0}};
         end else if (srst) begin
             rvalid_r <= 1'b0;
+            rid_r <= {AXI_ID_W{1'b0}};
+            rdata_r <= {ILEN{1'b0}};
         end else begin
             if (ctrl_rvalid && !ctrl_rready) rvalid_r <= 1'b1;
             else rvalid_r <= 1'b0;
+
+            if (rvalid_r==1'b0) begin
+                rdata_r <= cache_rdata;
+                rid_r <= arid_ffd;
+            end
         end
     end
 
-    assign ctrl_rvalid = cache_hit | rvalid_r;
-    assign ctrl_rdata = cache_rdata;
+    assign ctrl_rvalid = (cache_hit & !cache_miss_r | rvalid_r);
+    assign ctrl_rdata = (rvalid_r) ? rdata_r : cache_rdata;
     assign ctrl_rresp = 2'b0;
-    assign ctrl_rid = arid_ffd;
+    assign ctrl_rid = (rvalid_r) ? rid_r : arid_ffd;
 
     // Just transmit, and not managed at all in the core
     assign memctrl_arprot = ctrl_arprot;

@@ -47,7 +47,7 @@ module friscv_icache_memctrl
         input  wire                       aclk,
         input  wire                       aresetn,
         input  wire                       srst,
-        input  wire                       flush_req,
+        input  wire                       flush_blocks,
         output logic                      flush_ack,
         output logic                      flush,
         output logic                      cache_loading,
@@ -202,8 +202,8 @@ module friscv_icache_memctrl
     ///////////////////////////////////////////////////////////////////////////
     // Flush support on FENCE.i instruction execution
     //
-    // flush_ack is asserted for one cycle once flush_req has been asserted and
-    // the entire cache lines have been erased
+    // flush_ack is asserted for one cycle once flush_blocks has been asserted 
+    // and the entire cache lines have been erased
     ///////////////////////////////////////////////////////////////////////////
 
 
@@ -228,7 +228,7 @@ module friscv_icache_memctrl
                 default: begin
                     flush <= 1'b0;
                     flush_ack <= 1'b0;
-                    if (flush_req) begin
+                    if (flush_blocks) begin
                         erase_wen <= 1'b1;
                         cfsm <= FLUSH;
                     end
@@ -247,7 +247,7 @@ module friscv_icache_memctrl
                 // Once cache has been erased wait for req deassertion
                 ACK: begin
                     flush <= 1'b0;
-                    if (~flush_req) begin
+                    if (~flush_blocks) begin
                         flush_ack <= 1'b0;
                         cfsm <= IDLE;
                     end else  begin

@@ -39,9 +39,11 @@ module friscv_scfifo
         input  wire  [DATA_WIDTH-1:0] data_in,
         input  wire                   push,
         output logic                  full,
+        output logic                  afull,
         output logic [DATA_WIDTH-1:0] data_out,
         input  wire                   pull,
-        output logic                  empty
+        output logic                  empty,
+        output logic                  aempty
     );
 
     ///////////////////////////////////////////////////////////////////////////
@@ -52,7 +54,6 @@ module friscv_scfifo
     logic [ADDR_WIDTH  :0] wrptr;
     logic [ADDR_WIDTH  :0] rdptr;
     logic                  empty_flag;
-    logic                  full_flag;
     logic                  pass_thru;
     logic [DATA_WIDTH-1:0] data_fifo;
 
@@ -69,7 +70,7 @@ module friscv_scfifo
             wrptr <= {(ADDR_WIDTH+1){1'b0}};
         end
         else begin
-            if (push == 1'b1 && full_flag == 1'b0 && pass_thru==1'b0) begin
+            if (push == 1'b1 && full == 1'b0 && pass_thru==1'b0) begin
                 wrptr <= wrptr + 1'b1;
             end
         end
@@ -100,8 +101,10 @@ module friscv_scfifo
     ///////////////////////////////////////////////////////////////////////////
 
     assign empty_flag = (wrptr == rdptr) ? 1'b1 : 1'b0;
-    assign full_flag = ((wrptr - rdptr) == {1'b1,{ADDR_WIDTH{1'b0}}}) ? 1'b1 : 1'b0;
+    assign full = ((wrptr - rdptr) == {1'b1,{ADDR_WIDTH{1'b0}}}) ? 1'b1 : 1'b0;
 
+    assign aempty = ((wrptr-1) == rdptr) ? 1'b1 : 1'b0;
+    assign afull = ((wrptr - rdptr) == {1'b0,{ADDR_WIDTH{1'b1}}}) ? 1'b1 : 1'b0;
 
     ///////////////////////////////////////////////////////////////////////////
     // Internal RAM
@@ -135,14 +138,12 @@ module friscv_scfifo
         assign pass_thru = pull & empty_flag;
         assign data_out = (pass_thru) ? data_in : data_fifo;
         assign empty = (pass_thru) ? ~push : empty_flag;
-        assign full = full_flag;
 
     end else begin : STORE_MODE
 
         assign pass_thru = 1'b0;
         assign data_out = data_fifo;
         assign empty = empty_flag;
-        assign full = full_flag;
 
     end
     endgenerate

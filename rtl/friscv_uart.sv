@@ -276,9 +276,11 @@ module friscv_uart
         .data_in  (register2),
         .push     (tx_push  ),
         .full     (tx_full  ),
+        .afull    (         ),
         .data_out (tx_data  ),
         .pull     (tx_pull  ),
-        .empty    (tx_empty )
+        .empty    (tx_empty ),
+        .aempty   (         )
     );
 
 
@@ -459,9 +461,11 @@ module friscv_uart
         .data_in  (rx_data  ),
         .push     (rx_push  ),
         .full     (rx_full  ),
+        .afull    (         ),
         .data_out (register3),
         .pull     (rx_pull  ),
-        .empty    (rx_empty )
+        .empty    (rx_empty ),
+        .aempty   (         )
     );
 
 endmodule

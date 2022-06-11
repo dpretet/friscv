@@ -11,8 +11,11 @@
 #include "tty.h"
 #include "coreutils.h"
 
-// ASCII code for End Of Transmission
+// ASCII codes
 #define EOT 4
+#define SPACE 32
+#define TAB 9
+
 // Two variables to setup max args / max arg's size when extracting the command
 #define MAX_ARGS 8
 #define MAX_ARGS_SIZE 40
@@ -37,7 +40,7 @@ int main() {
 
     // command decomposed by separating by space
     int argc;
-    char *cmd_argv[MAX_ARGS_SIZE];
+    char cmd_argv[MAX_ARGS][MAX_ARGS_SIZE];
 
 
     SUCCESS("\n\nWelcome to FRISCV\n");
@@ -58,7 +61,10 @@ int main() {
                     cmdline[cmdsize] = 0;
                     eot = 1;
                 } else {
-                    cmdline[cmdsize] = inChar;
+                    if (inChar==TAB)
+                        cmdline[cmdsize] = SPACE;
+                    else
+                        cmdline[cmdsize] = inChar;
                     cmdsize += 1;
                 }
             }

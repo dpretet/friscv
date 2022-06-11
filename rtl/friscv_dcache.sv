@@ -181,9 +181,11 @@ module friscv_dcache
     .data_in  (memfy_awaddr),
     .push     (memfy_awvalid & memfy_awready),
     .full     (wch_full),
+    .afull    (),
     .data_out (awaddr_w),
     .pull     (dcache_wvalid & dcache_wready & dcache_wlast),
     .empty    (wch_empty)
+    .aempty   ()
     );
 
     // Drive address channel signals

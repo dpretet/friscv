@@ -69,8 +69,10 @@ module friscv_icache
         input  wire                       aclk,
         input  wire                       aresetn,
         input  wire                       srst,
-        // Flush control
-        input  wire                       flush_req,
+        // Flush control to clear outstanding request in buffers
+        input  wire                       flush_reqs,
+        // Flush control to execute FENCE.i
+        input  wire                       flush_blocks,
         output logic                      flush_ack,
         // Control unit interface
         input  wire                       ctrl_arvalid,
@@ -146,7 +148,8 @@ module friscv_icache
     .aclk            (aclk),
     .aresetn         (aresetn),
     .srst            (srst),
-    .flush_req       (flush_req),
+    .flush_reqs      (flush_reqs),
+    .flush_blocks    (flush_blocks),
     .flush_ack       (flush_ack_fetcher),
     .ctrl_arvalid    (ctrl_arvalid),
     .ctrl_arready    (ctrl_arready),
@@ -218,7 +221,7 @@ module friscv_icache
     .aclk           (aclk),
     .aresetn        (aresetn),
     .srst           (srst),
-    .flush_req      (flush_req),
+    .flush_blocks   (flush_blocks),
     .flush_ack      (flush_ack_memctrl),
     .flush          (is_flushing),
     .cache_loading  (cache_loading),

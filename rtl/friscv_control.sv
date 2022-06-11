@@ -39,8 +39,10 @@ module friscv_control
         input  wire                       srst,
         output logic [5             -1:0] traps,
         output logic [XLEN          -1:0] pc_val,
-        // Flush control
-        output logic                      flush_req,
+        // Flush control to clear outstanding request in buffers
+        output logic                      flush_reqs,
+        // Flush control to execute FENCE.i
+        output logic                      flush_blocks,
         input  wire                       flush_ack,
         // instruction memory interface
         output logic                      arvalid,
@@ -304,9 +306,11 @@ module friscv_control
         .data_in  (rdata),
         .push     (push_inst),
         .full     (fifo_full),
+        .afull    (),
         .data_out (instruction),
         .pull     (pull_inst),
-        .empty    (fifo_empty)
+        .empty    (fifo_empty),
+        .aempty   ()
     );
 
     assign pull_inst = (~cant_jump && ~cant_process && ~cant_lui_auipc && ~cant_sys &&
@@ -481,6 +485,8 @@ module friscv_control
 
     assign pc_val = pc_reg;
 
+    assign flush_reqs = 1'b0;
+
     always @ (posedge aclk or negedge aresetn) begin
 
         if (aresetn == 1'b0) begin
@@ -493,7 +499,7 @@ module friscv_control
             traps <= 5'b0;
             flush_fifo <= 1'b0;
             arid <= {AXI_ID_W{1'b0}};
-            flush_req <= 1'b0;
+            flush_blocks <= 1'b0;
             mepc_wr <= 1'b0;
             mepc <= {XLEN{1'b0}};
             mstatus_wr <= 1'b0;
@@ -513,7 +519,7 @@ module friscv_control
             traps <= 5'b0;
             flush_fifo <= 1'b0;
             arid <= {AXI_ID_W{1'b0}};
-            flush_req <= 1'b0;
+            flush_blocks <= 1'b0;
             mepc_wr <= 1'b0;
             mepc <= {XLEN{1'b0}};
             mstatus_wr <= 1'b0;
@@ -793,12 +799,12 @@ module friscv_control
                 // high as long ACK is not asserted.
                 ///////////////////////////////////////////////////////////////
                 FENCE_I: begin
-                    flush_req <= 1'b1;
+                    flush_blocks <= 1'b1;
                     if (flush_ack) begin
                         `ifdef USE_SVL
                         log.info("FENCE.i execution done");
                         `endif
-                        flush_req <= 1'b0;
+                        flush_blocks <= 1'b0;
                         flush_fifo <= 1'b0;
                         arvalid <= 1'b1;
                         cfsm <= FETCH;

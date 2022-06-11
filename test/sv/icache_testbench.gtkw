@@ -1,0 +1,342 @@
+[*]
+[*] GTKWave Analyzer v3.3.107 (w)1999-2020 BSI
+[*] Thu Jun 23 19:36:07 2022
+[*]
+[dumpfile] "/Users/damien/workspace/hdl/friscv/test/sv/icache_testbench.vcd"
+[dumpfile_mtime] "Thu Jun 23 19:36:07 2022"
+[dumpfile_size] 1173110784
+[savefile] "/Users/damien/workspace/hdl/friscv/test/sv/icache_testbench.gtkw"
+[timestart] 49375800
+[size] 2560 1440
+[pos] -1 -1
+*-14.580198 49558000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] fetcher.
+[treeopen] icache.
+[treeopen] icache_testbench.
+[sst_width] 436
+[signals_width] 491
+[sst_expanded] 1
+[sst_vpaned_height] 462
+@800200
+-Testbench
+@28
+icache_testbench.en
+@420
+icache_testbench.timer
+icache_testbench.req_num
+@28
+icache_testbench.error
+@420
+icache_testbench.svut_critical
+icache_testbench.svut_error
+icache_testbench.svut_status
+icache_testbench.svut_test_number
+icache_testbench.svut_warning
+@1000200
+-Testbench
+@c00200
+-driver
+@28
+driver.aclk
+driver.aresetn
+@200
+-
+@28
+driver.en
+driver.error
+driver.flush_ack
+@200
+-
+-
+@22
+driver.araddr[31:0]
+driver.arid[7:0]
+@28
+driver.arprot[2:0]
+driver.arready
+driver.arvalid
+@200
+-
+@420
+driver.req_or_cnt
+@22
+driver.rd_orreq[63:0]
+@200
+-
+@22
+driver.rdata[31:0]
+driver.rid[7:0]
+@28
+driver.rready
+driver.rvalid
+@200
+-
+@420
+driver.cpl_or_cnt
+@22
+driver.rd_orreq_rdata[2047:0]
+driver.rd_orreq_id[511:0]
+@200
+-
+@22
+driver.ar_lfsr[31:0]
+driver.arvalid_lfsr[31:0]
+driver.r_lfsr[31:0]
+driver.rready_lfsr[31:0]
+@200
+-
+@28
+driver.artimeout
+@420
+driver.artimer
+@200
+-
+-
+@22
+driver.rid_error[63:0]
+driver.ror_error[63:0]
+@1401200
+-driver
+@c00200
+-iCache
+@28
+icache.aclk
+icache.aresetn
+@200
+-
+@22
+icache.ctrl_araddr[31:0]
+icache.ctrl_arid[7:0]
+@28
+icache.ctrl_arready
+icache.ctrl_arvalid
+@200
+-
+@22
+icache.ctrl_rdata[31:0]
+icache.ctrl_rid[7:0]
+@28
+icache.ctrl_rready
+icache.ctrl_rresp[1:0]
+icache.ctrl_rvalid
+@200
+-
+@22
+icache.icache_araddr[31:0]
+icache.icache_arid[7:0]
+@28
+icache.icache_arready
+icache.icache_arvalid
+@22
+icache.icache_rdata[127:0]
+icache.icache_rid[7:0]
+@28
+icache.icache_rlast
+icache.icache_rready
+icache.icache_rresp[1:0]
+icache.icache_rvalid
+@1401200
+-iCache
+@800200
+-Fetcher
+@28
+fetcher.aclk
+fetcher.aresetn
+fetcher.flush_fifo
+fetcher.flush_blocks
+fetcher.flush_reqs
+fetcher.flush_ack
+fetcher.cache_loading
+fetcher.cache_writing
+@200
+-
+@22
+fetcher.ctrl_araddr[31:0]
+fetcher.ctrl_arid[7:0]
+@28
+fetcher.ctrl_arvalid
+fetcher.ctrl_arready
+@200
+-
+@28
+[color] 1
+fetcher.seq[2:0]
+fetcher.pull_addr_if
+fetcher.pull_addr_mf
+@200
+-
+@22
+fetcher.araddr_if[31:0]
+fetcher.arid_if[7:0]
+@28
+[color] 2
+fetcher.fifo_empty_if
+[color] 1
+fetcher.fifo_full_if
+@200
+-
+@22
+fetcher.araddr_mf[31:0]
+fetcher.arid_mf[7:0]
+@28
+[color] 2
+fetcher.fifo_empty_mf
+[color] 2
+fetcher.fifo_full_mf
+@200
+-
+@22
+fetcher.araddr_ffd[31:0]
+fetcher.arid_ffd[7:0]
+@200
+-
+@28
+fetcher.cache_ren
+@c00022
+fetcher.cache_raddr[31:0]
+@28
+(0)fetcher.cache_raddr[31:0]
+(1)fetcher.cache_raddr[31:0]
+(2)fetcher.cache_raddr[31:0]
+(3)fetcher.cache_raddr[31:0]
+(4)fetcher.cache_raddr[31:0]
+(5)fetcher.cache_raddr[31:0]
+(6)fetcher.cache_raddr[31:0]
+(7)fetcher.cache_raddr[31:0]
+(8)fetcher.cache_raddr[31:0]
+(9)fetcher.cache_raddr[31:0]
+(10)fetcher.cache_raddr[31:0]
+(11)fetcher.cache_raddr[31:0]
+(12)fetcher.cache_raddr[31:0]
+(13)fetcher.cache_raddr[31:0]
+(14)fetcher.cache_raddr[31:0]
+(15)fetcher.cache_raddr[31:0]
+(16)fetcher.cache_raddr[31:0]
+(17)fetcher.cache_raddr[31:0]
+(18)fetcher.cache_raddr[31:0]
+(19)fetcher.cache_raddr[31:0]
+(20)fetcher.cache_raddr[31:0]
+(21)fetcher.cache_raddr[31:0]
+(22)fetcher.cache_raddr[31:0]
+(23)fetcher.cache_raddr[31:0]
+(24)fetcher.cache_raddr[31:0]
+(25)fetcher.cache_raddr[31:0]
+(26)fetcher.cache_raddr[31:0]
+(27)fetcher.cache_raddr[31:0]
+(28)fetcher.cache_raddr[31:0]
+(29)fetcher.cache_raddr[31:0]
+(30)fetcher.cache_raddr[31:0]
+(31)fetcher.cache_raddr[31:0]
+@1401200
+-group_end
+@22
+fetcher.cache_rdata[31:0]
+fetcher.cache_rid[7:0]
+@200
+-
+@28
+[color] 3
+fetcher.cache_hit
+[color] 2
+fetcher.cache_miss
+@29
+fetcher.cache_miss_r
+@200
+-
+@28
+[color] 7
+fetcher.ctrl_rvalid
+[color] 7
+fetcher.ctrl_rready
+@22
+[color] 7
+fetcher.ctrl_rdata[31:0]
+[color] 7
+fetcher.ctrl_rid[7:0]
+@28
+[color] 7
+fetcher.ctrl_rresp[1:0]
+@200
+-
+@28
+[color] 2
+fetcher.rvalid_r
+@22
+fetcher.rdata_r[31:0]
+fetcher.rid_r[7:0]
+@200
+-
+@22
+fetcher.memctrl_araddr[31:0]
+fetcher.memctrl_arid[7:0]
+@28
+fetcher.memctrl_arprot[2:0]
+fetcher.memctrl_arready
+fetcher.memctrl_arvalid
+@1000200
+-Fetcher
+@800200
+-cache_blocks
+@28
+icache.cache_blocks.aclk
+icache.cache_blocks.aresetn
+icache.cache_blocks.flush
+@200
+-
+@22
+icache.cache_blocks.raddr[31:0]
+@200
+-
+@22
+icache.cache_blocks.rdata[31:0]
+@28
+[color] 1
+icache.cache_blocks.hit
+[color] 1
+icache.cache_blocks.miss
+@200
+-
+-
+@22
+icache.cache_blocks.rblock[127:0]
+icache.cache_blocks.rindex[8:0]
+@28
+icache.cache_blocks.roffset[1:0]
+icache.cache_blocks.rset
+@22
+icache.cache_blocks.rtag[18:0]
+@200
+-
+@28
+icache.cache_blocks.wen
+@22
+icache.cache_blocks.waddr[31:0]
+icache.cache_blocks.wdata[127:0]
+@200
+-
+@22
+icache.cache_blocks.wblock[147:0]
+icache.cache_blocks.windex[8:0]
+icache.cache_blocks.wtag[18:0]
+@1000200
+-cache_blocks
+@c00200
+-RAM
+@22
+icache_testbench.axi4l_ram.p1_araddr[31:0]
+icache_testbench.axi4l_ram.p1_arid[7:0]
+@28
+icache_testbench.axi4l_ram.p1_arprot[2:0]
+icache_testbench.axi4l_ram.p1_arready
+icache_testbench.axi4l_ram.p1_arvalid
+@22
+icache_testbench.axi4l_ram.p1_rdata[127:0]
+icache_testbench.axi4l_ram.p1_rid[7:0]
+@28
+icache_testbench.axi4l_ram.p1_rready
+icache_testbench.axi4l_ram.p1_rresp[1:0]
+icache_testbench.axi4l_ram.p1_rvalid
+@1401200
+-RAM
+[pattern_trace] 1
+[pattern_trace] 0
