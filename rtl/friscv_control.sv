@@ -485,8 +485,6 @@ module friscv_control
 
     assign pc_val = pc_reg;
 
-    assign flush_reqs = 1'b0;
-
     always @ (posedge aclk or negedge aresetn) begin
 
         if (aresetn == 1'b0) begin
@@ -508,7 +506,8 @@ module friscv_control
             mcause <= {XLEN{1'b0}};
             mtval_wr <= 1'b0;
             mtval <= {XLEN{1'b0}};
-            priv_mode <= 2'b11;
+            priv_mode <= `MMODE;
+            flush_reqs <= 1'b0;
         end else if (srst == 1'b1) begin
             cfsm <= BOOT;
             arvalid <= 1'b0;
@@ -528,7 +527,8 @@ module friscv_control
             mcause <= {XLEN{1'b0}};
             mtval_wr <= 1'b0;
             mtval <= {XLEN{1'b0}};
-            priv_mode <= 2'b11;
+            priv_mode <= `MMODE;
+            flush_reqs <= 1'b0;
         end else begin
 
             case (cfsm)
@@ -538,14 +538,23 @@ module friscv_control
                 ///////////////////////////////////////////////////////////////
                 default: begin
 
-                    // Load boot address
-                    arvalid <= 1'b1;
                     araddr <= BOOT_ADDR;
                     pc_reg <= BOOT_ADDR;
-                    // Machine-mode by default after a reset
-                    priv_mode <= 2'b11;
 
-                    if (arready) begin
+                    priv_mode <= `MMODE; // Machine-mode by default after a reset
+
+                    // 1. Start to erase the cache to be sure the first requests will be clean.
+                    //    The iCache RAM with X would lead to a wrong start-up state
+                    // 2. Once flushed, boot the processor
+                    if (flush_ack) begin
+                        arvalid <= 1'b1;
+                        flush_blocks <= 1'b0;
+                    end else if (!arvalid) begin
+                        flush_blocks <= 1'b1;
+                    end
+
+                    // 3. On a first handshake, launch the firmware
+                    if (arvalid && arready) begin
                         $fwrite(f, "@ %0t,%x\n", $realtime, BOOT_ADDR);
                         `ifdef USE_SVL
                         log.info("IDLE -> Boot the processor");
@@ -572,11 +581,13 @@ module friscv_control
                     //   manage a trap, stop the addr issuer and load the
                     //   right branch
                     //
-                    if (~fifo_empty &&
+                    if (~fifo_empty && ~cant_jump &&
                         (jump_branch || sys[`IS_ECALL] || sys[`IS_MRET] ||
-                         fence[`IS_FENCEI] || trap_occuring) &&
-                        ~cant_jump) begin
+                         fence[`IS_FENCEI] || trap_occuring))
+                    begin
 
+                        // Flush all previous requests made to iCache to save time
+                        flush_reqs <= 1'b1;
                         // ECALL / Trap handling
                         if (sys[`IS_ECALL] || trap_occuring) araddr <= mtvec;
                         // MRET
@@ -713,6 +724,7 @@ module friscv_control
                                 log.info("FENCE.i -> Start iCache flushing");
                                 `endif
                                 flush_fifo <= 1'b1;
+                                flush_reqs <= 1'b0;
                                 pc_reg <= pc;
                                 arvalid <= 1'b0;
                                 arid <= next_id(arid);
@@ -790,6 +802,7 @@ module friscv_control
                     mtval_wr <= 1'b0;
                     arvalid <= 1'b1;
                     flush_fifo <= 1'b0;
+                    flush_reqs <= 1'b0;
                     cfsm <= FETCH;
                 end
 
@@ -806,8 +819,7 @@ module friscv_control
                         `endif
                         flush_blocks <= 1'b0;
                         flush_fifo <= 1'b0;
-                        arvalid <= 1'b1;
-                        cfsm <= FETCH;
+                        cfsm <= RELOAD;
                     end
                 end
 
@@ -864,13 +876,13 @@ module friscv_control
     // LUI and AUIPC are executed internally, not in processing
     assign lui_auipc = lui | auipc;
 
-    assign cant_jump = (jal | jalr | branching) && (proc_busy || ~csr_ready);
+    assign cant_jump = (jal | jalr | branching) && (proc_busy | ~csr_ready);
 
-    assign cant_process = processing & (~proc_ready || ~csr_ready);
+    assign cant_process = processing & (~proc_ready | ~csr_ready);
 
-    assign cant_lui_auipc = lui_auipc & (proc_busy || ~csr_ready);
+    assign cant_lui_auipc = lui_auipc & (proc_busy | ~csr_ready);
 
-    assign cant_sys = |sys & (proc_busy || ~csr_ready);
+    assign cant_sys = (|sys | |fence) & (proc_busy | ~csr_ready);
 
 
     ///////////////////////////////////////////////////////////////////////////

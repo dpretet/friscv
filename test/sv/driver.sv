@@ -31,9 +31,12 @@ module driver
         input  wire                       srst,
         // Testbench interface
         input  wire                       en,
-        output wire                       error,
+        input  wire                       check_flush_reqs,
+        input  wire                       check_flush_blocks,
+        output logic                      error,
         // Flush control
         output logic                      flush_reqs,
+        output logic                      flush_blocks,
         input  wire                       flush_ack,
         // instruction memory interface
         output logic                      arvalid,
@@ -56,7 +59,7 @@ module driver
     string msg;
 
     initial begin
-        log = new("driver_logger",
+        log = new("log_driver",
                   `SVL_VERBOSE_DEBUG,
                   `SVL_ROUTE_ALL);
     end
@@ -90,8 +93,11 @@ module driver
     integer                                  artimer;
     integer                                  req_or_cnt;
     integer                                  cpl_or_cnt;
+    logic                                    block_rch;
+    logic                                    rvalid_s;
+    logic [AXI_ID_W                    -1:0] next_rid;
 
-    assign flush_reqs = 1'b0;
+
     assign arprot = 3'b0;
 
 
@@ -103,29 +109,58 @@ module driver
             beat_cnt <= 0;
             batch_len <= 8;
             req_or_cnt <= 0;
+            flush_reqs <= 1'b0;
+            flush_blocks <= 1'b0;
         end else if (srst) begin
             arid <= {AXI_ID_W{1'b0}};
             araddr <= {AXI_ADDR_W{1'b0}};
             beat_cnt <= 0;
             batch_len <= 8;
             req_or_cnt <= 0;
-        end else if (arvalid && arready) begin
+            flush_reqs <= 1'b0;
+            flush_blocks <= 1'b0;
+        end else begin
 
-            if (req_or_cnt==(MAX_OR-1)) begin
+            if (flush_reqs) begin
+                flush_reqs <= 1'b0;
                 req_or_cnt <= 0;
-            end else begin
-                req_or_cnt <= req_or_cnt + 1;
             end
 
-            if (beat_cnt==batch_len) begin
-                arid <= arid + 1;
-                batch_len <= ar_lfsr[3:0];
-                // Add two LSB because the AXI interface is byte oriented
-                araddr <= {ar_lfsr[19:2], 2'b00};
-                beat_cnt <= 0;
-            end else begin
-                beat_cnt <= beat_cnt + 1;
-                araddr <= araddr + 4;
+            if (flush_blocks && flush_ack) begin
+                flush_blocks <= 1'b0;
+                req_or_cnt <= 0;
+            end
+
+            if (arvalid && arready) begin
+
+                if (req_or_cnt==(MAX_OR-1)) begin
+                    req_or_cnt <= 0;
+                end else begin
+                    req_or_cnt <= req_or_cnt + 1;
+                end
+
+                if (beat_cnt==batch_len) begin
+
+                    arid <= arid + 1;
+                    batch_len <= ar_lfsr[3:0];
+                    // Add two LSB because the AXI interface is byte oriented
+                    araddr <= {ar_lfsr[19:2], 2'b00};
+                    beat_cnt <= 0;
+
+                    if (araddr[10+:3]==3'b101 && check_flush_reqs) begin
+                        flush_reqs <= 1'b1;
+                        next_rid <= arid + 1;
+                    end
+
+                    if (araddr[10+:8]==8'b1 && check_flush_blocks) begin
+                        flush_blocks <= 1'b1;
+                        next_rid <= arid + 1;
+                    end
+
+                end else begin
+                    beat_cnt <= beat_cnt + 1;
+                    araddr <= araddr + 4;
+                end
             end
         end
     end
@@ -138,11 +173,12 @@ module driver
             arvalid_lfsr <= 32'b0;
         end else begin
 
-            // At startup init with LFSR default value
+            // At startup init with LFSR d
+            // efault value
             if (arvalid_lfsr==32'b0) begin
                 arvalid_lfsr <= ar_lfsr;
             // Use to randomly assert arvalid/wvalid
-            end else if (~arvalid) begin
+            end else if (~arvalid_lfsr[0]) begin
                 arvalid_lfsr <= arvalid_lfsr >> 1;
             end else if (arready) begin
                 arvalid_lfsr <= ar_lfsr;
@@ -165,7 +201,7 @@ module driver
         .lfsr    (ar_lfsr)
     );
 
-    assign arvalid = arvalid_lfsr[0] & ~rd_orreq[req_or_cnt] & en;
+    assign arvalid = arvalid_lfsr[0] & ~rd_orreq[req_or_cnt] & en & !(flush_reqs | flush_blocks | flush_ack);
 
     ///////////////////////////////////////////////////////////////////////////
     // Monitor AR channel to detect timeout
@@ -200,6 +236,24 @@ module driver
     ///////////////////////////////////////////////////////////////////////////
 
     always @ (posedge aclk or negedge aresetn) begin
+        if (~aresetn) begin
+            block_rch <= 1'b0;
+        end else if (srst) begin
+            block_rch <= 1'b0;
+        end else begin
+            if (flush_reqs) 
+                block_rch <= 1'b1;
+            else if (rid==next_rid) 
+                block_rch <= 1'b0;
+        end
+    end
+
+    assign rvalid_s = (!check_flush_reqs         ) ? rvalid :
+                      (block_rch && rid==next_rid) ? rvalid :
+                      (block_rch && rid!=next_rid) ? 2'b0 :
+                                                     rvalid;
+
+    always @ (posedge aclk or negedge aresetn) begin
 
         if (~aresetn) begin
             rready_lfsr <= 32'b0;
@@ -212,7 +266,7 @@ module driver
             // Use to randomly assert arready
             end else if (~rready) begin
                 rready_lfsr <= rready_lfsr >> 1;
-            end else if (rvalid) begin
+            end else if (rvalid_s) begin
                 rready_lfsr <= r_lfsr;
             end
         end
@@ -230,7 +284,7 @@ module driver
         .aclk    (aclk),
         .aresetn (aresetn),
         .srst    (srst),
-        .en      (rvalid & rready),
+        .en      (rvalid_s & rready),
         .lfsr    (r_lfsr)
     );
 
@@ -275,7 +329,9 @@ module driver
 
         end else if (en) begin
 
-            if (rvalid && rready) begin
+            if (flush_reqs || flush_blocks) begin
+                cpl_or_cnt <= 0;
+            end else if (rvalid_s && rready) begin
                 if (cpl_or_cnt==(MAX_OR-1))
                     cpl_or_cnt <= 0;
                 else
@@ -284,8 +340,10 @@ module driver
 
             for (int i=0;i<MAX_OR;i++) begin
 
+                if (flush_reqs || flush_blocks) begin
+                    rd_orreq[i] <= 1'b0;
                 // Store the OR request on address channel handshake
-                if (arvalid && arready && i==req_or_cnt) begin
+                end else if (arvalid && arready && i==req_or_cnt) begin
                     rd_orreq[i] <= 1'b1;
                     rd_orreq_id[i*AXI_ID_W+:AXI_ID_W] <= arid;
                     rd_orreq_araddr[i*AXI_ADDR_W+:AXI_ADDR_W] <= araddr;
@@ -295,7 +353,7 @@ module driver
                 end
 
                 // And release the OR when handshaking with RLAST
-                if (rvalid && rready && cpl_or_cnt==i) begin
+                if (rvalid_s && rready && cpl_or_cnt==i && !flush_reqs) begin
 
                     rd_orreq[i] <= 1'b0;
 
@@ -304,7 +362,7 @@ module driver
                         `ifndef NODEBUG
                         $sformat(msg, "Read ID is wrong:");
                         log.error(msg);
-                        $sformat(msg, "  - completion nb: %0x",  cpl_or_cnt);
+                        $sformat(msg, "  - completion nb: %0d",  cpl_or_cnt);
                         log.error(msg);
                         $sformat(msg, "  - addr: %x",  rd_orreq_araddr[cpl_or_cnt*AXI_ADDR_W+:AXI_ADDR_W]);
                         log.error(msg);
@@ -320,7 +378,7 @@ module driver
                         `ifndef NODEBUG
                         $sformat(msg, "Read data is wrong:");
                         log.error(msg);
-                        $sformat(msg, "  - completion nb: %0x",  cpl_or_cnt);
+                        $sformat(msg, "  - completion nb: %0d",  cpl_or_cnt);
                         log.error(msg);
                         $sformat(msg, "  - addr: %x",  rd_orreq_araddr[cpl_or_cnt*AXI_ADDR_W+:AXI_ADDR_W]);
                         log.error(msg);

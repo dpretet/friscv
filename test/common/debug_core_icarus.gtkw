@@ -1,29 +1,244 @@
 [*]
 [*] GTKWave Analyzer v3.3.107 (w)1999-2020 BSI
-[*] Mon Apr 25 15:30:50 2022
+[*] Tue Jun 28 20:51:08 2022
 [*]
-[dumpfile] "/Users/damien/workspace/hdl/friscv/test/wba_testsuite/tests/rv32ui-p-test4.vcd"
-[dumpfile_mtime] "Mon Apr 25 15:30:06 2022"
-[dumpfile_size] 803824
-[savefile] "/Users/damien/workspace/hdl/friscv/test/wba_testsuite/debug_core_icarus.gtkw"
-[timestart] 610800
+[dumpfile] "/Users/damien/workspace/hdl/friscv/test/wba_testsuite/tests/rv32ui-p-test3.vcd"
+[dumpfile_mtime] "Tue Jun 28 20:21:51 2022"
+[dumpfile_size] 1268329
+[savefile] "/Users/damien/workspace/hdl/friscv/test/common/debug_core_icarus.gtkw"
+[timestart] 801490
 [size] 2560 1440
 [pos] -1 -1
-*-14.374160 615000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
-[treeopen] control.
+*-13.904762 861000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] dut.
-[sst_width] 458
-[signals_width] 334
+[treeopen] dut.USE_ICACHE.
+[treeopen] dut.USE_ICACHE.icache.
+[sst_width] 339
+[signals_width] 256
 [sst_expanded] 1
-[sst_vpaned_height] 453
+[sst_vpaned_height] 462
+@800200
+-Control
+@28
+control.aclk
+@800201
+-AXI4-lite
+@23
+control.araddr[31:0]
+@29
+control.aresetn
+@23
+control.arid[7:0]
+@29
+control.arprot[2:0]
+control.arready
+control.arvalid
+@201
+-
+@23
+control.rd[4:0]
+control.rdata[31:0]
+@29
+control.rvalid
+@23
+control.rid[7:0]
+@29
+control.rready
+control.rresp[1:0]
+@1000201
+-AXI4-lite
+@200
+-
+@28
+control.cant_jump
+control.cant_lui_auipc
+control.cant_process
+control.cant_sys
+control.sync_trap_occuring
+control.trap_occuring
+@200
+-
+@22
+control.pc[31:0]
+@200
+-
+@22
+control.sys[5:0]
+@28
+control.fence[1:0]
+@200
+-
+@22
+control.cfsm[3:0]
+control.pc_reg[31:0]
+control.instruction[31:0]
 @28
 control.fifo_empty
-@22
-control.instruction[31:0]
-control.pc_reg[31:0]
-@28
 control.pull_inst
-@420
-friscv_testbench.timer
+@200
+-
+@28
+control.csr_ready
+control.proc_busy
+control.proc_ready
+@200
+-
+@28
+control.flush_fifo
+control.flush_ack
+control.flush_blocks
+control.flush_reqs
+@1000200
+-Control
+@c00200
+-ISA Regs
+@22
+isa_registers.ctrl_rs1_addr[4:0]
+isa_registers.ctrl_rs1_val[31:0]
+@200
+-
+@22
+isa_registers.ctrl_rs2_addr[4:0]
+isa_registers.ctrl_rs2_val[31:0]
+@200
+-
+@28
+isa_registers.ctrl_rd_wr
+@22
+isa_registers.ctrl_rd_addr[4:0]
+isa_registers.ctrl_rd_val[31:0]
+@200
+-
+@22
+isa_registers.x1_ra[31:0]
+isa_registers.x2_sp[31:0]
+isa_registers.x3_gp[31:0]
+isa_registers.x4_tp[31:0]
+isa_registers.x5_t0[31:0]
+isa_registers.x6_t1[31:0]
+isa_registers.x7_t2[31:0]
+isa_registers.x8_s0_fp[31:0]
+isa_registers.x9_s1[31:0]
+isa_registers.x10_a0[31:0]
+isa_registers.x11_a1[31:0]
+isa_registers.x12_a2[31:0]
+isa_registers.x13_a3[31:0]
+isa_registers.x14_a4[31:0]
+isa_registers.x15_a5[31:0]
+isa_registers.x16_a6[31:0]
+isa_registers.x17_a7[31:0]
+isa_registers.x18_s2[31:0]
+isa_registers.x19_s3[31:0]
+isa_registers.x20_s4[31:0]
+isa_registers.x21_s5[31:0]
+isa_registers.x22_s6[31:0]
+isa_registers.x23_s7[31:0]
+isa_registers.x24_s8[31:0]
+isa_registers.x25_s9[31:0]
+isa_registers.x26_s10[31:0]
+isa_registers.x27_s11[31:0]
+isa_registers.x28_t3[31:0]
+isa_registers.x29_t4[31:0]
+isa_registers.x30_t5[31:0]
+isa_registers.x31_t6[31:0]
+@1401200
+-ISA Regs
+@c00200
+-Fetcher
+@28
+dut.USE_ICACHE.fetcher.aclk
+dut.USE_ICACHE.fetcher.aresetn
+@200
+-
+@28
+dut.USE_ICACHE.fetcher.seq[2:0]
+dut.USE_ICACHE.fetcher.cache_miss_r
+@200
+-
+@22
+dut.USE_ICACHE.fetcher.arid_ffd[7:0]
+dut.USE_ICACHE.fetcher.arid_if[7:0]
+dut.USE_ICACHE.fetcher.arid_mf[7:0]
+@200
+-
+@28
+dut.USE_ICACHE.fetcher.cache_loading
+dut.USE_ICACHE.fetcher.cache_ren
+@22
+dut.USE_ICACHE.fetcher.cache_raddr[31:0]
+dut.USE_ICACHE.fetcher.cache_rdata[31:0]
+dut.USE_ICACHE.fetcher.cache_rid[7:0]
+@28
+dut.USE_ICACHE.fetcher.cache_writing
+[color] 3
+dut.USE_ICACHE.fetcher.cache_hit
+[color] 3
+dut.USE_ICACHE.fetcher.cache_miss
+@200
+-
+@22
+dut.USE_ICACHE.fetcher.ctrl_araddr[31:0]
+dut.USE_ICACHE.fetcher.ctrl_arid[7:0]
+@28
+dut.USE_ICACHE.fetcher.ctrl_arprot[2:0]
+dut.USE_ICACHE.fetcher.ctrl_arready
+dut.USE_ICACHE.fetcher.ctrl_arvalid
+@200
+-
+@22
+dut.USE_ICACHE.fetcher.ctrl_rdata[31:0]
+dut.USE_ICACHE.fetcher.ctrl_rid[7:0]
+@28
+dut.USE_ICACHE.fetcher.ctrl_rready
+dut.USE_ICACHE.fetcher.ctrl_rresp[1:0]
+dut.USE_ICACHE.fetcher.ctrl_rvalid
+@200
+-
+@28
+dut.USE_ICACHE.fetcher.flush_blocks
+dut.USE_ICACHE.fetcher.flush_reqs
+dut.USE_ICACHE.fetcher.flush_ack
+@200
+-
+@22
+dut.USE_ICACHE.fetcher.araddr_ffd[31:0]
+dut.USE_ICACHE.fetcher.araddr_if[31:0]
+dut.USE_ICACHE.fetcher.araddr_mf[31:0]
+@200
+-
+@22
+dut.USE_ICACHE.fetcher.memctrl_araddr[31:0]
+dut.USE_ICACHE.fetcher.memctrl_arid[7:0]
+@28
+dut.USE_ICACHE.fetcher.memctrl_arprot[2:0]
+dut.USE_ICACHE.fetcher.memctrl_arready
+dut.USE_ICACHE.fetcher.memctrl_arvalid
+@200
+-
+@28
+dut.USE_ICACHE.fetcher.pull_addr_if
+dut.USE_ICACHE.fetcher.pull_addr_mf
+dut.USE_ICACHE.fetcher.push_addr_if
+dut.USE_ICACHE.fetcher.push_addr_mf
+@200
+-
+@28
+dut.USE_ICACHE.fetcher.fifo_empty_if
+dut.USE_ICACHE.fetcher.fifo_empty_mf
+dut.USE_ICACHE.fetcher.fifo_full_if
+dut.USE_ICACHE.fetcher.fifo_full_mf
+@200
+-
+@22
+dut.USE_ICACHE.fetcher.rdata_r[31:0]
+@28
+dut.USE_ICACHE.fetcher.read_addr_if
+dut.USE_ICACHE.fetcher.read_addr_mf
+@22
+dut.USE_ICACHE.fetcher.rid_r[7:0]
+@28
+dut.USE_ICACHE.fetcher.rvalid_r
+@1401200
+-Fetcher
 [pattern_trace] 1
 [pattern_trace] 0

@@ -184,7 +184,7 @@ module friscv_dcache
     .afull    (),
     .data_out (awaddr_w),
     .pull     (dcache_wvalid & dcache_wready & dcache_wlast),
-    .empty    (wch_empty)
+    .empty    (wch_empty),
     .aempty   ()
     );
 

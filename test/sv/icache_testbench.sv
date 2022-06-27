@@ -42,6 +42,8 @@ module icache_testbench();
     logic                       srst;
     logic                       error;
     logic                       en;
+    logic                       check_flush_reqs;
+    logic                       check_flush_blocks;
     logic                       flush_reqs;
     logic                       flush_blocks;
     logic                       flush_ack;
@@ -94,26 +96,27 @@ module icache_testbench();
     )
     driver
     (
-        .aclk       (aclk),
-        .aresetn    (aresetn),
-        .srst       (srst),
-        .en         (en),
-        .error      (error),
-        .flush_reqs (flush_reqs),
-        .flush_ack  (flush_ack),
-        .arvalid    (ctrl_arvalid),
-        .arready    (ctrl_arready),
-        .araddr     (ctrl_araddr),
-        .arprot     (ctrl_arprot),
-        .arid       (ctrl_arid),
-        .rvalid     (ctrl_rvalid),
-        .rready     (ctrl_rready),
-        .rid        (ctrl_rid),
-        .rresp      (ctrl_rresp),
-        .rdata      (ctrl_rdata)
+        .aclk               (aclk),
+        .aresetn            (aresetn),
+        .srst               (srst),
+        .en                 (en),
+        .error              (error),
+        .check_flush_reqs   (check_flush_reqs),
+        .check_flush_blocks (check_flush_blocks),
+        .flush_reqs         (flush_reqs),
+        .flush_blocks       (flush_blocks),
+        .flush_ack          (flush_ack),
+        .arvalid            (ctrl_arvalid),
+        .arready            (ctrl_arready),
+        .araddr             (ctrl_araddr),
+        .arprot             (ctrl_arprot),
+        .arid               (ctrl_arid),
+        .rvalid             (ctrl_rvalid),
+        .rready             (ctrl_rready),
+        .rid                (ctrl_rid),
+        .rresp              (ctrl_rresp),
+        .rdata              (ctrl_rdata)
     );
-
-    assign flush_blocks = 1'b0;
 
     friscv_icache
     #(
@@ -245,16 +248,21 @@ module icache_testbench();
         `INFO("Model running...");
     end
 
+
     // Setup time format when printing with $realtime()
     initial $timeformat(-9, 1, "ns", 8);
+
 
     initial begin
         $sformat(tbname, "%s", ``TBNAME);
     end
 
+
     task setup(msg="");
     begin
         en = 0;
+        check_flush_reqs = 0;
+        check_flush_blocks = 0;
         timer = 0;
         req_num = 0;
         srst = 1'b0;
@@ -265,38 +273,15 @@ module icache_testbench();
     end
     endtask
 
+
     task teardown(msg="");
     begin
         // teardown() runs when a test ends
     end
     endtask
 
-    `TEST_SUITE(tbname)
 
-    //  Available macros:"
-    //
-    //    - `MSG("message"):       Print a raw white message
-    //    - `INFO("message"):      Print a blue message with INFO: prefix
-    //    - `SUCCESS("message"):   Print a green message if SUCCESS: prefix
-    //    - `WARNING("message"):   Print an orange message with WARNING: prefix and increment warning counter
-    //    - `CRITICAL("message"):  Print a purple message with CRITICAL: prefix and increment critical counter
-    //    - `ERROR("message"):     Print a red message with ERROR: prefix and increment error counter
-    //
-    //    - `FAIL_IF(aSignal):                 Increment error counter if evaluaton is true
-    //    - `FAIL_IF_NOT(aSignal):             Increment error coutner if evaluation is false
-    //    - `FAIL_IF_EQUAL(aSignal, 23):       Increment error counter if evaluation is equal
-    //    - `FAIL_IF_NOT_EQUAL(aSignal, 45):   Increment error counter if evaluation is not equal
-    //    - `ASSERT(aSignal):                  Increment error counter if evaluation is not true
-    //    - `ASSERT((aSignal == 0)):           Increment error counter if evaluation is not true
-    //
-    //  Available flag:
-    //
-    //    - `LAST_STATUS: tied to 1 is last macro did experience a failure, else tied to 0
-
-    `UNIT_TEST("Randomized traffic without FENCE.i")
-
-        en = 1'b1;
-
+    task run_testcase;
         while (timer<TIMEOUT && req_num<MAX_TRAFFIC && error===1'b0) begin
             timer = timer + 1;
             if (ctrl_arvalid && ctrl_arready) begin
@@ -304,7 +289,10 @@ module icache_testbench();
             end
             @(posedge aclk);
         end
+    endtask
 
+
+    task check_results;
         if (timer >= TIMEOUT)
             `ERROR("Testbench reached timeout");
 
@@ -313,8 +301,60 @@ module icache_testbench();
 
         if (req_num==MAX_TRAFFIC)
             `SUCCESS("Maximum traffic has been issued!");
+    endtask
+
+
+    `TEST_SUITE(tbname)
+
+    `UNIT_TEST("Randomized traffic -flush_reqs -FENCE.i")
+
+        en = 1'b1;
+        check_flush_reqs = 0;
+        check_flush_blocks = 0;
+
+        run_testcase;
+
+        check_results;
 
     `UNIT_TEST_END
+
+    `UNIT_TEST("Randomized traffic +flush_reqs -FENCE.i")
+
+        en = 1'b1;
+        check_flush_reqs = 1;
+        check_flush_blocks = 0;
+
+        run_testcase;
+
+        check_results;
+
+    `UNIT_TEST_END
+
+    `UNIT_TEST("Randomized traffic -flush_reqs +FENCE.i")
+
+        en = 1'b1;
+        check_flush_reqs = 0;
+        check_flush_blocks = 1;
+
+        run_testcase;
+
+        check_results;
+
+    `UNIT_TEST_END
+
+    /*
+    `UNIT_TEST("Randomized traffic +flush_reqs +FENCE.i")
+
+        en = 1'b1;
+        check_flush_reqs = 1;
+        check_flush_blocks = 1;
+
+        run_testcase;
+
+        check_results;
+
+    `UNIT_TEST_END
+    */
 
     `TEST_SUITE_END
 

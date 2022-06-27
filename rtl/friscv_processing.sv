@@ -203,7 +203,7 @@ module friscv_processing
             .data_out (proc_instbus_q),
             .pull     (proc_ready_q),
             .empty    (queue_empty),
-            .aempty   (),
+            .aempty   ()
         );
 
         assign proc_ready_p = !queue_full;

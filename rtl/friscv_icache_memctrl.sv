@@ -147,7 +147,7 @@ module friscv_icache_memctrl
     // TODO: Fetch the address rounded to cache line boundary
     assign mem_araddr = {ctrl_araddr[AXI_ADDR_W-1:ADDR_LSB_W],{ADDR_LSB_W{1'b0}}};
     assign mem_arprot = ctrl_arprot;
-    assign mem_arid = ctrl_arid | AXI_ID_MASK;
+    assign mem_arid = AXI_ID_MASK;
 
 
     friscv_scfifo

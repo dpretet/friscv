@@ -96,23 +96,23 @@ module friscv_icache_fetcher
     typedef enum logic[2:0] {
         IDLE = 0,
         SERVE = 1,
-        LOAD = 2,
-        MISSED = 3,
-        FLUSH = 4
+        MISSED = 2,
+        LOAD = 3
     } seq_fsm;
 
     seq_fsm seq;
 
-    // Sync reset controlled on flush request
-    logic                     flush_fifo;
-
     // Signals driving the FIFO buffering the to-fetch instruction
     logic                     fifo_full_if;
+    logic                     read_addr_if;
     logic                     pull_addr_if;
+    logic                     push_addr_if;
     logic                     fifo_empty_if;
     // Signals driving the missed-fetch instruction
     logic                     fifo_full_mf;
+    logic                     read_addr_mf;
     logic                     pull_addr_mf;
+    logic                     push_addr_mf;
     logic                     fifo_empty_mf;
     logic                     rvalid_r;
 
@@ -162,16 +162,19 @@ module friscv_icache_fetcher
         .aclk     (aclk),
         .aresetn  (aresetn),
         .srst     (srst),
-        .flush    (flush_fifo | flush_reqs),
+        .flush    (flush_blocks | flush_reqs),
         .data_in  ({ctrl_arid, ctrl_araddr}),
-        .push     (ctrl_arvalid),
+        .push     (push_addr_if),
         .full     (fifo_full_if),
         .afull    (),
         .data_out ({arid_if, araddr_if}),
-        .pull     (pull_addr_if & ctrl_rready & !cache_loading),
+        .pull     (pull_addr_if),
         .empty    (fifo_empty_if),
         .aempty   ()
     );
+
+    assign push_addr_if = ctrl_arvalid;
+    assign pull_addr_if = read_addr_if & ctrl_rready & !cache_loading;
 
     // FFD stage to propagate potential addr/id to fetch
     // later in cache miss
@@ -201,22 +204,25 @@ module friscv_icache_fetcher
         .aclk     (aclk),
         .aresetn  (aresetn),
         .srst     (srst),
-        .flush    (flush_fifo | flush_reqs),
+        .flush    (flush_blocks | flush_reqs),
         .data_in  ({arid_ffd, araddr_ffd}),
-        .push     (cache_miss | cache_miss_r & cache_hit),
+        .push     (push_addr_mf),
         .full     (fifo_full_mf),
         .afull    (),
         .data_out ({arid_mf, araddr_mf}),
-        .pull     (pull_addr_mf & ctrl_rready),
+        .pull     (pull_addr_mf),
         .empty    (fifo_empty_mf),
         .aempty   ()
     );
+
+    assign push_addr_mf = cache_miss | cache_miss_r & cache_hit;
+    assign pull_addr_mf = read_addr_mf & ctrl_rready;
 
     // Read cache when the FIFO is filled or when missed-fetch instruction
     // occured, but never if the cache is rebooting.
     assign cache_ren = ((~fifo_empty_if && (seq==IDLE && !cache_loading || seq==SERVE)) ||
                         (~fifo_empty_mf && (seq==MISSED))
-                       ) ? ~flush_reqs & ctrl_rready : 1'b0;
+                       ) ? ~flush_reqs & !flush_blocks & ctrl_rready : 1'b0;
 
     // Multiplexer stage to drive missed-fetch or to-fetch requests
     assign cache_raddr = (~fifo_empty_mf) ? araddr_mf : araddr_if;
@@ -231,22 +237,20 @@ module friscv_icache_fetcher
     always @ (posedge aclk or negedge aresetn) begin
 
         if (~aresetn) begin
-            pull_addr_if <= 1'b0;
-            pull_addr_mf <= 1'b0;
+            read_addr_if <= 1'b0;
+            read_addr_mf <= 1'b0;
             memctrl_arvalid <= 1'b0;
             memctrl_araddr <= {AXI_ADDR_W{1'b0}};
             memctrl_arid <= {AXI_ID_W{1'b0}};
-            flush_fifo <= 1'b0;
             flush_ack <= 1'b0;
             cache_miss_r <= 1'b0;
             seq <= IDLE;
         end else if (srst) begin
-            pull_addr_if <= 1'b0;
-            pull_addr_mf <= 1'b0;
+            read_addr_if <= 1'b0;
+            read_addr_mf <= 1'b0;
             memctrl_arvalid <= 1'b0;
             memctrl_araddr <= {AXI_ADDR_W{1'b0}};
             memctrl_arid <= {AXI_ID_W{1'b0}};
-            flush_fifo <= 1'b0;
             flush_ack <= 1'b0;
             cache_miss_r <= 1'b0;
             seq <= IDLE;
@@ -255,27 +259,28 @@ module friscv_icache_fetcher
             if (flush_ack) begin
                 // flush is done in 1 cycle in fetcher, wait req
                 // deassertion then go back to IDLE to reboot
-                flush_fifo <= 1'b0;
                 if (flush_blocks==1'b0) begin
                     `ifdef USE_SVL
                     log.debug("Finished flush procedure");
                     `endif
-                    pull_addr_if <= 1'b1;
                     flush_ack <= 1'b0;
-                    seq <= IDLE;
                 end
-            end else if (flush_blocks) begin
-                pull_addr_if <= 1'b0;
-                pull_addr_mf <= 1'b0;
-                flush_fifo <= 1'b1;
+            end else if (flush_blocks || flush_blocks) begin
+                read_addr_if <= 1'b0;
+                read_addr_mf <= 1'b0;
                 flush_ack <= 1'b1;
+                cache_miss_r <= 1'b0;
+                memctrl_arvalid <= 1'b0;
+                memctrl_araddr <= {AXI_ADDR_W{1'b0}};
+                memctrl_arid <= {AXI_ID_W{1'b0}};
+                seq <= IDLE;
             end else begin
 
                 case (seq)
                     // Wait for the address requests from the instruction fetcher
                     default: begin
-                        pull_addr_if <= 1'b1;
-                        pull_addr_mf <= 1'b0;
+                        read_addr_if <= 1'b1;
+                        read_addr_mf <= 1'b0;
                         cache_miss_r <= 1'b0;
                         if (~fifo_empty_if && !cache_loading) begin
                             `ifdef USE_SVL
@@ -289,9 +294,9 @@ module friscv_icache_fetcher
                     SERVE: begin
                         // Move back to IDLE if ARID changed, meaning the
                         // control is jumping to another memory location
-                        if (flush_reqs) begin
-                            pull_addr_if <= 1'b0;
-                            pull_addr_mf <= 1'b0;
+                        if (flush_reqs || flush_blocks) begin
+                            read_addr_if <= 1'b0;
+                            read_addr_mf <= 1'b0;
                             seq <= IDLE;
                         // As soon a cache miss is detected, stop to pull the
                         // FIFO and move to read the AXI4 interface to grab the
@@ -301,7 +306,7 @@ module friscv_icache_fetcher
                             log.debug("Cache miss");
                             `endif
                             cache_miss_r <= 1'b1;
-                            pull_addr_if <= 1'b0;
+                            read_addr_if <= 1'b0;
                             memctrl_arvalid <= 1'b1;
                             memctrl_araddr <= araddr_ffd;
                             memctrl_arid <= arid_ffd;
@@ -321,9 +326,9 @@ module friscv_icache_fetcher
                     MISSED: begin
                         // Move back to IDLE if ARID changed, meaning the
                         // control is jumping to another memory location
-                        if (flush_reqs) begin
-                            pull_addr_if <= 1'b0;
-                            pull_addr_mf <= 1'b0;
+                        if (flush_reqs || flush_blocks) begin
+                            read_addr_if <= 1'b0;
+                            read_addr_mf <= 1'b0;
                             seq <= IDLE;
                         // As soon a cache miss is detected, stop to pull the
                         // FIFO and move to read the AXI4 interface to grab the
@@ -333,7 +338,7 @@ module friscv_icache_fetcher
                             log.debug("Cache miss");
                             `endif
                             cache_miss_r <= 1'b1;
-                            pull_addr_mf <= 1'b0;
+                            read_addr_mf <= 1'b0;
                             memctrl_arvalid <= 1'b1;
                             memctrl_araddr <= araddr_ffd;
                             memctrl_arid <= arid_ffd;
@@ -344,15 +349,16 @@ module friscv_icache_fetcher
                             `ifdef USE_SVL
                             log.debug("Go to to-fetch state");
                             `endif
-                            pull_addr_if <= 1'b1;
-                            pull_addr_mf <= 1'b0;
+                            read_addr_if <= 1'b1;
+                            read_addr_mf <= 1'b0;
                             seq <= SERVE;
                         // When empty, go back to IDLE to wait new requests
                         end else if (fifo_empty_mf) begin
                             `ifdef USE_SVL
                             log.debug("Go back to IDLE");
                             `endif
-                            pull_addr_mf <= 1'b0;
+                            read_addr_if <= 1'b1;
+                            read_addr_mf <= 1'b0;
                             seq <= IDLE;
                         end
                     end
@@ -371,7 +377,7 @@ module friscv_icache_fetcher
                         // If a reboot has been initiated, move back to IDLE
                         // to avoid a race condition which will fetch twice
                         // the next first instruction
-                        if (flush_reqs) begin
+                        if (flush_reqs || flush_blocks) begin
                             seq <= IDLE;
                             cache_miss_r <= 1'b0;
                             memctrl_arvalid <= 1'b0;
@@ -381,7 +387,7 @@ module friscv_icache_fetcher
                             `ifdef USE_SVL
                             log.debug("Go to missed-fetch state");
                             `endif
-                            pull_addr_mf <= 1'b1;
+                            read_addr_mf <= 1'b1;
                             cache_miss_r <= 1'b0;
                             seq <= MISSED;
                         end
@@ -408,7 +414,7 @@ module friscv_icache_fetcher
             rvalid_r <= 1'b0;
             rid_r <= {AXI_ID_W{1'b0}};
             rdata_r <= {ILEN{1'b0}};
-        end else if (srst) begin
+        end else if (srst | flush_blocks) begin
             rvalid_r <= 1'b0;
             rid_r <= {AXI_ID_W{1'b0}};
             rdata_r <= {ILEN{1'b0}};
