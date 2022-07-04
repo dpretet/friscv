@@ -20,7 +20,7 @@ NO_VCD=0
 # Check X31 used to detect testcase execution error
 ERROR_STATUS_X31=1
 
-source ../common/functions.run.sh
+source ../common/functions.sh
 
 
 #------------------------------------------------------------------------------

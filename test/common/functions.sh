@@ -45,7 +45,8 @@ TC=
 NO_COMPILE=0
 # INTERACTIVE enable a UART to read/write from Verilator
 [[ -z $INTERACTIVE ]] && INTERACTIVE=0
-
+# Used to print the testcase name in svut flow
+[[ -z $FLOW_NAME ]] && FLOW_NAME="FRISCV"
 #------------------------------------------------------------------------------
 
 
@@ -54,10 +55,12 @@ NO_COMPILE=0
 #------------------------------------------------------------------------------
 clean() {
     make -C ./tests clean
+    rm -fr build
     rm -f ./rv*.*v
     rm -f ./*.vcd
     rm -f ./*.txt
     rm -f data.v
+    rm -f ./*.out
     exit 0
 }
 #------------------------------------------------------------------------------
@@ -72,10 +75,11 @@ run_tests() {
     for test in $1; do
 
         # Convert the verilog content into a file to init the RAM
+        # and grab first address written, expected to be the boot adddress
         BOOT_ADDR=$(../common/bin2hex.py "$test" test.v $INST_PER_LINE)
 
         # Get test name by removing the extension
-        test_file=$(basename $test)
+        test_file=$(basename "$test")
         test_name=${test_file%%.*}
 
         # Print testcase description and its configuration
@@ -87,12 +91,12 @@ run_tests() {
         echo "  - CACHE_BLOCK_W:    $CACHE_BLOCK_W"
         echo "  - TIMEOUT:          $TIMEOUT"
         echo "  - TB_CHOICE:        $TB_CHOICE (0=CORE, 1=PLATFORM)"
-        echo "  - TCNAME:           ${test_name}"
+        echo "  - TCNAME:           $test_name"
         echo "  - SIMULATOR:        $SIM"
         echo "  - INTERACTIVE:      $INTERACTIVE"
         echo "  - ERROR_STATUS_X31: $ERROR_STATUS_X31"
         if [[ -n $NO_RAM_LOG ]]; then
-            echo "  - NO_RAM_LOG:    $NO_RAM_LOG"
+            echo "  - NO_RAM_LOG:       $NO_RAM_LOG"
         fi
 
         # build defines list passed to the testbench
@@ -105,6 +109,7 @@ run_tests() {
             SIM="verilator"
         fi
 
+        DEFINES="${DEFINES}TCNAME=$FLOW_NAME;"
         DEFINES="${DEFINES}CACHE_BLOCK_W=$CACHE_BLOCK_W;"
         DEFINES="${DEFINES}BOOT_ADDR=$BOOT_ADDR;"
         DEFINES="${DEFINES}XLEN=$XLEN;"
@@ -117,7 +122,6 @@ run_tests() {
         if [[ -n $NO_RAM_LOG ]]; then
             DEFINES="${DEFINES}NO_RAM_LOG=$NO_RAM_LOG;"
         fi
-        DEFINES="${DEFINES}TCNAME=${test_name}"
 
         # Execute the testcase with SVUT
         svutRun -t ./friscv_testbench.sv \
@@ -157,16 +161,9 @@ run_testsuite() {
     # Erase first the temporary files
     rm -f ./test*.v
     rm -f ./*.log
-    rm -f ./*.out
-    rm -f ./*.o
-    rm -f ./*.vpi
 
     # Execute the testsuite
     run_tests "$@"
-
-    # Clean-up before exiting
-    rm -f ./*.vcd
-    rm -f ./*.out
 
     # Check status of the execution
     check_status

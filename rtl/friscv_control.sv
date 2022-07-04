@@ -314,7 +314,7 @@ module friscv_control
     );
 
     assign pull_inst = (~cant_jump && ~cant_process && ~cant_lui_auipc && ~cant_sys &&
-                        ~fifo_empty && (cfsm==FETCH) && ~trap_occuring) ? 1'b1 : 1'b0;
+                        (cfsm==FETCH) && ~trap_occuring) ? 1'b1 : 1'b0;
 
     ///////////////////////////////////////////////////////////////////////////
     //
@@ -420,7 +420,7 @@ module friscv_control
     assign pc_jalr = $signed(ctrl_rs1_val) + $signed({{20{imm12[11]}}, imm12});
 
     // For all branching instruction
-    assign pc_branching =  $signed(pc_reg) + $signed({{19{imm12[11]}}, imm12, 1'b0});
+    assign pc_branching = $signed(pc_reg) + $signed({{19{imm12[11]}}, imm12, 1'b0});
 
     // Program counter switching logic
     assign pc = (cfsm==BOOT)                ? pc_reg :
@@ -905,9 +905,9 @@ module friscv_control
             ctrl_rd_addr <= 5'b0;
             ctrl_rd_val <= {XLEN{1'b0}};
         end else begin
-            ctrl_rd_wr <=  (cfsm!=FETCH)                                ? 1'b0 :
-                           (pull_inst && (auipc || jal || jalr || lui)) ? 1'b1 :
-                                                                          1'b0 ;
+            ctrl_rd_wr <=  (cfsm!=FETCH)                                               ? 1'b0 :
+                           (pull_inst && !fifo_empty && (auipc || jal || jalr || lui)) ? 1'b1 :
+                                                                                         1'b0 ;
             ctrl_rd_addr <= rd;
 
             ctrl_rd_val <= ((jal || jalr) && ~pull_inst) ? pc_jal_saved :

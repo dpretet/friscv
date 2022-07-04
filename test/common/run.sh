@@ -14,7 +14,7 @@
 # Don't assert a testbench error if X31 is asserted
 ERROR_STATUS_X31=1
 
-source ../common/functions.run.sh
+source ../common/functions.sh
 
 
 #------------------------------------------------------------------------------

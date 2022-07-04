@@ -5,29 +5,16 @@
 This testsuite is composed by several applications, stressing out C toolchain and
 benchmarking the core.
 
-The testbench provides two configurations:
-
-- core: the hart is connected upon an AXI4-lite dual port RAM model, the instruction
-  bus on one port, the data bus on the other
-- platform: the core is connected upon an AXI4 crossbar with some peripherals
-  (GPIOs, UART, CLINT) and share the same master interface to the AXI4-lite RAM molde
+The testbench provides onl;y "platform" support (CPU + AXI4 interconnect). The application
+are interactive and require user inputs.
 
 To execute the flow:
 
 ```bash
-./run.sh --tb "CORE" // to run the core only simulation
-./run.sh --tb "PLATFORM" // to run the platform, the core + the peripherals
+./run.sh --tc tests/repl.v
 ```
 
-This will make all programs in tests\* folders, copy the RAM content generated,
-convert it to Verilog format then execute SVUT to run the testbench on each
-testcase.
-
-For more information about the bash front-end flow:
-
-```bash
-./run.sh -h
-```
+For the moment only a REPL aaplication is available and under desgn.
 
 All the testcases rely on [SVUT](https://github.com/dpretet/svut) and use
 [Icarus Verilog](http://iverilog.icarus.com) or [Verilator](https://github.com/verilator).

@@ -1,18 +1,20 @@
 [*]
 [*] GTKWave Analyzer v3.3.107 (w)1999-2020 BSI
-[*] Tue Jun 28 20:51:08 2022
+[*] Sat Jul  2 14:04:26 2022
 [*]
 [dumpfile] "/Users/damien/workspace/hdl/friscv/test/wba_testsuite/tests/rv32ui-p-test3.vcd"
-[dumpfile_mtime] "Tue Jun 28 20:21:51 2022"
-[dumpfile_size] 1268329
+[dumpfile_mtime] "Sat Jul  2 14:02:12 2022"
+[dumpfile_size] 743854
 [savefile] "/Users/damien/workspace/hdl/friscv/test/common/debug_core_icarus.gtkw"
-[timestart] 801490
+[timestart] 0
 [size] 2560 1440
 [pos] -1 -1
-*-13.904762 861000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-14.997102 101000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] dut.
 [treeopen] dut.USE_ICACHE.
 [treeopen] dut.USE_ICACHE.icache.
+[treeopen] friscv_testbench.
+[treeopen] friscv_testbench.genblk1.
 [sst_width] 339
 [signals_width] 256
 [sst_expanded] 1
@@ -21,32 +23,50 @@
 -Control
 @28
 control.aclk
-@800201
+@c00200
 -AXI4-lite
-@23
+@22
 control.araddr[31:0]
-@29
+@28
 control.aresetn
-@23
+@22
 control.arid[7:0]
-@29
+@28
 control.arprot[2:0]
 control.arready
 control.arvalid
-@201
+@200
 -
-@23
+@22
 control.rd[4:0]
 control.rdata[31:0]
-@29
+@28
 control.rvalid
-@23
+@22
 control.rid[7:0]
-@29
+@28
 control.rready
 control.rresp[1:0]
-@1000201
+@1401200
 -AXI4-lite
+@23
+friscv_testbench.genblk1.axi4l_ram.p1_araddr_s[31:0]
+friscv_testbench.genblk1.axi4l_ram.p1_arid[7:0]
+friscv_testbench.genblk1.axi4l_ram.p1_arid_s[7:0]
+@29
+friscv_testbench.genblk1.axi4l_ram.p1_arprot[2:0]
+friscv_testbench.genblk1.axi4l_ram.p1_arready
+@23
+friscv_testbench.genblk1.axi4l_ram.p1_arready_lfsr[31:0]
+@29
+friscv_testbench.genblk1.axi4l_ram.p1_arvalid
+@23
+friscv_testbench.genblk1.axi4l_ram.p1_rdata[127:0]
+friscv_testbench.genblk1.axi4l_ram.p1_rid[7:0]
+@29
+friscv_testbench.genblk1.axi4l_ram.p1_rready
+friscv_testbench.genblk1.axi4l_ram.p1_rresp[1:0]
+friscv_testbench.genblk1.axi4l_ram.p1_rvalid
 @200
 -
 @28

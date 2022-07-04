@@ -595,7 +595,7 @@ module friscv_testbench(
         // Check program hasn't been aborted to early
         $sformat(stop_msg, "PC=0x%0x", pc);
         `INFO(stop_msg);
-        `ASSERT((pc>testcase_start_addr), "Program stopped too early");
+        `ASSERT((pc>testcase_start_addr), "Program counter stopped too early");
 
         // Detect errors with X31
         $sformat(stop_msg, "X31=0x%0x", error_status_reg);
