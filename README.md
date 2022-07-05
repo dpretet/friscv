@@ -24,10 +24,10 @@ FRISCV is a SystemVerilog implementation of the [RISCV ISA](https://riscv.org):
 - Machine-mode only
 - Implement a 3-stage pipeline
 - Support global and software interrupts
-- Implement timer
+- Clint extension
 - In-order execution
-- Provide an instruction cache
-- Use AXI4-lite for instruction and data bus
+- Instruction & data cache
+- AXI4-lite for instruction and data bus
 
 The core is [compliant](./test/riscv-tests/README.md) with the official RISCV
 testsuite.
@@ -48,8 +48,8 @@ The core is compact and composed by:
 - the control unit, fetching and sequencing the instructions
 - the processing unit, executing the arithmetic and memory access instructions
 - the cache units
-- the CSR unit, providing the registers to connect the features and extensions
-- the ISA registers, shared between control and processing units
+- the CSR unit
+- the ISA registers
 
 More details of the architecture can be found in the:
 - Architecture [chapter](./doc/architecture.md).
@@ -58,44 +58,39 @@ More details of the architecture can be found in the:
 
 ## Verification environment
 
-The core is verified with Assembler within two testsuites, present in
-[test](./test) folder:
+The core is verified with several testsuites, present in [test](./test) folder:
 - [White-Box Assembler Testsuite](./test/wba_testsuite/README.md)
 - [RISCV Compliance Testsuite](./test/riscv-tests/README.md)
-- [Apps Testsuite](./test/apps/README.md)
+- [C Testsuite](./test/c_testsuite/README.md)
+- [Apps](./test/apps/README.md)
+- [SV](.test/sv)
 
  The flow relies on:
 
 - [Icarus Verilog 11](https://github.com/steveicarus/iverilog)
 - [Verilator 4.2](https://github.com/verilator)
-- [SVUT](https://github.com/dpretet/svut) to configure and execute Icarus
+- [SVUT](https://github.com/dpretet/svut)
 
-The RISCV compliance testsuite is the official testsuite provided by RISCV
-foundation, adapted the core and its environment platform. The White-Box ASM
-testsuite has been developed for the purpose of this project and targets
-specific instructions sequence.
 
 ## Validation environment
 
 The core has not been yet tested on hardware, but a synthesis flow based in [Yosys](https://github.com/YosysHQ/yosys)
-is available in [syn](./syn) folder.
+is available in [syn](./syn) folder. First sets of synthesis with Vivado were OK.
 
 
-# [Development plan](doc/project_mgt.md)
+# Development plan
 
-Ongoing:
-
-- Development of ASM and C programs to test the processor with real use cases and benchmark it
+- [HW development plan](doc/project_mgt_hw.md)
+- [SW development plan](doc/project_mgt_sw.md)
 
 Next:
 
+- Data cache stage (under dev)
 - Counters
 - Supervisor & user mode
-- Support F extension with Berkeley Hardfloat core
-- Data cache stage
+- Support F extension
 - 64 bits architecture
-- JTAG interface for debugging purpose
-- ... and many more :)
+- JTAG interface
 
 
 # License

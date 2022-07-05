@@ -1,26 +1,16 @@
 # DOING
 
-- [ ] Develop some C/ASM programs
-    - all types of variables what about float double w/ the F extension?
-    - how to link putchar, printf, getchar
-    - function call by value or by address
-    - test return
-    - pointers on int, char & function, pointer to pointer
-    - Benchmark (Dhrystone or others)
-    - Binary tree
-    - Matrix computation
-    - mean of an array
-
 # BACKLOG
 
 N.B. : Any new feature and ISA should be carefully study to ensure a proper
 exception and interrupt handling
 
 Misc.
-- [ ] Minimalistic Unix
-    - tool to trace: https://github.com/janestreet/magic-trace
+- [ ] Deactivate trace with define
+- [ ] Rework pipeline to avoid double not
 - [ ] Add counters
 - [ ] 64 bits support
+- [ ] Atomic operations
 - [ ] Support privileged instructions, supervisor mode & user mode
       https://danielmangum.com/posts/risc-v-bytes-privilege-levels/
       https://mobile.twitter.com/hasheddan/status/1514581031092899843?s=12&t=MMNTY_iRC48CjykLQBdTkQ
@@ -32,27 +22,37 @@ Misc.
         - https://tomverbeure.github.io/2021/07/18/VexRiscv-OpenOCD-and-Traps.html
         - https://tomverbeure.github.io/2022/02/20/GDBWave-Post-Simulation-RISCV-SW-Debugging.html
         - https://github.com/BLangOS/VexRiscV_with_HW-GDB_Server
-- [ ] Processor profiling
-    - https://github.com/LucasKl/riscv-function-profiling
-- [ ] Removed the 2 LSBs in instruction cache while always 2'b11 (6.25% saving)
-- [ ] AXI4 Infrastructure
-    - [ ] Check des IDs de control sent. Should be incremented in memory
-          controller and not used directly
-    - [ ] Write completion usage in memfy or dcache? Could raise an exception?
-    - [ ] Support different clock for AXI4 memory interface, cache and internal core
 - [ ] Support PLIC (only for multi-core)
 - [ ] Support CLIC controller
+- [ ] UART: Support 9/10 bits & parity
+
+
+AXI4 Infrastructure
+- [ ] Support different clock for AXI4 memory interface, cache and internal core
+- [ ] Out of order support in AXI
+- [ ] Support ECC bits in core/crossbar 
+- [ ] Rework GPIOs sub-system
+    - [ ] Reduce latency in switching logic
+    - [ ] Ajouter PERROR sur l’APB, to log on error reporting bus
+
 
 Control:
 - [ ] [Multiple instruction issue](https://www.youtube.com/watch?v=wGpkiNb_V9c)
+- [ ] Enable flow-thru mode in instruction FIFO
+- [ ] Reduce cache jump
+
 
 Processing:
+
+https://www.youtube.com/channel/UCPSsA8oxlSBjidJsSPdpjsQ/videos
+
 - [ ] Scheduler to run multiple operations in parallel
-- [ ] Memfy enhancement
-    - Support outstanding requests
-    - Write completion: how to support BRESP error
-    - Read completion: how to support RRESP error
-    - Detect IO requests to forward info for FENCE execution
+- [ ] Memfy:
+    - [ ] Support outstanding write request
+    - [ ] Manage RRESP/BRESP
+    - [ ] Don’t block write if AW / W are ready
+    - [ ] Don’t block write until BCH but block any further read if pending write (in-order only)
+    - [ ] Detect IO requests to forward info for FENCE execution
 - [ ] Support F extension
 - [ ] Support FENCE if AXI4-lite + OR support
 - Division
@@ -60,37 +60,22 @@ Processing:
     - [ ] Manage pow2 division by shifting
     - [ ] Start division from first non-zero digit
 - [ ] Out-of-order execution
-- [ ] https://www.youtube.com/channel/UCPSsA8oxlSBjidJsSPdpjsQ/videos
+
 
 Cache Stages:
-- Merge FETCH and MISS states in iCache
-- Support outstanding requests
-- Manage RRESP/BRESP
-- Support wrap mode
-- Support width adaptation in iCache
+- [ ] Walk thru FIFO to reduce latency on jump
+- [ ] AXI4 + Wrap mode
 - [ ] Support prefetch: if no jump/branch detected in fetched instructions
       grab the next line, else give a try to fetch the branch address
-- [ ] Implement a data cache stage
-    - Support MSI/MOSI/MESI protocol
-    - None-cachable address
-- [ ] Review flush/reboot in fetcher & memctrl
+- [ ] Implement a L2 cache stage
 - [ ] Support datapath adaptation from memory controller
-- [ ] Enhance cache reboot when ARID changes. Today just flush the FIFO,
-      could restart the whole fetcher stages
-- [ ] Write cache read and cache lines on the same cycle to save latency
+- [ ] Removed the 2 LSBs in instruction cache while always 2'b11 (6.25% saving)
 
 
-To finalize:
-- [ ] Ensure interrupt and trap are correctly supported
-    - race condition when CSR is written and interrupt arrives
-- [ ] UART: Support 9/10 bits & parity
-- [-] VPI for UART:
-    - [X] update SVUT to pass extra string to vvp
-    - [-] module for the agent, instanciating the UART agent
-        - [X] task to initalize the UART agent in the testbench thru APB
-        - [-] function to open a socket and configure it
-        - [-] task to write in UART, reading periodically the socket
-        - [-] task to read the UART (periodically) and send dat to the socket
+dCache
+- [ ] Derive from iCache
+- [ ] Uncachable memory region for IOs region
+- [ ] Write-then-read if same memory address accessed to avoid collision 
 
 
 Verification/Validation:
@@ -98,32 +83,29 @@ Verification/Validation:
 - [ ] Testcases to write in ASM testsuite
     - IRQ & WFI
     - add a IRQ generation in the testbench
-- [ ] Port to LiteX
-- [ ] Define the hardware platform to use
 - [ ] Update synthesis flow
     - [ ] Standard cells library for Yosys
     - [ ] https://github.com/dpretet/ascend-freepdk45/tree/master/lib
     - [ ] https://github.com/chipsalliance/Surelog
     - [ ] https://stackoverflow.com/questions/65534532/how-to-estimation-a-chip-size-with-standard-cell-library
-- [ ] Formal verification tutorial https://zipcpu.com/tutorial/
-- [ ] Prepare a hardware execution environment for preliminary testing
-- [ ] Prepare a hardware execution environment for OS testing
+- [ ] Core config
+    - [ ] Supporter des set de config du core en test bench.
+    - [ ] Faire un test de synthèse selon les configs du core
+- [ ] Error Logger Interface
+    - [ ] Shared bus des CSRs, privilege mode, event, …
+    - [ ] stream the event like a write memory error
+    - [ ] log error in a file
+    - [ ] Support GDB:  https://tomverbeure.github.io/2021/07/18/VexRiscv-OpenOCD-and-Traps.html
+
+
+Hardware Test:
+- [ ] Support LiteX: https://github.com/litex-hub/litex-boards, https://pcotret.gitlab.io/blog/processor_in_litex/ 
+- [ ] Azure: https://www.xilinx.com/products/boards-and-kits/alveo/cloud-solutions/microsoft-azure.html
+- [ ] AWS: https://www.xilinx.com/products/design-tools/acceleration-zone/aws.html
 
 
 # Ideas / Applications
 
-- [ ] Build an Amiga: Emulate M68K and build an emulation platform
-- [ ] Logicstic regression to setup optimized procesor configuration
-- [ ] Possibility to use a program executed upon a testbench or on board
-    - bash front-end, getting a folder. The folder contains the sources and
-      the makefile or just the sources. Can also support only a source or set
-      of sources.
-    - Launch the flow, connect the UART to the DPI or the board, output the
-      processor printf and wait for a key to exit.
-    - Should support sim and hw execution in the same way. Auto search the FPGA
-      and auto-connect the UART
-    - Able to update the FPGA bitstream with the new program
-- [ ] Implement a neural network with the processor and TF lite
 - [ ] Next CPU architecture:
     - Study SIMD architecture
     - Study vector architecture
@@ -131,12 +113,23 @@ Verification/Validation:
     - Many-core / NoC architecture (power/interupt consideration)
     - Support float16 & float8, more generaly low-precision arithmetic like int8...
 - [ ] Build a testing platform to validate IPs
-- [ ] Retro gaming platform
 - [ ] Openlane submission
 
 
 # DONE
 
+- [X] Add Github actions
+- [X] Support unaligned address in APB sub-system
+- [X] Add Clint peripheral
+- [X] Output ISA regs on top level for debug purpose
+- [X] Create a tesbench for iCache
+- [X] Add C testsuite and Apps testsuite (interactive)
+- [X] Add almost empty full flags to scfifo
+- [X] Ensure interrupt and trap are correctly supported
+- [X] Update SVUT to pass extra string to vvp for VPI
+- [X] Review flush/reboot in fetcher & memctrl
+- [X] Enhance cache reboot when ARID changes. Today just flush the FIFO,
+      could restart the whole fetcher stages
 - [X] Make AXI4-lite RAM throtteling
 - [X] Enhance processing unit (CANCELLED: implementation is too big for too few benefits)
         - control checks registers under use in an instruction and knows if can branch, LUI, AUIPC
@@ -145,7 +138,6 @@ Verification/Validation:
 - [X] Support multiple ALUs in parallel, differents extensions (float, mult/div, ...)
 - [X] Better print control status when branching and trapping (MAUSE info)
 - [X] Add Github Actions and deploy CI flow
-- [X] Support both Icarus and Verilator in simulation flow
 - [X] Support both Icarus and Verilator in simulation flow
 - [X] Add M extension
 - [X] Share common sources between ASM and Compliance testsuite
