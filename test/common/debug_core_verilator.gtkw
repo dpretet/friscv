@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.107 (w)1999-2020 BSI
-[*] Sun Jul  3 12:03:02 2022
+[*] Sat Jul 30 17:01:45 2022
 [*]
-[dumpfile] "/Users/damien/workspace/hdl/friscv/test/wba_testsuite/tests/rv32ui-p-test4.vcd"
-[dumpfile_mtime] "Sat Jul  2 14:32:38 2022"
-[dumpfile_size] 738041
+[dumpfile] "/Users/damien/workspace/hdl/friscv/test/c_testsuite/tests/functions.vcd"
+[dumpfile_mtime] "Sat Jul 30 17:00:52 2022"
+[dumpfile_size] 1928718
 [savefile] "/Users/damien/workspace/hdl/friscv/test/common/debug_core_verilator.gtkw"
-[timestart] 676
+[timestart] 461
 [size] 2560 1440
 [pos] -1 -26
-*-3.342152 717 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-5.342152 541 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] friscv_testbench.
 [treeopen] friscv_testbench.friscv_testbench.
 [treeopen] friscv_testbench.friscv_testbench.genblk1.
@@ -21,7 +21,7 @@
 [sst_width] 335
 [signals_width] 247
 [sst_expanded] 1
-[sst_vpaned_height] 491
+[sst_vpaned_height] 387
 @c00200
 -Testbench
 @22
@@ -275,9 +275,7 @@ friscv_testbench.friscv_testbench.genblk1.dut.control.pc_plus4[31:0]
 @28
 friscv_testbench.friscv_testbench.genblk1.dut.control.jump_branch
 friscv_testbench.friscv_testbench.genblk1.dut.control.jal
-@29
 friscv_testbench.friscv_testbench.genblk1.dut.control.jalr
-@28
 friscv_testbench.friscv_testbench.genblk1.dut.control.lui
 friscv_testbench.friscv_testbench.genblk1.dut.control.fence[1:0]
 @22
@@ -320,7 +318,7 @@ friscv_testbench.friscv_testbench.genblk1.dut.processing.proc_busy
 -processing
 @200
 -
-@c00200
+@800200
 -Memfy
 @200
 -
@@ -331,9 +329,6 @@ friscv_testbench.friscv_testbench.genblk1.dut.processing.memfy.memfy_ready
 friscv_testbench.friscv_testbench.genblk1.dut.processing.memfy.memfy_valid
 @200
 -
-@28
-friscv_testbench.friscv_testbench.genblk1.dut.processing.memfy.state
-@200
 -
 @22
 friscv_testbench.friscv_testbench.genblk1.dut.processing.memfy.araddr[31:0]
@@ -368,6 +363,16 @@ friscv_testbench.friscv_testbench.genblk1.dut.processing.memfy.awready
 friscv_testbench.friscv_testbench.genblk1.dut.processing.memfy.awvalid
 @200
 -
+@23
+friscv_testbench.friscv_testbench.genblk1.dut.processing.memfy.wdata[31:0]
+@29
+friscv_testbench.friscv_testbench.genblk1.dut.processing.memfy.wready
+@23
+friscv_testbench.friscv_testbench.genblk1.dut.processing.memfy.wstrb[3:0]
+@29
+friscv_testbench.friscv_testbench.genblk1.dut.processing.memfy.wvalid
+@200
+-
 @22
 friscv_testbench.friscv_testbench.genblk1.dut.processing.memfy.bid[7:0]
 @28
@@ -375,7 +380,15 @@ friscv_testbench.friscv_testbench.genblk1.dut.processing.memfy.bready
 friscv_testbench.friscv_testbench.genblk1.dut.processing.memfy.bresp[1:0]
 [color] 3
 friscv_testbench.friscv_testbench.genblk1.dut.processing.memfy.bvalid
-@1401200
+friscv_testbench.friscv_testbench.genblk1.dut.processing.memfy.memfy_pending_read
+friscv_testbench.friscv_testbench.genblk1.dut.processing.memfy.rd_or_cnt[2:0]
+friscv_testbench.friscv_testbench.genblk1.dut.processing.memfy.waiting_rd_cpl
+friscv_testbench.friscv_testbench.genblk1.dut.processing.memfy.waiting_wr_cpl
+friscv_testbench.friscv_testbench.genblk1.dut.processing.memfy.wr_or_cnt[2:0]
+@200
+-
+-
+@1000200
 -Memfy
 @200
 -

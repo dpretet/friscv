@@ -77,15 +77,8 @@ This testcase executes memory and arithmetic instructions break up by CSR
 accesses. CSR instructions require several cycles to complete, thus could lead
 to failure in control unit.
 
-## Test 6: WFI - Asynchronous Interrupts
+## Test 6: WFI - LOAD/STORE outstanding requests support
 
-This testcase tries to catch up interrupts, external, software and timer interrupts.
-
-To be written.
-
-## Test 7: Traps - Synchronous Interrupts
-
-This testcase tries to catch up synchronous interrupts
-
-To be written.
+This testcase stresses out outstanding requests management in Memfy module when issuing
+multiple write requests.
 

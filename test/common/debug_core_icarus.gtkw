@@ -1,29 +1,28 @@
 [*]
 [*] GTKWave Analyzer v3.3.107 (w)1999-2020 BSI
-[*] Sat Jul  2 14:04:26 2022
+[*] Sun Jul 10 19:22:03 2022
 [*]
-[dumpfile] "/Users/damien/workspace/hdl/friscv/test/wba_testsuite/tests/rv32ui-p-test3.vcd"
-[dumpfile_mtime] "Sat Jul  2 14:02:12 2022"
-[dumpfile_size] 743854
+[dumpfile] "/Users/damien/workspace/hdl/friscv/test/wba_testsuite/tests/rv32ui-p-test2.vcd"
+[dumpfile_mtime] "Sun Jul 10 19:18:25 2022"
+[dumpfile_size] 715085
 [savefile] "/Users/damien/workspace/hdl/friscv/test/common/debug_core_icarus.gtkw"
-[timestart] 0
+[timestart] 559500
 [size] 2560 1440
 [pos] -1 -1
-*-14.997102 101000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
-[treeopen] dut.
-[treeopen] dut.USE_ICACHE.
+*-14.997102 751000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] dut.USE_ICACHE.icache.
 [treeopen] friscv_testbench.
 [treeopen] friscv_testbench.genblk1.
+[treeopen] processing.
 [sst_width] 339
 [signals_width] 256
 [sst_expanded] 1
-[sst_vpaned_height] 462
-@800200
+[sst_vpaned_height] 370
+@c00200
 -Control
 @28
 control.aclk
-@c00200
+@800200
 -AXI4-lite
 @22
 control.araddr[31:0]
@@ -47,23 +46,23 @@ control.rid[7:0]
 @28
 control.rready
 control.rresp[1:0]
-@1401200
+@1000200
 -AXI4-lite
-@23
+@22
 friscv_testbench.genblk1.axi4l_ram.p1_araddr_s[31:0]
 friscv_testbench.genblk1.axi4l_ram.p1_arid[7:0]
 friscv_testbench.genblk1.axi4l_ram.p1_arid_s[7:0]
-@29
+@28
 friscv_testbench.genblk1.axi4l_ram.p1_arprot[2:0]
 friscv_testbench.genblk1.axi4l_ram.p1_arready
-@23
+@22
 friscv_testbench.genblk1.axi4l_ram.p1_arready_lfsr[31:0]
-@29
+@28
 friscv_testbench.genblk1.axi4l_ram.p1_arvalid
-@23
+@22
 friscv_testbench.genblk1.axi4l_ram.p1_rdata[127:0]
 friscv_testbench.genblk1.axi4l_ram.p1_rid[7:0]
-@29
+@28
 friscv_testbench.genblk1.axi4l_ram.p1_rready
 friscv_testbench.genblk1.axi4l_ram.p1_rresp[1:0]
 friscv_testbench.genblk1.axi4l_ram.p1_rvalid
@@ -108,7 +107,7 @@ control.flush_fifo
 control.flush_ack
 control.flush_blocks
 control.flush_reqs
-@1000200
+@1401200
 -Control
 @c00200
 -ISA Regs
@@ -260,5 +259,120 @@ dut.USE_ICACHE.fetcher.rid_r[7:0]
 dut.USE_ICACHE.fetcher.rvalid_r
 @1401200
 -Fetcher
+@800200
+-Memfy
+@28
+processing.memfy.aclk
+processing.memfy.aresetn
+@200
+-
+@22
+processing.memfy.awaddr[31:0]
+processing.memfy.awid[7:0]
+@28
+processing.memfy.awvalid
+processing.memfy.awready
+@200
+-
+@22
+processing.memfy.wdata[31:0]
+@28
+processing.memfy.wready
+@22
+processing.memfy.wstrb[3:0]
+@28
+processing.memfy.wvalid
+@200
+-
+@22
+processing.memfy.bid[7:0]
+@28
+processing.memfy.bvalid
+processing.memfy.bready
+processing.memfy.bresp[1:0]
+@200
+-
+@22
+processing.memfy.araddr[31:0]
+@28
+processing.memfy.arready
+processing.memfy.arvalid
+@200
+-
+@22
+processing.memfy.rdata[31:0]
+@28
+processing.memfy.rresp[1:0]
+@22
+processing.memfy.rid[7:0]
+@28
+processing.memfy.rready
+processing.memfy.rvalid
+@200
+-
+@29
+[color] 7
+processing.memfy.state[1:0]
+@28
+processing.memfy.memfy_valid
+processing.memfy.memfy_ready
+processing.memfy.memfy_ready_fsm
+@22
+processing.memfy.memfy_instbus[85:0]
+@200
+-
+@28
+processing.memfy.memfy_rd_wr
+@22
+processing.memfy.memfy_rd_addr[4:0]
+processing.memfy.memfy_rd_strb[3:0]
+processing.memfy.memfy_rd_val[31:0]
+@200
+-
+@22
+processing.memfy.memfy_rs1_addr[4:0]
+processing.memfy.memfy_rs1_val[31:0]
+@200
+-
+@22
+processing.memfy.memfy_rs2_addr[4:0]
+processing.memfy.memfy_rs2_val[31:0]
+@200
+-
+@28
+processing.memfy.two_phases
+processing.memfy.cross_boundary
+processing.memfy.offset[1:0]
+@22
+processing.memfy.opcode[6:0]
+processing.memfy.opcode_r[6:0]
+@28
+processing.memfy.funct3[2:0]
+processing.memfy.funct3_r[2:0]
+@22
+processing.memfy.imm12[11:0]
+@200
+-
+@22
+processing.memfy.rd[4:0]
+processing.memfy.rd_r[4:0]
+processing.memfy.rs1[4:0]
+processing.memfy.rs2[4:0]
+@200
+-
+@28
+processing.memfy.load_misaligned
+processing.memfy.store_misaligned
+processing.memfy.memfy_exceptions[1:0]
+@22
+processing.memfy.memfy_fenceinfo[3:0]
+@200
+-
+@28
+processing.memfy.max_or
+processing.memfy.or_counter[2:0]
+processing.memfy.waiting_wr_cpl
+@1000200
+-Memfy
 [pattern_trace] 1
 [pattern_trace] 0

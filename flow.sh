@@ -4,7 +4,7 @@
 # -u: treat unset variable as an error
 # -f: disable filename expansion upon seeing *, ?, ...
 # -o pipefail: causes a pipeline to fail if any command fails
-set -eu -o pipefail
+set -e -o pipefail
 
 # Current script path; doesn't support symlink
 FRISCV_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
@@ -137,7 +137,14 @@ main() {
             exit 1
         fi
 
-        if [ $2 == "wba-testsuite" ]; then
+        if [[ -z "$2" ]]; then
+            printerror "Plese specify a testsuite to run:"
+            echo "  - wba-testsuite"
+            echo "  - riscv-testsuite"
+            echo "  - c-testsuite"
+        fi
+
+        if [ "$2" == "wba-testsuite" ]; then
             echo ""
             printinfo "Start WBA Simulation flow"
             cd "${FRISCV_DIR}/test/wba_testsuite"
@@ -148,7 +155,7 @@ main() {
             ./run.sh --simulator icarus --tb PLATFORM --nocompile 1
         fi
 
-        if [ $2 == "riscv-testsuite" ]; then
+        if [ "$2" == "riscv-testsuite" ]; then
             echo ""
             printinfo "Start RISCV Compliance flow"
             cd "${FRISCV_DIR}/test/riscv-tests"
@@ -159,7 +166,7 @@ main() {
             ./run.sh --simulator icarus --tb PLATFORM --nocompile 1
         fi
 
-        if [ $2 == "c-testsuite" ]; then
+        if [ "$2" == "c-testsuite" ]; then
             echo ""
             printinfo "Start C Simulation flow"
             cd "${FRISCV_DIR}/test/c_testsuite"

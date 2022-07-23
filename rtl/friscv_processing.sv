@@ -99,6 +99,7 @@ module friscv_processing
     logic                        m_ready;
     logic                        alu_ready;
     logic                        memfy_ready;
+    logic                        memfy_pending_read;
     logic                        i_inst;
     logic                        ls_inst;
     logic                        m_inst;
@@ -121,22 +122,26 @@ module friscv_processing
     generate
     if (INST_BUS_PIPELINE || INST_QUEUE_DEPTH) begin: BUSY_FLAG_WITH_PIPE
 
+        logic proc_busy_r;
+
         always @ (posedge aclk or negedge aresetn) begin
             if (!aresetn) begin
-                proc_busy <= 1'b0;
+                proc_busy_r <= 1'b0;
             end else if (srst) begin
-                proc_busy <= 1'b0;
+                proc_busy_r <= 1'b0;
             end else begin
-                if (proc_valid) begin
-                    proc_busy <= 1'b1;
+                if (proc_valid || memfy_pending_read) begin
+                    proc_busy_r <= 1'b1;
                 end else if (!proc_valid_q && proc_ready_q) begin
-                    proc_busy <= 1'b0;
+                    proc_busy_r <= 1'b0;
                 end
             end
         end
 
+        assign proc_busy = proc_busy_r | memfy_pending_read;
+
     end else begin: BUSY_FLAG_WITHOUT_PIPE
-        assign proc_busy = !proc_ready;
+        assign proc_busy = !proc_ready || memfy_pending_read;
     end
     endgenerate
 
@@ -239,9 +244,9 @@ module friscv_processing
 
     assign m_inst = (opcode==`MULDIV && funct7==7'b0000001) ? 1'b1 : 1'b0;
 
-    assign alu_valid = proc_valid_q & memfy_ready & m_ready & i_inst;
+    assign alu_valid = proc_valid_q & memfy_ready & m_ready & i_inst & !memfy_pending_read;
     assign memfy_valid = proc_valid_q & alu_ready & m_ready & ls_inst;
-    assign m_valid = proc_valid_q & alu_ready & memfy_ready & m_inst;
+    assign m_valid = proc_valid_q & alu_ready & memfy_ready & m_inst & !memfy_pending_read;
 
     assign proc_ready_q = alu_ready & memfy_ready & m_ready;
 
@@ -290,6 +295,7 @@ module friscv_processing
         .srst               (srst),
         .memfy_valid        (memfy_valid),
         .memfy_ready        (memfy_ready),
+        .memfy_pending_read (memfy_pending_read),
         .memfy_fenceinfo    (proc_fenceinfo),
         .memfy_instbus      (proc_instbus_q),
         .memfy_exceptions   (memfy_exceptions),
@@ -364,7 +370,7 @@ module friscv_processing
     // Exceptions mapping
     //
     ///////////////////////////////////////////////////////////////////////////
-    
+
     assign proc_exceptions[0+:2] = memfy_exceptions;
 
 endmodule

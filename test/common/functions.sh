@@ -109,7 +109,7 @@ run_tests() {
             SIM="verilator"
         fi
 
-        DEFINES="${DEFINES}TCNAME=$FLOW_NAME;"
+        DEFINES="${DEFINES}TCNAME=$test_name;"
         DEFINES="${DEFINES}CACHE_BLOCK_W=$CACHE_BLOCK_W;"
         DEFINES="${DEFINES}BOOT_ADDR=$BOOT_ADDR;"
         DEFINES="${DEFINES}XLEN=$XLEN;"

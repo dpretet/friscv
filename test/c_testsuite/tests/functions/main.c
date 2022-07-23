@@ -23,6 +23,7 @@ int main() {
      *  Test Fibonnaci, a recursive function
      */
 
+    /*
     temp = fibonacci(0);
     if (res0 != temp)
         asm("addi t6,t6,1");
@@ -30,11 +31,13 @@ int main() {
     temp = fibonacci(1);
     if (res1 != temp)
         inc_error();
+     */
 
     temp = fibonacci(2);
     if (res2 != temp)
         asm("addi t6,t6,1");
 
+    /*
     temp = fibonacci(3);
     if (res3 != temp)
         asm("addi t6,t6,1");
@@ -55,10 +58,12 @@ int main() {
     if (res7 != temp)
         asm("addi t6,t6,1");
 
+        */
     /*
      *  Test status, a static variable of get_status()
      */
 
+    /*
     temp = get_status();
     if (temp == 0)
         asm("addi t6,t6,1");
@@ -75,6 +80,7 @@ int main() {
     if (temp == 1)
         asm("addi t6,t6,1");
 
+     */
     asm("ebreak");
 }
 
