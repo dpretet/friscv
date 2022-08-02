@@ -183,7 +183,7 @@ main() {
     if [[ $1 == "syn" ]]; then
         printinfo "Start synthesis flow"
         cd "$FRISCV_DIR/syn"
-        ./run.sh
+        ./syn_asic.sh
         return $?
     fi
 }

@@ -134,7 +134,7 @@ build
 *.vcd
 *.hex
 
-syn/*.lib
+syn/vsclib013.lib
 syn/*.v
 obj_dir
 .DS_Store

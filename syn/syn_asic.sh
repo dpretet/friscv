@@ -6,10 +6,10 @@ set -e -o pipefail
 
 design="./friscv_rv32i.ys"
 
-if [[ ! -f "./vsclib013.lib" ]]; then
-    echo "INFO: Download library for synthesis"
-    wget http://www.vlsitechnology.org/synopsys/vsclib013.lib
-fi
+# if [[ ! -f "./vsclib013.lib" ]]; then
+    # echo "INFO: Download library for synthesis"
+    # wget http://www.vlsitechnology.org/synopsys/vsclib013.lib
+# fi
 
 # Check if a design is specified
 if [[ -n $1 ]]; then
@@ -19,11 +19,7 @@ fi
 
 echo "INFO: Start synthesis flow"
 yosys -V
-cmd="yosys -q $design | tee friscv_rv32i.log"
 
-if eval "$cmd"; then
-    echo "ERROR: Synthesis failed"
-    exit 1
-fi
+yosys "$design"
 
 exit 0

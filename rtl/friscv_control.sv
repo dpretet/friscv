@@ -200,8 +200,10 @@ module friscv_control
                       `CONTROL_ROUTE);
     `endif
 
+    `ifdef FRISCV_SIM
     integer f;
     initial f = $fopen("trace.csv","w");
+    `endif
 
     /////////////////////////////////////////////////////////////////
     // Used to print instruction during execution, relies on SVLogger
@@ -231,6 +233,7 @@ module friscv_control
     /////////////////////////////////////////////////////////////////////
     // Get a description of a synchronous exception when handling a trap
     /////////////////////////////////////////////////////////////////////
+    `ifdef USE_SVL
     function automatic string get_mcause_desc(input integer cause);
         if (cause==1) get_mcause_desc = "Read-only CSR write access";
         if (cause==0) get_mcause_desc = "Instruction address misaligned";
@@ -238,11 +241,13 @@ module friscv_control
         if (cause==6) get_mcause_desc = "STORE address misaligned";
         if (cause==2) get_mcause_desc = "Instruction decoding error";
     endfunction
+    `endif
 
 
     /////////////////////////////////////////////////////////////////////
     // Print function used when the FSM is handling a trap
     /////////////////////////////////////////////////////////////////////
+    `ifdef USE_SVL
     task print_mcause(
         input string           msg,
         input logic [XLEN-1:0] cause
@@ -258,6 +263,7 @@ module friscv_control
                    });
         `endif
     endtask
+    `endif
 
 
     //////////////////////////////////////////////////////////////////////
@@ -555,7 +561,9 @@ module friscv_control
 
                     // 3. On a first handshake, launch the firmware
                     if (arvalid && arready) begin
+                        `ifdef FRISCV_SIM
                         $fwrite(f, "@ %0t,%x\n", $realtime, BOOT_ADDR);
+                        `endif
                         `ifdef USE_SVL
                         log.info("IDLE -> Boot the processor");
                         `endif
@@ -794,7 +802,9 @@ module friscv_control
                 // a new origin
                 ///////////////////////////////////////////////////////////////
                 RELOAD: begin
+                    `ifdef FRISCV_SIM
                     $fwrite(f, "@ %0t,%x\n", $realtime, araddr);
+                    `endif
                     traps <= 5'b0;
                     mepc_wr <= 1'b0;
                     mstatus_wr <= 1'b0;

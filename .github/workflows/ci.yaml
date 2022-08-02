@@ -1,12 +1,18 @@
 name: FRISCV
 on: [push]
 jobs:
-  lint-code:
+  Lint:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v2
       - run: brew install verilator
       - run: ./flow.sh lint
+  Synthesis:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v2
+      - run: brew install yosys
+      - run: ./flow.sh syn
   WBA-testsuite:
     runs-on: macos-latest
     steps:
