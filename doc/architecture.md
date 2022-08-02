@@ -115,10 +115,6 @@ It's nowadays very simple and executes the instructions in-order.
   <img src="assets/processing.png">
 </p>
 
-Later this unit will be enhanced to support more extensions like mult, div or
-even better multiple instructions in the same cycle, why not in a out-of-order
-way.
-
 
 ### Cache Units
 
@@ -252,9 +248,9 @@ modules use APB protocol, so requests from the core are first translated from/to
 
 The GPIOs are binded behind two registers:
 
-> Register 0 - Address 0 - 32 bits wide - Outputs
+- Register 0 - Address 0 - 32 bits wide - Outputs
 
-> Register 1 - Address 0 - 32 bits wide - Inputs
+- Register 1 - Address 0 - 32 bits wide - Inputs
 
 Reading and writing to the GPIOs is never blocking.
 
@@ -265,8 +261,8 @@ The UART uses few IOs:
 
 - rx: serial input, data from an external transmitter
 - tx: serial output, data to an external receiver
-- rts: back-pressure to indicate the UART receiver can't receive anymore data
-- cts: back-pressure to indicate the external receiver can't receive data anymore
+- rts: back-pressure flag to indicate the core can't receive anymore data
+- cts: back-pressure flag to indicate the external receiver can't receive data anymore
 
 The UART uses a FIFO to store data to transmit, and another to store data
 received. If the FIFOs are full, the UART can't receive anymore data and rises
@@ -278,17 +274,11 @@ or a reserved field will be without effect and can't change the register
 content neither the engine behavior. RW registers can be written partially by
 setting properly the WSTRB signal.
 
-Register 1, setting up the baud rate, can be changed anytime like any register;
-but an update during an ongoing operation will certainly lead to compromise the
-transfer integrity and possibly make unstable the UART engine. The user is
-advised to configure the baud rate during start up and be sure the engine is
-disabled before changing this value.
-
 If a transfer (RX or TX) is active and the enable bit is setup back to 0, the
 transfer will terminate only after the complete frame transmission
 
 
-Register 0: Control and Status [RW] - Address 0 - 16 bits wide
+##### Register 0: Control and Status [RW] - Address 0x0
 
 - bit 0     : Enable the UART engine (both RX and TX) [RW]
 - bit 1     : Loopback mode, every received data will be stored in RX
@@ -307,7 +297,8 @@ Register 0: Control and Status [RW] - Address 0 - 16 bits wide
 - bit 15    : Parity error of the last RX transaction [RO]
 - bit 31:16 : Reserved
 
-Register 1: UART Clock Divider [RW] - Address 1 - 16 bits wide
+
+##### Register 1: UART Clock Divider [RW] - Address 0x4
 
 The number of CPU core cycles to divide down to get the UART data bit
 rate (baud rate).
@@ -315,8 +306,12 @@ rate (baud rate).
 - Bit 15:0  : Clock divider
 - Bit 31:16 : Reserved
 
+An update during an ongoing operation will certainly lead to compromise the
+transfer integrity and possibly make unstable the UART engine. The user is
+advised to configure the baud rate during start up and be sure the engine is
+disabled before changing this value.
 
-Register 2: TX FIFO [RW] - Address 1 - 8 bits wide
+##### Register 2: TX FIFO [RW] - Address 0x8
 
 Push data into TX FIFO. Writing into this register will block the APB
 write request if TX FIFO is full, until the engine transmit a new word.
@@ -325,7 +320,7 @@ write request if TX FIFO is full, until the engine transmit a new word.
 - Bit 31:8 : Reserved
 
 
-Register 3: RX FIFO [RO] - Address 1 - 8 bits wide
+##### Register 3: RX FIFO [RO] - Address 0xC
 
 Pull data from RX FIFO. Reading into this register will block the APB
 read request if FIFO is empty, until the engine receives a new word.

@@ -59,11 +59,11 @@ More details of the architecture can be found in the:
 ## Verification environment
 
 The core is verified with several testsuites, present in [test](./test) folder:
-- [White-Box Assembler Testsuite](./test/wba_testsuite/README.md)
-- [RISCV Compliance Testsuite](./test/riscv-tests/README.md)
-- [C Testsuite](./test/c_testsuite/README.md)
-- [Apps](./test/apps/README.md)
-- [SV](.test/sv)
+- [White-Box Assembler testsuite](./test/wba_testsuite/README.md)
+- [RISCV Compliance testsuite](./test/riscv-tests/README.md)
+- [C testsuite](./test/c_testsuite/README.md)
+- [Apps testsuite](./test/apps/README.md)
+- [SV testsuite](./test/sv/README.md)
 
  The flow relies on:
 
