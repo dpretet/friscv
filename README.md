@@ -75,7 +75,7 @@ The core is verified with several testsuites, present in [test](./test) folder:
 ## Validation environment
 
 The core has not been yet tested on hardware, but a synthesis flow based in [Yosys](https://github.com/YosysHQ/yosys)
-is available in [syn](./syn) folder. First sets of synthesis with Vivado were OK.
+is available in [syn](./syn) folder.
 
 
 # Development plan
