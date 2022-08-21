@@ -112,7 +112,7 @@ module friscv_scfifo
 
     assign wr_en = push & ~full & ~pass_thru;
 
-    friscv_scfifo_ram
+    friscv_ram
     #(
         .ADDR_WIDTH (ADDR_WIDTH),
         .DATA_WIDTH (DATA_WIDTH),

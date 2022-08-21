@@ -48,7 +48,9 @@ module friscv_memfy
         // AXI4 data width, for instruction and a data bus
         parameter AXI_DATA_W        = XLEN,
         // ID used to identify the dta abus in the infrastructure
-        parameter AXI_ID_MASK       = 'h20
+        parameter AXI_ID_MASK       = 'h20,
+        // Maximum outstanding request supported
+        parameter MAX_OR = 8
     )(
         // clock & reset
         input  wire                         aclk,
@@ -265,10 +267,6 @@ module friscv_memfy
     //
     ///////////////////////////////////////////////////////////////////////////
 
-    localparam MAX_OR = 8;
-    localparam MAX_OR_CMP = MAX_OR - 1;
-    localparam MAX_OR_W = $clog2(MAX_OR);
-
     // instructions fields
     logic signed [XLEN        -1:0] addr;
     logic        [`OPCODE_W   -1:0] opcode;
@@ -282,18 +280,14 @@ module friscv_memfy
     logic        [`RD_W       -1:0] rd_r;
     logic                           load_misaligned;
     logic                           store_misaligned;
-    logic        [MAX_OR_W    -1:0] wr_or_cnt;
-    logic                           max_wr_or;
-    logic        [MAX_OR_W    -1:0] rd_or_cnt;
-    logic                           max_rd_or;
-    logic                           waiting_wr_cpl;
-    logic                           waiting_rd_cpl;
     logic                           memfy_ready_fsm;
     logic                           push_rd_or;
     logic                           rd_or_full;
     logic                           rd_or_empty;
     logic        [2           -1:0] offset;
     logic                           stall_bus;
+    logic                           waiting_rd_cpl;
+    logic                           waiting_wr_cpl;
 
     typedef enum logic[1:0] {
         IDLE = 0,
@@ -486,7 +480,7 @@ module friscv_memfy
     friscv_scfifo 
     #(
         .PASS_THRU  (0),
-        .ADDR_WIDTH (MAX_OR_W),
+        .ADDR_WIDTH ($clog2(MAX_OR)),
         .DATA_WIDTH (10)
     )
     rd_or_fifo 
@@ -506,56 +500,28 @@ module friscv_memfy
     );
 
 
-    // Track the current read/write outstanding requests waiting completions
-    always @ (posedge aclk or negedge aresetn) begin
+    friscv_axi_or_tracker 
+    #(
+        .NAME   ("Memfy"),
+        .MAX_OR (MAX_OR)
+    )
+    outstanding_request_tracker 
+    (
+        .aclk           (aclk),
+        .aresetn        (aresetn),
+        .srst           (srst),
+        .awvalid        (awvalid),
+        .awready        (awready),
+        .bvalid         (bvalid),
+        .bready         (bready),
+        .arvalid        (arvalid),
+        .arready        (arready),
+        .rvalid         (rvalid),
+        .rready         (rready),
+        .waiting_wr_cpl (waiting_wr_cpl),
+        .waiting_rd_cpl (waiting_rd_cpl)
+    );
 
-        if (!aresetn) begin
-            wr_or_cnt <= {MAX_OR_W{1'b0}};
-            rd_or_cnt <= {MAX_OR_W{1'b0}};
-
-        end else if (srst) begin
-            wr_or_cnt <= {MAX_OR_W{1'b0}};
-            rd_or_cnt <= {MAX_OR_W{1'b0}};
-
-        end else begin
-
-            // Write xfers tracker
-            if (awvalid && awready && !bvalid && !max_wr_or) begin
-                wr_or_cnt <= wr_or_cnt + 1'b1;
-            end else if (!(awvalid & awready) && bvalid && bready && wr_or_cnt!={MAX_OR_W{1'b0}}) begin
-                wr_or_cnt <= wr_or_cnt - 1'b1;
-            end
-
-            // Read xfers tracker
-            if (arvalid && arready && !rvalid && !max_rd_or) begin
-                rd_or_cnt <= rd_or_cnt + 1'b1;
-            end else if (!(arvalid & arready) && rvalid && rready && rd_or_cnt!={MAX_OR_W{1'b0}}) begin
-                rd_or_cnt <= rd_or_cnt - 1'b1;
-            end
-
-            //synthesis translate_off
-            //synopsys translate_off
-            if (awvalid && awready && !bvalid && max_wr_or) begin
-                $display("ERROR: Memfy: Reached maximum write OR number but continue to issue requets");
-            end else if (!awvalid && bvalid && bready && wr_or_cnt=={MAX_OR_W{1'b0}}) begin
-                $display("ERROR: Memfy: Freeing a write OR but counter is already 0");
-            end
-
-            if (arvalid && arready && !rvalid && max_rd_or) begin
-                $display("ERROR: Memfy: Reached maximum write OR number but continue to issue requets");
-            end else if (!arvalid && rvalid && rready && rd_or_cnt=={MAX_OR_W{1'b0}}) begin
-                $display("ERROR: Memfy: Freeing a write OR but counter is already 0");
-            end
-            //synopsys translate_on
-            //synthesis translate_on
-        end
-    end
-
-    assign max_wr_or = (wr_or_cnt==MAX_OR_CMP[MAX_OR_W-1:0]) ? 1'b1 : 1'b0;
-    assign max_rd_or = (rd_or_cnt==MAX_OR_CMP[MAX_OR_W-1:0]) ? 1'b1 : 1'b0;
-
-    assign waiting_wr_cpl = (wr_or_cnt!={MAX_OR_W{1'b0}}) ? 1'b1 : 1'b0;
-    assign waiting_rd_cpl = (rd_or_cnt!={MAX_OR_W{1'b0}}) ? 1'b1 : 1'b0;
 
     // Manage the RD write operation
     always @ (posedge aclk or negedge aresetn) begin
@@ -571,7 +537,7 @@ module friscv_memfy
             memfy_rd_val <= {XLEN{1'b0}};
         end else begin
             // Write into RD once the read data channel handshakes
-            memfy_rd_wr <= rvalid && rready && (rd_or_cnt!={MAX_OR_W{1'b0}});
+            memfy_rd_wr <= rvalid & rready & waiting_rd_cpl;
             memfy_rd_addr <= rd_r;
             memfy_rd_strb <= get_rd_strb(funct3_r, offset);
             memfy_rd_val <= get_rd_val(funct3_r, rdata, offset);
@@ -594,16 +560,23 @@ module friscv_memfy
 
 
     //////////////////////////////////////////////////////////////////////////
-    // Unsupported / constant AXI4-lite signals
+    // Constant AXI4-lite signals
     //////////////////////////////////////////////////////////////////////////
 
-    assign awid = {AXI_ID_W{1'b0}} | AXI_ID_MASK;
-    assign awprot = 3'b0;
+    // Always use the same IDs for in-order execution / completion
+    assign awid = AXI_ID_MASK;
+    assign arid = AXI_ID_MASK;
+
+    // Access permissions
+    // [0] Unprivileged or privileged
+    // [1] Secure or Non-secure
+    // [2] Instruction or data
+    assign awprot = 3'b000;
+    assign arprot = 3'b000;
+
+    // Completion are always ready
     assign bready = 1'b1;
     assign rready = 1'b1;
-
-    assign arid = {AXI_ID_W{1'b0}} | AXI_ID_MASK;
-    assign arprot = 3'b0;
 
 
     //////////////////////////////////////////////////////////////////////////

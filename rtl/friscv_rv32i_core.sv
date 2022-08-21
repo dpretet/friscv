@@ -30,6 +30,8 @@ module friscv_rv32i_core
         parameter BOOT_ADDR         = 0,
         // Number of outstanding requests used by the control unit
         parameter INST_OSTDREQ_NUM  = 8,
+        // Number of outstanding requests used by the LOAD/STORE unit
+        parameter DATA_OSTDREQ_NUM  = 8,
         // Core Hart ID
         parameter MHART_ID          = 0,
         // RV32E architecture, limits integer registers to 16, else 32 available
@@ -62,8 +64,9 @@ module friscv_rv32i_core
         // Caches setup
         ////////////////////////////////////////////////////////////////////////
 
-        // Enable instruction cache
-        parameter ICACHE_EN          = 0,
+        // Enable instruction & data caches
+        parameter CACHE_EN           = 0,
+
         // Enable cache block prefetch
         parameter ICACHE_PREFETCH_EN = 0,
         // Block width defining only the data payload, in bits, must an
@@ -72,8 +75,6 @@ module friscv_rv32i_core
         // Number of blocks in the cache
         parameter ICACHE_DEPTH       = 512,
 
-        // Enable data cache
-        parameter DCACHE_EN          = 0,
         // Enable cache block prefetch
         parameter DCACHE_PREFETCH_EN = 0,
         // Block width defining only the data payload, in bits, must an
@@ -224,6 +225,7 @@ module friscv_rv32i_core
     logic [XLEN                -1:0] ctrl_mtval;
     logic [`CSR_SB_W           -1:0] csr_sb;
 
+
     //////////////////////////////////////////////////////////////////////////
     // Check parameters setup consistency and break up if not supported
     //////////////////////////////////////////////////////////////////////////
@@ -240,6 +242,25 @@ module friscv_rv32i_core
 
         `CHECKER((RV32E!=0 && RV32E!=1),
             "RV32E can be only equal to 0 or 1");
+
+        `CHECKER((CACHE_EN==0 && AXI_IMEM_W != XLEN),
+            "If cache is disable, AXI_IMEM_W must be XLEN");
+
+        `CHECKER((CACHE_EN==0 && AXI_DMEM_W != XLEN),
+            "If cache is disable, AXI_DMEM_W must be XLEN");
+
+        `CHECKER((CACHE_EN==1 && AXI_IMEM_W != ICACHE_BLOCK_W),
+           "Only AXI_IMEM_W = ICACHE_BLOCK_W is supported for the moment");
+
+        `CHECKER((CACHE_EN==1 && AXI_DMEM_W != DCACHE_BLOCK_W),
+            "Only AXI_DMEM_W = DCACHE_BLOCK_W is supported for the moment");
+
+        `CHECKER((CACHE_EN==1 && (ICACHE_BLOCK_W/ILEN)!=4),
+            "Only a ratio = 4 between instruction bus and cache block width is supported");
+
+        `CHECKER((CACHE_EN==1 && (DCACHE_BLOCK_W/XLEN)!=4),
+            "Only a ratio = 4 between data bus and cache block width is supported");
+
     end
 
     //////////////////////////////////////////////////////////////////////////
@@ -400,7 +421,7 @@ module friscv_rv32i_core
     //////////////////////////////////////////////////////////////////////////
 
     generate
-    if (ICACHE_EN) begin : USE_ICACHE
+    if (CACHE_EN) begin : USE_ICACHE
 
     friscv_icache
     #(
@@ -460,7 +481,7 @@ module friscv_rv32i_core
     assign inst_arready_s = imem_arready;
     assign imem_araddr = inst_araddr_s;
     assign imem_arprot = inst_arprot_s;
-    assign imem_arid = inst_arid_s | AXI_IMEM_MASK;
+    assign imem_arid = AXI_IMEM_MASK;
     assign inst_rvalid_s = imem_rvalid;
     assign imem_rready = inst_rready_s;
     assign inst_rid_s = imem_rid;
@@ -535,6 +556,7 @@ module friscv_rv32i_core
         .AXI_ID_MASK       (AXI_DMEM_MASK),
         .NB_UNIT           (NB_ALU_UNIT),
         .MAX_UNIT          (MAX_ALU_UNIT),
+        .DATA_OSTDREQ_NUM  (DATA_OSTDREQ_NUM),
         .INST_BUS_PIPELINE (PROCESSING_BUS_PIPELINE),
         .INST_QUEUE_DEPTH  (PROCESSING_QUEUE_DEPTH)
     )
@@ -584,13 +606,13 @@ module friscv_rv32i_core
 
     generate
 
-    if (DCACHE_EN) begin: DCACHE_ON
+    if (CACHE_EN) begin: DCACHE_ON
 
         friscv_dcache
         #(
             .ILEN              (ILEN),
             .XLEN              (XLEN),
-            .OSTDREQ_NUM       (4),
+            .OSTDREQ_NUM       (DATA_OSTDREQ_NUM),
             .AXI_ADDR_W        (AXI_ADDR_W),
             .AXI_ID_W          (AXI_ID_W),
             .AXI_DATA_W        (AXI_DMEM_W),
@@ -604,8 +626,6 @@ module friscv_rv32i_core
             .aclk            (aclk),
             .aresetn         (aresetn),
             .srst            (srst),
-            .flush_req       (1'b0),
-            .flush_ack       (),
             .memfy_awvalid   (memfy_awvalid),
             .memfy_awready   (memfy_awready),
             .memfy_awaddr    (memfy_awaddr),
@@ -676,7 +696,7 @@ module friscv_rv32i_core
     assign memfy_awready = dmem_awready;
     assign dmem_awaddr = memfy_awaddr;
     assign dmem_awprot = memfy_awprot;
-    assign dmem_awid = memfy_awid | AXI_DMEM_MASK;
+    assign dmem_awid = AXI_DMEM_MASK;
 
     assign dmem_wvalid = memfy_wvalid;
     assign memfy_wready = dmem_wready;
@@ -692,7 +712,7 @@ module friscv_rv32i_core
     assign memfy_arready = dmem_arready;
     assign dmem_araddr = memfy_araddr;
     assign dmem_arprot = memfy_arprot;
-    assign dmem_arid = memfy_arid | AXI_DMEM_MASK;
+    assign dmem_arid = AXI_DMEM_MASK;
 
     assign memfy_rvalid = dmem_rvalid;
     assign dmem_rready = memfy_rready;

@@ -23,12 +23,21 @@ NC='\033[0m' # No Color
 XLEN=32
 # Instruction width
 ILEN=32
+# Enable both instruction & data caches
+CACHE_EN=1
 # Cache block width in bits
 CACHE_BLOCK_W=128
 # Number of instruction per cache block
 INST_PER_BLOCK=$(($CACHE_BLOCK_W/$ILEN))
 # Boot address
 BOOT_ADDR=0
+
+#----------------------------------------------------------------
+# This section gathers parameters enabled or setup conditionally
+# in a flow (WBA, C, RISCV, ...)
+#----------------------------------------------------------------
+# Force run without trying to compile again C or ASM programs
+NO_COMPILE=0
 # Timeout upon which the simulation is ran
 [[ -z $TIMEOUT ]] && TIMEOUT=10000
 # Testbench configuration: 0="CORE", 1="PLATFORM"
@@ -41,8 +50,6 @@ TC=
 [[ -z $MIN_PC ]] && MIN_PC=65908
 # Don't dump VCD during simulation
 [[ -z $NO_VCD ]] && NO_VCD=0
-# Force run without trying to compile again C or ASM programs
-NO_COMPILE=0
 # INTERACTIVE enable a UART to read/write from Verilator
 [[ -z $INTERACTIVE ]] && INTERACTIVE=0
 # Used to print the testcase name in svut flow
@@ -88,6 +95,7 @@ run_tests() {
         echo ""
         echo "  - XLEN:             $XLEN"
         echo "  - BOOT_ADDR:        $BOOT_ADDR"
+        echo "  - CACHE_EN:         $CACHE_EN"
         echo "  - CACHE_BLOCK_W:    $CACHE_BLOCK_W"
         echo "  - TIMEOUT:          $TIMEOUT"
         echo "  - TB_CHOICE:        $TB_CHOICE (0=CORE, 1=PLATFORM)"
@@ -99,7 +107,7 @@ run_tests() {
             echo "  - NO_RAM_LOG:       $NO_RAM_LOG"
         fi
 
-        # build defines list passed to the testbench
+        # Build defines list passed to the testbench
         if [[ $SIM == "icarus" ]]; then
             # Use SVlogger only with Icarus, Verilator sv support being too limited
             DEFINES="USE_ICARUS=1;USE_SVL=1;"
@@ -111,6 +119,7 @@ run_tests() {
 
         DEFINES="${DEFINES}FRISV_SIM=1;"
         DEFINES="${DEFINES}TCNAME=$test_name;"
+        DEFINES="${DEFINES}CACHE_EN=$CACHE_EN;"
         DEFINES="${DEFINES}CACHE_BLOCK_W=$CACHE_BLOCK_W;"
         DEFINES="${DEFINES}BOOT_ADDR=$BOOT_ADDR;"
         DEFINES="${DEFINES}XLEN=$XLEN;"
@@ -139,6 +148,7 @@ run_tests() {
         if [ -f "./friscv_testbench.vcd" ]; then
             cp ./friscv_testbench.vcd "./tests/$test_name.vcd"
         fi
+
         # Create the trace of the execution
         if [ -f "./trace.csv" ] && [ -f "tests/${test_name}.symbols" ]; then
             ../common/trace.py --itrace trace.csv \
@@ -197,10 +207,14 @@ check_status() {
 #------------------------------------------------------------------------------
 
 get_args() {
-    # First handle the arguments
+
     while [ "$1" != "" ]; do
-        case $1 in
-            -l | --cache_block )
+        case $1 in 
+            --cache_en )
+                shift
+                CACHE_EN=$1
+            ;;
+            --cache_block )
                 shift
                 CACHE_BLOCK_W=$1
             ;;
@@ -264,15 +278,18 @@ usage()
 {
 cat << EOF
 usage: bash ./run.sh ...
--h    | --help              Brings up this menu
--l    | --cache_block       cache line width in bits (128 by default)
--x    | --xlen              XLEN, 32 or 64 bits (32 by default)
--t    | --timeout           Timeout in number of cycles (10000 by default, 0 inactivate it)
+
 -c    | --clean             Clean-up and exit
-        --tb                CORE or PLATFORM, CORE is optional. Platform embbeds a core + an AXI4 crossbar
-        --tc                A specific testcase to launch, can use wildcard
-        --simulator         Choose between icarus or verilator. icarus is default
-        --novcd             Don't dump VCD during simulation
+-h    | --help              Brings up this menu
+
+-x    | --xlen              XLEN, 32 or 64 bits (32 bits by default)
+-t    | --timeout           Timeout in number of cycles before the simulation stops (10000 by default, 0 inactivate it)
+        --cache_en          Enable instruction and data caches (Enabled by default)
+        --cache_block       Cache line width in bits (128 bits by default)
+        --tb                CORE or PLATFORM (CORE by default)
+        --tc                A specific testcase to launch, can use wildcard if enclosed with ' (Run all by default)
+        --simulator         Choose between icarus or verilator (icarus is default)
+        --novcd             Don't dump VCD during simulation (Dump by default)
         --nocompile         Don't try to compile C or assembler (CI tests only)
 EOF
 }

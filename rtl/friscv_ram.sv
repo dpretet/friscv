@@ -4,9 +4,10 @@
 `timescale 1 ns / 1 ps
 `default_nettype none
 
-module friscv_scfifo_ram
+module friscv_ram
 
     #(
+        parameter INIT = 0,
         parameter ADDR_WIDTH = 8,
         parameter DATA_WIDTH = 8,
         parameter FFD_EN = 0
@@ -20,6 +21,14 @@ module friscv_scfifo_ram
     );
 
     logic [DATA_WIDTH-1:0] ram [2**ADDR_WIDTH-1:0];
+
+    initial begin
+        if (INIT) begin
+            for (int i=0;i<2**ADDR_WIDTH;i=i+1) begin
+                ram[i] = {DATA_WIDTH{1'b0}};
+            end
+        end
+    end
 
     always @ (posedge aclk) begin
         if (wr_en) begin

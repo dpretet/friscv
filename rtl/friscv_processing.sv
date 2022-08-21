@@ -32,7 +32,9 @@ module friscv_processing
         // Insert a pipeline on instruction bus coming from the controller
         parameter INST_BUS_PIPELINE = 0,
         // Internal FIFO depth, buffering the instruction to execute
-        parameter INST_QUEUE_DEPTH  = 0
+        parameter INST_QUEUE_DEPTH  = 0,
+        // Number of outstanding requests used by the LOAD/STORE unit
+        parameter DATA_OSTDREQ_NUM  = 8
     )(
         // clock & reset
         input  wire                         aclk,
@@ -283,6 +285,7 @@ module friscv_processing
     friscv_memfy
     #(
         .XLEN         (XLEN),
+        .MAX_OR       (DATA_OSTDREQ_NUM),
         .AXI_ADDR_W   (AXI_ADDR_W),
         .AXI_ID_W     (AXI_ID_W),
         .AXI_DATA_W   (AXI_DATA_W),

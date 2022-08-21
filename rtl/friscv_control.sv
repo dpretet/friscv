@@ -877,8 +877,11 @@ module friscv_control
         end
     end
 
-    // Unused AXI protection capability
-    assign arprot = 3'b0;
+    // Access permissions
+    // [0] Unprivileged or privileged
+    // [1] Secure or Non-secure
+    // [2] Instruction or data
+    assign arprot = 3'b100;
 
     // Needs to jump or branch, the request to cache/RAM needs to be restarted
     assign jump_branch = (branching & goto_branch) | jal | jalr;

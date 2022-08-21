@@ -69,8 +69,9 @@ module friscv_rv32i_platform
         // Cache setup
         ////////////////////////////////////////////////////////////////////////
 
-        // Enable instruction cache
-        parameter ICACHE_EN          = 0,
+        // Enable instruction & data caches
+        parameter CACHE_EN           = 0,
+
         // Enable cache block prefetch
         parameter ICACHE_PREFETCH_EN = 0,
         // Block width defining only the data payload, in bits, must be an
@@ -79,8 +80,6 @@ module friscv_rv32i_platform
         // Number of blocks in the cache
         parameter ICACHE_DEPTH       = 512,
 
-        // Enable data cache
-        parameter DCACHE_EN          = 0,
         // Enable cache block prefetch
         parameter DCACHE_PREFETCH_EN = 0,
         // Block width defining only the data payload, in bits, must an
@@ -320,11 +319,10 @@ module friscv_rv32i_platform
     .AXI_DMEM_W (AXI_DMEM_W),
     .AXI_IMEM_MASK (AXI_IMEM_MASK),
     .AXI_DMEM_MASK (AXI_DMEM_MASK),
-    .ICACHE_EN (ICACHE_EN),
+    .CACHE_EN (CACHE_EN),
     .ICACHE_PREFETCH_EN (ICACHE_PREFETCH_EN),
     .ICACHE_BLOCK_W (ICACHE_BLOCK_W),
     .ICACHE_DEPTH (ICACHE_DEPTH),
-    .DCACHE_EN (DCACHE_EN),
     .DCACHE_PREFETCH_EN (DCACHE_PREFETCH_EN),
     .DCACHE_BLOCK_W (DCACHE_BLOCK_W),
     .DCACHE_DEPTH (DCACHE_DEPTH)

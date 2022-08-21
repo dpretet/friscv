@@ -1,11 +1,33 @@
 # DOING
 
+- [~] Develop dCache
+    - [X] Derive from iCache
+    - [~] Add pusher stage for write access
+    - [ ] Uncachable access for IOs region
+    - [ ] APROT[2] pour instruction or data access
+- [~] Memfy:
+    - [X] Support outstanding write request
+    - [X] Don’t block write if AW / W are ready
+    - [X] Don’t block write until BCH but block any further read if pending write (in-order only)
+    - [ ] Detect IO requests to forward info for FENCE execution
+
+Cache Stages:
+- [ ] Walk-thru FIFO to reduce latency on jump
+- [ ] AXI4 + Wrap mode for read
+- [ ] Support prefetch: if no jump/branch detected in fetched instructions
+      grab the next line, else give a try to fetch the branch address. AXI hint?
+- [ ] Support datapath adaptation from memory controller
+    - Narrow transfer support?
+    - Gather multiple transactions?
+
+
 # BACKLOG
 
 N.B. : Any new feature and ISA should be carefully study to ensure a proper
 exception and interrupt handling
 
 Misc.
+- [ ] Print des tests qui ne marchent pas dans le bash et svut_h.sv pour verilator
 - [ ] Deactivate trace with define
 - [ ] Rework pipeline to avoid double not
 - [ ] Add counters
@@ -25,6 +47,7 @@ Misc.
 - [ ] Support PLIC (only for multi-core)
 - [ ] Support CLIC controller
 - [ ] UART: Support 9/10 bits & parity
+- [ ] Removed the 2 LSBs in instruction cache while always 2'b11 (6.25% saving)
 
 
 AXI4 Infrastructure
@@ -34,6 +57,7 @@ AXI4 Infrastructure
 - [ ] Rework GPIOs sub-system
     - [ ] Reduce latency in switching logic
     - [ ] Ajouter PERROR sur l’APB, to log on error reporting bus
+- [ ] Implement a L2 cache stage
 
 
 Control:
@@ -47,35 +71,13 @@ Processing:
 https://www.youtube.com/channel/UCPSsA8oxlSBjidJsSPdpjsQ/videos
 
 - [ ] Scheduler to run multiple operations in parallel
-- [ ] Memfy:
-    - [ ] Support outstanding write request
-    - [ ] Manage RRESP/BRESP
-    - [ ] Don’t block write if AW / W are ready
-    - [ ] Don’t block write until BCH but block any further read if pending write (in-order only)
-    - [ ] Detect IO requests to forward info for FENCE execution
+- [ ] Memfy: Manage RRESP/BRESP
 - [ ] Support F extension
-- [ ] Support FENCE if AXI4-lite + OR support
 - Division
     - [ ] Save bandwidth by removing dead cycles
     - [ ] Manage pow2 division by shifting
     - [ ] Start division from first non-zero digit
 - [ ] Out-of-order execution
-
-
-Cache Stages:
-- [ ] Walk thru FIFO to reduce latency on jump
-- [ ] AXI4 + Wrap mode
-- [ ] Support prefetch: if no jump/branch detected in fetched instructions
-      grab the next line, else give a try to fetch the branch address
-- [ ] Implement a L2 cache stage
-- [ ] Support datapath adaptation from memory controller
-- [ ] Removed the 2 LSBs in instruction cache while always 2'b11 (6.25% saving)
-
-
-dCache
-- [ ] Derive from iCache
-- [ ] Uncachable memory region for IOs region
-- [ ] Write-then-read if same memory address accessed to avoid collision 
 
 
 Verification/Validation:
@@ -96,7 +98,7 @@ Verification/Validation:
     - [ ] stream the event like a write memory error
     - [ ] log error in a file
     - [ ] Support GDB:  https://tomverbeure.github.io/2021/07/18/VexRiscv-OpenOCD-and-Traps.html
-
+- [ ] Put in place monitoring/profiling
 
 Hardware Test:
 - [ ] Support LiteX: https://github.com/litex-hub/litex-boards, https://pcotret.gitlab.io/blog/processor_in_litex/ 
@@ -118,6 +120,7 @@ Hardware Test:
 
 # DONE
 
+- [X] Add unsupported cache setup in core checkers
 - [X] Add Github actions
 - [X] Support unaligned address in APB sub-system
 - [X] Add Clint peripheral

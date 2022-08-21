@@ -52,7 +52,7 @@ main() {
     fi
 
     # OK, sounds good, exit gently
-    echo -e "${GREEN}SUCCESS: RISCV compliance testsuite successfully terminated ^^${NC}"
+    echo -e "${GREEN}SUCCESS: Testsuite successfully terminated ^^${NC}"
 
     exit 0
 }

@@ -51,6 +51,11 @@ module friscv_testbench(
     `define BOOT_ADDR 0
     `endif
 
+    // Instruction/data cache enable
+    `ifndef CACHE_EN
+    `define CACHE_EN 1
+    `endif
+
     // Cache block width in bits
     `ifndef CACHE_BLOCK_W
     `define CACHE_BLOCK_W 128
@@ -108,13 +113,14 @@ module friscv_testbench(
     // AXI4 instruction bus width
     parameter AXI_IMEM_W = `CACHE_BLOCK_W;
     // AXI4 data bus width
-    parameter AXI_DMEM_W = (TB_CHOICE=="CORE") ? XLEN : `CACHE_BLOCK_W;
+    parameter AXI_DMEM_W = `CACHE_BLOCK_W;
     // ID used by instruction and data buses
     parameter AXI_IMEM_MASK = 'h10;
     parameter AXI_DMEM_MASK = 'h20;
 
-    // Enable Instruction cache
-    parameter ICACHE_EN = 1;
+    // Enable Instruction & data caches
+    parameter CACHE_EN = `CACHE_EN;
+
     // Enable cache block prefetch
     parameter ICACHE_PREFETCH_EN = 0;
     // Block width defining only the data payload, in bits, must an
@@ -123,8 +129,6 @@ module friscv_testbench(
     // Number of blocks in the cache
     parameter ICACHE_DEPTH = 512;
 
-    // Enable data cache
-    parameter DCACHE_EN = (TB_CHOICE=="PLATFORM") ? 1 : 0;
     // Enable cache block prefetch
     parameter DCACHE_PREFETCH_EN = 0;
     // Block width defining only the data payload, in bits, must an
@@ -147,16 +151,15 @@ module friscv_testbench(
     logic                      aresetn;
     logic                      srst;
     logic [XLEN          -1:0] pc;
+    logic                      error_status_reg;
 `endif
+    logic                      tc_error_flag;
     logic [XLEN*32       -1:0] dbg_regs;
     logic [8             -1:0] status;
     logic                      ext_irq;
     logic                      sw_irq;
     logic                      timer_irq;
     logic                      rtc;
-`ifdef USE_ICARUS
-    logic                      error_status_reg;
-`endif
     logic                      imem_awvalid;
     logic                      imem_awready;
     logic [AXI_ADDR_W    -1:0] imem_awaddr;
@@ -243,6 +246,7 @@ module friscv_testbench(
 
     // Run the testbench by using only the CPU core
     generate
+
     if (TB_CHOICE=="CORE") begin
 
         assign timer_irq = 1'b0;
@@ -251,30 +255,29 @@ module friscv_testbench(
 
         friscv_rv32i_core
         #(
-            .ILEN (ILEN),
-            .XLEN (XLEN),
-            .BOOT_ADDR (BOOT_ADDR),
-            .INST_OSTDREQ_NUM (INST_OSTDREQ_NUM),
-            .MHART_ID (MHART_ID),
-            .RV32E (RV32E),
-            .M_EXTENSION (M_EXTENSION),
-            .F_EXTENSION (F_EXTENSION),
-            .PROCESSING_QUEUE_DEPTH (PROCESSING_QUEUE_DEPTH),
-            .PROCESSING_BUS_PIPELINE (PROCESSING_BUS_PIPELINE),
-            .AXI_ADDR_W (AXI_ADDR_W),
-            .AXI_ID_W (AXI_ID_W),
-            .AXI_IMEM_W (AXI_IMEM_W),
-            .AXI_DMEM_W (AXI_DMEM_W),
-            .AXI_IMEM_MASK (AXI_IMEM_MASK),
-            .AXI_DMEM_MASK (AXI_DMEM_MASK),
-            .ICACHE_EN (ICACHE_EN),
-            .ICACHE_BLOCK_W (ICACHE_BLOCK_W),
-            .ICACHE_PREFETCH_EN (ICACHE_PREFETCH_EN),
-            .ICACHE_DEPTH (ICACHE_DEPTH),
-            .DCACHE_EN (DCACHE_EN),
-            .DCACHE_BLOCK_W (DCACHE_BLOCK_W),
-            .DCACHE_PREFETCH_EN (DCACHE_PREFETCH_EN),
-            .DCACHE_DEPTH (DCACHE_DEPTH)
+            .ILEN                       (ILEN),
+            .XLEN                       (XLEN),
+            .BOOT_ADDR                  (BOOT_ADDR),
+            .INST_OSTDREQ_NUM           (INST_OSTDREQ_NUM),
+            .MHART_ID                   (MHART_ID),
+            .RV32E                      (RV32E),
+            .M_EXTENSION                (M_EXTENSION),
+            .F_EXTENSION                (F_EXTENSION),
+            .PROCESSING_QUEUE_DEPTH     (PROCESSING_QUEUE_DEPTH),
+            .PROCESSING_BUS_PIPELINE    (PROCESSING_BUS_PIPELINE),
+            .AXI_ADDR_W                 (AXI_ADDR_W),
+            .AXI_ID_W                   (AXI_ID_W),
+            .AXI_IMEM_W                 (AXI_IMEM_W),
+            .AXI_DMEM_W                 (AXI_DMEM_W),
+            .AXI_IMEM_MASK              (AXI_IMEM_MASK),
+            .AXI_DMEM_MASK              (AXI_DMEM_MASK),
+            .CACHE_EN                   (CACHE_EN),
+            .ICACHE_BLOCK_W             (ICACHE_BLOCK_W),
+            .ICACHE_PREFETCH_EN         (ICACHE_PREFETCH_EN),
+            .ICACHE_DEPTH               (ICACHE_DEPTH),
+            .DCACHE_BLOCK_W             (DCACHE_BLOCK_W),
+            .DCACHE_PREFETCH_EN         (DCACHE_PREFETCH_EN),
+            .DCACHE_DEPTH               (DCACHE_DEPTH)
         )
         dut
         (
@@ -400,6 +403,7 @@ module friscv_testbench(
         `else
 
         `ifdef INTERACTIVE
+
         friscv_uart
         #(
         .ADDRW           (8),
@@ -433,29 +437,28 @@ module friscv_testbench(
 
         friscv_rv32i_platform
         #(
-            .ILEN (ILEN),
-            .XLEN (XLEN),
-            .BOOT_ADDR (BOOT_ADDR),
-            .INST_OSTDREQ_NUM (INST_OSTDREQ_NUM),
-            .MHART_ID (MHART_ID),
-            .RV32E (RV32E),
-            .M_EXTENSION (M_EXTENSION),
-            .F_EXTENSION (F_EXTENSION),
-            .PROCESSING_QUEUE_DEPTH (PROCESSING_QUEUE_DEPTH),
-            .PROCESSING_BUS_PIPELINE (PROCESSING_BUS_PIPELINE),
-            .AXI_ADDR_W (AXI_ADDR_W),
-            .AXI_ID_W (AXI_ID_W),
-            .AXI_DATA_W (AXI_DATA_W),
-            .AXI_IMEM_MASK (AXI_IMEM_MASK),
-            .AXI_DMEM_MASK (AXI_DMEM_MASK),
-            .ICACHE_EN (ICACHE_EN),
-            .ICACHE_PREFETCH_EN (ICACHE_PREFETCH_EN),
-            .ICACHE_BLOCK_W (ICACHE_BLOCK_W),
-            .ICACHE_DEPTH (ICACHE_DEPTH),
-            .DCACHE_EN (DCACHE_EN),
-            .DCACHE_BLOCK_W (DCACHE_BLOCK_W),
-            .DCACHE_PREFETCH_EN (DCACHE_PREFETCH_EN),
-            .DCACHE_DEPTH (DCACHE_DEPTH)
+            .ILEN                       (ILEN),
+            .XLEN                       (XLEN),
+            .BOOT_ADDR                  (BOOT_ADDR),
+            .INST_OSTDREQ_NUM           (INST_OSTDREQ_NUM),
+            .MHART_ID                   (MHART_ID),
+            .RV32E                      (RV32E),
+            .M_EXTENSION                (M_EXTENSION),
+            .F_EXTENSION                (F_EXTENSION),
+            .PROCESSING_QUEUE_DEPTH     (PROCESSING_QUEUE_DEPTH),
+            .PROCESSING_BUS_PIPELINE    (PROCESSING_BUS_PIPELINE),
+            .AXI_ADDR_W                 (AXI_ADDR_W),
+            .AXI_ID_W                   (AXI_ID_W),
+            .AXI_DATA_W                 (AXI_DATA_W),
+            .AXI_IMEM_MASK              (AXI_IMEM_MASK),
+            .AXI_DMEM_MASK              (AXI_DMEM_MASK),
+            .CACHE_EN                   (CACHE_EN),
+            .ICACHE_PREFETCH_EN         (ICACHE_PREFETCH_EN),
+            .ICACHE_BLOCK_W             (ICACHE_BLOCK_W),
+            .ICACHE_DEPTH               (ICACHE_DEPTH),
+            .DCACHE_BLOCK_W             (DCACHE_BLOCK_W),
+            .DCACHE_PREFETCH_EN         (DCACHE_PREFETCH_EN),
+            .DCACHE_DEPTH               (DCACHE_DEPTH)
         )
         dut
         (
@@ -596,11 +599,14 @@ module friscv_testbench(
         $sformat(stop_msg, "PC=0x%0x", pc);
         `INFO(stop_msg);
         `ASSERT((pc>testcase_start_addr), "Program counter stopped too early");
+        if (pc<testcase_start_addr) tc_error_flag = 1'b1;
 
         // Detect errors with X31
         $sformat(stop_msg, "X31=0x%0x", error_status_reg);
         `INFO(stop_msg);
+        `ifdef ERROR_STATUS_X31
         `ASSERT((error_status_reg==0), "X31 != 0");
+        `endif
 
         // status[0] = ECALL
         if (status[0]) `INFO("Halt on ECALL");
@@ -613,7 +619,10 @@ module friscv_testbench(
         // status[4] = CSR write in read-only register
         if (status[4]) `INFO("Halt on a read-only write register event");
         // Timeout occured
-        if (TIMEOUT>0 && timer>=TIMEOUT) `ERROR("Halt on timeout");
+        if (TIMEOUT>0 && timer>=TIMEOUT) begin
+            tc_error_flag = 1'b1;
+            `ERROR("Halt on timeout");
+        end
 
     endtask
 
@@ -665,86 +674,103 @@ module friscv_testbench(
     end
     endtask
 
-//-------------------------------------------------------------------------------------------------
-// This sections is used for Icarus Verilog based simulation, relying on SVUT system verilog
-// framework. The structure is minimal while we only assert/deassert reset and wait for the end of
-// execution
-//-------------------------------------------------------------------------------------------------
-`ifdef USE_ICARUS
 
-    initial aclk = 0;
-    always #1 aclk = ~aclk;
+    //----------------------------------------------------------------------------------------------
+    // This sections is used for Icarus Verilog based simulation, relying on SVUT system verilog
+    // framework. The structure is minimal while we only assert/deassert reset and wait for the end
+    // of execution
+    //----------------------------------------------------------------------------------------------
+    `ifdef USE_ICARUS
 
-    initial begin
-        $sformat(tcname, "%s", ``TCNAME);
-    end
+        initial aclk = 0;
+        always #1 aclk = ~aclk;
 
-    task setup(msg="");
-    begin
-        aresetn = 1'b0;
-        srst = 1'b0;
-        timer = 0;
-        repeat (5) @(posedge aclk);
-        aresetn = 1'b1;
-        repeat (5) @(posedge aclk);
-    end
-    endtask
-
-    task teardown(msg="");
-    begin
-        $display("");
-        check_test(MIN_PC);
-        print_isa_regs;
-    end
-    endtask
-
-
-    `TEST_SUITE("FRISCV Testbench")
-
-    `UNIT_TEST(tcname)
-
-        // Stop the simulation if executing EBREAK or if reached the timeout
-        while (status[1]==1'b0 && timer<TIMEOUT) begin
-            timer = timer + 1;
-            @(posedge aclk);
+        initial begin
+            $sformat(tcname, "%s", ``TCNAME);
         end
 
-    `UNIT_TEST_END
+        task setup(msg="");
+        begin
+            aresetn = 1'b0;
+            tc_error_flag = 1'b0;
+            srst = 1'b0;
+            timer = 0;
+            repeat (5) @(posedge aclk);
+            aresetn = 1'b1;
+            repeat (5) @(posedge aclk);
+        end
+        endtask
 
-    `TEST_SUITE_END
+        task teardown(msg="");
+        begin
+            $display("");
+            check_test(MIN_PC);
+            print_isa_regs;
+        end
+        endtask
 
-`endif
+
+        `TEST_SUITE("FRISCV Testbench")
+
+        `UNIT_TEST(tcname)
+
+            // Stop the simulation if executing EBREAK or if reached the timeout
+            while (status[1]==1'b0 && timer<TIMEOUT) begin
+                timer = timer + 1;
+                @(posedge aclk);
+            end
+
+        `UNIT_TEST_END
+
+        `TEST_SUITE_END
+
+    `endif
 
 
-//-------------------------------------------------------------------------------------------------
-// This sections is used for Verilator based simulation, and simply implements a timer to
-// detect any timeout. The simulation is finished here to trig Verilator context, testcase
-// is also checked here.
-//-------------------------------------------------------------------------------------------------
-`ifndef USE_ICARUS
+    //----------------------------------------------------------------------------------------------
+    // This sections is used for Verilator based simulation, and simply implements a timer to
+    // detect any timeout. The simulation is finished here to trig Verilator context, testcase
+    // is also checked here.
+    //----------------------------------------------------------------------------------------------
+    `ifndef USE_ICARUS
 
-    always @ (posedge aclk or negedge aresetn) begin
-
-        if (!aresetn) begin
-            timer <= 0;
-        end else if (srst) begin
-            timer <= 0;
-        end else begin
-            timer <= timer + 1;
+        initial begin
+            tc_error_flag = 1'b0;
         end
 
-        if (timer>10) begin
-            // Stop the simulation if executing EBREAK
-            // With Verilator only, the testbench can run infinitly with TIMEOUT=0
-            if (status[1]!=1'b0 || (TIMEOUT>0 && timer>TIMEOUT)) begin
-                $display("");
-                check_test(MIN_PC);
-                print_isa_regs;
-                $finish();
+        always @ (posedge aclk or negedge aresetn) begin
+
+            if (!aresetn) begin
+                timer <= 0;
+            end else if (srst) begin
+                timer <= 0;
+            end else begin
+                timer <= timer + 1;
+            end
+
+            if (timer>10) begin
+                // Stop the simulation if executing EBREAK
+                // With Verilator only, the testbench can run infinitly with TIMEOUT=0
+                if (status[1]!=1'b0 || (TIMEOUT>0 && timer>TIMEOUT)) begin
+
+                    check_test(MIN_PC);
+                    print_isa_regs;
+
+                    `ifdef ERROR_STATUS_X31
+                    if (error_status_reg==1'b0 && tc_error_flag==1'b0) begin
+                    `else
+                    if (tc_error_flag==1'b0) begin
+                    `endif
+                        `SUCCESS("Test passed");
+                    end else begin
+                        `ERROR("Test failed");
+                    end
+
+                    $finish();
+                end
             end
         end
-    end
 
-`endif
+    `endif
 
 endmodule

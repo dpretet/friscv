@@ -173,9 +173,7 @@ module friscv_m_ext
             m_rd_addr <= 5'b0;
         end else begin
             m_rd_wr <= (m_valid & !funct3[2]) | rd_wr_div;
-
             m_rd_addr <= (rd_wr_div) ? rd_r : rd;
-
         end
     end
 

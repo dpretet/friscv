@@ -4,8 +4,9 @@
 ../common/lfsr.sv
 ./driver.sv
 ../../rtl/friscv_icache.sv
-../../rtl/friscv_icache_fetcher.sv
-../../rtl/friscv_icache_blocks.sv
-../../rtl/friscv_icache_memctrl.sv
+../../rtl/friscv_cache_fetcher.sv
+../../rtl/friscv_cache_blocks.sv
+../../rtl/friscv_cache_memctrl.sv
 ../../rtl/friscv_scfifo.sv
-../../rtl/friscv_scfifo_ram.sv
+../../rtl/friscv_ram.sv
+../../rtl/friscv_rambe.sv

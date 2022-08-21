@@ -1,21 +1,23 @@
 [*]
 [*] GTKWave Analyzer v3.3.107 (w)1999-2020 BSI
-[*] Sun Jul 10 19:22:03 2022
+[*] Mon Aug 22 19:33:59 2022
 [*]
 [dumpfile] "/Users/damien/workspace/hdl/friscv/test/wba_testsuite/tests/rv32ui-p-test2.vcd"
-[dumpfile_mtime] "Sun Jul 10 19:18:25 2022"
-[dumpfile_size] 715085
+[dumpfile_mtime] "Mon Aug 22 19:32:16 2022"
+[dumpfile_size] 848075
 [savefile] "/Users/damien/workspace/hdl/friscv/test/common/debug_core_icarus.gtkw"
-[timestart] 559500
+[timestart] 0
 [size] 2560 1440
 [pos] -1 -1
-*-14.997102 751000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
-[treeopen] dut.USE_ICACHE.icache.
+*-17.000122 75000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] friscv_testbench.
 [treeopen] friscv_testbench.genblk1.
 [treeopen] processing.
+[treeopen] USE_ICACHE.
+[treeopen] USE_ICACHE.icache.
+[treeopen] USE_ICACHE.icache.cache_blocks.
 [sst_width] 339
-[signals_width] 256
+[signals_width] 367
 [sst_expanded] 1
 [sst_vpaned_height] 370
 @c00200
@@ -37,7 +39,6 @@ control.arvalid
 @200
 -
 @22
-control.rd[4:0]
 control.rdata[31:0]
 @28
 control.rvalid
@@ -164,102 +165,21 @@ isa_registers.x31_t6[31:0]
 -ISA Regs
 @c00200
 -Fetcher
-@28
-dut.USE_ICACHE.fetcher.aclk
-dut.USE_ICACHE.fetcher.aresetn
 @200
 -
-@28
-dut.USE_ICACHE.fetcher.seq[2:0]
-dut.USE_ICACHE.fetcher.cache_miss_r
-@200
 -
-@22
-dut.USE_ICACHE.fetcher.arid_ffd[7:0]
-dut.USE_ICACHE.fetcher.arid_if[7:0]
-dut.USE_ICACHE.fetcher.arid_mf[7:0]
-@200
 -
-@28
-dut.USE_ICACHE.fetcher.cache_loading
-dut.USE_ICACHE.fetcher.cache_ren
-@22
-dut.USE_ICACHE.fetcher.cache_raddr[31:0]
-dut.USE_ICACHE.fetcher.cache_rdata[31:0]
-dut.USE_ICACHE.fetcher.cache_rid[7:0]
-@28
-dut.USE_ICACHE.fetcher.cache_writing
-[color] 3
-dut.USE_ICACHE.fetcher.cache_hit
-[color] 3
-dut.USE_ICACHE.fetcher.cache_miss
-@200
 -
-@22
-dut.USE_ICACHE.fetcher.ctrl_araddr[31:0]
-dut.USE_ICACHE.fetcher.ctrl_arid[7:0]
-@28
-dut.USE_ICACHE.fetcher.ctrl_arprot[2:0]
-dut.USE_ICACHE.fetcher.ctrl_arready
-dut.USE_ICACHE.fetcher.ctrl_arvalid
-@200
 -
-@22
-dut.USE_ICACHE.fetcher.ctrl_rdata[31:0]
-dut.USE_ICACHE.fetcher.ctrl_rid[7:0]
-@28
-dut.USE_ICACHE.fetcher.ctrl_rready
-dut.USE_ICACHE.fetcher.ctrl_rresp[1:0]
-dut.USE_ICACHE.fetcher.ctrl_rvalid
-@200
 -
-@28
-dut.USE_ICACHE.fetcher.flush_blocks
-dut.USE_ICACHE.fetcher.flush_reqs
-dut.USE_ICACHE.fetcher.flush_ack
-@200
 -
-@22
-dut.USE_ICACHE.fetcher.araddr_ffd[31:0]
-dut.USE_ICACHE.fetcher.araddr_if[31:0]
-dut.USE_ICACHE.fetcher.araddr_mf[31:0]
-@200
 -
-@22
-dut.USE_ICACHE.fetcher.memctrl_araddr[31:0]
-dut.USE_ICACHE.fetcher.memctrl_arid[7:0]
-@28
-dut.USE_ICACHE.fetcher.memctrl_arprot[2:0]
-dut.USE_ICACHE.fetcher.memctrl_arready
-dut.USE_ICACHE.fetcher.memctrl_arvalid
-@200
 -
-@28
-dut.USE_ICACHE.fetcher.pull_addr_if
-dut.USE_ICACHE.fetcher.pull_addr_mf
-dut.USE_ICACHE.fetcher.push_addr_if
-dut.USE_ICACHE.fetcher.push_addr_mf
-@200
 -
-@28
-dut.USE_ICACHE.fetcher.fifo_empty_if
-dut.USE_ICACHE.fetcher.fifo_empty_mf
-dut.USE_ICACHE.fetcher.fifo_full_if
-dut.USE_ICACHE.fetcher.fifo_full_mf
-@200
 -
-@22
-dut.USE_ICACHE.fetcher.rdata_r[31:0]
-@28
-dut.USE_ICACHE.fetcher.read_addr_if
-dut.USE_ICACHE.fetcher.read_addr_mf
-@22
-dut.USE_ICACHE.fetcher.rid_r[7:0]
-@28
-dut.USE_ICACHE.fetcher.rvalid_r
 @1401200
 -Fetcher
-@800200
+@c00200
 -Memfy
 @28
 processing.memfy.aclk
@@ -310,10 +230,9 @@ processing.memfy.rready
 processing.memfy.rvalid
 @200
 -
-@29
+@28
 [color] 7
 processing.memfy.state[1:0]
-@28
 processing.memfy.memfy_valid
 processing.memfy.memfy_ready
 processing.memfy.memfy_ready_fsm
@@ -340,8 +259,6 @@ processing.memfy.memfy_rs2_val[31:0]
 @200
 -
 @28
-processing.memfy.two_phases
-processing.memfy.cross_boundary
 processing.memfy.offset[1:0]
 @22
 processing.memfy.opcode[6:0]
@@ -369,10 +286,145 @@ processing.memfy.memfy_fenceinfo[3:0]
 @200
 -
 @28
-processing.memfy.max_or
-processing.memfy.or_counter[2:0]
 processing.memfy.waiting_wr_cpl
-@1000200
+@1401200
 -Memfy
+@800200
+-iCache
+@28
+USE_ICACHE.icache.aclk
+USE_ICACHE.icache.aresetn
+@200
+-
+@28
+USE_ICACHE.icache.cache_loading
+USE_ICACHE.icache.cache_hit
+USE_ICACHE.icache.cache_miss
+@22
+USE_ICACHE.icache.cache_raddr[31:0]
+USE_ICACHE.icache.cache_rdata[31:0]
+@28
+USE_ICACHE.icache.cache_ren
+@200
+-
+@28
+USE_ICACHE.icache.cache_wen
+USE_ICACHE.icache.flushing
+@22
+USE_ICACHE.icache.cache_waddr[31:0]
+USE_ICACHE.icache.cache_wdata[127:0]
+@200
+-
+@22
+USE_ICACHE.icache.ctrl_araddr[31:0]
+USE_ICACHE.icache.ctrl_arid[7:0]
+@28
+USE_ICACHE.icache.ctrl_arprot[2:0]
+USE_ICACHE.icache.ctrl_arready
+USE_ICACHE.icache.ctrl_arvalid
+@22
+USE_ICACHE.icache.ctrl_rdata[31:0]
+USE_ICACHE.icache.ctrl_rid[7:0]
+@28
+USE_ICACHE.icache.ctrl_rready
+USE_ICACHE.icache.ctrl_rresp[1:0]
+USE_ICACHE.icache.ctrl_rvalid
+@200
+-
+@28
+USE_ICACHE.icache.flush_ack
+USE_ICACHE.icache.flush_ack_fetcher
+USE_ICACHE.icache.flush_ack_memctrl
+USE_ICACHE.icache.flush_blocks
+USE_ICACHE.icache.flush_reqs
+@200
+-
+@22
+USE_ICACHE.icache.icache_araddr[31:0]
+@28
+USE_ICACHE.icache.icache_arburst[1:0]
+@22
+USE_ICACHE.icache.icache_arcache[3:0]
+USE_ICACHE.icache.icache_arid[7:0]
+USE_ICACHE.icache.icache_arlen[7:0]
+@28
+USE_ICACHE.icache.icache_arlock[1:0]
+USE_ICACHE.icache.icache_arprot[2:0]
+@22
+USE_ICACHE.icache.icache_arqos[3:0]
+@28
+USE_ICACHE.icache.icache_arready
+@22
+USE_ICACHE.icache.icache_arregion[3:0]
+@28
+USE_ICACHE.icache.icache_arsize[2:0]
+USE_ICACHE.icache.icache_arvalid
+@22
+USE_ICACHE.icache.icache_rdata[127:0]
+USE_ICACHE.icache.icache_rid[7:0]
+@28
+USE_ICACHE.icache.icache_rlast
+USE_ICACHE.icache.icache_rready
+USE_ICACHE.icache.icache_rresp[1:0]
+USE_ICACHE.icache.icache_rvalid
+@200
+-
+@22
+USE_ICACHE.icache.memctrl_araddr[31:0]
+USE_ICACHE.icache.memctrl_arid[7:0]
+@28
+USE_ICACHE.icache.memctrl_arprot[2:0]
+USE_ICACHE.icache.memctrl_arready
+USE_ICACHE.icache.memctrl_arvalid
+@200
+-
+@800200
+-Cache Blocks
+@28
+USE_ICACHE.icache.cache_blocks.aclk
+USE_ICACHE.icache.cache_blocks.aresetn
+@200
+-
+@28
+USE_ICACHE.icache.cache_blocks.flush
+@200
+-
+@28
+USE_ICACHE.icache.cache_blocks.p1_ren
+USE_ICACHE.icache.cache_blocks.p1_hit
+USE_ICACHE.icache.cache_blocks.p1_miss
+@22
+USE_ICACHE.icache.cache_blocks.p1_raddr[31:0]
+USE_ICACHE.icache.cache_blocks.p1_rdata[31:0]
+USE_ICACHE.icache.cache_blocks.p1_rindex[8:0]
+@28
+USE_ICACHE.icache.cache_blocks.p1_roffset[1:0]
+@22
+USE_ICACHE.icache.cache_blocks.p1_rtag[18:0]
+@200
+-
+@22
+USE_ICACHE.icache.cache_blocks.rblock_data[127:0]
+@28
+USE_ICACHE.icache.cache_blocks.rblock_set
+@22
+USE_ICACHE.icache.cache_blocks.rblock_tag[18:0]
+USE_ICACHE.icache.cache_blocks.rindex[8:0]
+@200
+-
+@28
+USE_ICACHE.icache.cache_blocks.p1_wen
+@22
+USE_ICACHE.icache.cache_blocks.p1_waddr[31:0]
+USE_ICACHE.icache.cache_blocks.p1_wstrb[3:0]
+USE_ICACHE.icache.cache_blocks.p1_wdata[127:0]
+USE_ICACHE.icache.cache_blocks.p1_windex[8:0]
+USE_ICACHE.icache.cache_blocks.p1_wtag[18:0]
+@1000200
+-Cache Blocks
+@200
+-
+@1000200
+-iCache
 [pattern_trace] 1
 [pattern_trace] 0

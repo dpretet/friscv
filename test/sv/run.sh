@@ -84,6 +84,8 @@ run_tests() {
         SIM="verilator"
     fi
 
+    # Let the internal cache block RAMs to be init to 0
+    DEFINES="${DEFINES}CACHE_SIM_ENV=1;"
     DEFINES="${DEFINES}CACHE_BLOCK_W=$CACHE_BLOCK_W;"
     DEFINES="${DEFINES}TIMEOUT=$TIMEOUT;"
     DEFINES="${DEFINES}NO_VCD=$NO_VCD;"

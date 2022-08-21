@@ -19,23 +19,28 @@
 ///////////////////////////////////////////////////////////////////////////
 
 
-module friscv_icache_fetcher
+module friscv_cache_fetcher
 
     #(
         ///////////////////////////////////////////////////////////////////////
         // General Setup
         ///////////////////////////////////////////////////////////////////////
 
+        // Name used for svlogger file name
+        parameter NAME = "fetcher",
         // Instruction length (always 32, whatever the architecture)
         parameter ILEN = 32,
         // RISCV Architecture
         parameter XLEN = 32,
         // Number of outstanding requests supported
         parameter OSTDREQ_NUM = 4,
-        // Enable pipeline on cache
-        //   - bit 0: Use pass-thru mode in fetcher's FIFOs
-        parameter CACHE_PIPELINE = 32'h00000000,
-
+        // IO regions for direct read/write access
+        parameter IO_REGION_NUMBER = 1,
+        // IO address ranges, organized by memory region as END-ADDR_START-ADDR:
+        // > 0xEND-MEM2_START-MEM2_END_MEM1-STARr-MEM1_END-MEM0_START-MEM0
+        // IO mapping can be contiguous or sparse, no restriction on the number,
+        // the size or the range if it fits into the XLEN addressable space
+        parameter [XLEN*2*IO_REGION_NUMBER-1:0] IO_MAP = 64'h001000FF_00100000,
         ///////////////////////////////////////////////////////////////////////
         // Interface Setup
         ///////////////////////////////////////////////////////////////////////
@@ -52,22 +57,24 @@ module friscv_icache_fetcher
         input  wire                       aclk,
         input  wire                       aresetn,
         input  wire                       srst,
+        input  logic                      pending_wr,
+        output logic                      pending_rd,
         // Flush control to clear outstanding request in buffers
         input  wire                       flush_reqs,
         // Flush control to execute FENCE.i
         input  wire                       flush_blocks,
         output logic                      flush_ack,
         // Control unit interface
-        input  wire                       ctrl_arvalid,
-        output logic                      ctrl_arready,
-        input  wire  [AXI_ADDR_W    -1:0] ctrl_araddr,
-        input  wire  [3             -1:0] ctrl_arprot,
-        input  wire  [AXI_ID_W      -1:0] ctrl_arid,
-        output logic                      ctrl_rvalid,
-        input  wire                       ctrl_rready,
-        output logic [AXI_ID_W      -1:0] ctrl_rid,
-        output logic [2             -1:0] ctrl_rresp,
-        output logic [ILEN          -1:0] ctrl_rdata,
+        input  wire                       mst_arvalid,
+        output logic                      mst_arready,
+        input  wire  [AXI_ADDR_W    -1:0] mst_araddr,
+        input  wire  [3             -1:0] mst_arprot,
+        input  wire  [AXI_ID_W      -1:0] mst_arid,
+        output logic                      mst_rvalid,
+        input  wire                       mst_rready,
+        output logic [AXI_ID_W      -1:0] mst_rid,
+        output logic [2             -1:0] mst_rresp,
+        output logic [ILEN          -1:0] mst_rdata,
         // Memory controller read interface
         output logic                      memctrl_arvalid,
         input  wire                       memctrl_arready,
@@ -90,17 +97,18 @@ module friscv_icache_fetcher
 
     // Missed-fetch FIFO depth
     localparam MF_FIFO_DEPTH = 8;
-    localparam PASS_THRU_MODE = CACHE_PIPELINE[0];
+    localparam PASS_THRU_MODE = 0;
 
     // Control fsm, the sequencer driving the cache read and the memory controller
     typedef enum logic[2:0] {
         IDLE = 0,
-        SERVE = 1,
+        FETCH = 1,
         MISSED = 2,
         LOAD = 3
     } seq_fsm;
 
     seq_fsm seq;
+    seq_fsm loader;
 
     // Signals driving the FIFO buffering the to-fetch instruction
     logic                     fifo_full_if;
@@ -120,16 +128,20 @@ module friscv_icache_fetcher
     // buffering the instruction fetch stage
     logic [AXI_ADDR_W   -1:0] araddr_if;
     logic [AXI_ID_W     -1:0] arid_if;
+    logic [3            -1:0] arprot_if;
 
     // Miss-fetched instruction and address, to read again once the
     // memory controller will fill the cache
     logic [AXI_ADDR_W   -1:0] araddr_mf;
     logic [AXI_ID_W     -1:0] arid_mf;
+    logic [3            -1:0] arprot_mf;
 
     // Pipeline stage to move back data to AXI4-lite and to missed-fecth FIFO
     logic [AXI_ADDR_W   -1:0] araddr_ffd;
     logic [AXI_ID_W     -1:0] arid_ffd;
+    logic [3            -1:0] arprot_ffd;
     logic [AXI_ID_W     -1:0] cache_rid;
+    logic [3            -1:0] cache_prot;
     logic [ILEN         -1:0] rdata_r;
     logic [AXI_ID_W     -1:0] rid_r;
 
@@ -141,7 +153,7 @@ module friscv_icache_fetcher
     `ifdef USE_SVL
     `include "svlogger.sv"
     svlogger log;
-    initial log = new("iCache-Fetcher",
+    initial log = new(NAME,
                       `ICACHE_VERBOSITY,
                       `ICACHE_ROUTE);
     `endif
@@ -155,7 +167,7 @@ module friscv_icache_fetcher
     #(
         .PASS_THRU (PASS_THRU_MODE),
         .ADDR_WIDTH ($clog2(OSTDREQ_NUM)),
-        .DATA_WIDTH (AXI_ADDR_W+AXI_ID_W)
+        .DATA_WIDTH (3+AXI_ADDR_W+AXI_ID_W)
     )
     if_fifo
     (
@@ -163,18 +175,18 @@ module friscv_icache_fetcher
         .aresetn  (aresetn),
         .srst     (srst),
         .flush    (flush_blocks | flush_reqs),
-        .data_in  ({ctrl_arid, ctrl_araddr}),
+        .data_in  ({mst_arprot, mst_arid, mst_araddr}),
         .push     (push_addr_if),
         .full     (fifo_full_if),
         .afull    (),
-        .data_out ({arid_if, araddr_if}),
+        .data_out ({arprot_if, arid_if, araddr_if}),
         .pull     (pull_addr_if),
         .empty    (fifo_empty_if),
         .aempty   ()
     );
 
-    assign push_addr_if = ctrl_arvalid;
-    assign pull_addr_if = read_addr_if & ctrl_rready & !cache_loading;
+    assign push_addr_if = mst_arvalid;
+    assign pull_addr_if = read_addr_if & mst_rready & !cache_loading & !pending_wr;
 
     // FFD stage to propagate potential addr/id to fetch
     // later in cache miss
@@ -182,12 +194,15 @@ module friscv_icache_fetcher
         if (~aresetn) begin
             araddr_ffd <= {AXI_ADDR_W{1'b0}};
             arid_ffd <= {AXI_ID_W{1'b0}};
+            arprot_ffd <= 3'b0;
         end else if (srst || flush_reqs) begin
             araddr_ffd <= {AXI_ADDR_W{1'b0}};
             arid_ffd <= {AXI_ID_W{1'b0}};
+            arprot_ffd <= 3'b0;
         end else begin
             araddr_ffd <= cache_raddr;
             arid_ffd <= cache_rid;
+            arprot_ffd <= cache_prot;
         end
     end
 
@@ -197,7 +212,7 @@ module friscv_icache_fetcher
     #(
         .PASS_THRU (PASS_THRU_MODE),
         .ADDR_WIDTH ($clog2(MF_FIFO_DEPTH)),
-        .DATA_WIDTH (AXI_ADDR_W+AXI_ID_W)
+        .DATA_WIDTH (3+AXI_ADDR_W+AXI_ID_W)
     )
     mf_fifo
     (
@@ -205,185 +220,168 @@ module friscv_icache_fetcher
         .aresetn  (aresetn),
         .srst     (srst),
         .flush    (flush_blocks | flush_reqs),
-        .data_in  ({arid_ffd, araddr_ffd}),
+        .data_in  ({arprot_ffd, arid_ffd, araddr_ffd}),
         .push     (push_addr_mf),
         .full     (fifo_full_mf),
         .afull    (),
-        .data_out ({arid_mf, araddr_mf}),
+        .data_out ({arprot_mf, arid_mf, araddr_mf}),
         .pull     (pull_addr_mf),
         .empty    (fifo_empty_mf),
         .aempty   ()
     );
 
     assign push_addr_mf = cache_miss | cache_miss_r & cache_hit;
-    assign pull_addr_mf = read_addr_mf & ctrl_rready;
+    assign pull_addr_mf = read_addr_mf & mst_rready;
 
     // Read cache when the FIFO is filled or when missed-fetch instruction
     // occured, but never if the cache is rebooting.
-    assign cache_ren = ((~fifo_empty_if && (seq==IDLE && !cache_loading || seq==SERVE)) ||
-                        (~fifo_empty_mf && (seq==MISSED))
-                       ) ? ~flush_reqs & !flush_blocks & ctrl_rready : 1'b0;
+    assign cache_ren = ((!fifo_empty_if && (seq==IDLE && !cache_loading && !pending_wr || seq==FETCH)) ||
+                        (!fifo_empty_mf && (seq==MISSED))
+                       ) ? !flush_reqs & !flush_blocks & mst_rready : 1'b0;
 
     // Multiplexer stage to drive missed-fetch or to-fetch requests
-    assign cache_raddr = (~fifo_empty_mf) ? araddr_mf : araddr_if;
-    assign cache_rid = (~fifo_empty_mf) ? arid_mf : arid_if;
+    assign cache_raddr = (!fifo_empty_mf) ? araddr_mf : araddr_if;
+    assign cache_rid = (!fifo_empty_mf) ? arid_mf : arid_if;
+    assign cache_prot = (!fifo_empty_mf) ? arprot_mf : arprot_if;
+
+    // Pending read request flag, indicating some read completion still need to be issued
+    assign pending_rd = !fifo_empty_mf | cache_loading;
+
+    // Read address request handshake if able to receive
+    assign mst_arready = (~fifo_full_if && ~flush_reqs) ? 1'b1 : 1'b0;
 
 
     ///////////////////////////////////////////////////////////////////////////
-    // Control flow
+    // Control flow to fetch request between to-fetch and miss-fetch FIFOs
     ///////////////////////////////////////////////////////////////////////////
 
-    // FSM sequencer controlling the cache lines and the memory controller
+    // FSM sequencer controlling the FIFOs and the cache blocks
     always @ (posedge aclk or negedge aresetn) begin
 
         if (~aresetn) begin
             read_addr_if <= 1'b0;
             read_addr_mf <= 1'b0;
-            memctrl_arvalid <= 1'b0;
-            memctrl_araddr <= {AXI_ADDR_W{1'b0}};
-            memctrl_arid <= {AXI_ID_W{1'b0}};
             flush_ack <= 1'b0;
             cache_miss_r <= 1'b0;
             seq <= IDLE;
         end else if (srst) begin
             read_addr_if <= 1'b0;
             read_addr_mf <= 1'b0;
-            memctrl_arvalid <= 1'b0;
-            memctrl_araddr <= {AXI_ADDR_W{1'b0}};
-            memctrl_arid <= {AXI_ID_W{1'b0}};
             flush_ack <= 1'b0;
             cache_miss_r <= 1'b0;
             seq <= IDLE;
         end else begin
 
+            ////////////////////////////////////////////////////////////
+            // First part of the process manages the flushing procedures
+            ////////////////////////////////////////////////////////////
+
+            // A flush block procedure is occuring
             if (flush_ack) begin
-                // flush is done in 1 cycle in fetcher, wait req
-                // deassertion then go back to IDLE to reboot
+                // flush is done in 1 cycle in fetcher, wait req deassertion from the memory
+                // controller then go back to IDLE and reboot
                 if (flush_blocks==1'b0) begin
                     `ifdef USE_SVL
                     log.debug("Finished flush procedure");
                     `endif
                     flush_ack <= 1'b0;
                 end
-            end else if (flush_blocks || flush_blocks) begin
+            // Must start a flush block procedure, this module clears its buffers while the 
+            // memory controller clear the cache blocks
+            end else if (flush_blocks) begin
                 read_addr_if <= 1'b0;
                 read_addr_mf <= 1'b0;
                 flush_ack <= 1'b1;
                 cache_miss_r <= 1'b0;
-                memctrl_arvalid <= 1'b0;
-                memctrl_araddr <= {AXI_ADDR_W{1'b0}};
-                memctrl_arid <= {AXI_ID_W{1'b0}};
                 seq <= IDLE;
-            end else begin
+            // Move back to IDLE if the requester wants to move to a new batch of read requests.
+            // Can occur if it wants to jump in a new memory location for instance
+            end else if (flush_reqs) begin
+                read_addr_if <= 1'b0;
+                read_addr_mf <= 1'b0;
+                cache_miss_r <= 1'b0;
+                seq <= IDLE;
 
+            //////////////////////////////////////////////////////////////
+            // Second part manages the FIFOs read and cache read sequences
+            //////////////////////////////////////////////////////////////
+
+            end else begin
                 case (seq)
-                    // Wait for the address requests from the instruction fetcher
+                    // IDLE: Wait for the address requests from the front-end FIFO
                     default: begin
                         read_addr_if <= 1'b1;
                         read_addr_mf <= 1'b0;
                         cache_miss_r <= 1'b0;
-                        if (~fifo_empty_if && !cache_loading) begin
+                        if (!fifo_empty_if && !cache_loading && !pending_wr) begin
                             `ifdef USE_SVL
                             log.debug("Start to serve");
                             `endif
-                            seq <= SERVE;
+                            seq <= FETCH;
                         end
                     end
-                    // State to serve the instruction read request from the
-                    // core controller
-                    SERVE: begin
-                        // Move back to IDLE if ARID changed, meaning the
-                        // control is jumping to another memory location
-                        if (flush_reqs || flush_blocks) begin
-                            read_addr_if <= 1'b0;
-                            read_addr_mf <= 1'b0;
-                            seq <= IDLE;
+                    // State to serve the instruction read request from the core controller
+                    FETCH: begin
+
                         // As soon a cache miss is detected, stop to pull the
                         // FIFO and move to read the AXI4 interface to grab the
                         // missing instruction
-                        end else if (cache_miss) begin
+                        if (cache_miss) begin
                             `ifdef USE_SVL
                             log.debug("Cache miss");
                             `endif
                             cache_miss_r <= 1'b1;
                             read_addr_if <= 1'b0;
-                            memctrl_arvalid <= 1'b1;
-                            memctrl_araddr <= araddr_ffd;
-                            memctrl_arid <= arid_ffd;
                             seq <= LOAD;
                         // When empty, go back to IDLE to wait new requests
                         end else if (fifo_empty_if) begin
                             `ifdef USE_SVL
-                            log.debug("Go back to IDLE");
+                            log.debug("Go back to IDLE state");
                             `endif
                             seq <= IDLE;
                         end
                     end
                     // State to fetch the missed-fetch instruction in the
                     // dedicated FIFO. Empties it, possibiliy along several epochs
-                    // Equivalent behavior than SERVE state.
-                    // TODO: Try to merge FETCH and MISS states
+                    // Equivalent behavior than FETCH state.
                     MISSED: begin
-                        // Move back to IDLE if ARID changed, meaning the
-                        // control is jumping to another memory location
-                        if (flush_reqs || flush_blocks) begin
-                            read_addr_if <= 1'b0;
-                            read_addr_mf <= 1'b0;
-                            seq <= IDLE;
+
                         // As soon a cache miss is detected, stop to pull the
                         // FIFO and move to read the AXI4 interface to grab the
                         // missing instruction
-                        end else if (cache_miss) begin
+                        if (cache_miss) begin
                             `ifdef USE_SVL
                             log.debug("Cache miss");
                             `endif
                             cache_miss_r <= 1'b1;
                             read_addr_mf <= 1'b0;
-                            memctrl_arvalid <= 1'b1;
-                            memctrl_araddr <= araddr_ffd;
-                            memctrl_arid <= arid_ffd;
                             seq <= LOAD;
                         // If other instruction fetchs have been issue,
                         // continue to serve the core controller
-                        end else if (~fifo_empty_if && fifo_empty_mf) begin
+                        end else if (!fifo_empty_if && fifo_empty_mf) begin
                             `ifdef USE_SVL
-                            log.debug("Go to to-fetch state");
+                            log.debug("Go to FETCH state");
                             `endif
                             read_addr_if <= 1'b1;
                             read_addr_mf <= 1'b0;
-                            seq <= SERVE;
+                            seq <= FETCH;
                         // When empty, go back to IDLE to wait new requests
                         end else if (fifo_empty_mf) begin
                             `ifdef USE_SVL
-                            log.debug("Go back to IDLE");
+                            log.debug("Go back to IDLE state");
                             `endif
                             read_addr_if <= 1'b1;
                             read_addr_mf <= 1'b0;
                             seq <= IDLE;
                         end
                     end
+
                     // Fetch a new instruction in external memory
                     LOAD: begin
 
-                        // Handshaked with memory controller, now
-                        // wait for the write stage to restart
-                        if (memctrl_arvalid && memctrl_arready) begin
-                            `ifdef USE_SVL
-                            log.debug("Read memory");
-                            `endif
-                            memctrl_arvalid <= 1'b0;
-                        end
-
-                        // If a reboot has been initiated, move back to IDLE
-                        // to avoid a race condition which will fetch twice
-                        // the next first instruction
-                        if (flush_reqs || flush_blocks) begin
-                            seq <= IDLE;
-                            cache_miss_r <= 1'b0;
-                            memctrl_arvalid <= 1'b0;
                         // Go to read the cache lines once the memory controller
-                        // wrote a new cache line, the read completion
-                        end else if (cache_writing) begin
+                        // wrote a new cache line
+                        if (cache_writing) begin
                             `ifdef USE_SVL
                             log.debug("Go to missed-fetch state");
                             `endif
@@ -399,12 +397,9 @@ module friscv_icache_fetcher
 
 
     ///////////////////////////////////////////////////////////////////////////
-    // AXI4-lite interface management
+    // AXI4-lite read completion channel
     ///////////////////////////////////////////////////////////////////////////
 
-
-    // Read address request handshake if able to receive
-    assign ctrl_arready = (~fifo_full_if && ~flush_reqs) ? 1'b1 : 1'b0;
 
     // Manage read data channel back-pressure in case RVALID has been
     // asserted but RREADY wasn't asserted. RDATA stay stable, even after
@@ -419,7 +414,7 @@ module friscv_icache_fetcher
             rid_r <= {AXI_ID_W{1'b0}};
             rdata_r <= {ILEN{1'b0}};
         end else begin
-            if (ctrl_rvalid && !ctrl_rready) rvalid_r <= 1'b1;
+            if (mst_rvalid && !mst_rready) rvalid_r <= 1'b1;
             else rvalid_r <= 1'b0;
 
             if (rvalid_r==1'b0) begin
@@ -429,13 +424,75 @@ module friscv_icache_fetcher
         end
     end
 
-    assign ctrl_rvalid = (cache_hit & !cache_miss_r | rvalid_r);
-    assign ctrl_rdata = (rvalid_r) ? rdata_r : cache_rdata;
-    assign ctrl_rresp = 2'b0;
-    assign ctrl_rid = (rvalid_r) ? rid_r : arid_ffd;
+    assign mst_rvalid = (cache_hit & !cache_miss_r | rvalid_r);
+    assign mst_rdata = (rvalid_r) ? rdata_r : cache_rdata;
+    assign mst_rresp = 2'b0;
+    assign mst_rid = (rvalid_r) ? rid_r : arid_ffd;
 
-    // Just transmit, and not managed at all in the core
-    assign memctrl_arprot = ctrl_arprot;
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Memory controller management
+    ///////////////////////////////////////////////////////////////////////////
+
+    // FSM sequencer controlling the cache lines and the memory controller
+    always @ (posedge aclk or negedge aresetn) begin
+
+        if (~aresetn) begin
+            memctrl_arvalid <= 1'b0;
+            memctrl_araddr <= {AXI_ADDR_W{1'b0}};
+            memctrl_arid <= {AXI_ID_W{1'b0}};
+            memctrl_arprot <= 3'b0;
+            loader <= IDLE;
+        end else if (srst) begin
+            memctrl_arvalid <= 1'b0;
+            memctrl_araddr <= {AXI_ADDR_W{1'b0}};
+            memctrl_arid <= {AXI_ID_W{1'b0}};
+            memctrl_arprot <= 3'b0;
+            loader <= IDLE;
+        end else begin
+
+            case (seq)
+                // Wait for the address requests from the instruction fetcher
+                default: begin
+                    if (cache_miss) begin
+                        memctrl_arvalid <= 1'b1;
+                        memctrl_araddr <= araddr_ffd;
+                        memctrl_arid <= arid_ffd;
+                        memctrl_arprot <= arprot_ffd;
+                        loader <= LOAD;
+                    end else begin
+                        memctrl_arvalid <= 1'b0;
+                    end
+                end
+                // Fetch a new instruction in external memory
+                LOAD: begin
+
+                    // Handshaked with memory controller, now
+                    // wait for the write stage to restart
+                    if (memctrl_arvalid && memctrl_arready) begin
+                        `ifdef USE_SVL
+                        log.debug("Read memory");
+                        `endif
+                        memctrl_arvalid <= 1'b0;
+                    end
+
+                    // If a reboot has been initiated, move back to IDLE
+                    // to avoid a race condition which will fetch twice
+                    // the next first instruction
+                    if (flush_reqs || flush_blocks) begin
+                        loader <= IDLE;
+                        memctrl_arvalid <= 1'b0;
+                    // Go to read the cache lines once the memory controller
+                    // wrote a new cache line, the read completion
+                    end else if (cache_writing) begin
+                        `ifdef USE_SVL
+                        `endif
+                        loader <= IDLE;
+                    end
+                end
+            endcase
+        end
+    end
 
 endmodule
 

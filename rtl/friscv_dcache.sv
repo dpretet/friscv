@@ -8,17 +8,15 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 //
-// Data cache module
+// Data cache circuit
 //
-// - 2/4/8 way associative placement policy
-// - Random replacement policy
+// - Direct-mapped (1-way) placement policy
 // - Parametrizable cache depth
 // - Parametrizable cache line width
 // - Transparent operation, no need of user management
-// - Software-based flush control with FENCE.i instruction
-// - Cache control & status observable by a debug interface
-// - slave AXI4-lite interface to fetch instructions
-// - master AXI4 interface to read central memory
+// - IO mapping for direct read/write access to GPIOs and IO peripherals
+// - Slave AXI4-lite interface to fetch instructions
+// - Master AXI4 interface to read/write the  central memory
 //
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -35,6 +33,13 @@ module friscv_dcache
         parameter XLEN = 32,
         // Number of outstanding requests supported
         parameter OSTDREQ_NUM = 4,
+        // IO regions for direct read/write access
+        parameter IO_REGION_NUMBER = 1,
+        // IO address ranges, organized by memory region as END-ADDR_START-ADDR:
+        // > 0xEND-MEM2_START-MEM2_END_MEM1-STARr-MEM1_END-MEM0_START-MEM0
+        // IO mapping can be contiguous or sparse, no restriction on the number,
+        // the size or the range if it fits into the XLEN addressable space
+        parameter [XLEN*2*IO_REGION_NUMBER-1:0] IO_MAP = 64'h001000FF_00100000,
 
         ///////////////////////////////////////////////////////////////////////
         // Interface Setup
@@ -46,8 +51,7 @@ module friscv_dcache
         parameter AXI_ID_W = 8,
         // AXI4 data width, independant of control unit width
         parameter AXI_DATA_W = 8,
-        // ID Mask to apply to identify the instruction cache in the AXI4
-        // infrastructure
+        // ID Mask to apply to identify the data cache in the AXI4 infrastructure
         parameter AXI_ID_MASK = 'h20,
 
         ///////////////////////////////////////////////////////////////////////
@@ -62,12 +66,11 @@ module friscv_dcache
         parameter CACHE_DEPTH = 512
 
     )(
+        // Global interface
         input  wire                       aclk,
         input  wire                       aresetn,
         input  wire                       srst,
-        // Flush control
-        input  wire                       flush_req,
-        output logic                      flush_ack,
+
         // memfy memory interface
         input  wire                       memfy_awvalid,
         output logic                      memfy_awready,
@@ -92,7 +95,8 @@ module friscv_dcache
         output logic [AXI_ID_W      -1:0] memfy_rid,
         output logic [2             -1:0] memfy_rresp,
         output logic [XLEN          -1:0] memfy_rdata,
-        // AXI4 Write channels interface to central memory
+
+        // AXI4 write channels interface to central memory
         output logic                      dcache_awvalid,
         input  wire                       dcache_awready,
         output logic [AXI_ADDR_W    -1:0] dcache_awaddr,
@@ -114,7 +118,8 @@ module friscv_dcache
         output logic                      dcache_bready,
         input  wire  [AXI_ID_W      -1:0] dcache_bid,
         input  wire  [2             -1:0] dcache_bresp,
-        // AXI4 Read channels interface to central memory
+
+        // AXI4 read channels interface to central memory
         output logic                      dcache_arvalid,
         input  wire                       dcache_arready,
         output logic [AXI_ADDR_W    -1:0] dcache_araddr,
@@ -135,158 +140,288 @@ module friscv_dcache
         input  wire                       dcache_rlast
     );
 
+
+    // Signals driving the cache blocks
+    logic                          memctrl_cache_wen;
+    logic [AXI_ADDR_W        -1:0] memctrl_cache_waddr;
+    logic [CACHE_BLOCK_W     -1:0] memctrl_cache_wdata;
+    logic                          fetcher_cache_ren;
+    logic [AXI_ADDR_W        -1:0] fetcher_cache_raddr;
+    logic [ILEN              -1:0] fetcher_cache_rdata;
+    logic                          fetcher_cache_hit;
+    logic                          fetcher_cache_miss;
+    logic                          pusher_cache_wen;
+    logic [AXI_ADDR_W        -1:0] pusher_cache_waddr;
+    logic [CACHE_BLOCK_W     -1:0] pusher_cache_wdata;
+    logic [CACHE_BLOCK_W/8   -1:0] pusher_cache_wstrb;
+    logic                          pusher_cache_ren;
+    logic [AXI_ADDR_W        -1:0] pusher_cache_raddr;
+    logic [ILEN              -1:0] pusher_cache_rdata;
+    logic                          pusher_cache_hit;
+    logic                          pusher_cache_miss;
+
+    logic                          cache_loading;
+
+    // Memory controller interface
+    logic                     memctrl_arvalid;
+    logic                     memctrl_arready;
+    logic [AXI_ADDR_W   -1:0] memctrl_araddr;
+    logic [3            -1:0] memctrl_arprot;
+    logic [AXI_ID_W     -1:0] memctrl_arid;
+    logic                     memctrl_awvalid;
+    logic                     memctrl_awready;
+    logic [AXI_ADDR_W   -1:0] memctrl_awaddr;
+    logic [3            -1:0] memctrl_awprot;
+    logic [AXI_ID_W     -1:0] memctrl_awid;
+    logic                     memctrl_wvalid;
+    logic                     memctrl_wready;
+    logic [XLEN         -1:0] memctrl_wdata;
+    logic [XLEN/8       -1:0] memctrl_wstrb;
+    logic                     memctrl_bvalid;
+    logic                     memctrl_bready;
+    logic [AXI_ID_W     -1:0] memctrl_bid;
+    logic [2            -1:0] memctrl_bresp;
+
+    // Flag to pause fetcher and pusher on concurrent read/write access
+    // to ensure the ordering rules are correctly applied
+    logic                     pending_rd;
+    logic                     pending_wr;
+    logic                     flushing;
+
+
     ///////////////////////////////////////////////////////////////////////////
-    // Parameters and signals declarations
+    // Cache sequencers, fetcher manages read requests, pusher write requests
     ///////////////////////////////////////////////////////////////////////////
 
-    localparam ADDR_LSB = $clog2(XLEN/8);
-    localparam SCALE = AXI_DATA_W / XLEN;
-    localparam SCALE_W = $clog2(SCALE);
-
-    logic [AXI_ADDR_W    -1:0] awaddr_w;
-    logic [AXI_ADDR_W    -1:0] araddr_w;
-    logic [SCALE_W-1:0] wr_position;
-    logic [SCALE_W-1:0] rd_position;
-
-    logic                  wch_full;
-    logic                  wch_empty;
-    logic                  rch_full;
-    logic                  rch_empty;
-
-
-    ///////////////////////////////////////////////////////////////////////////
-    // Hardcoded setup
-    ///////////////////////////////////////////////////////////////////////////
-
-    assign flush_ack = 1'b1;
-
-
-    ///////////////////////////////////////////////////////////////////////////
-    // Write Address channel
-    ///////////////////////////////////////////////////////////////////////////
-
-    // This FIFO stores the address for write data alignement
-    friscv_scfifo
+    friscv_cache_fetcher
     #(
-    .PASS_THRU  (0),
-    .ADDR_WIDTH ($clog2(OSTDREQ_NUM)),
-    .DATA_WIDTH (AXI_ADDR_W)
+        .NAME             ("dCache-Fetcher"),
+        .ILEN             (ILEN),
+        .XLEN             (XLEN),
+        .OSTDREQ_NUM      (OSTDREQ_NUM),
+        .IO_REGION_NUMBER (IO_REGION_NUMBER),
+        .IO_MAP           (IO_MAP),
+        .AXI_ADDR_W       (AXI_ADDR_W),
+        .AXI_ID_W         (AXI_ID_W),
+        .AXI_DATA_W       (AXI_DATA_W)
     )
-    wch_addr
+    fetcher
     (
-    .aclk     (aclk),
-    .aresetn  (aresetn),
-    .srst     (srst),
-    .flush    (1'b0),
-    .data_in  (memfy_awaddr),
-    .push     (memfy_awvalid & memfy_awready),
-    .full     (wch_full),
-    .afull    (),
-    .data_out (awaddr_w),
-    .pull     (dcache_wvalid & dcache_wready & dcache_wlast),
-    .empty    (wch_empty),
-    .aempty   ()
+        .aclk            (aclk),
+        .aresetn         (aresetn),
+        .srst            (srst),
+        .flush_reqs      (1'b0),
+        .flush_blocks    (1'b0),
+        .flush_ack       (),
+        .pending_wr      (pending_wr),
+        .pending_rd      (pending_rd),
+        .mst_arvalid     (memfy_arvalid),
+        .mst_arready     (memfy_arready),
+        .mst_araddr      (memfy_araddr),
+        .mst_arprot      (memfy_arprot),
+        .mst_arid        (memfy_arid),
+        .mst_rvalid      (memfy_rvalid),
+        .mst_rready      (memfy_rready),
+        .mst_rid         (memfy_rid),
+        .mst_rresp       (memfy_rresp),
+        .mst_rdata       (memfy_rdata),
+        .memctrl_arvalid (memctrl_arvalid),
+        .memctrl_arready (memctrl_arready),
+        .memctrl_araddr  (memctrl_araddr),
+        .memctrl_arprot  (memctrl_arprot),
+        .memctrl_arid    (memctrl_arid),
+        .cache_writing   (memctrl_cache_wen),
+        .cache_loading   (cache_loading),
+        .cache_ren       (fetcher_cache_ren),
+        .cache_raddr     (fetcher_cache_raddr),
+        .cache_rdata     (fetcher_cache_rdata),
+        .cache_hit       (fetcher_cache_hit),
+        .cache_miss      (fetcher_cache_miss)
     );
 
-    // Drive address channel signals
-    assign dcache_awvalid = memfy_awvalid & !wch_full;
-    assign memfy_awready = dcache_awready & !wch_full;
-    assign dcache_awaddr = memfy_awaddr;
-    assign dcache_awlen = 8'h0;
-    assign dcache_awburst = 2'b01;
-    assign dcache_awid = memfy_awid | AXI_ID_MASK;
-    assign dcache_awregion = 4'b0;
-    assign dcache_awsize = 3'b0;
-    assign dcache_awlock = 2'b0;
-    assign dcache_awcache = 4'b0;
-    assign dcache_awprot = 3'b0;
-    assign dcache_awqos = 4'b0;
-
-
-
-    ///////////////////////////////////////////////////////////////////////////
-    // Write Data channel
-    ///////////////////////////////////////////////////////////////////////////
-
-    assign wr_position = memfy_awaddr[ADDR_LSB+:SCALE_W];
-
-    always @ (*) begin: GEN_WSTRB
-        for (int i=0;i<SCALE;i=i+1) begin
-            if (i==wr_position) begin: WSTRB_ON
-                dcache_wstrb[i*XLEN/8+:XLEN/8] = memfy_wstrb;
-            end else begin: WSTRB_OFF
-                dcache_wstrb[i*XLEN/8+:XLEN/8] = {XLEN/8{1'b0}};
-            end
-        end
-    end
-
-    assign dcache_wdata = {SCALE{memfy_wdata}};
-    assign dcache_wvalid = memfy_wvalid;
-    assign memfy_wready = dcache_wready;
-    assign dcache_wlast = 1'b1;
-
-    ///////////////////////////////////////////////////////////////////////////
-    // Write Reponse channel
-    ///////////////////////////////////////////////////////////////////////////
-
-    assign memfy_bvalid = dcache_bvalid;
-    assign memfy_bid = dcache_bid;
-    assign memfy_bresp = dcache_bresp;
-    assign dcache_bready = memfy_bready;
-
-    ///////////////////////////////////////////////////////////////////////////
-    // Read Address channel
-    ///////////////////////////////////////////////////////////////////////////
-
-    // This FIFO stores the address for read data alignement
-    friscv_scfifo
+    friscv_cache_pusher 
     #(
-    .PASS_THRU  (0),
-    .ADDR_WIDTH ($clog2(OSTDREQ_NUM)),
-    .DATA_WIDTH (AXI_ADDR_W)
+        .ILEN             (ILEN),
+        .XLEN             (XLEN),
+        .OSTDREQ_NUM      (OSTDREQ_NUM),
+        .IO_REGION_NUMBER (IO_REGION_NUMBER),
+        .IO_MAP           (IO_MAP),
+        .AXI_ADDR_W       (AXI_ADDR_W),
+        .AXI_ID_W         (AXI_ID_W),
+        .AXI_DATA_W       (AXI_DATA_W),
+        .AXI_ID_MASK      (AXI_ID_MASK),
+        .CACHE_BLOCK_W    (CACHE_BLOCK_W)
     )
-    rch_addr
+    pusher 
     (
-    .aclk     (aclk),
-    .aresetn  (aresetn),
-    .srst     (srst),
-    .flush    (1'b0),
-    .data_in  (memfy_araddr),
-    .push     (memfy_arvalid & memfy_arready),
-    .full     (rch_full),
-    .data_out (araddr_w),
-    .pull     (dcache_rvalid & dcache_rready & dcache_rlast),
-    .empty    (rch_empty)
+        .aclk            (aclk),
+        .aresetn         (aresetn),
+        .srst            (srst),
+        .pending_wr      (pending_wr),
+        .pending_rd      (pending_rd),
+        .mst_awvalid     (memfy_awvalid),
+        .mst_awready     (memfy_awready),
+        .mst_awaddr      (memfy_awaddr),
+        .mst_awprot      (memfy_awprot),
+        .mst_awid        (memfy_awid),
+        .mst_wvalid      (memfy_wvalid),
+        .mst_wready      (memfy_wready),
+        .mst_wdata       (memfy_wdata),
+        .mst_wstrb       (memfy_wstrb),
+        .mst_bvalid      (memfy_bvalid),
+        .mst_bready      (memfy_bready),
+        .mst_bid         (memfy_bid),
+        .mst_bresp       (memfy_bresp),
+        .memctrl_awvalid (memctrl_awvalid),
+        .memctrl_awready (memctrl_awready),
+        .memctrl_awaddr  (memctrl_awaddr),
+        .memctrl_awprot  (memctrl_awprot),
+        .memctrl_awid    (memctrl_awid),
+        .memctrl_wvalid  (memctrl_wvalid),
+        .memctrl_wready  (memctrl_wready),
+        .memctrl_wdata   (memctrl_wdata),
+        .memctrl_wstrb   (memctrl_wstrb),
+        .memctrl_bvalid  (memctrl_bvalid),
+        .memctrl_bready  (memctrl_bready),
+        .memctrl_bid     (memctrl_bid),
+        .memctrl_bresp   (memctrl_bresp),
+        .cache_ren       (pusher_cache_ren),
+        .cache_raddr     (pusher_cache_raddr),
+        .cache_hit       (pusher_cache_hit),
+        .cache_miss      (pusher_cache_miss),
+        .cache_wen       (pusher_cache_wen),
+        .cache_wstrb     (pusher_cache_wstrb),
+        .cache_waddr     (pusher_cache_waddr),
+        .cache_wdata     (pusher_cache_wdata)
     );
 
-    // Drive address channel signals
-    assign dcache_arvalid = memfy_arvalid & !rch_full;
-    assign memfy_arready = dcache_arready & !rch_full;
-    assign dcache_araddr = memfy_araddr;
-    assign dcache_arlen = 8'h0;
-    assign dcache_arburst = 2'b01;
-    assign dcache_arsize = 3'b0;
-    assign dcache_arid = memfy_arid | AXI_ID_MASK;
-    assign dcache_arregion = 4'b0;
-    assign dcache_arlock = 2'b0;
-    assign dcache_arcache = 4'b0;
-    assign dcache_arprot = 3'b0;
-    assign dcache_arqos = 4'b0;
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Cache blocks Storage
+    ///////////////////////////////////////////////////////////////////////////
+
+    friscv_cache_blocks
+    #(
+        .ILEN          (ILEN),
+        .ADDR_W        (AXI_ADDR_W),
+        .CACHE_BLOCK_W (CACHE_BLOCK_W),
+        .CACHE_DEPTH   (CACHE_DEPTH)
+    )
+    cache_blocks
+    (
+        .aclk       (aclk),
+        .aresetn    (aresetn),
+        .srst       (srst),
+        .flush      (flushing),
+        .p1_wen     (memctrl_cache_wen),
+        .p1_wstrb   ({CACHE_BLOCK_W/8{1'b1}}),
+        .p1_waddr   (memctrl_cache_waddr),
+        .p1_wdata   (memctrl_cache_wdata),
+        .p1_ren     (fetcher_cache_ren),
+        .p1_raddr   (fetcher_cache_raddr),
+        .p1_rdata   (fetcher_cache_rdata),
+        .p1_hit     (fetcher_cache_hit),
+        .p1_miss    (fetcher_cache_miss),
+        .p2_wen     (pusher_cache_wen),
+        .p2_wstrb   (pusher_cache_wstrb),
+        .p2_waddr   (pusher_cache_waddr),
+        .p2_wdata   (pusher_cache_wdata),
+        .p2_ren     (pusher_cache_ren),
+        .p2_raddr   (pusher_cache_raddr),
+        .p2_rdata   (),
+        .p2_hit     (pusher_cache_hit),
+        .p2_miss    (pusher_cache_miss)
+    );
 
 
     ///////////////////////////////////////////////////////////////////////////
-    // Read Data channel
+    // AXI4 memory controller to read external memory
     ///////////////////////////////////////////////////////////////////////////
 
-    assign rd_position = araddr_w[ADDR_LSB+:SCALE_W];
-
-    assign memfy_rdata = dcache_rdata[rd_position*XLEN+:XLEN];
-    assign memfy_rvalid = dcache_rvalid;
-    assign dcache_rready = memfy_rready;
-    assign memfy_rid = dcache_rid;
-    assign memfy_rresp = dcache_rresp;
+    friscv_cache_memctrl
+    #(
+        .ILEN          (ILEN),
+        .XLEN          (XLEN),
+        .RW_MODE       (1),
+        .OSTDREQ_NUM   (OSTDREQ_NUM),
+        .AXI_ADDR_W    (AXI_ADDR_W),
+        .AXI_ID_W      (AXI_ID_W),
+        .AXI_DATA_W    (AXI_DATA_W),
+        .AXI_ID_MASK   (AXI_ID_MASK),
+        .CACHE_BLOCK_W (CACHE_BLOCK_W),
+        .CACHE_DEPTH   (CACHE_DEPTH)
+    )
+    mem_ctrl
+    (
+        .aclk           (aclk),
+        .aresetn        (aresetn),
+        .srst           (srst),
+        .flush_blocks   (1'b0),
+        .flush_ack      (),
+        .flushing       (flushing),
+        .mst_arvalid    (memctrl_arvalid),
+        .mst_arready    (memctrl_arready),
+        .mst_araddr     (memctrl_araddr),
+        .mst_arprot     (memctrl_arprot),
+        .mst_arid       (memctrl_arid),
+        .mst_awvalid    (memctrl_awvalid),
+        .mst_awready    (memctrl_awready),
+        .mst_awaddr     (memctrl_awaddr),
+        .mst_awprot     (memctrl_awprot),
+        .mst_awid       (memctrl_awid),
+        .mst_wvalid     (memctrl_wvalid),
+        .mst_wready     (memctrl_wready),
+        .mst_wdata      (memctrl_wdata),
+        .mst_wstrb      (memctrl_wstrb),
+        .mst_bvalid     (memctrl_bvalid),
+        .mst_bready     (memctrl_bready),
+        .mst_bid        (memctrl_bid),
+        .mst_bresp      (memctrl_bresp),
+        .mem_awvalid    (dcache_awvalid),
+        .mem_awready    (dcache_awready),
+        .mem_awaddr     (dcache_awaddr),
+        .mem_awlen      (dcache_awlen),
+        .mem_awsize     (dcache_awsize),
+        .mem_awburst    (dcache_awburst),
+        .mem_awlock     (dcache_awlock),
+        .mem_awcache    (dcache_awcache),
+        .mem_awprot     (dcache_awprot),
+        .mem_awqos      (dcache_awqos),
+        .mem_awregion   (dcache_awregion),
+        .mem_awid       (dcache_awid),
+        .mem_wvalid     (dcache_wvalid),
+        .mem_wready     (dcache_wready),
+        .mem_wlast      (dcache_wlast),
+        .mem_wdata      (dcache_wdata),
+        .mem_wstrb      (dcache_wstrb),
+        .mem_bvalid     (dcache_bvalid),
+        .mem_bready     (dcache_bready),
+        .mem_bid        (dcache_bid),
+        .mem_bresp      (dcache_bresp),
+        .mem_arvalid    (dcache_arvalid),
+        .mem_arready    (dcache_arready),
+        .mem_araddr     (dcache_araddr),
+        .mem_arlen      (dcache_arlen),
+        .mem_arsize     (dcache_arsize),
+        .mem_arburst    (dcache_arburst),
+        .mem_arlock     (dcache_arlock),
+        .mem_arcache    (dcache_arcache),
+        .mem_arprot     (dcache_arprot),
+        .mem_arqos      (dcache_arqos),
+        .mem_arregion   (dcache_arregion),
+        .mem_arid       (dcache_arid),
+        .mem_rvalid     (dcache_rvalid),
+        .mem_rready     (dcache_rready),
+        .mem_rid        (dcache_rid),
+        .mem_rresp      (dcache_rresp),
+        .mem_rdata      (dcache_rdata),
+        .mem_rlast      (dcache_rlast),
+        .cache_loading  (cache_loading),
+        .cache_wen      (memctrl_cache_wen),
+        .cache_waddr    (memctrl_cache_waddr),
+        .cache_wdata    (memctrl_cache_wdata)
+    );
 
 endmodule
 
 `resetall
-
