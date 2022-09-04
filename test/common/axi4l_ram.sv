@@ -8,14 +8,29 @@
 // A simple AXI4-lite RAM model, simulation only. Dual port which can be with
 // different widths.
 //
-// Limitations:
-// - assume only a power of two ratio between ports' data width
+// TODO: Manage independant write address and data channel in compliance mode
 ///////////////////////////////////////////////////////////////////////////////
 
 module axi4l_ram
 
     #(
         parameter INIT  = "init.v",
+
+        // Performance or Compliance mode
+        //  - compliance: throttle all channels handshakes to ensure proper back-pressure support
+        //  - performance: complete ASAP a read or write request
+        parameter MODE = "compliance",
+
+        // Seeds used in LSFR, per channel and port
+        parameter P1_RD_ADDR_SEED = 32'hCCCCCCCC,
+        parameter P1_RD_DATA_SEED = 32'h986A23CC,
+        parameter P2_RD_ADDR_SEED = 32'h1C6CDCC5,
+        parameter P2_RD_DATA_SEED = 32'h4567CCA0,
+        parameter P1_WR_ADDR_SEED = 32'h8711CBAA,
+        parameter P1_WR_DATA_SEED = 32'h0,
+        parameter P2_WR_ADDR_SEED = 32'h12349876,
+        parameter P2_WR_DATA_SEED = 32'h0,
+
         // Address bus width defined for both control and AXI4 address signals
         parameter AXI_ADDR_W = 8,
         // AXI ID width, setup by default to 8 and unused
@@ -142,23 +157,23 @@ module axi4l_ram
     logic [AXI2_DATA_W-1:0  ] p2_wdata_s;
     logic [AXI2_DATA_W/8-1:0] p2_wstrb_s;
 
-    logic [32            -1:0] p1_awready_lfsr;
-    logic [32            -1:0] p2_awready_lfsr;
-    logic [32            -1:0] p1_aw_lfsr;
-    logic [32            -1:0] p2_aw_lfsr;
-    logic [32            -1:0] p1_arready_lfsr;
-    logic [32            -1:0] p2_arready_lfsr;
-    logic [32            -1:0] p1_ar_lfsr;
-    logic [32            -1:0] p2_ar_lfsr;
+    logic [32           -1:0] p1_awready_lfsr;
+    logic [32           -1:0] p2_awready_lfsr;
+    logic [32           -1:0] p1_aw_lfsr;
+    logic [32           -1:0] p2_aw_lfsr;
+    logic [32           -1:0] p1_arready_lfsr;
+    logic [32           -1:0] p2_arready_lfsr;
+    logic [32           -1:0] p1_ar_lfsr;
+    logic [32           -1:0] p2_ar_lfsr;
+    logic [32           -1:0] p1_r_lfsr;
+    logic [32           -1:0] p1_rvalid_lfsr;
+    logic [32           -1:0] p2_r_lfsr;
+    logic [32           -1:0] p2_rvalid_lfsr;
 
-    logic [32            -1:0] p1_r_lfsr;
-    logic [32            -1:0] p1_rvalid_lfsr;
-    logic [32            -1:0] p2_r_lfsr;
-    logic [32            -1:0] p2_rvalid_lfsr;
 
-    ///////////////////////////////////////////////////////////////////////////
-    // Read address channels, store info to perform the read accesses
-    ///////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////
+    // Read Address Channel Port 1
+    ///////////////////////////////////////////////////////////////
 
     friscv_scfifo
     #(
@@ -179,40 +194,53 @@ module axi4l_ram
         .empty    (p1_raddr_empty)
     );
 
-    always @ (posedge aclk or negedge aresetn) begin
+    generate if (MODE=="compliance") begin
 
-        if (~aresetn) begin
-            p1_arready_lfsr <= 32'b0;
-        end else if (srst) begin
-            p1_arready_lfsr <= 32'b0;
-        end else begin
-            // At startup init with LFSR default value
-            if (p1_arready_lfsr==32'b0) begin
-                p1_arready_lfsr <= p1_ar_lfsr;
-            // Use to randomly assert arready
-            end else if (~p1_arready) begin
-                p1_arready_lfsr <= p1_arready_lfsr >> 1;
-            end else if (p1_arvalid) begin
-                p1_arready_lfsr <= p1_ar_lfsr;
+        always @ (posedge aclk or negedge aresetn) begin
+
+            if (~aresetn) begin
+                p1_arready_lfsr <= 32'b0;
+            end else if (srst) begin
+                p1_arready_lfsr <= 32'b0;
+            end else begin
+                // At startup init with LFSR default value
+                if (p1_arready_lfsr==32'b0) begin
+                    p1_arready_lfsr <= p1_ar_lfsr;
+                // Use to randomly assert arready
+                end else if (~p1_arready) begin
+                    p1_arready_lfsr <= p1_arready_lfsr >> 1;
+                end else if (p1_arvalid) begin
+                    p1_arready_lfsr <= p1_ar_lfsr;
+                end
             end
         end
+
+        lfsr32
+        #(
+            .KEY (P1_RD_ADDR_SEED)
+        )
+        p1_arch_lfsr
+        (
+            .aclk    (aclk),
+            .aresetn (aresetn),
+            .srst    (srst),
+            .en      (p1_arvalid & p1_arready),
+            .lfsr    (p1_ar_lfsr)
+        );
+
+        assign p1_arready = p1_arready_lfsr[0] & ~p1_raddr_full;
+
+    // Performance mode
+    end else begin
+
+        assign p1_arready = ~p1_raddr_full;
+
     end
+    endgenerate
 
-    assign p1_arready = p1_arready_lfsr[0] & ~p1_raddr_full;
-
-    lfsr32
-    #(
-        .KEY ('hCCCCCCCC)
-    )
-    p1_arch_lfsr
-    (
-        .aclk    (aclk),
-        .aresetn (aresetn),
-        .srst    (srst),
-        .en      (p1_arvalid & p1_arready),
-        .lfsr    (p1_ar_lfsr)
-    );
-
+    ///////////////////////////////////////////////////////////////
+    // Read Address Channel Port 2
+    ///////////////////////////////////////////////////////////////
 
     friscv_scfifo
     #(
@@ -233,48 +261,56 @@ module axi4l_ram
         .empty    (p2_raddr_empty)
     );
 
-    always @ (posedge aclk or negedge aresetn) begin
+    generate if (MODE=="compliance") begin
 
-        if (~aresetn) begin
-            p2_arready_lfsr <= 32'b0;
-        end else if (srst) begin
-            p2_arready_lfsr <= 32'b0;
-        end else begin
-            // At startup init with LFSR default value
-            if (p2_arready_lfsr==32'b0) begin
-                p2_arready_lfsr <= p2_ar_lfsr;
-            // Use to randomly assert arready
-            end else if (~p2_arready) begin
-                p2_arready_lfsr <= p2_arready_lfsr >> 1;
-            end else if (p2_arvalid) begin
-                p2_arready_lfsr <= p2_ar_lfsr;
+        always @ (posedge aclk or negedge aresetn) begin
+
+            if (~aresetn) begin
+                p2_arready_lfsr <= 32'b0;
+            end else if (srst) begin
+                p2_arready_lfsr <= 32'b0;
+            end else begin
+                // At startup init with LFSR default value
+                if (p2_arready_lfsr==32'b0) begin
+                    p2_arready_lfsr <= p2_ar_lfsr;
+                // Use to randomly assert arready
+                end else if (~p2_arready) begin
+                    p2_arready_lfsr <= p2_arready_lfsr >> 1;
+                end else if (p2_arvalid) begin
+                    p2_arready_lfsr <= p2_ar_lfsr;
+                end
             end
         end
+
+        lfsr32
+        #(
+            .KEY (P2_RD_ADDR_SEED)
+        )
+        p2_arch_lfsr
+        (
+            .aclk    (aclk),
+            .aresetn (aresetn),
+            .srst    (srst),
+            .en      (p2_arvalid & p2_arready),
+            .lfsr    (p2_ar_lfsr)
+        );
+
+        assign p2_arready = p2_arready_lfsr[0] & ~p2_raddr_full;
+
+    // Performance mode
+    end else begin
+
+        assign p2_arready = ~p2_raddr_full;
+
     end
-
-    assign p2_arready = p2_arready_lfsr[0] & ~p2_raddr_full;
-
-    lfsr32
-    #(
-        .KEY ('h1C6CDCC5)
-    )
-    p2_arch_lfsr
-    (
-        .aclk    (aclk),
-        .aresetn (aresetn),
-        .srst    (srst),
-        .en      (p2_arvalid & p2_arready),
-        .lfsr    (p2_ar_lfsr)
-    );
-
+    endgenerate
 
 
     ///////////////////////////////////////////////////////////////////////////
-    // Read data channels, complete the read requets
+    // Read data channels Port 1
     ///////////////////////////////////////////////////////////////////////////
 
     assign p1_raddr_pull = p1_rvalid & p1_rready;
-    assign p2_raddr_pull = p2_rvalid & p2_rready;
 
     always @ (posedge aclk or negedge aresetn) begin
 
@@ -298,20 +334,30 @@ module axi4l_ram
         end
     end
 
-    lfsr32
-    #(
-    .KEY (32'h986A23CC)
-    )
-    p1_rch_lfsr
-    (
-    .aclk    (aclk),
-    .aresetn (aresetn),
-    .srst    (srst),
-    .en      (p1_rvalid & p1_rready),
-    .lfsr    (p1_r_lfsr)
-    );
+    generate if (MODE=="compliance") begin
 
-    assign p1_rvalid = p1_rvalid_lfsr[0] & ~p1_raddr_empty;
+        lfsr32
+        #(
+            .KEY (P1_RD_DATA_SEED)
+        )
+        p1_rch_lfsr
+        (
+            .aclk    (aclk),
+            .aresetn (aresetn),
+            .srst    (srst),
+            .en      (p1_rvalid & p1_rready),
+            .lfsr    (p1_r_lfsr)
+        );
+
+        assign p1_rvalid = p1_rvalid_lfsr[0] & ~p1_raddr_empty;
+
+    // Performance Mode
+    end else begin
+
+        assign p1_rvalid = ~p1_raddr_empty;
+
+    end
+    endgenerate
 
     // Get the position in the RAM line in bits:
     //  - p1_araddr_s[0+:ADDR_LSB_W] : get the start address in byte
@@ -330,6 +376,13 @@ module axi4l_ram
     assign p1_rid = p1_arid_s;
     assign p1_rresp = 2'b0;
 
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Read data channels Port 2
+    ///////////////////////////////////////////////////////////////////////////
+
+    assign p2_raddr_pull = p2_rvalid & p2_rready;
+
     always @ (posedge aclk or negedge aresetn) begin
 
         if (~aresetn) begin
@@ -346,36 +399,37 @@ module axi4l_ram
             end else if (p2_rready) begin
                 p2_rvalid_lfsr <= p2_r_lfsr;
                 `ifndef NO_RAM_LOG
-                $fwrite(f, "(@ %0t) Port 2 - Read  Addr=%x Data=%x\n", $realtime, p1_araddr_s, p1_rdata);
+                $fwrite(f, "(@ %0t) Port 2 - Read  Addr=%x Data=%x\n", $realtime, p2_araddr_s, p2_rdata);
                 `endif
             end
         end
     end
 
-    lfsr32
-    #(
-    .KEY (32'h4567CCA0)
-    )
-    p2_rch_lfsr
-    (
-    .aclk    (aclk),
-    .aresetn (aresetn),
-    .srst    (srst),
-    .en      (p2_rvalid & p2_rready),
-    .lfsr    (p2_r_lfsr)
-    );
+    generate if (MODE=="compliance") begin
 
-    assign p2_rvalid = p2_rvalid_lfsr[0] & ~p2_raddr_empty;
-    // always @ (posedge aclk or negedge aresetn) begin
-//
-        // if (~aresetn) begin
-            // p2_rvalid <= 1'b0;
-        // end else if (srst) begin
-            // p2_rvalid <= 1'b0;
-        // end else begin
-            // p2_rvalid <= p2_rvalid_lfsr[0] & ~p2_raddr_empty;
-        // end
-    // end
+        lfsr32
+        #(
+            .KEY (P2_RD_DATA_SEED)
+        )
+        p2_rch_lfsr
+        (
+            .aclk    (aclk),
+            .aresetn (aresetn),
+            .srst    (srst),
+            .en      (p2_rvalid & p2_rready),
+            .lfsr    (p2_r_lfsr)
+        );
+
+        assign p2_rvalid = p2_rvalid_lfsr[0] & ~p2_raddr_empty;
+
+    // Performance Mode
+    end else begin
+
+        assign p2_rvalid = ~p2_raddr_empty;
+
+    end
+    endgenerate
+
 
     // Get the position in the RAM line in bits:
     //  - p2_araddr_s[0+:ADDR_LSB_W] : get the start address in byte
@@ -396,7 +450,7 @@ module axi4l_ram
 
 
     ///////////////////////////////////////////////////////////////////////////
-    // Write address channels, store info to perform the write accesses
+    // Write address channel Port 1
     ///////////////////////////////////////////////////////////////////////////
 
     friscv_scfifo
@@ -418,39 +472,54 @@ module axi4l_ram
         .empty    (p1_awaddr_empty)
     );
 
-    always @ (posedge aclk or negedge aresetn) begin
+    generate if (MODE=="compliance") begin
 
-        if (~aresetn) begin
-            p1_awready_lfsr <= 32'b0;
-        end else if (srst) begin
-            p1_awready_lfsr <= 32'b0;
-        end else begin
-            // At startup init with LFSR default value
-            if (p1_awready_lfsr==32'b0) begin
-                p1_awready_lfsr <= p1_aw_lfsr;
-            // Use to randomly assert awready/wready
-            end else if (~p1_awready) begin
-                p1_awready_lfsr <= p1_awready_lfsr >> 1;
-            end else if (p1_awvalid) begin
-                p1_awready_lfsr <= p1_aw_lfsr;
+        always @ (posedge aclk or negedge aresetn) begin
+
+            if (~aresetn) begin
+                p1_awready_lfsr <= 32'b0;
+            end else if (srst) begin
+                p1_awready_lfsr <= 32'b0;
+            end else begin
+                // At startup init with LFSR default value
+                if (p1_awready_lfsr==32'b0) begin
+                    p1_awready_lfsr <= p1_aw_lfsr;
+                // Use to randomly assert awready/wready
+                end else if (~p1_awready) begin
+                    p1_awready_lfsr <= p1_awready_lfsr >> 1;
+                end else if (p1_awvalid) begin
+                    p1_awready_lfsr <= p1_aw_lfsr;
+                end
             end
         end
+
+        lfsr32
+        #(
+            .KEY (P1_WR_ADDR_SEED)
+        )
+        p1_awch_lfsr
+        (
+            .aclk    (aclk),
+            .aresetn (aresetn),
+            .srst    (srst),
+            .en      (p1_awvalid & p1_awready),
+            .lfsr    (p1_aw_lfsr)
+        );
+
+        assign p1_awready = p1_awready_lfsr[0] & ~p1_wdata_full & ~p1_awaddr_full;
+
+    // Performance Mode
+    end else begin
+
+        assign p1_awready = ~p1_wdata_full & ~p1_awaddr_full;
+
     end
+    endgenerate
 
-    lfsr32
-    #(
-        .KEY (32'h8711CBAA)
-    )
-    p1_awch_lfsr
-    (
-        .aclk    (aclk),
-        .aresetn (aresetn),
-        .srst    (srst),
-        .en      (p1_awvalid & p1_awready),
-        .lfsr    (p1_aw_lfsr)
-    );
 
-    assign p1_awready = p1_awready_lfsr[0] & ~p1_wdata_full & ~p1_awaddr_full;
+    ///////////////////////////////////////////////////////////////////////////
+    // Write address channel Port 2
+    ///////////////////////////////////////////////////////////////////////////
 
     friscv_scfifo
     #(
@@ -471,40 +540,54 @@ module axi4l_ram
         .empty    (p2_awaddr_empty)
     );
 
-    always @ (posedge aclk or negedge aresetn) begin
+    generate if (MODE=="compliance") begin
 
-        if (~aresetn) begin
-            p2_awready_lfsr <= 32'b0;
-        end else if (srst) begin
-            p2_awready_lfsr <= 32'b0;
-        end else begin
-            // At startup init with LFSR default value
-            if (p2_awready_lfsr==32'b0) begin
-                p2_awready_lfsr <= p2_aw_lfsr;
-            // Use to randomly assert awready/wready
-            end else if (~p2_awready) begin
-                p2_awready_lfsr <= p2_awready_lfsr >> 1;
-            end else if (p2_awvalid) begin
-                p2_awready_lfsr <= p2_aw_lfsr;
+        always @ (posedge aclk or negedge aresetn) begin
+
+            if (~aresetn) begin
+                p2_awready_lfsr <= 32'b0;
+            end else if (srst) begin
+                p2_awready_lfsr <= 32'b0;
+            end else begin
+                // At startup init with LFSR default value
+                if (p2_awready_lfsr==32'b0) begin
+                    p2_awready_lfsr <= p2_aw_lfsr;
+                // Use to randomly assert awready/wready
+                end else if (~p2_awready) begin
+                    p2_awready_lfsr <= p2_awready_lfsr >> 1;
+                end else if (p2_awvalid) begin
+                    p2_awready_lfsr <= p2_aw_lfsr;
+                end
             end
         end
+
+        lfsr32
+        #(
+            .KEY (P2_WR_ADDR_SEED)
+        )
+        p2_awch_lfsr
+        (
+            .aclk    (aclk),
+            .aresetn (aresetn),
+            .srst    (srst),
+            .en      (p2_awvalid & p2_awready),
+            .lfsr    (p2_aw_lfsr)
+        );
+
+        assign p2_awready = p2_awready_lfsr[0] & ~p2_wdata_full & ~p2_awaddr_full;
+
+    // Performance Mode
+    end else begin
+
+        assign p2_awready = ~p2_wdata_full & ~p2_awaddr_full;
+
     end
+    endgenerate
 
-    lfsr32
-    #(
-        .KEY (32'h12349876)
-    )
-    p2_awch_lfsr
-    (
-        .aclk    (aclk),
-        .aresetn (aresetn),
-        .srst    (srst),
-        .en      (p2_awvalid & p2_awready),
-        .lfsr    (p2_aw_lfsr)
-    );
 
-    assign p2_awready = p2_awready_lfsr[0] & ~p2_wdata_full & ~p2_awaddr_full;
-
+    ///////////////////////////////////////////////////////////////////////////
+    // Write data & response channels Port 1
+    ///////////////////////////////////////////////////////////////////////////
 
     friscv_scfifo
     #(
@@ -526,33 +609,6 @@ module axi4l_ram
     );
 
     assign p1_wready = p1_awready;
-
-
-    friscv_scfifo
-    #(
-        .ADDR_WIDTH ($clog2(OSTDREQ_NUM)),
-        .DATA_WIDTH (AXI2_DATA_W+AXI2_DATA_W/8)
-    )
-    p2_wdata_fifo
-    (
-        .aclk     (aclk),
-        .aresetn  (aresetn),
-        .srst     (srst),
-        .flush    (1'b0),
-        .data_in  ({p2_wstrb,p2_wdata}),
-        .push     (p2_wvalid & p2_wready),
-        .full     (p2_wdata_full),
-        .data_out ({p2_wstrb_s,p2_wdata_s}),
-        .pull     (p2_wpull),
-        .empty    (p2_wdata_empty)
-    );
-
-    assign p2_wready = p2_awready;
-
-
-    ///////////////////////////////////////////////////////////////////////////
-    // Write data chennels, perform write operations
-    ///////////////////////////////////////////////////////////////////////////
 
     // Get the position in the RAM line in bits:
     //  - p1_awaddr_s[0+:ADDR_LSB_W] : get the start address in byte
@@ -585,7 +641,7 @@ module axi4l_ram
                 p1_bid <= p1_awid_s;
 
                 `ifndef NO_RAM_LOG
-                $fwrite(f, "(@ %0t) Port 1 - Write Addr=%x Data=%x\n", $realtime, p1_awaddr_s, p1_wdata_s);
+                $fwrite(f, "(@ %0t) Port 1 - Write Addr=%x Data=%x Strb=%x\n", $realtime, p1_awaddr_s, p1_wdata_s, p1_wstrb_s);
                 `endif
 
                 if (AXI1_DATA_W<AXI_DATA_W) begin
@@ -607,6 +663,35 @@ module axi4l_ram
             end
         end
     end
+
+    assign p1_bresp = 2'b0;
+
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Write data& response channels Port 2
+    ///////////////////////////////////////////////////////////////////////////
+
+
+    friscv_scfifo
+    #(
+        .ADDR_WIDTH ($clog2(OSTDREQ_NUM)),
+        .DATA_WIDTH (AXI2_DATA_W+AXI2_DATA_W/8)
+    )
+    p2_wdata_fifo
+    (
+        .aclk     (aclk),
+        .aresetn  (aresetn),
+        .srst     (srst),
+        .flush    (1'b0),
+        .data_in  ({p2_wstrb,p2_wdata}),
+        .push     (p2_wvalid & p2_wready),
+        .full     (p2_wdata_full),
+        .data_out ({p2_wstrb_s,p2_wdata_s}),
+        .pull     (p2_wpull),
+        .empty    (p2_wdata_empty)
+    );
+
+    assign p2_wready = p2_awready;
 
     // Get the position in the RAM line in bits:
     //  - p2_awaddr_s[0+:ADDR_LSB_W] : get the start address in byte
@@ -639,7 +724,7 @@ module axi4l_ram
                 p2_bid <= p2_awid_s;
 
                 `ifndef NO_RAM_LOG
-                $fwrite(f, "(@ %0t) Port 2 - Write Addr=%x Data=%x\n", $realtime, p1_awaddr_s, p1_wdata_s);
+                $fwrite(f, "(@ %0t) Port 2 - Write Addr=%x Data=%x Strb=%x\n", $realtime, p2_awaddr_s, p2_wdata_s, p2_wstrb_s);
                 `endif
 
                 if (AXI2_DATA_W<AXI_DATA_W) begin
@@ -662,12 +747,6 @@ module axi4l_ram
         end
     end
 
-
-    ///////////////////////////////////////////////////////////////////////////
-    // Write reponse chennels, complete the write requests
-    ///////////////////////////////////////////////////////////////////////////
-
-    assign p1_bresp = 2'b0;
     assign p2_bresp = 2'b0;
 
 endmodule

@@ -1,17 +1,25 @@
 # DOING
 
+- [ ] Add counters
+- [ ] AXI RAM model: add a performance mode
 - [~] Develop dCache
+    - [~] Uncachable access for IOs region
     - [X] Derive from iCache
-    - [~] Add pusher stage for write access
-    - [ ] Uncachable access for IOs region
-    - [ ] APROT[2] pour instruction or data access
+    - [X] Add pusher stage for write access
+    - [X] APROT[2] pour instruction or data access
 - [~] Memfy:
     - [X] Support outstanding write request
     - [X] Don’t block write if AW / W are ready
     - [X] Don’t block write until BCH but block any further read if pending write (in-order only)
     - [ ] Detect IO requests to forward info for FENCE execution
 
-Cache Stages:
+
+# BACKLOG
+
+N.B. : Any new feature and ISA should be carefully study to ensure a proper
+exception and interrupt handling
+
+Cache Stage Enhancement:
 - [ ] Walk-thru FIFO to reduce latency on jump
 - [ ] AXI4 + Wrap mode for read
 - [ ] Support prefetch: if no jump/branch detected in fetched instructions
@@ -20,17 +28,10 @@ Cache Stages:
     - Narrow transfer support?
     - Gather multiple transactions?
 
-
-# BACKLOG
-
-N.B. : Any new feature and ISA should be carefully study to ensure a proper
-exception and interrupt handling
-
 Misc.
 - [ ] Print des tests qui ne marchent pas dans le bash et svut_h.sv pour verilator
 - [ ] Deactivate trace with define
 - [ ] Rework pipeline to avoid double not
-- [ ] Add counters
 - [ ] 64 bits support
 - [ ] Atomic operations
 - [ ] Support privileged instructions, supervisor mode & user mode
@@ -53,7 +54,7 @@ Misc.
 AXI4 Infrastructure
 - [ ] Support different clock for AXI4 memory interface, cache and internal core
 - [ ] Out of order support in AXI
-- [ ] Support ECC bits in core/crossbar 
+- [ ] Support ECC bits in core/crossbar
 - [ ] Rework GPIOs sub-system
     - [ ] Reduce latency in switching logic
     - [ ] Ajouter PERROR sur l’APB, to log on error reporting bus
@@ -101,7 +102,7 @@ Verification/Validation:
 - [ ] Put in place monitoring/profiling
 
 Hardware Test:
-- [ ] Support LiteX: https://github.com/litex-hub/litex-boards, https://pcotret.gitlab.io/blog/processor_in_litex/ 
+- [ ] Support LiteX: https://github.com/litex-hub/litex-boards, https://pcotret.gitlab.io/blog/processor_in_litex/
 - [ ] Azure: https://www.xilinx.com/products/boards-and-kits/alveo/cloud-solutions/microsoft-azure.html
 - [ ] AWS: https://www.xilinx.com/products/design-tools/acceleration-zone/aws.html
 
