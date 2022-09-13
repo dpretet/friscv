@@ -37,6 +37,7 @@ main() {
 
     # Clean up compiled applications and exit
     if [ $do_clean -eq 1 ]; then
+        clean
         for dir in tests/*/; do
             if [ "$dir" != "tests/common/" ]; then
                 echo "INFO: Clean $dir"

@@ -26,7 +26,7 @@ module friscv_cache_fetcher
         // General Setup
         ///////////////////////////////////////////////////////////////////////
 
-        // Name used for svlogger file name
+        // Name used for tracer file name
         parameter NAME = "fetcher",
         // Instruction length (always 32, whatever the architecture)
         parameter ILEN = 32,
@@ -149,13 +149,14 @@ module friscv_cache_fetcher
     // read in the block in a burst read
     logic                     cache_miss_r;
 
-    // Logger setup
-    `ifdef USE_SVL
-    `include "svlogger.sv"
-    svlogger log;
-    initial log = new(NAME,
-                      `ICACHE_VERBOSITY,
-                      `ICACHE_ROUTE);
+    // Tracer setup
+    `ifdef TRACE_CACHE
+    string fname;
+    integer f;
+    initial begin
+        $sformat(fname, "trace_%s.txt", NAME);
+        f = $fopen(fname, "w");
+    end
     `endif
 
     ///////////////////////////////////////////////////////////////////////////
@@ -281,12 +282,12 @@ module friscv_cache_fetcher
                 // flush is done in 1 cycle in fetcher, wait req deassertion from the memory
                 // controller then go back to IDLE and reboot
                 if (flush_blocks==1'b0) begin
-                    `ifdef USE_SVL
-                    log.debug("Finished flush procedure");
+                    `ifdef TRACE_CACHE
+                    $fwrite(f, "@ %0t: Finished flush procedure\n", $realtime);
                     `endif
                     flush_ack <= 1'b0;
                 end
-            // Must start a flush block procedure, this module clears its buffers while the 
+            // Must start a flush block procedure, this module clears its buffers while the
             // memory controller clear the cache blocks
             end else if (flush_blocks) begin
                 read_addr_if <= 1'b0;
@@ -314,8 +315,8 @@ module friscv_cache_fetcher
                         read_addr_mf <= 1'b0;
                         cache_miss_r <= 1'b0;
                         if (!fifo_empty_if && !cache_loading && !pending_wr) begin
-                            `ifdef USE_SVL
-                            log.debug("Start to serve");
+                            `ifdef TRACE_CACHE
+                            $fwrite(f, "@ %0t: Start to serve\n", $realtime);
                             `endif
                             seq <= FETCH;
                         end
@@ -327,16 +328,16 @@ module friscv_cache_fetcher
                         // FIFO and move to read the AXI4 interface to grab the
                         // missing instruction
                         if (cache_miss) begin
-                            `ifdef USE_SVL
-                            log.debug("Cache miss");
+                            `ifdef TRACE_CACHE
+                            $fwrite(f, "@ %0t: Cache miss - Addr=0x%x\n", $realtime, araddr_ffd);
                             `endif
                             cache_miss_r <= 1'b1;
                             read_addr_if <= 1'b0;
                             seq <= LOAD;
                         // When empty, go back to IDLE to wait new requests
                         end else if (fifo_empty_if) begin
-                            `ifdef USE_SVL
-                            log.debug("Go back to IDLE state");
+                            `ifdef TRACE_CACHE
+                            $fwrite(f, "@ %0t: Go back to IDLE state\n", $realtime);
                             `endif
                             seq <= IDLE;
                         end
@@ -350,8 +351,8 @@ module friscv_cache_fetcher
                         // FIFO and move to read the AXI4 interface to grab the
                         // missing instruction
                         if (cache_miss) begin
-                            `ifdef USE_SVL
-                            log.debug("Cache miss");
+                            `ifdef TRACE_CACHE
+                            $fwrite(f, "@ %0t: Cache miss - Addr=0x%x\n", $realtime, araddr_ffd);
                             `endif
                             cache_miss_r <= 1'b1;
                             read_addr_mf <= 1'b0;
@@ -359,16 +360,16 @@ module friscv_cache_fetcher
                         // If other instruction fetchs have been issue,
                         // continue to serve the core controller
                         end else if (!fifo_empty_if && fifo_empty_mf) begin
-                            `ifdef USE_SVL
-                            log.debug("Go to FETCH state");
+                            `ifdef TRACE_CACHE
+                            $fwrite(f, "@ %0t: Go to FETCH state\n", $realtime);
                             `endif
                             read_addr_if <= 1'b1;
                             read_addr_mf <= 1'b0;
                             seq <= FETCH;
                         // When empty, go back to IDLE to wait new requests
                         end else if (fifo_empty_mf) begin
-                            `ifdef USE_SVL
-                            log.debug("Go back to IDLE state");
+                            `ifdef TRACE_CACHE
+                            $fwrite(f, "@ %0t: Go back to IDLE state\n", $realtime);
                             `endif
                             read_addr_if <= 1'b1;
                             read_addr_mf <= 1'b0;
@@ -382,8 +383,8 @@ module friscv_cache_fetcher
                         // Go to read the cache lines once the memory controller
                         // wrote a new cache line
                         if (cache_writing) begin
-                            `ifdef USE_SVL
-                            log.debug("Go to missed-fetch state");
+                            `ifdef TRACE_CACHE
+                            $fwrite(f, "@ %0t: Go to missed-fetch state\n", $realtime);
                             `endif
                             read_addr_mf <= 1'b1;
                             cache_miss_r <= 1'b0;
@@ -470,8 +471,8 @@ module friscv_cache_fetcher
                     // Handshaked with memory controller, now
                     // wait for the write stage to restart
                     if (memctrl_arvalid && memctrl_arready) begin
-                        `ifdef USE_SVL
-                        log.debug("Read memory");
+                        `ifdef TRACE_CACHE
+                        $fwrite(f, "@ %0t: Read memory - Addr=0x%x\n", $realtime, memctrl_araddr);
                         `endif
                         memctrl_arvalid <= 1'b0;
                     end
@@ -485,7 +486,8 @@ module friscv_cache_fetcher
                     // Go to read the cache lines once the memory controller
                     // wrote a new cache line, the read completion
                     end else if (cache_writing) begin
-                        `ifdef USE_SVL
+                        `ifdef TRACE_CACHE
+                        $fwrite(f, "@ %0t: Read completion received\n", $realtime);
                         `endif
                         loader <= IDLE;
                     end

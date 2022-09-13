@@ -195,7 +195,7 @@ module friscv_dcache
 
     friscv_cache_fetcher
     #(
-        .NAME             ("dCache-Fetcher"),
+        .NAME             ("dCache-fetcher"),
         .ILEN             (ILEN),
         .XLEN             (XLEN),
         .OSTDREQ_NUM      (OSTDREQ_NUM),
@@ -241,6 +241,7 @@ module friscv_dcache
 
     friscv_cache_pusher 
     #(
+        .NAME             ("dCache-pusher"),
         .ILEN             (ILEN),
         .XLEN             (XLEN),
         .OSTDREQ_NUM      (OSTDREQ_NUM),
@@ -302,6 +303,7 @@ module friscv_dcache
 
     friscv_cache_blocks
     #(
+        .NAME          ("dCache-blocks"),
         .ILEN          (ILEN),
         .ADDR_W        (AXI_ADDR_W),
         .CACHE_BLOCK_W (CACHE_BLOCK_W),

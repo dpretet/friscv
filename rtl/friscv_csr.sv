@@ -77,20 +77,20 @@ module friscv_csr
     logic [`ZIMM_W     -1:0] zimm;
     logic [`CSR_W      -1:0] csr;
 
-    logic                  csr_wren;
-    logic                  csr_rden;
-    logic [XLEN      -1:0] oldval;
-    logic [XLEN      -1:0] newval;
+    logic                    csr_wren;
+    logic                    csr_rden;
+    logic [XLEN        -1:0] oldval;
+    logic [XLEN        -1:0] newval;
 
-    logic [`FUNCT3_W -1:0] funct3_r;
-    logic [`CSR_W    -1:0] csr_r;
-    logic [`ZIMM_W   -1:0] zimm_r;
-    logic [5         -1:0] rs1_addr_r;
-    logic [XLEN      -1:0] rs1_val_r;
+    logic [`FUNCT3_W   -1:0] funct3_r;
+    logic [`CSR_W      -1:0] csr_r;
+    logic [`ZIMM_W     -1:0] zimm_r;
+    logic [5           -1:0] rs1_addr_r;
+    logic [XLEN        -1:0] rs1_val_r;
 
-    logic                  ext_irq_sync;
-    logic                  timer_irq_sync;
-    logic                  sw_irq_sync;
+    logic                    ext_irq_sync;
+    logic                    timer_irq_sync;
+    logic                    sw_irq_sync;
 
     //////////////////////////////////////////////////////////////////////////
     // Machine-level CSRs:
@@ -161,6 +161,7 @@ module friscv_csr
     // Print implemented CSRs
     //////////////////////////////////////////////////////////////////////////
 
+    /*
     `ifdef FRISCV_SIM
         initial begin
             $display("");
@@ -181,6 +182,7 @@ module friscv_csr
             $display("");
         end
     `endif
+    */
 
     //////////////////////////////////////////////////////////////////////////
     // Synchronize the IRQs in the core's clock domain

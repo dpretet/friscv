@@ -1,17 +1,16 @@
 # DOING
 
 - [ ] Add counters
-- [ ] AXI RAM model: add a performance mode
 - [~] Develop dCache
     - [~] Uncachable access for IOs region
     - [X] Derive from iCache
     - [X] Add pusher stage for write access
-    - [X] APROT[2] pour instruction or data access
+    - [X] APROT[2] pour instruction or data hint
 - [~] Memfy:
     - [X] Support outstanding write request
     - [X] Don’t block write if AW / W are ready
     - [X] Don’t block write until BCH but block any further read if pending write (in-order only)
-    - [ ] Detect IO requests to forward info for FENCE execution
+    - [ ] Detect IO requests to forward info for FENCE execution (token system)
 
 
 # BACKLOG
@@ -30,7 +29,6 @@ Cache Stage Enhancement:
 
 Misc.
 - [ ] Print des tests qui ne marchent pas dans le bash et svut_h.sv pour verilator
-- [ ] Deactivate trace with define
 - [ ] Rework pipeline to avoid double not
 - [ ] 64 bits support
 - [ ] Atomic operations
@@ -74,7 +72,7 @@ https://www.youtube.com/channel/UCPSsA8oxlSBjidJsSPdpjsQ/videos
 - [ ] Scheduler to run multiple operations in parallel
 - [ ] Memfy: Manage RRESP/BRESP
 - [ ] Support F extension
-- Division
+- [ ] Division
     - [ ] Save bandwidth by removing dead cycles
     - [ ] Manage pow2 division by shifting
     - [ ] Start division from first non-zero digit
@@ -121,6 +119,9 @@ Hardware Test:
 
 # DONE
 
+- [X] Rework trace among the modules
+- [X] Deactivate trace with define for every module
+- [X] AXI RAM model: add a performance mode
 - [X] Add unsupported cache setup in core checkers
 - [X] Add Github actions
 - [X] Support unaligned address in APB sub-system

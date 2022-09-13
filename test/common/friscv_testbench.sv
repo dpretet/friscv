@@ -9,7 +9,7 @@
 `include "../../rtl/friscv_debug_h.sv"
 
 module friscv_testbench(
-`ifndef USE_ICARUS
+`ifdef VERILATOR
     // Interface to UART to communicate with the processor
     `ifdef INTERACTIVE
     input  wire                     slv_en,
@@ -146,7 +146,7 @@ module friscv_testbench(
     integer                    timer;
     string                     tcname;
 
-`ifdef USE_ICARUS
+`ifndef VERILATOR
     logic                      aclk;
     logic                      aresetn;
     logic                      srst;
@@ -394,8 +394,8 @@ module friscv_testbench(
         assign ext_irq = 1'b0;
         assign rtc = aclk;
 
-        // Can't use interactive mode with Icarus
-        `ifdef USE_ICARUS
+        // Can't use interactive mode with Verilator
+        `ifndef VERILATOR
 
         assign uart_rx = 1'b0;
         assign uart_cts = 1'b0;
@@ -577,7 +577,7 @@ module friscv_testbench(
 
 
     // Time format for $time / $realtime printing
-    `ifdef USE_ICARUS
+    `ifndef VERILATOR
     initial $timeformat(-9, 1, "ns", 8);
     `else
     initial $timeformat(-12, 1, "ps", 8);
@@ -680,7 +680,7 @@ module friscv_testbench(
     // framework. The structure is minimal while we only assert/deassert reset and wait for the end
     // of execution
     //----------------------------------------------------------------------------------------------
-    `ifdef USE_ICARUS
+    `ifndef VERILATOR
 
         initial aclk = 0;
         always #1 aclk = ~aclk;
@@ -732,7 +732,7 @@ module friscv_testbench(
     // detect any timeout. The simulation is finished here to trig Verilator context, testcase
     // is also checked here.
     //----------------------------------------------------------------------------------------------
-    `ifndef USE_ICARUS
+    `ifdef VERILATOR
 
         initial begin
             tc_error_flag = 1'b0;

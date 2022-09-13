@@ -42,6 +42,7 @@ Minimalistic Unix
     - [ ] https://github.com/riscv-software-src/riscv-tests
     - [ ] Run SPEC benchmark
     - [ ] Run NBench
+    - [ ] https://github.com/darklife/darkriscv/tree/master/src/coremark 
 - [ ] Run Doom
 - [ ] Code the game of life
 - [ ] Code Tetris

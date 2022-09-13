@@ -142,7 +142,7 @@ module friscv_icache
 
     friscv_cache_fetcher
     #(
-        .NAME             ("iCache-Fetcher"),
+        .NAME             ("iCache-fetcher"),
         .ILEN             (ILEN),
         .XLEN             (XLEN),
         .OSTDREQ_NUM      (OSTDREQ_NUM),
@@ -192,6 +192,7 @@ module friscv_icache
 
     friscv_cache_blocks
     #(
+        .NAME          ("iCache-blocks"),
         .ILEN          (ILEN),
         .ADDR_W        (AXI_ADDR_W),
         .CACHE_BLOCK_W (CACHE_BLOCK_W),

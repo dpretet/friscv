@@ -11,6 +11,8 @@ module friscv_cache_pusher
         // General Setup
         ///////////////////////////////////////////////////////////////////////
 
+        // Name used for tracer file name
+        parameter NAME = "pusher",
         // Instruction length (always 32, whatever the architecture)
         parameter ILEN = 32,
         // RISCV Architecture
@@ -108,6 +110,7 @@ module friscv_cache_pusher
     logic                      addr_fifo_full;
     logic                      data_fifo_empty;
     logic                      data_fifo_full;
+    logic                      pending_wr_or;
 
     logic                      wait_data_channel;
     logic [XLEN          -1:0] mst_wdata_r;
@@ -117,6 +120,15 @@ module friscv_cache_pusher
     logic [XLEN/8        -1:0] cache_wstrb_r;
     logic [SCALE_W       -1:0] wr_position;
 
+    // Tracer setup
+    `ifdef TRACE_CACHE
+    string fname;
+    integer f;
+    initial begin
+        $sformat(fname, "trace_%s.txt", NAME);
+        f = $fopen(fname, "w");
+    end
+    `endif
 
     ///////////////////////////////////////////////////////////////////////////
     //
@@ -214,6 +226,13 @@ module friscv_cache_pusher
             // As long a cache hit is received and the data is ready, update the 
             // data in the cache block
             if (cache_hit && !wait_data_channel) begin
+                `ifdef TRACE_CACHE
+                $fwrite(f, "@ %0t: Update block\n", $realtime);
+                $fwrite(f, "  - addr 0x%x\n", cache_raddr_r);
+                $fwrite(f, "  - offset 0x%x\n", wr_position);
+                $fwrite(f, "  - data 0x%x\n", cache_wdata_r);
+                $fwrite(f, "  - strb 0x%x\n", cache_wstrb_r);
+                `endif
                 cache_wen <= 1'b1;
                 cache_waddr <= cache_raddr_r;
                 cache_wdata <= {SCALE{cache_wdata_r}};
@@ -316,11 +335,13 @@ module friscv_cache_pusher
         .arready        (1'b0),
         .rvalid         (1'b0),
         .rready         (1'b0),
-        .waiting_wr_cpl (pending_wr),
+        .waiting_wr_cpl (pending_wr_or),
         .waiting_rd_cpl ()
     );
 
     assign memctrl_bready = 1'b1;
+    
+    assign pending_wr = pending_wr_or | cache_wen;
 
 endmodule
 

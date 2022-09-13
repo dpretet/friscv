@@ -20,6 +20,8 @@
 module friscv_cache_blocks
 
     #(
+        // Name used for tracer file name
+        parameter NAME = "blocks",
         // Instruction length (always 32, whatever the architecture)
         parameter ILEN = 32,
         // Address bus width
@@ -118,6 +120,33 @@ module friscv_cache_blocks
     integer j;
     genvar k;
 
+    // Tracer setup
+    `ifdef TRACE_CACHE
+    integer f;
+    string fname;
+    initial begin
+        $sformat(fname, "trace_%s.txt", NAME);
+        f = $fopen(fname, "w");
+    end
+    `endif
+
+    // Print read access either for port 1 or 2
+    `define trace_read(PNUM) \
+        $fwrite(f, "@ %0t: Port PNUM read @ 0x%x\n", $realtime, p``PNUM``_raddr);\
+        $fwrite(f, "  Block:\n");\
+        $fwrite(f, "    - set 0x%x\n", rblock_set);\
+        $fwrite(f, "    - tag 0x%x\n", rblock_tag);\
+        $fwrite(f, "    - data 0x%x\n", rblock_data);\
+        $fwrite(f, "  Request:\n");\
+        if (rblock_set && p``PNUM``_rtag==rblock_tag)\
+            $fwrite(f, "    - hit\n");\
+        else\
+            $fwrite(f, "    - miss\n");\
+        $fwrite(f, "    - index 0x%x\n", p``PNUM``_rindex);\
+        $fwrite(f, "    - tag 0x%x\n", p``PNUM``_rtag);\
+        $fwrite(f, "    - offset 0x%x\n", p``PNUM``_roffset);\
+        $fwrite(f, "    - data 0x%x\n", rblock_data[p``PNUM``_roffset*ILEN+:ILEN]);
+
 
     //////////////////////////////////////////////////////////////////////////
     // Address parsing and cache line construction
@@ -133,9 +162,23 @@ module friscv_cache_blocks
 
     assign wen = p1_wen | p2_wen;
     assign windex = (p1_wen) ? p1_windex : p2_windex;
+    assign wtag = (p1_wen) ? p1_wtag : p2_wtag;
     assign wstrb = (p1_wen) ? p1_wstrb : p2_wstrb;
     assign wdata = (p1_wen) ? p1_wdata : p2_wdata;
-    assign wtag = (p1_wen) ? p1_wtag : p2_wtag;
+
+    `ifdef TRACE_BLOCKS
+    always @ (posedge aclk) begin
+        if (wen) begin
+            if (p1_wen) $fwrite(f, "@ %0t: Port 1 write @ 0x%x\n", $realtime, p1_waddr);
+            else        $fwrite(f, "@ %0t: Port 2 write @ 0x%x\n", $realtime, p2_waddr);
+            $fwrite(f, "  - index 0x%x\n", windex);
+            $fwrite(f, "  - tag 0x%x\n", wtag);
+            $fwrite(f, "  - data 0x%x\n", wdata);
+            $fwrite(f, "  - strb 0x%x\n", wstrb);
+        end
+    end
+    `endif
+
 
     //////////////////////////////////////////////////////////////////////////
     // Two RAM / regfiles to store the cache blocks
@@ -234,10 +277,16 @@ module friscv_cache_blocks
                 p1_hit <= (rblock_set && p1_rtag==rblock_tag) ? 1'b1 : 1'b0;
                 p1_miss <= (~rblock_set || p1_rtag!=rblock_tag) ? 1'b1 : 1'b0;
                 p1_rdata <= rblock_data[p1_roffset*ILEN+:ILEN];
+                `ifdef TRACE_BLOCKS
+                `trace_read(1)
+                `endif
             end else if (p2_ren) begin
                 p2_hit <= (rblock_set && p2_rtag==rblock_tag) ? 1'b1 : 1'b0;
                 p2_miss <= (~rblock_set || p2_rtag!=rblock_tag) ? 1'b1 : 1'b0;
                 p2_rdata <= rblock_data[p2_roffset*ILEN+:ILEN];
+                `ifdef TRACE_BLOCKS
+                `trace_read(2)
+                `endif
             end else begin
                 p1_hit <= 1'b0;
                 p1_miss <= 1'b0;

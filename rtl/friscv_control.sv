@@ -200,9 +200,9 @@ module friscv_control
                       `CONTROL_ROUTE);
     `endif
 
-    `ifdef FRISCV_SIM
+    `ifdef TRACE_CONTROL
     integer f;
-    initial f = $fopen("trace.csv","w");
+    initial f = $fopen("trace_control.csv","w");
     `endif
 
     /////////////////////////////////////////////////////////////////
@@ -252,7 +252,6 @@ module friscv_control
         input string           msg,
         input logic [XLEN-1:0] cause
     );
-        `ifdef USE_SVL
         string cause_str;
         $sformat(cause_str, "%x", cause);
         log.warning({msg,
@@ -261,7 +260,6 @@ module friscv_control
                      get_mcause_desc(cause),
                      ")"
                    });
-        `endif
     endtask
     `endif
 
@@ -561,7 +559,7 @@ module friscv_control
 
                     // 3. On a first handshake, launch the firmware
                     if (arvalid && arready) begin
-                        `ifdef FRISCV_SIM
+                        `ifdef TRACE_CONTROL
                         $fwrite(f, "@ %0t,%x\n", $realtime, BOOT_ADDR);
                         `endif
                         `ifdef USE_SVL
@@ -802,7 +800,7 @@ module friscv_control
                 // a new origin
                 ///////////////////////////////////////////////////////////////
                 RELOAD: begin
-                    `ifdef FRISCV_SIM
+                    `ifdef TRACE_CONTROL
                     $fwrite(f, "@ %0t,%x\n", $realtime, araddr);
                     `endif
                     traps <= 5'b0;

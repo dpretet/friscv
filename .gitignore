@@ -143,4 +143,5 @@ test/*/*.txt
 *.elf
 *.asm
 *.bkp
-trace.csv
+*.csv
+*.symbols

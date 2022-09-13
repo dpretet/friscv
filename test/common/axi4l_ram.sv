@@ -110,8 +110,8 @@ module axi4l_ram
 
     initial $readmemh(INIT, mem, 0, 2**ADDRW-1);
 
-    `ifndef NO_RAM_LOG
-    initial f = $fopen("axi4lite_ram.txt","w");
+    `ifdef TRACE_TB_RAM
+    initial f = $fopen("trace_tb_ram.txt","w");
     `endif
 
     integer                   p1_random;
@@ -327,7 +327,7 @@ module axi4l_ram
                 p1_rvalid_lfsr <= p1_rvalid_lfsr >> 1;
             end else if (p1_rready) begin
                 p1_rvalid_lfsr <= p1_r_lfsr;
-                `ifndef NO_RAM_LOG
+                `ifdef TRACE_TB_RAM
                 $fwrite(f, "(@ %0t) Port 1 - Read  Addr=%x Data=%x\n", $realtime, p1_araddr_s, p1_rdata);
                 `endif
             end
@@ -398,7 +398,7 @@ module axi4l_ram
                 p2_rvalid_lfsr <= p2_rvalid_lfsr >> 1;
             end else if (p2_rready) begin
                 p2_rvalid_lfsr <= p2_r_lfsr;
-                `ifndef NO_RAM_LOG
+                `ifdef TRACE_TB_RAM
                 $fwrite(f, "(@ %0t) Port 2 - Read  Addr=%x Data=%x\n", $realtime, p2_araddr_s, p2_rdata);
                 `endif
             end
@@ -640,7 +640,7 @@ module axi4l_ram
                 p1_bvalid <= 1'b1;
                 p1_bid <= p1_awid_s;
 
-                `ifndef NO_RAM_LOG
+                `ifdef TRACE_TB_RAM
                 $fwrite(f, "(@ %0t) Port 1 - Write Addr=%x Data=%x Strb=%x\n", $realtime, p1_awaddr_s, p1_wdata_s, p1_wstrb_s);
                 `endif
 
@@ -723,7 +723,7 @@ module axi4l_ram
                 p2_bvalid <= 1'b1;
                 p2_bid <= p2_awid_s;
 
-                `ifndef NO_RAM_LOG
+                `ifdef TRACE_TB_RAM
                 $fwrite(f, "(@ %0t) Port 2 - Write Addr=%x Data=%x Strb=%x\n", $realtime, p2_awaddr_s, p2_wdata_s, p2_wstrb_s);
                 `endif
 

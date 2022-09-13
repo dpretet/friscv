@@ -7,6 +7,7 @@ RISCV_NAME = riscv64-unknown-elf
 RISCV_CC=$(RISCV_NAME)-gcc
 RISCV_OBJCOPY = $(RISCV_NAME)-objcopy
 RISCV_OBJDUMP = $(RISCV_NAME)-objdump
+RISCV_NM      = $(RISCV_NAME)-nm
 
 RISCV_CLIB="/opt/homebrew/Cellar/riscv-gnu-toolchain/main/riscv64-unknown-elf/include/"
 
@@ -46,6 +47,8 @@ OBJS := $(addprefix $(OBJDIR)/,$(OBJS))
 
 all: $(OBJDIR)/$(PROJ_NAME).elf $(OBJDIR)/$(PROJ_NAME).hex $(OBJDIR)/$(PROJ_NAME).asm $(OBJDIR)/$(PROJ_NAME).v
 	@cp *.v ../
+	$(RISCV_NM) *.elf > $(PROJ_NAME).symbols
+	@cp *.symbols ../
 	@echo "done"
 
 $(OBJDIR)/%.elf: $(OBJS) | $(OBJDIR)
@@ -79,6 +82,7 @@ clean:
 	rm -f $(OBJDIR)/*.v
 	rm -f $(OBJDIR)/*.asm
 	rm -f $(OBJDIR)/*.o
+	rm -f $(OBJDIR)/*.symbols
 
 
 #.SECONDARY: $(OBJS)

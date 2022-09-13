@@ -20,6 +20,8 @@ FRISCV is a SystemVerilog implementation of the [RISCV ISA](https://riscv.org):
 - Support RV32I & RV32E architecture
 - Support Zifencei
 - Support Zicsr
+- Support Zicntr
+- Support Zihpm
 - Support M extension (multiply/divide)
 - Machine-mode only
 - Implement a 3-stage pipeline
@@ -82,15 +84,6 @@ is available in [syn](./syn) folder.
 
 - [HW development plan](doc/project_mgt_hw.md)
 - [SW development plan](doc/project_mgt_sw.md)
-
-Next:
-
-- Data cache stage (under dev)
-- Counters
-- Supervisor & user mode
-- Support F extension
-- 64 bits architecture
-- JTAG interface
 
 
 # License

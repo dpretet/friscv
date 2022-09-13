@@ -441,7 +441,7 @@ module friscv_memfy
 
                         // Wait until addr and data have been acknowledged
                         if (awready && wready  ||   // addr & data channel acked on same cycle
-                            ~awvalid && wready ||   // addr hass been acked before & data is acked
+                            ~awvalid && wready ||   // addr has been acked before data
                             awready && ~wvalid      // addr is acked and data has been acked before
                         ) begin
                             memfy_ready_fsm <= 1'b1;

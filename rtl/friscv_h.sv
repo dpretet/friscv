@@ -188,18 +188,17 @@
 
 `ifndef LOGGER
 `define LOGGER
+
     `ifndef ICACHE_VERBOSITY
         `define ICACHE_VERBOSITY `SVL_VERBOSE_WARNING
         `define ICACHE_ROUTE `SVL_ROUTE_ALL
     `endif
+
     `ifndef CONTROL_VERBOSITY
         `define CONTROL_VERBOSITY `SVL_VERBOSE_DEBUG
         `define CONTROL_ROUTE `SVL_ROUTE_ALL
     `endif
-    `ifndef CSR_VERBOSITY
-        `define CSR_VERBOSITY `SVL_VERBOSE_DEBUG
-        `define CSR_ROUTE `SVL_ROUTE_ALL
-    `endif
+
 `endif
 
 

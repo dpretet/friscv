@@ -7,6 +7,7 @@
 import sys
 import argparse
 
+
 def get_symbols(symfile):
     """
     Grab from the exported symbols the one for function
@@ -52,7 +53,7 @@ def build_trace(trace, symbols):
 
 if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser(description='Produce a CPU trace from a dump of the core and the exported symbols')
+    parser = argparse.ArgumentParser(description='Produce a CPU trace from a dump of the core\'s control stage and the exported symbols with nm utility')
     parser.add_argument("--itrace", help="Input csv trace, each line containing the time then the address to jump")
     parser.add_argument("--symbols", help="Symbol list exported with nm (nm my_elf > my_symbols)")
     parser.add_argument("--otrace", help="csv trace, same than itrace with a third argument being the symbol associated to the address")

@@ -29,14 +29,17 @@ CACHE_EN=1
 CACHE_BLOCK_W=128
 # Number of instruction per cache block
 INST_PER_BLOCK=$(($CACHE_BLOCK_W/$ILEN))
-# Boot address
+# Boot address, will be determined by python during elf extraction
 BOOT_ADDR=0
+
 
 #----------------------------------------------------------------
 # This section gathers parameters enabled or setup conditionally
 # in a flow (WBA, C, RISCV, ...)
 #----------------------------------------------------------------
+
 # Force run without trying to compile again C or ASM programs
+# Can be overridden by -- no-compile argument
 NO_COMPILE=0
 # Timeout upon which the simulation is ran
 [[ -z $TIMEOUT ]] && TIMEOUT=10000
@@ -54,7 +57,13 @@ TC=
 [[ -z $INTERACTIVE ]] && INTERACTIVE=0
 # Used to print the testcase name in svut flow
 [[ -z $FLOW_NAME ]] && FLOW_NAME="FRISCV"
-#------------------------------------------------------------------------------
+
+[[ -z $TRACE_CONTROL ]] && TRACE_CONTROL=1
+[[ -z $TRACE_CACHE ]] && TRACE_CACHE=1
+[[ -z $TRACE_BLOCKS ]] && TRACE_BLOCKS=1
+TRACE_FETCHER=1
+TRACE_PUSHER=1
+[[ -z $TRACE_TB_RAM ]] && TRACE_TB_RAM=1
 
 
 #------------------------------------------------------------------------------
@@ -66,12 +75,60 @@ clean() {
     rm -f ./rv*.*v
     rm -f ./*.vcd
     rm -f ./*.txt
-    rm -f data.v
+    rm -f ./*.csv
     rm -f ./*.out
     exit 0
 }
+
+
+#------------------------------------------------------------------------------
+# Get testbench defines and print them
 #------------------------------------------------------------------------------
 
+get_defines() {
+
+    # Print testcase description and its configuration
+    echo ""
+    echo -e "${BLUE}INFO: Execute ${test}${NC}"
+    echo ""
+    echo "  - XLEN:             $XLEN"
+    echo "  - BOOT_ADDR:        $BOOT_ADDR"
+    echo "  - CACHE_EN:         $CACHE_EN"
+    echo "  - CACHE_BLOCK_W:    $CACHE_BLOCK_W"
+    echo "  - TIMEOUT:          $TIMEOUT"
+    echo "  - MIN_PC:           $MIN_PC"
+    echo "  - TB_CHOICE:        $TB_CHOICE (0=CORE, 1=PLATFORM)"
+    echo "  - TCNAME:           $test_name"
+    echo "  - SIMULATOR:        $SIM"
+    echo "  - NO_VCD:           $NO_VCD"
+    echo "  - INTERACTIVE:      $INTERACTIVE"
+    echo "  - ERROR_STATUS_X31: $ERROR_STATUS_X31"
+    echo "  - TRACE_CONTROL:    $TRACE_CONTROL"
+    echo "  - TRACE_CACHE:      $TRACE_CACHE"
+    echo "  - TRACE_BLOCKS:     $TRACE_BLOCKS"
+    echo "  - TRACE_FETCHER:    $TRACE_FETCHER"
+    echo "  - TRACE_PUSHER:     $TRACE_PUSHER"
+    echo "  - TRACE_TB_RAM:     $TRACE_TB_RAM"
+
+    DEFINES="${DEFINES}XLEN=$XLEN;"
+    DEFINES="${DEFINES}BOOT_ADDR=$BOOT_ADDR;"
+    DEFINES="${DEFINES}CACHE_EN=$CACHE_EN;"
+    DEFINES="${DEFINES}CACHE_BLOCK_W=$CACHE_BLOCK_W;"
+    DEFINES="${DEFINES}TIMEOUT=$TIMEOUT;"
+    DEFINES="${DEFINES}MIN_PC=$MIN_PC;"
+    DEFINES="${DEFINES}TB_CHOICE=$TB_CHOICE;"
+    DEFINES="${DEFINES}TCNAME=$test_name;"
+    DEFINES="${DEFINES}NO_VCD=$NO_VCD;"
+    DEFINES="${DEFINES}INTERACTIVE=$INTERACTIVE;"
+    DEFINES="${DEFINES}ERROR_STATUS_X31=$ERROR_STATUS_X31;"
+    DEFINES="${DEFINES}TRACE_CONTROL=$TRACE_CONTROL;"
+    DEFINES="${DEFINES}TRACE_CACHE=$TRACE_CACHE;"
+    DEFINES="${DEFINES}TRACE_BLOCKS=$TRACE_BLOCKS;"
+    DEFINES="${DEFINES}TRACE_FETCHER=$TRACE_FETCHER;"
+    DEFINES="${DEFINES}TRACE_PUSHER=$TRACE_PUSHER;"
+    DEFINES="${DEFINES}TRACE_TB_RAM=$TRACE_TB_RAM;"
+
+}
 
 #------------------------------------------------------------------------------
 # Tests execution
@@ -89,49 +146,17 @@ run_tests() {
         test_file=$(basename "$test")
         test_name=${test_file%%.*}
 
-        # Print testcase description and its configuration
-        echo ""
-        echo -e "${BLUE}INFO: Execute ${test}${NC}"
-        echo ""
-        echo "  - XLEN:             $XLEN"
-        echo "  - BOOT_ADDR:        $BOOT_ADDR"
-        echo "  - CACHE_EN:         $CACHE_EN"
-        echo "  - CACHE_BLOCK_W:    $CACHE_BLOCK_W"
-        echo "  - TIMEOUT:          $TIMEOUT"
-        echo "  - TB_CHOICE:        $TB_CHOICE (0=CORE, 1=PLATFORM)"
-        echo "  - TCNAME:           $test_name"
-        echo "  - SIMULATOR:        $SIM"
-        echo "  - INTERACTIVE:      $INTERACTIVE"
-        echo "  - ERROR_STATUS_X31: $ERROR_STATUS_X31"
-        if [[ -n $NO_RAM_LOG ]]; then
-            echo "  - NO_RAM_LOG:       $NO_RAM_LOG"
-        fi
-
-        # Build defines list passed to the testbench
-        if [[ $SIM == "icarus" ]]; then
-            # Use SVlogger only with Icarus, Verilator sv support being too limited
-            DEFINES="USE_ICARUS=1;USE_SVL=1;"
+        # Check simulator to use with lower case
+        if [[ ${SIM} == "icarus" ]]; then
+            # Use SVlogger only with Icarus, Verilator systemverilog support being too limited
+            DEFINES="FRISV_SIM=1;USE_SVL=1;"
             SIM="icarus"
         else
-            DEFINES=""
+            DEFINES="FRISV_SIM=1;"
             SIM="verilator"
         fi
 
-        DEFINES="${DEFINES}FRISV_SIM=1;"
-        DEFINES="${DEFINES}TCNAME=$test_name;"
-        DEFINES="${DEFINES}CACHE_EN=$CACHE_EN;"
-        DEFINES="${DEFINES}CACHE_BLOCK_W=$CACHE_BLOCK_W;"
-        DEFINES="${DEFINES}BOOT_ADDR=$BOOT_ADDR;"
-        DEFINES="${DEFINES}XLEN=$XLEN;"
-        DEFINES="${DEFINES}TIMEOUT=$TIMEOUT;"
-        DEFINES="${DEFINES}MIN_PC=$MIN_PC;"
-        DEFINES="${DEFINES}TB_CHOICE=$TB_CHOICE;"
-        DEFINES="${DEFINES}NO_VCD=$NO_VCD;"
-        DEFINES="${DEFINES}INTERACTIVE=$INTERACTIVE;"
-        DEFINES="${DEFINES}ERROR_STATUS_X31=$ERROR_STATUS_X31;"
-        if [[ -n $NO_RAM_LOG ]]; then
-            DEFINES="${DEFINES}NO_RAM_LOG=$NO_RAM_LOG;"
-        fi
+        get_defines
 
         # Execute the testcase with SVUT
         svutRun -t ./friscv_testbench.sv \
@@ -149,16 +174,15 @@ run_tests() {
             cp ./friscv_testbench.vcd "./tests/$test_name.vcd"
         fi
 
-        # Create the trace of the execution
-        if [ -f "./trace.csv" ] && [ -f "tests/${test_name}.symbols" ]; then
-            ../common/trace.py --itrace trace.csv \
-                               --otrace "./tests/${test_name}_trace.csv" \
+        # Create the trace of the C execution
+        if [ -f "./trace_control.csv" ] && [ -f "tests/${test_name}.symbols" ]; then
+            ../common/trace.py --itrace trace_control.csv \
+                               --otrace "tests/${test_name}_trace.csv" \
                                --symbols "tests/${test_name}.symbols"
         fi
     done
 
 }
-#------------------------------------------------------------------------------
 
 
 #------------------------------------------------------------------------------
@@ -170,8 +194,11 @@ run_testsuite() {
     echo "Start testsuite execution"
 
     # Erase first the temporary files
+    rm -fr ./build
     rm -f ./test*.v
     rm -f ./*.log
+    rm -f ./*.txt
+    rm -f ./*.csv
 
     # Execute the testsuite
     run_tests "$@"
@@ -209,7 +236,7 @@ check_status() {
 get_args() {
 
     while [ "$1" != "" ]; do
-        case $1 in 
+        case $1 in
             --cache_en )
                 shift
                 CACHE_EN=$1
@@ -281,7 +308,6 @@ usage: bash ./run.sh ...
 
 -c    | --clean             Clean-up and exit
 -h    | --help              Brings up this menu
-
 -x    | --xlen              XLEN, 32 or 64 bits (32 bits by default)
 -t    | --timeout           Timeout in number of cycles before the simulation stops (10000 by default, 0 inactivate it)
         --cache_en          Enable instruction and data caches (Enabled by default)
