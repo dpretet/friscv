@@ -47,6 +47,7 @@ Misc.
 - [ ] Support CLIC controller
 - [ ] UART: Support 9/10 bits & parity
 - [ ] Removed the 2 LSBs in instruction cache while always 2'b11 (6.25% saving)
+- [ ] Branch preduction https://blog.cloudflare.com/branch-predictor/
 
 
 AXI4 Infrastructure
@@ -115,6 +116,7 @@ Hardware Test:
     - Support float16 & float8, more generaly low-precision arithmetic like int8...
 - [ ] Build a testing platform to validate IPs
 - [ ] Openlane submission
+- [ ] Secure platform https://msrc-blog.microsoft.com/2022/09/06/whats-the-smallest-variety-of-cheri/
 
 
 # DONE

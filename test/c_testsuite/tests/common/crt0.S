@@ -40,7 +40,7 @@ _start:
     li x31, 0
 
     # Init the max boundary of the stack section
-    # __stack_top will be linked later with the linker file symbols
+    # _estack will be linked later with the linker file symbols
     la sp, _estack
 
     # Setup ecall

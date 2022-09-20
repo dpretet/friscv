@@ -144,6 +144,9 @@ module friscv_cache_fetcher
     logic [3            -1:0] cache_prot;
     logic [ILEN         -1:0] rdata_r;
     logic [AXI_ID_W     -1:0] rid_r;
+    `ifdef TRACE_CACHE
+    logic [AXI_ADDR_W   -1:0] araddr_r;
+    `endif
 
     // A flag to drive all request to miss fetch FIFO in case a first
     // read in the block in a burst read
@@ -410,10 +413,16 @@ module friscv_cache_fetcher
             rvalid_r <= 1'b0;
             rid_r <= {AXI_ID_W{1'b0}};
             rdata_r <= {ILEN{1'b0}};
+            `ifdef TRACE_CACHE
+            araddr_r <= {AXI_ADDR_W{1'b0}};
+            `endif
         end else if (srst | flush_blocks) begin
             rvalid_r <= 1'b0;
             rid_r <= {AXI_ID_W{1'b0}};
             rdata_r <= {ILEN{1'b0}};
+            `ifdef TRACE_CACHE
+            araddr_r <= {AXI_ADDR_W{1'b0}};
+            `endif
         end else begin
             if (mst_rvalid && !mst_rready) rvalid_r <= 1'b1;
             else rvalid_r <= 1'b0;
@@ -421,7 +430,20 @@ module friscv_cache_fetcher
             if (rvalid_r==1'b0) begin
                 rdata_r <= cache_rdata;
                 rid_r <= arid_ffd;
+                `ifdef TRACE_CACHE
+                araddr_r <= araddr_ffd;
+                `endif
             end
+            `ifdef TRACE_CACHE
+            if (mst_rvalid && mst_rready) begin
+                $fwrite(f, "@ %0t: Cache hit\n", $realtime);
+                if (rvalid_r)
+                    $fwrite(f, "  - addr 0x%x\n", araddr_r);
+                else
+                    $fwrite(f, "  - addr 0x%x\n", araddr_ffd);
+                $fwrite(f, "  - data 0x%x\n", mst_rdata);
+            end
+            `endif
         end
     end
 

@@ -547,18 +547,10 @@ module friscv_control
 
                     priv_mode <= `MMODE; // Machine-mode by default after a reset
 
-                    // 1. Start to erase the cache to be sure the first requests will be clean.
-                    //    The iCache RAM with X would lead to a wrong start-up state
                     // 2. Once flushed, boot the processor
                     if (flush_ack) begin
                         arvalid <= 1'b1;
                         flush_blocks <= 1'b0;
-                    end else if (!arvalid) begin
-                        flush_blocks <= 1'b1;
-                    end
-
-                    // 3. On a first handshake, launch the firmware
-                    if (arvalid && arready) begin
                         `ifdef TRACE_CONTROL
                         $fwrite(f, "@ %0t,%x\n", $realtime, BOOT_ADDR);
                         `endif
@@ -566,7 +558,12 @@ module friscv_control
                         log.info("IDLE -> Boot the processor");
                         `endif
                         cfsm <= FETCH;
+                    // 1. Start to erase the cache to be sure the first requests will be clean.
+                    //    The iCache RAM with X would lead to a wrong start-up state
+                    end else if (!arvalid) begin
+                        flush_blocks <= 1'b1;
                     end
+
                 end
 
                 ///////////////////////////////////////////////////////////////
