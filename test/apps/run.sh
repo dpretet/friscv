@@ -33,6 +33,13 @@ TB_CHOICE=1 # PLATFORM
 # Don't assert a testbench error if X31 is asserted
 ERROR_STATUS_X31=0
 
+TRACE_CONTROL=0
+TRACE_CACHE=0
+TRACE_BLOCKS=0
+TRACE_FETCHER=0
+TRACE_PUSHER=0
+TRACE_TB_RAM=0
+
 source ../common/functions.sh
 
 

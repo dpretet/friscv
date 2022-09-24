@@ -12,6 +12,9 @@
 # cycles. This test will ensure incoming instructions between them will not be
 # lost and so the control unit properly manages this situation.
 
+# x3/gp is the tes number in the unit test flow, must be greater than 0
+# 0 means the processor din't move out the initialization correctly and is stucked
+
 RVTEST_RV64U
 RVTEST_CODE_BEGIN
 

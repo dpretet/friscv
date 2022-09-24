@@ -37,7 +37,9 @@ main() {
         if [ -n "$(find tests/ -maxdepth 1 -name \*.v -print -quit)" ] ; then
             echo "INFO: Found compiled programs, execute ./run -C to rebuild from scratch"
         else
+            set -e
             make -C ./tests XLEN=$XLEN
+            set +e
         fi
     fi
 

@@ -62,23 +62,30 @@ them will not be lost and so the control unit properly manages this situation.
 
 ## Test 3: Check FENCE/FENCE.i instructions
 
-Place FENCE and FENCE.i between ALU and memfy instructions. The test is
+Executes FENCE and FENCE.i between ALU and memfy instructions. The test is
 supposed for the moment harmless because the processor doesn't support neither
 out-of-order or parallel executions.
 
 ## Test 4: JAL/JALR: Throttle execution by jumping back and forth
 
-This testcase executes memory and arithmetic instructions break up by JAL and
+Executes memory and arithmetic instructions break up by JAL and
 JALR instruction to ensure branching doesn't introduce failures.
 
-## Test 5: CSRs: Throttle execution by acessing the ISA CSRs
+## Test 5: CSRs: Throttle execution by accessing the ISA CSRs
 
-This testcase executes memory and arithmetic instructions break up by CSR
+Executes memory and arithmetic instructions break up by CSR
 accesses. CSR instructions require several cycles to complete, thus could lead
 to failure in control unit.
 
-## Test 6: WFI - LOAD/STORE outstanding requests support
+## Test 6: LOAD/STORE outstanding requests support
 
-This testcase stresses out outstanding requests management in Memfy module when issuing
-multiple write requests.
+Stresses out outstanding requests management in Memfy module when issuing
+multiple read or write requests.
 
+# Test 7: RDCYCLE/RDTIME and RDINSTRET
+
+Checks instret, cycle and time are incremented accordingly the spec
+
+# Test 8: WFI
+
+Setup interrupt and checks the core manages EIRQ correctly.

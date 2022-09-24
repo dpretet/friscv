@@ -39,7 +39,7 @@ module friscv_rv32i_platform
         // Number of outstanding requests used by the control unit
         parameter INST_OSTDREQ_NUM   = 8,
         // Core Hart ID
-        parameter MHART_ID           = 0,
+        parameter HART_ID            = 0,
         // RV32E architecture, limits integer registers to 16, else 32 available
         parameter RV32E              = 0,
         // Floating-point extension support
@@ -311,7 +311,7 @@ module friscv_rv32i_platform
     .PROCESSING_BUS_PIPELINE (PROCESSING_BUS_PIPELINE),
     .BOOT_ADDR (BOOT_ADDR),
     .INST_OSTDREQ_NUM (INST_OSTDREQ_NUM),
-    .MHART_ID (MHART_ID),
+    .HART_ID (HART_ID),
     .RV32E (RV32E),
     .AXI_ADDR_W (AXI_ADDR_W),
     .AXI_ID_W (AXI_ID_W),

@@ -18,8 +18,8 @@ module friscv_csr
         parameter M_EXTENSION = 0,
         // Reduced RV32 arch
         parameter RV32E = 0,
-        // MHART_ID CSR
-        parameter MHART_ID = 0
+        // MHART_ID CSR value
+        parameter HART_ID = 0
     )(
         // Clock/reset interface
         input  wire                    aclk,
@@ -48,6 +48,7 @@ module friscv_csr
         input  wire  [XLEN       -1:0] ctrl_mcause,
         input  wire                    ctrl_mtval_wr,
         input  wire  [XLEN       -1:0] ctrl_mtval,
+        input  wire  [64         -1:0] ctrl_rdinstret,
         // CSR shared bus
         output logic [`CSR_SB_W  -1:0] csr_sb
     );
@@ -96,6 +97,27 @@ module friscv_csr
     // Machine-level CSRs:
     //////////////////////////////////////////////////////////////////////////
 
+    localparam MHART_ID     =    12'hF14;
+    localparam MSTATUS      =    12'h300;
+    localparam MISA         =    12'h301;
+    localparam MEDELEG      =    12'h302;
+    localparam MIDELEG      =    12'h303;
+    localparam MIE          =    12'h304;
+    localparam MTVEC        =    12'h305;
+    localparam MCOUNTEREN   =    12'h306;
+    localparam MSCRATCH     =    12'h340;
+    localparam MEPC         =    12'h341;
+    localparam MCAUSE       =    12'h342;
+    localparam MTVAL        =    12'h343;
+    localparam MIP          =    12'h344;
+    localparam RDCYCLE      =    12'hC00;
+    localparam RDTIME       =    12'hC01;
+    localparam RDINSTRET    =    12'hC02;
+    localparam RDCYCLEH     =    12'hC80;
+    localparam RDTIMEH      =    12'hC81;
+    localparam RDINSTRETH   =    12'hC82;
+
+
     // Machine Information Status
     // logic [XLEN-1:0] mvendorid;  // 0xF11    MRO (not implemented)
     // logic [XLEN-1:0] marchid;    // 0xF12    MRO (not implemented)
@@ -126,6 +148,10 @@ module friscv_csr
     // logic [XLEN-1:0] pmpcfg3;       // 0x3A3    MRW (not implemented)
     // logic [XLEN-1:0] pmpaddr0;      // 0x3B0    MRW (not implemented)
 
+    // “Zicntr” Standard Extension for Base Counters and Timers
+    logic [64  -1:0] rdcycle;          // 0xC00    MRO (0xC80 for 32b MSBs)
+    logic [64  -1:0] rdtime;           // 0xC01    MRO (0xC81 for 32b MSBs)
+    logic [64  -1:0] rdinstret;        // 0xC02    MRO (0xC82 for 32b MSBs)
 
     //////////////////////////////////////////////////////////////////////////
     // Supervisor-level CSRs:
@@ -156,33 +182,6 @@ module friscv_csr
 
     assign rs1_addr = rs1;
 
-
-    //////////////////////////////////////////////////////////////////////////
-    // Print implemented CSRs
-    //////////////////////////////////////////////////////////////////////////
-
-    /*
-    `ifdef FRISCV_SIM
-        initial begin
-            $display("");
-            $display("FRISCV implemented CSRs:");
-            $display("  - mhartid    : 0xF14 - MRO");
-            $display("  - mstatus    : 0x300 - MRW");
-            $display("  - misa       : 0x301 - MRO");
-            $display("  - medeleg    : 0x302 - MRW");
-            $display("  - mideleg    : 0x303 - MRW");
-            $display("  - mie        : 0x304 - MRW");
-            $display("  - mtvec      : 0x305 - MRW");
-            $display("  - mcounteren : 0x306 - MRW");
-            $display("  - mscratch   : 0x340 - MRW");
-            $display("  - mepc       : 0x341 - MRW");
-            $display("  - mcause     : 0x342 - MRW");
-            $display("  - mtval      : 0x343 - MRW");
-            $display("  - mip        : 0x344 - MRW");
-            $display("");
-        end
-    `endif
-    */
 
     //////////////////////////////////////////////////////////////////////////
     // Synchronize the IRQs in the core's clock domain
@@ -363,7 +362,7 @@ module friscv_csr
     ///////////////////////////////////////////////////////////////////////////
     // HARTID - 0xF14 (RO)
     ///////////////////////////////////////////////////////////////////////////
-    assign mhartid = MHART_ID;
+    assign mhartid = HART_ID;
 
     ///////////////////////////////////////////////////////////////////////////
     // MISA - 0x301 (RO)
@@ -445,7 +444,7 @@ module friscv_csr
                             ctrl_mstatus[8:7], 1'b0, ctrl_mstatus[5:3], 1'b0,
                             ctrl_mstatus[1:0]};
             end else if (csr_wren) begin
-                if (csr_r==12'h300) begin
+                if (csr_r==MSTATUS) begin
                     mstatus <= {newval[31], 8'b0, newval[22:11], 2'b0,
                                 newval[8:7], 1'b0, newval[5:3], 1'b0,
                                 newval[1:0]};
@@ -464,7 +463,7 @@ module friscv_csr
             mie <= {XLEN{1'b0}};
         end else begin
             if (csr_wren) begin
-                if (csr_r==12'h304) begin
+                if (csr_r==MIE) begin
                     mie <= newval;
                 end
             end
@@ -481,7 +480,7 @@ module friscv_csr
             mtvec <= {XLEN{1'b0}};
         end else begin
             if (csr_wren) begin
-                if (csr_r==12'h305) begin
+                if (csr_r==MTVEC) begin
                     mtvec <= newval;
                 end
             end
@@ -498,7 +497,7 @@ module friscv_csr
             mscratch <= {XLEN{1'b0}};
         end else begin
             if (csr_wren) begin
-                if (csr_r==12'h340) begin
+                if (csr_r==MSCRATCH) begin
                     mscratch <= newval;
                 end
             end
@@ -517,7 +516,7 @@ module friscv_csr
             if (ctrl_mepc_wr) begin
                 mepc <= {ctrl_mepc[XLEN-1:2], 2'b0};
             end else if (csr_wren) begin
-                if (csr_r==12'h341) begin
+                if (csr_r==MEPC) begin
                     mepc <= {newval[XLEN-1:2], 2'b0};
                 end
             end
@@ -536,7 +535,7 @@ module friscv_csr
             if (ctrl_mcause_wr) begin
                 mcause <= ctrl_mcause;
             end else if (csr_wren) begin
-                if (csr_r==12'h342) begin
+                if (csr_r==MCAUSE) begin
                     mcause <= newval;
                 end
             end
@@ -555,7 +554,7 @@ module friscv_csr
             if (ctrl_mtval_wr) begin
                 mtval <= ctrl_mtval;
             end else if (csr_wren) begin
-                if (csr_r==12'h343) begin
+                if (csr_r==MTVAL) begin
                     mtval <= newval;
                 end
             end
@@ -592,12 +591,38 @@ module friscv_csr
                     mip[7] <= 1'b0;
                 end
             end else if (csr_wren) begin
-                if (csr_r==12'h344) begin
+                if (csr_r==MIP) begin
                     mip <= newval;
                 end
             end
         end
     end
+
+    //////////////////////////////////////////////////////////////////////////
+    // Counters and timers
+    //////////////////////////////////////////////////////////////////////////
+
+    // TODO: Check and rework these counters for multi hart implementations.
+    // This description is pretty naive and would be greatly enhanced. From
+    // the specification:
+    //  RDCYCLE is intended to return the number of cycles executed by the
+    //  processor core, not the hart
+
+    // Number of active cycles since moved out of reset
+    always @ (posedge aclk or negedge aresetn) begin
+        if (~aresetn) begin
+            rdtime <= {64{1'b0}};
+        end else if (srst) begin
+            rdtime <= {64{1'b0}};
+        end else begin
+            rdtime <= rdtime + 1;
+        end
+    end
+
+    // Same than rdtime, should be implemented for power aware core
+    assign rdcycle = rdtime;
+
+    assign rdinstret = ctrl_rdinstret;
 
     //////////////////////////////////////////////////////////////////////////
     // Read circuit
@@ -610,26 +635,51 @@ module friscv_csr
             oldval <= {XLEN{1'b0}};
         end else begin
             if (cfsm==IDLE && valid) begin
-                if (csr==12'h300) begin
+
+                if (csr==MSTATUS) begin
                     oldval <= mstatus;
-                end else if (csr==12'h301) begin
+
+                end else if (csr==MISA) begin
                     oldval <= misa;
-                end else if (csr==12'h304) begin
+
+                end else if (csr==MIE) begin
                     oldval <= mie;
-                end else if (csr==12'h305) begin
+
+                end else if (csr==MTVEC) begin
                     oldval <= mtvec;
-                end else if (csr==12'h340) begin
+
+                end else if (csr==MSCRATCH) begin
                     oldval <= mscratch;
-                end else if (csr==12'h341) begin
+
+                end else if (csr==MEPC) begin
                     oldval <= mepc;
-                end else if (csr==12'h342) begin
+
+                end else if (csr==MCAUSE) begin
                     oldval <= mcause;
-                end else if (csr==12'h343) begin
+
+                end else if (csr==MTVAL) begin
                     oldval <= mtval;
-                end else if (csr==12'h344) begin
+
+                end else if (csr==MIP) begin
                     oldval <= mip;
-                end else if (csr==12'hF14) begin
+
+                end else if (csr==RDCYCLE) begin
+                    oldval <= rdcycle[0+:XLEN];
+                end else if (csr==RDTIME) begin
+                    oldval <= rdtime[0+:XLEN];
+                end else if (csr==RDINSTRET) begin
+                    oldval <= rdinstret[0+:XLEN];
+
+                end else if (csr==RDCYCLEH) begin
+                    oldval <= rdcycle[32+:32];
+                end else if (csr==RDTIMEH) begin
+                    oldval <= rdtime[32+:32];
+                end else if (csr==RDINSTRETH) begin
+                    oldval <= rdinstret[32+:32];
+
+                end else if (csr==MHART_ID) begin
                     oldval <= mhartid;
+
                 end else begin
                     oldval <= {XLEN{1'b0}};
                 end

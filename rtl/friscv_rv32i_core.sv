@@ -33,7 +33,7 @@ module friscv_rv32i_core
         // Number of outstanding requests used by the LOAD/STORE unit
         parameter DATA_OSTDREQ_NUM  = 8,
         // Core Hart ID
-        parameter MHART_ID          = 0,
+        parameter HART_ID          = 0,
         // RV32E architecture, limits integer registers to 16, else 32 available
         parameter RV32E             = 0,
         // Floating-point extension support
@@ -224,6 +224,7 @@ module friscv_rv32i_core
     logic                            ctrl_mtval_wr;
     logic [XLEN                -1:0] ctrl_mtval;
     logic [`CSR_SB_W           -1:0] csr_sb;
+    logic [64                  -1:0] ctrl_rdinstret;
 
 
     //////////////////////////////////////////////////////////////////////////
@@ -412,6 +413,7 @@ module friscv_rv32i_core
         .mcause             (ctrl_mcause),
         .mtval_wr           (ctrl_mtval_wr),
         .mtval              (ctrl_mtval),
+        .instret            (ctrl_rdinstret),
         .csr_sb             (csr_sb)
     );
 
@@ -502,7 +504,7 @@ module friscv_rv32i_core
     friscv_csr
     #(
         .RV32E       (RV32E),
-        .MHART_ID    (MHART_ID),
+        .HART_ID     (HART_ID),
         .XLEN        (XLEN),
         .F_EXTENSION (F_EXTENSION),
         .M_EXTENSION (M_EXTENSION)
@@ -531,6 +533,7 @@ module friscv_rv32i_core
         .ctrl_mcause     (ctrl_mcause),
         .ctrl_mtval_wr   (ctrl_mtval_wr),
         .ctrl_mtval      (ctrl_mtval),
+        .ctrl_rdinstret  (ctrl_rdinstret),
         .csr_sb          (csr_sb)
     );
 

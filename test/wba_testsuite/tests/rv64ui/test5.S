@@ -10,6 +10,9 @@
 # accesses. CSR instructions require several cycles to complete, thus could lead
 # to failure in control unit.
 
+# x3/gp is the tes number in the unit test flow, must be greater than 0
+# 0 means the processor din't move out the initialization correctly and is stucked
+
 RVTEST_RV64U
 RVTEST_CODE_BEGIN
 

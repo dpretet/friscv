@@ -5,4 +5,4 @@
 #undef RVTEST_RV64U
 #define RVTEST_RV64U RVTEST_RV32U
 
-#include "../rv64ui/test6.S"
+#include "../rv64ui/test8.S"

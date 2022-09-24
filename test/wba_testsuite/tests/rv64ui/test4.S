@@ -9,6 +9,9 @@
 # This testcase executes memory and arithmetic instructions break up by JAL and
 # JALR instruction to ensure branching doesn't introduce failures.
 
+# x3/gp is the tes number in the unit test flow, must be greater than 0
+# 0 means the processor din't move out the initialization correctly and is stucked
+
 RVTEST_RV64U
 RVTEST_CODE_BEGIN
 

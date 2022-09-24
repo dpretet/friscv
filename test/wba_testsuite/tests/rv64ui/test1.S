@@ -15,6 +15,9 @@
 # All these instructions are handled in one cycle and shouldn't introduce any
 # wait cycles between each others.
 
+# x3/gp is the tes number in the unit test flow, must be greater than 0
+# 0 means the processor din't move out the initialization correctly and is stucked
+
 RVTEST_RV64U
 RVTEST_CODE_BEGIN
 

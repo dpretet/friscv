@@ -55,8 +55,8 @@ TC=
 [[ -z $NO_VCD ]] && NO_VCD=0
 # INTERACTIVE enable a UART to read/write from Verilator
 [[ -z $INTERACTIVE ]] && INTERACTIVE=0
-# Used to print the testcase name in svut flow
-[[ -z $FLOW_NAME ]] && FLOW_NAME="FRISCV"
+# Generate an external IRQ in the core 
+[[ -z $GEN_EIRQ ]] && GEN_EIRQ=0
 
 [[ -z $TRACE_CONTROL ]] && TRACE_CONTROL=1
 [[ -z $TRACE_CACHE ]] && TRACE_CACHE=1
@@ -103,6 +103,7 @@ get_defines() {
     echo "  - NO_VCD:           $NO_VCD"
     echo "  - INTERACTIVE:      $INTERACTIVE"
     echo "  - ERROR_STATUS_X31: $ERROR_STATUS_X31"
+    echo "  - GEN_EIRQ:         $GEN_EIRQ"
     echo "  - TRACE_CONTROL:    $TRACE_CONTROL"
     echo "  - TRACE_CACHE:      $TRACE_CACHE"
     echo "  - TRACE_BLOCKS:     $TRACE_BLOCKS"
@@ -121,6 +122,7 @@ get_defines() {
     DEFINES="${DEFINES}NO_VCD=$NO_VCD;"
     DEFINES="${DEFINES}INTERACTIVE=$INTERACTIVE;"
     DEFINES="${DEFINES}ERROR_STATUS_X31=$ERROR_STATUS_X31;"
+    DEFINES="${DEFINES}GEN_EIRQ=$GEN_EIRQ;"
     [[ $TRACE_CONTROL -eq 1 ]] && DEFINES="${DEFINES}TRACE_CONTROL=$TRACE_CONTROL;"
     [[ $TRACE_CACHE   -eq 1 ]] && DEFINES="${DEFINES}TRACE_CACHE=$TRACE_CACHE;"
     [[ $TRACE_BLOCKS  -eq 1 ]] && DEFINES="${DEFINES}TRACE_BLOCKS=$TRACE_BLOCKS;"

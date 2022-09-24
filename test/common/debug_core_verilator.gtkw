@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.107 (w)1999-2020 BSI
-[*] Thu Sep  8 18:47:55 2022
+[*] Sat Sep 24 16:08:58 2022
 [*]
-[dumpfile] "/Users/damien/workspace/hdl/friscv/test/c_testsuite/tests/functions.vcd"
-[dumpfile_mtime] "Sun Sep  4 19:21:22 2022"
-[dumpfile_size] 5333585
+[dumpfile] "/Users/damien/workspace/hdl/friscv/test/wba_testsuite/tests/rv32ui-p-test8.vcd"
+[dumpfile_mtime] "Sat Sep 24 16:08:51 2022"
+[dumpfile_size] 886654
 [savefile] "/Users/damien/workspace/hdl/friscv/test/common/debug_core_verilator.gtkw"
-[timestart] 6242
+[timestart] 1
 [size] 2560 1440
-[pos] -1 -26
-*-4.779926 6389 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[pos] -1 -1
+*-7.821643 1673 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] friscv_testbench.
 [treeopen] friscv_testbench.friscv_testbench.
 [treeopen] friscv_testbench.friscv_testbench.genblk1.
@@ -24,7 +24,7 @@
 [sst_width] 335
 [signals_width] 526
 [sst_expanded] 1
-[sst_vpaned_height] 528
+[sst_vpaned_height] 510
 @c00200
 -Testbench
 @24
@@ -46,7 +46,6 @@ friscv_testbench.friscv_testbench.ICACHE_DEPTH[31:0]
 friscv_testbench.friscv_testbench.ICACHE_PREFETCH_EN[31:0]
 friscv_testbench.friscv_testbench.ILEN[31:0]
 friscv_testbench.friscv_testbench.INST_OSTDREQ_NUM[31:0]
-friscv_testbench.friscv_testbench.MHART_ID[31:0]
 friscv_testbench.friscv_testbench.MIN_PC[31:0]
 friscv_testbench.friscv_testbench.M_EXTENSION[31:0]
 friscv_testbench.friscv_testbench.PROCESSING_BUS_PIPELINE[31:0]
@@ -352,6 +351,44 @@ friscv_testbench.friscv_testbench.genblk1.dut.USE_ICACHE.icache.mem_ctrl.mem_rva
 @200
 -
 @c00200
+-ISA regs
+@28
+friscv_testbench.friscv_testbench.genblk1.dut.isa_registers.aclk
+@22
+friscv_testbench.friscv_testbench.genblk1.dut.isa_registers.x1_ra[31:0]
+friscv_testbench.friscv_testbench.genblk1.dut.isa_registers.x2_sp[31:0]
+friscv_testbench.friscv_testbench.genblk1.dut.isa_registers.x3_gp[31:0]
+friscv_testbench.friscv_testbench.genblk1.dut.isa_registers.x4_tp[31:0]
+friscv_testbench.friscv_testbench.genblk1.dut.isa_registers.x5_t0[31:0]
+friscv_testbench.friscv_testbench.genblk1.dut.isa_registers.x6_t1[31:0]
+friscv_testbench.friscv_testbench.genblk1.dut.isa_registers.x7_t2[31:0]
+friscv_testbench.friscv_testbench.genblk1.dut.isa_registers.x8_s0_fp[31:0]
+friscv_testbench.friscv_testbench.genblk1.dut.isa_registers.x9_s1[31:0]
+friscv_testbench.friscv_testbench.genblk1.dut.isa_registers.x10_a0[31:0]
+friscv_testbench.friscv_testbench.genblk1.dut.isa_registers.x11_a1[31:0]
+friscv_testbench.friscv_testbench.genblk1.dut.isa_registers.x12_a2[31:0]
+friscv_testbench.friscv_testbench.genblk1.dut.isa_registers.x13_a3[31:0]
+friscv_testbench.friscv_testbench.genblk1.dut.isa_registers.x14_a4[31:0]
+friscv_testbench.friscv_testbench.genblk1.dut.isa_registers.x15_a5[31:0]
+friscv_testbench.friscv_testbench.genblk1.dut.isa_registers.x16_a6[31:0]
+friscv_testbench.friscv_testbench.genblk1.dut.isa_registers.x17_a7[31:0]
+friscv_testbench.friscv_testbench.genblk1.dut.isa_registers.x18_s2[31:0]
+friscv_testbench.friscv_testbench.genblk1.dut.isa_registers.x19_s3[31:0]
+friscv_testbench.friscv_testbench.genblk1.dut.isa_registers.x20_s4[31:0]
+friscv_testbench.friscv_testbench.genblk1.dut.isa_registers.x21_s5[31:0]
+friscv_testbench.friscv_testbench.genblk1.dut.isa_registers.x22_s6[31:0]
+friscv_testbench.friscv_testbench.genblk1.dut.isa_registers.x23_s7[31:0]
+friscv_testbench.friscv_testbench.genblk1.dut.isa_registers.x24_s8[31:0]
+friscv_testbench.friscv_testbench.genblk1.dut.isa_registers.x25_s9[31:0]
+friscv_testbench.friscv_testbench.genblk1.dut.isa_registers.x26_s10[31:0]
+friscv_testbench.friscv_testbench.genblk1.dut.isa_registers.x27_s11[31:0]
+friscv_testbench.friscv_testbench.genblk1.dut.isa_registers.x28_t3[31:0]
+friscv_testbench.friscv_testbench.genblk1.dut.isa_registers.x29_t4[31:0]
+friscv_testbench.friscv_testbench.genblk1.dut.isa_registers.x30_t5[31:0]
+friscv_testbench.friscv_testbench.genblk1.dut.isa_registers.x31_t6[31:0]
+@1401200
+-ISA regs
+@c00200
 -Control
 @200
 -
@@ -361,7 +398,7 @@ friscv_testbench.friscv_testbench.genblk1.dut.control.aclk
 friscv_testbench.friscv_testbench.genblk1.dut.control.cfsm[3:0]
 @200
 -
-@800200
+@c00200
 -axi4-lite
 @28
 friscv_testbench.friscv_testbench.genblk1.dut.control.flush_reqs
@@ -379,7 +416,7 @@ friscv_testbench.friscv_testbench.genblk1.dut.control.rid[7:0]
 @28
 friscv_testbench.friscv_testbench.genblk1.dut.control.rready
 friscv_testbench.friscv_testbench.genblk1.dut.control.rvalid
-@1000200
+@1401200
 -axi4-lite
 @200
 -
@@ -418,6 +455,13 @@ friscv_testbench.friscv_testbench.genblk1.dut.control.fence[1:0]
 friscv_testbench.friscv_testbench.genblk1.dut.control.sys[5:0]
 @200
 -
+@22
+friscv_testbench.friscv_testbench.genblk1.dut.control.imm12[11:0]
+friscv_testbench.friscv_testbench.genblk1.dut.control.imm20[19:0]
+@28
+friscv_testbench.friscv_testbench.genblk1.dut.control.goto_branch
+@200
+-
 @28
 friscv_testbench.friscv_testbench.genblk1.dut.control.cant_jump
 friscv_testbench.friscv_testbench.genblk1.dut.control.cant_lui_auipc
@@ -426,9 +470,14 @@ friscv_testbench.friscv_testbench.genblk1.dut.control.cant_sys
 @200
 -
 @28
+friscv_testbench.friscv_testbench.genblk1.dut.control.csr_en
+[color] 2
 friscv_testbench.friscv_testbench.genblk1.dut.control.csr_ready
-friscv_testbench.friscv_testbench.genblk1.dut.control.proc_busy
+friscv_testbench.friscv_testbench.genblk1.dut.control.proc_valid
+[color] 2
 friscv_testbench.friscv_testbench.genblk1.dut.control.proc_ready
+[color] 2
+friscv_testbench.friscv_testbench.genblk1.dut.control.proc_busy
 @200
 -
 @22
@@ -456,17 +505,66 @@ friscv_testbench.friscv_testbench.genblk1.dut.control.sync_trap_occuring
 friscv_testbench.friscv_testbench.genblk1.dut.control.trap_occuring
 @200
 -
+@28
+friscv_testbench.friscv_testbench.genblk1.dut.control.ctrl_rd_wr
+@22
+friscv_testbench.friscv_testbench.genblk1.dut.control.ctrl_rd_addr[4:0]
+friscv_testbench.friscv_testbench.genblk1.dut.control.ctrl_rd_val[31:0]
+@200
+-
 @1401200
 -Control
+@800200
+-CSRs
+@28
+friscv_testbench.friscv_testbench.genblk1.dut.csrs.ext_irq
+friscv_testbench.friscv_testbench.genblk1.dut.csrs.sw_irq
+friscv_testbench.friscv_testbench.genblk1.dut.csrs.timer_irq
+@23
+friscv_testbench.friscv_testbench.genblk1.dut.csrs.rdcycle[63:0]
+@22
+friscv_testbench.friscv_testbench.genblk1.dut.csrs.rdinstret[63:0]
+friscv_testbench.friscv_testbench.genblk1.dut.csrs.rdtime[63:0]
+friscv_testbench.friscv_testbench.genblk1.dut.csrs.mcause[31:0]
+friscv_testbench.friscv_testbench.genblk1.dut.csrs.mcounteren[31:0]
+friscv_testbench.friscv_testbench.genblk1.dut.csrs.medeleg[31:0]
+friscv_testbench.friscv_testbench.genblk1.dut.csrs.mepc[31:0]
+friscv_testbench.friscv_testbench.genblk1.dut.csrs.mhartid[31:0]
+friscv_testbench.friscv_testbench.genblk1.dut.csrs.mideleg[31:0]
+friscv_testbench.friscv_testbench.genblk1.dut.csrs.mie[31:0]
+friscv_testbench.friscv_testbench.genblk1.dut.csrs.mip[31:0]
+friscv_testbench.friscv_testbench.genblk1.dut.csrs.misa[31:0]
+friscv_testbench.friscv_testbench.genblk1.dut.csrs.mscratch[31:0]
+friscv_testbench.friscv_testbench.genblk1.dut.csrs.mstatus[31:0]
+friscv_testbench.friscv_testbench.genblk1.dut.csrs.mtval[31:0]
+friscv_testbench.friscv_testbench.genblk1.dut.csrs.mtvec[31:0]
+@1000200
+-CSRs
 @200
 -
 @c00200
 -processing
 @28
-friscv_testbench.friscv_testbench.genblk1.dut.processing.alu_ready
-friscv_testbench.friscv_testbench.genblk1.dut.processing.m_ready
-friscv_testbench.friscv_testbench.genblk1.dut.processing.memfy_ready
+friscv_testbench.friscv_testbench.genblk1.dut.processing.proc_valid
+friscv_testbench.friscv_testbench.genblk1.dut.processing.proc_ready
 friscv_testbench.friscv_testbench.genblk1.dut.processing.proc_busy
+@200
+-
+@28
+friscv_testbench.friscv_testbench.genblk1.dut.processing.alu_valid
+friscv_testbench.friscv_testbench.genblk1.dut.processing.alu_ready
+friscv_testbench.friscv_testbench.genblk1.dut.processing.m_valid
+friscv_testbench.friscv_testbench.genblk1.dut.processing.m_ready
+friscv_testbench.friscv_testbench.genblk1.dut.processing.memfy_valid
+friscv_testbench.friscv_testbench.genblk1.dut.processing.memfy_ready
+@200
+-
+@28
+friscv_testbench.friscv_testbench.genblk1.dut.processing.proc_rd_wr[2:0]
+@22
+friscv_testbench.friscv_testbench.genblk1.dut.processing.proc_rd_addr[14:0]
+friscv_testbench.friscv_testbench.genblk1.dut.processing.proc_rd_strb[11:0]
+friscv_testbench.friscv_testbench.genblk1.dut.processing.proc_rd_val[95:0]
 @1401200
 -processing
 @c00200
@@ -643,10 +741,10 @@ friscv_testbench.friscv_testbench.genblk1.dut.DCACHE_ON.dcache.pusher_cache_wen
 @22
 friscv_testbench.friscv_testbench.genblk1.dut.processing.memfy.memfy_instbus[85:0]
 @28
-friscv_testbench.friscv_testbench.genblk1.dut.processing.memfy.memfy_ready
 friscv_testbench.friscv_testbench.genblk1.dut.processing.memfy.memfy_valid
+friscv_testbench.friscv_testbench.genblk1.dut.processing.memfy.memfy_ready
+friscv_testbench.friscv_testbench.genblk1.dut.processing.memfy.state[1:0]
 @200
--
 -
 @22
 friscv_testbench.friscv_testbench.genblk1.dut.processing.memfy.araddr[31:0]
@@ -656,19 +754,19 @@ friscv_testbench.friscv_testbench.genblk1.dut.processing.memfy.aresetn
 friscv_testbench.friscv_testbench.genblk1.dut.processing.memfy.arid[7:0]
 @28
 friscv_testbench.friscv_testbench.genblk1.dut.processing.memfy.arprot[2:0]
+friscv_testbench.friscv_testbench.genblk1.dut.processing.memfy.arvalid
 [color] 3
 friscv_testbench.friscv_testbench.genblk1.dut.processing.memfy.arready
-friscv_testbench.friscv_testbench.genblk1.dut.processing.memfy.arvalid
 @200
 -
 @22
 friscv_testbench.friscv_testbench.genblk1.dut.processing.memfy.rdata[31:0]
 friscv_testbench.friscv_testbench.genblk1.dut.processing.memfy.rid[7:0]
 @28
-friscv_testbench.friscv_testbench.genblk1.dut.processing.memfy.rready
-friscv_testbench.friscv_testbench.genblk1.dut.processing.memfy.rresp[1:0]
 [color] 3
 friscv_testbench.friscv_testbench.genblk1.dut.processing.memfy.rvalid
+friscv_testbench.friscv_testbench.genblk1.dut.processing.memfy.rready
+friscv_testbench.friscv_testbench.genblk1.dut.processing.memfy.rresp[1:0]
 @200
 -
 @22
@@ -698,6 +796,9 @@ friscv_testbench.friscv_testbench.genblk1.dut.processing.memfy.bready
 friscv_testbench.friscv_testbench.genblk1.dut.processing.memfy.bresp[1:0]
 [color] 3
 friscv_testbench.friscv_testbench.genblk1.dut.processing.memfy.bvalid
+@200
+-
+@28
 friscv_testbench.friscv_testbench.genblk1.dut.processing.memfy.memfy_pending_read
 friscv_testbench.friscv_testbench.genblk1.dut.processing.memfy.waiting_rd_cpl
 friscv_testbench.friscv_testbench.genblk1.dut.processing.memfy.waiting_wr_cpl
@@ -714,7 +815,7 @@ friscv_testbench.friscv_testbench.genblk1.dut.processing.memfy.memfy_rd_val[31:0
 @22
 friscv_testbench.friscv_testbench.genblk1.dut.processing.memfy.memfy_rs1_addr[4:0]
 friscv_testbench.friscv_testbench.genblk1.dut.processing.memfy.memfy_rs1_val[31:0]
-@201
+@200
 -
 @22
 friscv_testbench.friscv_testbench.genblk1.dut.processing.memfy.memfy_rs2_addr[4:0]
@@ -725,42 +826,6 @@ friscv_testbench.friscv_testbench.genblk1.dut.processing.memfy.memfy_rs2_val[31:
 -Memfy
 @200
 -
-@800200
--ISA regs
-@22
-friscv_testbench.friscv_testbench.genblk1.dut.isa_registers.x1_ra[31:0]
-friscv_testbench.friscv_testbench.genblk1.dut.isa_registers.x2_sp[31:0]
-friscv_testbench.friscv_testbench.genblk1.dut.isa_registers.x3_gp[31:0]
-friscv_testbench.friscv_testbench.genblk1.dut.isa_registers.x4_tp[31:0]
-friscv_testbench.friscv_testbench.genblk1.dut.isa_registers.x5_t0[31:0]
-friscv_testbench.friscv_testbench.genblk1.dut.isa_registers.x6_t1[31:0]
-friscv_testbench.friscv_testbench.genblk1.dut.isa_registers.x7_t2[31:0]
-friscv_testbench.friscv_testbench.genblk1.dut.isa_registers.x8_s0_fp[31:0]
-friscv_testbench.friscv_testbench.genblk1.dut.isa_registers.x9_s1[31:0]
-friscv_testbench.friscv_testbench.genblk1.dut.isa_registers.x10_a0[31:0]
-friscv_testbench.friscv_testbench.genblk1.dut.isa_registers.x11_a1[31:0]
-friscv_testbench.friscv_testbench.genblk1.dut.isa_registers.x12_a2[31:0]
-friscv_testbench.friscv_testbench.genblk1.dut.isa_registers.x13_a3[31:0]
-friscv_testbench.friscv_testbench.genblk1.dut.isa_registers.x14_a4[31:0]
-friscv_testbench.friscv_testbench.genblk1.dut.isa_registers.x15_a5[31:0]
-friscv_testbench.friscv_testbench.genblk1.dut.isa_registers.x16_a6[31:0]
-friscv_testbench.friscv_testbench.genblk1.dut.isa_registers.x17_a7[31:0]
-friscv_testbench.friscv_testbench.genblk1.dut.isa_registers.x18_s2[31:0]
-friscv_testbench.friscv_testbench.genblk1.dut.isa_registers.x19_s3[31:0]
-friscv_testbench.friscv_testbench.genblk1.dut.isa_registers.x20_s4[31:0]
-friscv_testbench.friscv_testbench.genblk1.dut.isa_registers.x21_s5[31:0]
-friscv_testbench.friscv_testbench.genblk1.dut.isa_registers.x22_s6[31:0]
-friscv_testbench.friscv_testbench.genblk1.dut.isa_registers.x23_s7[31:0]
-friscv_testbench.friscv_testbench.genblk1.dut.isa_registers.x24_s8[31:0]
-friscv_testbench.friscv_testbench.genblk1.dut.isa_registers.x25_s9[31:0]
-friscv_testbench.friscv_testbench.genblk1.dut.isa_registers.x26_s10[31:0]
-friscv_testbench.friscv_testbench.genblk1.dut.isa_registers.x27_s11[31:0]
-friscv_testbench.friscv_testbench.genblk1.dut.isa_registers.x28_t3[31:0]
-friscv_testbench.friscv_testbench.genblk1.dut.isa_registers.x29_t4[31:0]
-friscv_testbench.friscv_testbench.genblk1.dut.isa_registers.x30_t5[31:0]
-friscv_testbench.friscv_testbench.genblk1.dut.isa_registers.x31_t6[31:0]
-@1000200
--ISA regs
 @c00200
 -dCache Pusher
 @22

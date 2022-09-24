@@ -93,7 +93,7 @@ module friscv_testbench(
     // Number of outstanding requests used by the control unit
     parameter INST_OSTDREQ_NUM = 8;
     // MHART ID CSR register
-    parameter MHART_ID = 0;
+    parameter HART_ID = 0;
 
     // Floating-point extension support
     parameter F_EXTENSION = 0;
@@ -244,6 +244,29 @@ module friscv_testbench(
     assign imem_wvalid = 1'b0;
     assign imem_bready = 1'b1;
 
+    `ifdef GEN_EIRQ
+        always @ (posedge aclk or negedge aresetn) begin
+            integer cnt;
+            if (!aresetn) begin
+                ext_irq <= 1'b0;
+                cnt <= 0;
+            end else if (srst) begin
+                ext_irq <= 1'b0;
+                cnt <= 0;
+            end else begin
+                if (cnt == 100) begin
+                    cnt <= 0;
+                    ext_irq <= 1'b1;
+                end else begin
+                    cnt <= cnt + 1;
+                    ext_irq <= 1'b0;
+                end 
+            end
+        end
+    `else 
+        assign ext_irq = 1'b0;
+    `endif
+
     // Run the testbench by using only the CPU core
     generate
 
@@ -251,7 +274,6 @@ module friscv_testbench(
 
         assign timer_irq = 1'b0;
         assign sw_irq = 1'b0;
-        assign ext_irq = 1'b0;
 
         friscv_rv32i_core
         #(
@@ -259,7 +281,7 @@ module friscv_testbench(
             .XLEN                       (XLEN),
             .BOOT_ADDR                  (BOOT_ADDR),
             .INST_OSTDREQ_NUM           (INST_OSTDREQ_NUM),
-            .MHART_ID                   (MHART_ID),
+            .HART_ID                    (HART_ID),
             .RV32E                      (RV32E),
             .M_EXTENSION                (M_EXTENSION),
             .F_EXTENSION                (F_EXTENSION),
@@ -391,7 +413,6 @@ module friscv_testbench(
 
         assign timer_irq = 1'b0;
         assign sw_irq = 1'b0;
-        assign ext_irq = 1'b0;
         assign rtc = aclk;
 
         // Can't use interactive mode with Verilator
@@ -441,7 +462,7 @@ module friscv_testbench(
             .XLEN                       (XLEN),
             .BOOT_ADDR                  (BOOT_ADDR),
             .INST_OSTDREQ_NUM           (INST_OSTDREQ_NUM),
-            .MHART_ID                   (MHART_ID),
+            .HART_ID                    (HART_ID),
             .RV32E                      (RV32E),
             .M_EXTENSION                (M_EXTENSION),
             .F_EXTENSION                (F_EXTENSION),

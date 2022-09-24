@@ -1,6 +1,5 @@
 # DOING
 
-- [ ] Add counters
 - [~] Develop dCache
     - [~] Uncachable access for IOs region
     - [X] Derive from iCache
@@ -15,8 +14,11 @@
 
 # BACKLOG
 
-N.B. : Any new feature and ISA should be carefully study to ensure a proper
-exception and interrupt handling
+N.B. :
+- Counters and timers should be rework for multi hart architecture, and probably adapted
+  for platform specific configurations
+- Any new feature and ISA should be carefully study to ensure a proper
+  exception and interrupt handling
 
 Cache Stage Enhancement:
 - [ ] Walk-thru FIFO to reduce latency on jump
@@ -28,8 +30,11 @@ Cache Stage Enhancement:
     - Gather multiple transactions?
 
 Misc.
+- [ ] Add Zihpm
 - [ ] Print des tests qui ne marchent pas dans le bash et svut_h.sv pour verilator
 - [ ] Rework pipeline to avoid double not
+- [ ] Implmentent branch prediction
+    https://github.com/BrunoLevy/learn-fpga/blob/master/FemtoRV/TUTORIALS/FROM_BLINKER_TO_RISCV/PIPELINE.md
 - [ ] 64 bits support
 - [ ] Atomic operations
 - [ ] Support privileged instructions, supervisor mode & user mode
@@ -121,6 +126,7 @@ Hardware Test:
 
 # DONE
 
+- [X] Add Zicntr
 - [X] Rework trace among the modules
 - [X] Deactivate trace with define for every module
 - [X] AXI RAM model: add a performance mode
@@ -130,8 +136,10 @@ Hardware Test:
 - [X] Add Clint peripheral
 - [X] Output ISA regs on top level for debug purpose
 - [X] Create a tesbench for iCache
-- [X] Add C testsuite and Apps testsuite (interactive)
-- [X] Add almost empty full flags to scfifo
+- [X] Support script in App interactive testsuite
+- [X] Add C testsuite
+- [X] Add Apps testsuite, interactive tb with UART link from Verilator
+- [X] Add almost empty/full flags to scfifo
 - [X] Ensure interrupt and trap are correctly supported
 - [X] Update SVUT to pass extra string to vvp for VPI
 - [X] Review flush/reboot in fetcher & memctrl

@@ -5,6 +5,7 @@
 `default_nettype none
 
 `include "friscv_h.sv"
+`include "friscv_control_h.sv"
 
 ///////////////////////////////////////////////////////////////////////////////
 // Central controller of the processor, fetching instruction and driving
@@ -85,6 +86,7 @@ module friscv_control
         output logic [XLEN          -1:0] mcause,
         output logic                      mtval_wr,
         output logic [XLEN          -1:0] mtval,
+        output logic [64            -1:0] instret,
         // CSR shared bus
         input  wire  [`CSR_SB_W     -1:0] csr_sb
     );
@@ -932,6 +934,18 @@ module friscv_control
     // Prepare CSR registers content to use or modify
     //
     ///////////////////////////////////////////////////////////////////////////
+
+    always @ (posedge aclk or negedge aresetn) begin
+        if (~aresetn) begin
+            instret <= {64{1'b0}};
+        end else if (srst) begin
+            instret <= {64{1'b0}};
+        end else begin
+            if (!fifo_empty && pull_inst)
+                instret <= instret + 1;
+        end
+    end
+
 
     // MSTATUS CSR to write when executing MRET
     assign mstatus_for_mret = {sb_mstatus[XLEN-1:13],  // WPRI
