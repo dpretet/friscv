@@ -5,17 +5,12 @@
     - [X] Derive from iCache
     - [X] Add pusher stage for write access
     - [X] APROT[2] pour instruction or data hint
-- [~] Memfy:
-    - [X] Support outstanding write request
-    - [X] Don’t block write if AW / W are ready
-    - [X] Don’t block write until BCH but block any further read if pending write (in-order only)
-    - [ ] Detect IO requests to forward info for FENCE execution (token system)
 
 
 # BACKLOG
 
 N.B. :
-- Counters and timers should be rework for multi hart architecture, and probably adapted
+- Counters and timers should be reworked for multi hart architecture, and probably adapted
   for platform specific configurations
 - Any new feature and ISA should be carefully study to ensure a proper
   exception and interrupt handling
@@ -27,14 +22,13 @@ Cache Stage Enhancement:
       grab the next line, else give a try to fetch the branch address. AXI hint?
 - [ ] Support datapath adaptation from memory controller
     - Narrow transfer support?
-    - Gather multiple transactions?
+    - Gather/merge multiple continuous transactions?
 
 Misc.
+- [ ] Put in place profiling
 - [ ] Add Zihpm
 - [ ] Print des tests qui ne marchent pas dans le bash et svut_h.sv pour verilator
 - [ ] Rework pipeline to avoid double not
-- [ ] Implmentent branch prediction
-    https://github.com/BrunoLevy/learn-fpga/blob/master/FemtoRV/TUTORIALS/FROM_BLINKER_TO_RISCV/PIPELINE.md
 - [ ] 64 bits support
 - [ ] Atomic operations
 - [ ] Support privileged instructions, supervisor mode & user mode
@@ -52,7 +46,9 @@ Misc.
 - [ ] Support CLIC controller
 - [ ] UART: Support 9/10 bits & parity
 - [ ] Removed the 2 LSBs in instruction cache while always 2'b11 (6.25% saving)
-- [ ] Branch preduction https://blog.cloudflare.com/branch-predictor/
+- [ ] Branch prediction
+    https://blog.cloudflare.com/branch-predictor/
+    https://github.com/BrunoLevy/learn-fpga/blob/master/FemtoRV/TUTORIALS/FROM_BLINKER_TO_RISCV/PIPELINE.md
 
 
 AXI4 Infrastructure
@@ -66,6 +62,7 @@ AXI4 Infrastructure
 
 
 Control:
+- [ ] Detect IO requests to forward info for FENCE execution
 - [ ] [Multiple instruction issue](https://www.youtube.com/watch?v=wGpkiNb_V9c)
 - [ ] Enable flow-thru mode in instruction FIFO
 - [ ] Reduce cache jump
@@ -87,9 +84,6 @@ https://www.youtube.com/channel/UCPSsA8oxlSBjidJsSPdpjsQ/videos
 
 Verification/Validation:
 
-- [ ] Testcases to write in ASM testsuite
-    - IRQ & WFI
-    - add a IRQ generation in the testbench
 - [ ] Update synthesis flow
     - [ ] Standard cells library for Yosys
     - [ ] https://github.com/dpretet/ascend-freepdk45/tree/master/lib
@@ -103,7 +97,6 @@ Verification/Validation:
     - [ ] stream the event like a write memory error
     - [ ] log error in a file
     - [ ] Support GDB:  https://tomverbeure.github.io/2021/07/18/VexRiscv-OpenOCD-and-Traps.html
-- [ ] Put in place monitoring/profiling
 
 Hardware Test:
 - [ ] Support LiteX: https://github.com/litex-hub/litex-boards, https://pcotret.gitlab.io/blog/processor_in_litex/
@@ -126,6 +119,14 @@ Hardware Test:
 
 # DONE
 
+- [X] Fix lint error code management in CI
+- [X] Memfy:
+    - [X] Support outstanding read/write request
+    - [X] Don’t block write if AW / W are ready
+    - [X] Don’t block write until BCH but block any further read if pending write (in-order only)
+- [X] Testcase WFI
+- [X] Testcase outstanding requests
+- [X] Testcase Zicnt
 - [X] Add Zicntr
 - [X] Rework trace among the modules
 - [X] Deactivate trace with define for every module

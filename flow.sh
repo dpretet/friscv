@@ -9,7 +9,6 @@ set -e -o pipefail
 # Current script path; doesn't support symlink
 FRISCV_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
-ret=0
 
 # Bash color codes
 Red='\033[0;31m'
@@ -71,6 +70,13 @@ help() {
     echo -e "${NC}"
 }
 
+run_sims() {
+    ./run.sh --simulator verilator --tb CORE --nocompile 1
+    ./run.sh --simulator verilator --tb PLATFORM --nocompile 1
+    ./run.sh --simulator icarus --tb CORE --nocompile 1
+    ./run.sh --simulator icarus --tb PLATFORM --nocompile 1
+}
+
 main() {
 
     echo ""
@@ -99,6 +105,7 @@ main() {
             -Wall -Wpedantic \
             -Wno-VARHIDDEN \
             -Wno-PINCONNECTEMPTY \
+            -Wno-PINMISSING \
             -I./rtl\
             -I./dep/svlogger\
             ./rtl/friscv_h.sv\
@@ -122,9 +129,20 @@ main() {
             ./rtl/friscv_cache_blocks.sv\
             ./rtl/friscv_cache_memctrl.sv\
             ./rtl/friscv_axi_or_tracker.sv\
-            --top-module friscv_rv32i_core
+            --top-module friscv_rv32i_core 2> lint.log
 
         set -e
+
+        ec=$(grep -c "%Error:" lint.log)
+
+        if [[ $ec -gt 1 ]]; then
+            printerror "Lint failed, check ./lint.log for further details"
+            exit 1
+        else
+            printsuccess "Lint ran successfully"
+            exit 0
+        fi
+
     fi
 
     if [[ $1 == "sim" ]]; then
@@ -145,39 +163,30 @@ main() {
             echo "  - wba-testsuite"
             echo "  - riscv-testsuite"
             echo "  - c-testsuite"
+            echo "  - all"
         fi
 
-        if [ "$2" == "wba-testsuite" ]; then
+        if [ "$2" == "wba-testsuite" ] || [ "$2" == "all" ]; then
             echo ""
             printinfo "Start WBA Simulation flow"
             cd "${FRISCV_DIR}/test/wba_testsuite"
+            run_sims
 
-            ./run.sh --simulator verilator --tb CORE --nocompile 1
-            ./run.sh --simulator verilator --tb PLATFORM --nocompile 1
-            ./run.sh --simulator icarus --tb CORE --nocompile 1
-            ./run.sh --simulator icarus --tb PLATFORM --nocompile 1
         fi
 
-        if [ "$2" == "riscv-testsuite" ]; then
+        if [ "$2" == "riscv-testsuite" ] || [ "$2" == "all" ]; then
             echo ""
             printinfo "Start RISCV Compliance flow"
             cd "${FRISCV_DIR}/test/riscv-tests"
+            run_sims
 
-            ./run.sh --simulator verilator --tb CORE --nocompile 1
-            ./run.sh --simulator verilator --tb PLATFORM --nocompile 1
-            ./run.sh --simulator icarus --tb CORE --nocompile 1
-            ./run.sh --simulator icarus --tb PLATFORM --nocompile 1
         fi
 
-        if [ "$2" == "c-testsuite" ]; then
+        if [ "$2" == "c-testsuite" ] || [ "$2" == "all" ]; then
             echo ""
             printinfo "Start C Simulation flow"
             cd "${FRISCV_DIR}/test/c_testsuite"
-
-            ./run.sh --simulator verilator --tb CORE --nocompile 1
-            ./run.sh --simulator verilator --tb PLATFORM --nocompile 1
-            ./run.sh --simulator icarus --tb CORE --nocompile 1
-            ./run.sh --simulator icarus --tb PLATFORM --nocompile 1
+            run_sims
         fi
 
         exit 0
@@ -190,5 +199,6 @@ main() {
         return $?
     fi
 }
+
 
 main "$@"

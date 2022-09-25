@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.107 (w)1999-2020 BSI
-[*] Sat Sep 24 16:08:58 2022
+[*] Sun Sep 25 13:03:17 2022
 [*]
 [dumpfile] "/Users/damien/workspace/hdl/friscv/test/wba_testsuite/tests/rv32ui-p-test8.vcd"
-[dumpfile_mtime] "Sat Sep 24 16:08:51 2022"
-[dumpfile_size] 886654
+[dumpfile_mtime] "Sat Sep 24 16:17:02 2022"
+[dumpfile_size] 1028560
 [savefile] "/Users/damien/workspace/hdl/friscv/test/common/debug_core_verilator.gtkw"
 [timestart] 1
 [size] 2560 1440
 [pos] -1 -1
-*-7.821643 1673 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-8.821643 1757 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] friscv_testbench.
 [treeopen] friscv_testbench.friscv_testbench.
 [treeopen] friscv_testbench.friscv_testbench.genblk1.
@@ -24,7 +24,7 @@
 [sst_width] 335
 [signals_width] 526
 [sst_expanded] 1
-[sst_vpaned_height] 510
+[sst_vpaned_height] 1122
 @c00200
 -Testbench
 @24
@@ -388,7 +388,33 @@ friscv_testbench.friscv_testbench.genblk1.dut.isa_registers.x30_t5[31:0]
 friscv_testbench.friscv_testbench.genblk1.dut.isa_registers.x31_t6[31:0]
 @1401200
 -ISA regs
-@c00200
+@800200
+-CSRs
+@28
+friscv_testbench.friscv_testbench.genblk1.dut.csrs.ext_irq
+friscv_testbench.friscv_testbench.genblk1.dut.csrs.sw_irq
+friscv_testbench.friscv_testbench.genblk1.dut.csrs.timer_irq
+@22
+friscv_testbench.friscv_testbench.genblk1.dut.csrs.rdcycle[63:0]
+friscv_testbench.friscv_testbench.genblk1.dut.csrs.rdinstret[63:0]
+friscv_testbench.friscv_testbench.genblk1.dut.csrs.rdtime[63:0]
+friscv_testbench.friscv_testbench.genblk1.dut.csrs.mcause[31:0]
+friscv_testbench.friscv_testbench.genblk1.dut.csrs.mcounteren[31:0]
+friscv_testbench.friscv_testbench.genblk1.dut.csrs.medeleg[31:0]
+friscv_testbench.friscv_testbench.genblk1.dut.csrs.mepc[31:0]
+friscv_testbench.friscv_testbench.genblk1.dut.csrs.mhartid[31:0]
+friscv_testbench.friscv_testbench.genblk1.dut.csrs.mideleg[31:0]
+friscv_testbench.friscv_testbench.genblk1.dut.csrs.mie[31:0]
+friscv_testbench.friscv_testbench.genblk1.dut.csrs.mip[31:0]
+friscv_testbench.friscv_testbench.genblk1.dut.csrs.misa[31:0]
+friscv_testbench.friscv_testbench.genblk1.dut.csrs.mscratch[31:0]
+friscv_testbench.friscv_testbench.genblk1.dut.csrs.mstatus[31:0]
+friscv_testbench.friscv_testbench.genblk1.dut.csrs.mtval[31:0]
+@23
+friscv_testbench.friscv_testbench.genblk1.dut.csrs.mtvec[31:0]
+@1000200
+-CSRs
+@800200
 -Control
 @200
 -
@@ -512,34 +538,8 @@ friscv_testbench.friscv_testbench.genblk1.dut.control.ctrl_rd_addr[4:0]
 friscv_testbench.friscv_testbench.genblk1.dut.control.ctrl_rd_val[31:0]
 @200
 -
-@1401200
--Control
-@800200
--CSRs
-@28
-friscv_testbench.friscv_testbench.genblk1.dut.csrs.ext_irq
-friscv_testbench.friscv_testbench.genblk1.dut.csrs.sw_irq
-friscv_testbench.friscv_testbench.genblk1.dut.csrs.timer_irq
-@23
-friscv_testbench.friscv_testbench.genblk1.dut.csrs.rdcycle[63:0]
-@22
-friscv_testbench.friscv_testbench.genblk1.dut.csrs.rdinstret[63:0]
-friscv_testbench.friscv_testbench.genblk1.dut.csrs.rdtime[63:0]
-friscv_testbench.friscv_testbench.genblk1.dut.csrs.mcause[31:0]
-friscv_testbench.friscv_testbench.genblk1.dut.csrs.mcounteren[31:0]
-friscv_testbench.friscv_testbench.genblk1.dut.csrs.medeleg[31:0]
-friscv_testbench.friscv_testbench.genblk1.dut.csrs.mepc[31:0]
-friscv_testbench.friscv_testbench.genblk1.dut.csrs.mhartid[31:0]
-friscv_testbench.friscv_testbench.genblk1.dut.csrs.mideleg[31:0]
-friscv_testbench.friscv_testbench.genblk1.dut.csrs.mie[31:0]
-friscv_testbench.friscv_testbench.genblk1.dut.csrs.mip[31:0]
-friscv_testbench.friscv_testbench.genblk1.dut.csrs.misa[31:0]
-friscv_testbench.friscv_testbench.genblk1.dut.csrs.mscratch[31:0]
-friscv_testbench.friscv_testbench.genblk1.dut.csrs.mstatus[31:0]
-friscv_testbench.friscv_testbench.genblk1.dut.csrs.mtval[31:0]
-friscv_testbench.friscv_testbench.genblk1.dut.csrs.mtvec[31:0]
 @1000200
--CSRs
+-Control
 @200
 -
 @c00200
@@ -734,7 +734,7 @@ friscv_testbench.friscv_testbench.genblk1.dut.DCACHE_ON.dcache.pusher_cache_wen
 -dCache
 @200
 -
-@800200
+@c00200
 -Memfy
 @200
 -
@@ -822,7 +822,7 @@ friscv_testbench.friscv_testbench.genblk1.dut.processing.memfy.memfy_rs2_addr[4:
 friscv_testbench.friscv_testbench.genblk1.dut.processing.memfy.memfy_rs2_val[31:0]
 @200
 -
-@1000200
+@1401200
 -Memfy
 @200
 -
