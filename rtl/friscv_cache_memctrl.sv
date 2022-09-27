@@ -11,10 +11,11 @@
 // Memory controller managing AXI4-lite read request from Fetcher to read
 // central memory to fill caches lines.
 //
-// TODO: Support AXI4 transfer with different width than the cache line width
+// TODO: Support AXI4 transfer with different width than the cache block width
 // TODO: Support width adaptation between ctrl and memory (a5f613f50f861)
 // TODO: Support Wrap mode for read channel
 // TODO: Manage RRESP
+// TODO: Add tracer
 //
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -24,9 +25,9 @@ module friscv_cache_memctrl
         ///////////////////////////////////////////////////////////////////////
         // General Setup
         ///////////////////////////////////////////////////////////////////////
-
-        // Instruction length (always 32, whatever the architecture)
-        parameter ILEN = 32,
+        
+        // Module name for printing
+        parameter NAME = "Cache-MemCtrl",
         // RISCV Architecture
         parameter XLEN = 32,
         // Number of outstanding requests supported
@@ -42,9 +43,10 @@ module friscv_cache_memctrl
         parameter AXI_ID_W = 8,
         // AXI4 data width, independant of control unit width
         parameter AXI_DATA_W = 128,
-        // ID Mask to apply to identify the instruction cache in the AXI4
-        // infrastructure
-        parameter AXI_ID_MASK = 'h10,
+        // Use original ID issued or fix it to ensure in-order execution
+        parameter AXI_IN_ORDER = 1,
+        // ID Mask to apply to identify the data cache in the AXI4 infrastructure
+        parameter AXI_ID_MASK = 'h20,
 
         ///////////////////////////////////////////////////////////////////////
         // Cache Setup
@@ -66,17 +68,28 @@ module friscv_cache_memctrl
         input  wire                       flush_blocks,
         output logic                      flush_ack,
         output logic                      flushing,
-        // ctrl read interface
+        // ctrl read address interface
         input  wire                       mst_arvalid,
         output logic                      mst_arready,
         input  wire  [AXI_ADDR_W    -1:0] mst_araddr,
         input  wire  [3             -1:0] mst_arprot,
+        input  wire  [4             -1:0] mst_arcache,
         input  wire  [AXI_ID_W      -1:0] mst_arid,
+        // Control read completion
+        output logic                      mst_rvalid,
+        input  wire                       mst_rready,
+        output logic                      mst_rcache,
+        output logic [AXI_ADDR_W    -1:0] mst_raddr,
+        output logic [AXI_ID_W      -1:0] mst_rid,
+        output logic [2             -1:0] mst_rresp,
+        output logic [CACHE_BLOCK_W -1:0] mst_rdata_blk,
+        output logic [XLEN          -1:0] mst_rdata,
         // ctrl write interface
         input  logic                      mst_awvalid,
         output logic                      mst_awready,
         input  logic [AXI_ADDR_W    -1:0] mst_awaddr,
         input  logic [3             -1:0] mst_awprot,
+        input  wire  [4             -1:0] mst_awcache,
         input  logic [AXI_ID_W      -1:0] mst_awid,
         input  logic                      mst_wvalid,
         output logic                      mst_wready,
@@ -126,12 +139,7 @@ module friscv_cache_memctrl
         input  wire  [AXI_ID_W      -1:0] mem_rid,
         input  wire  [2             -1:0] mem_rresp,
         input  wire  [AXI_DATA_W    -1:0] mem_rdata,
-        input  wire                       mem_rlast,
-        // Cache block write interface driven with read data channel
-        output logic                      cache_loading,
-        output logic                      cache_wen,
-        output logic [AXI_ADDR_W    -1:0] cache_waddr,
-        output logic [CACHE_BLOCK_W -1:0] cache_wdata
+        input  wire                       mem_rlast
     );
 
 
@@ -154,11 +162,17 @@ module friscv_cache_memctrl
     localparam SCALE = AXI_DATA_W / XLEN;
     localparam SCALE_W = $clog2(SCALE);
 
+    // Offset part into address to index a DWORD or QWORD
+    localparam OFFSET_IX = (XLEN==32) ? 2 : 3;
+    localparam OFFSET_W = $clog2(AXI_DATA_W/XLEN);
+
     // Used on flush request to erase the cache content
     logic                  erase_wen;
     logic [AXI_ADDR_W  :0] erase_addr;
 
     logic [AXI_ADDR_W-1:0] araddr;
+    logic                  arcache;
+    logic [OFFSET_W  -1:0] roffset;
     logic                  rch_full;
     logic                  wch_full;
     logic                  rch_empty;
@@ -169,6 +183,8 @@ module friscv_cache_memctrl
     logic [3         -1:0] asize;
     logic [SCALE_W   -1:0] wr_position;
     logic [SCALE_W   -1:0] wr_position_ff;
+    logic [AXI_ID_W  -1:0] arid_m;
+    logic [AXI_ID_W  -1:0] rid_m;
 
     ///////////////////////////////////////////////////////////////////////////
     // Fixed ASIZE, narrow transfers are not supported neither necessary
@@ -214,61 +230,101 @@ module friscv_cache_memctrl
     assign mem_arvalid = mst_arvalid;
     assign mst_arready = mem_arready && !rch_full;
 
-    // TODO: Fetch the address rounded to cache line boundary
     assign mem_araddr = {mst_araddr[AXI_ADDR_W-1:ADDR_LSB_W],{ADDR_LSB_W{1'b0}}};
     assign mem_arprot = mst_arprot;
-    assign mem_arid = AXI_ID_MASK;
+    assign mem_arid = mst_arid;
 
+    generate
+    if (AXI_IN_ORDER>0) begin: IN_ORDER_CPL
 
-    friscv_scfifo
-    #(
-        .PASS_THRU  (0),
-        .ADDR_WIDTH ($clog2(OSTDREQ_NUM)),
-        .DATA_WIDTH (AXI_ADDR_W)
-    )
-    araddr_fifo
-    (
-        .aclk     (aclk),
-        .aresetn  (aresetn),
-        .srst     (srst),
-        .flush    (1'b0),
-        .data_in  (mst_araddr),
-        .push     (mst_arvalid & mst_arready),
-        .full     (rch_full),
-        .data_out (araddr),
-        .pull     (mem_rvalid),
-        .empty    (rch_empty)
-    );
+        friscv_scfifo
+        #(
+            .PASS_THRU  (0),
+            .ADDR_WIDTH ($clog2(OSTDREQ_NUM)),
+            .DATA_WIDTH (AXI_ADDR_W + 1 /*ARCACHE[1]*/)
+        )
+        araddr_fifo
+        (
+            .aclk     (aclk),
+            .aresetn  (aresetn),
+            .srst     (srst),
+            .flush    (1'b0),
+            .data_in  ({mst_arcache[1], mst_araddr}),
+            .push     (mst_arvalid & mst_arready),
+            .full     (rch_full),
+            .data_out ({arcache, araddr}),
+            .pull     (mem_rvalid & mem_rready),
+            .empty    (rch_empty)
+        );
 
-    assign mem_rready = !rch_empty;
-
-    ///////////////////////////////////////////////////////////////////////////
-    // Cache block write executed with read completion channel
-    ///////////////////////////////////////////////////////////////////////////
-
-    assign cache_wen = (cfsm==IDLE) ? mem_rvalid : erase_wen;
-    assign cache_waddr = (cfsm==IDLE) ? araddr : erase_addr[AXI_ADDR_W-1:0];
-    assign cache_wdata = (cfsm==IDLE) ? mem_rdata : {CACHE_BLOCK_W{1'b0}};
-
-
-    ///////////////////////////////////////////////////////////////////////////
-    // Flag indicating a memory read request is occuring, waiting for a 
-    // completion
-    // TODO: Check if an OR tracker shouldn't be used
-    ///////////////////////////////////////////////////////////////////////////
+        assign arid_m = {AXI_ID_W{1'b0}};
+        assign rid_m = {AXI_ID_W{1'b0}};
     
-    always @ (posedge aclk or negedge aresetn) begin
+    end else begin
 
-        if (aresetn == 1'b0) begin
-            cache_loading <= 1'b0;
-        end else if (srst == 1'b1) begin
-            cache_loading <= 1'b0;
-        end else begin
-            if (mem_arready && mem_arvalid) cache_loading <= 1'b1;
-            else if (mem_rvalid && mem_rready) cache_loading <= 1'b0;
-        end
+        friscv_ram
+        #(
+            .ADDR_WIDTH ($clog2(OSTDREQ_NUM)),
+            .DATA_WIDTH (AXI_ADDR_W + 1 /*ARCACHE[1]*/)
+        )
+        araddr_ram
+        (
+            .aclk       (aclk),
+            .wr_en      (mst_arvalid & mst_arready),
+            .addr_in    (arid_m),
+            .data_in    ({mst_arcache[1], mst_araddr}),
+            .addr_out   (rid_m),
+            .data_out   ({arcache, araddr})
+        );
+
+        // Remove the ID mask before parsing the RAM while expecting IDs
+        // numbered from 0
+        assign arid_m = mst_arid ^ AXI_ID_MASK;
+        assign rid_m = mst_rid ^ AXI_ID_MASK;
+
+        assign rch_full = 1'b0;
+        assign rch_empty = 1'b0;
+
     end
-    
+    endgenerate
+
+
+    // Offset to use for RDATA extraction whithin the cache block
+    assign roffset = araddr[OFFSET_IX+:OFFSET_W];
+
+    `ifdef FRISCV_SIM
+    always @ (posedge aclk) begin
+        if (mem_rvalid && rch_empty && (aresetn && !srst))
+            $display("ERROR: (@ %t) %s - Receive an unexpected read request", $realtime, NAME);
+    end
+    `endif
+
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Read completion channel, used also as a cache block write interface
+    //
+    // Add extra signals for cache write purpose:
+    //
+    //  - raddr: the original ARADDR of the request to drive cache write interface
+    //  - rcache: ARCACHE[1], used to drive IO request to cache completion
+    //    channel and so bypass the cache blocks
+    //  - rdata_blk: the whole address line fetched, the controller always
+    //    read a whole block
+    //  - rdata: RDATA extracted from the interface to match the exact address 
+    //    while we always fetch a whole cache block. Make the controller usable 
+    //    for both instruction and data cache
+    ///////////////////////////////////////////////////////////////////////////
+
+    assign mst_rvalid = (cfsm==IDLE) ? mem_rvalid : erase_wen;
+    assign mem_rready = mst_rready;
+    assign mst_rid = (cfsm==IDLE) ? mem_rid : {AXI_ID_W{1'b0}};
+    assign mst_rresp = (cfsm==IDLE) ? mem_rresp : 2'b0;
+    assign mst_rdata = mem_rdata[XLEN*roffset+:XLEN];
+    // custom signals
+    assign mst_raddr = (cfsm==IDLE) ? araddr : erase_addr[AXI_ADDR_W-1:0];
+    assign mst_rcache = (cfsm==IDLE) ? (rch_empty) ? 1'b0 : arcache : 1'b0;
+    assign mst_rdata_blk = (cfsm==IDLE) ? mem_rdata : {CACHE_BLOCK_W{1'b0}};
+
 
     ///////////////////////////////////////////////////////////////////////////
     // Flush support on FENCE.i instruction execution
@@ -356,7 +412,7 @@ module friscv_cache_memctrl
         assign mem_awprot = mst_awprot;
         assign mem_awqos = 4'b0;
         assign mem_awregion = 4'b0;
-        assign mem_awid = AXI_ID_MASK;
+        assign mem_awid = mst_awid;
 
         // Write data channel
         assign mem_wvalid = mst_wvalid & !wch_full;

@@ -22,8 +22,8 @@ module friscv_cache_blocks
     #(
         // Name used for tracer file name
         parameter NAME = "blocks",
-        // Instruction length (always 32, whatever the architecture)
-        parameter ILEN = 32,
+        // data length, ILEN or XLEN if is a i$ or d$
+        parameter WLEN = 32,
         // Address bus width
         parameter ADDR_W = 32,
         // Line width defining only the data payload, in bits
@@ -41,7 +41,7 @@ module friscv_cache_blocks
         input  wire  [CACHE_BLOCK_W/8   -1:0] p1_wstrb,
         input  wire                           p1_ren,
         input  wire  [ADDR_W            -1:0] p1_raddr,
-        output logic [ILEN              -1:0] p1_rdata,
+        output logic [WLEN              -1:0] p1_rdata,
         output logic                          p1_hit,
         output logic                          p1_miss,
         input  wire                           p2_wen,
@@ -50,7 +50,7 @@ module friscv_cache_blocks
         input  wire  [CACHE_BLOCK_W/8   -1:0] p2_wstrb,
         input  wire                           p2_ren,
         input  wire  [ADDR_W            -1:0] p2_raddr,
-        output logic [ILEN              -1:0] p2_rdata,
+        output logic [WLEN              -1:0] p2_rdata,
         output logic                          p2_hit,
         output logic                          p2_miss
     );
@@ -60,21 +60,20 @@ module friscv_cache_blocks
     // Parameters to parse the address and cache blocks
     //////////////////////////////////////////////////////////////////////////
 
-    // Offset part into address value, 2 because we index dword (ILEN)
-    localparam OFFSET_IX = 2;
-    localparam OFFSET_W = $clog2(CACHE_BLOCK_W/ILEN);
+    // Offset part into address to index a DWORD or QWORD
+    localparam OFFSET_IX = (WLEN==32) ? 2 : 3;
+    localparam OFFSET_W = $clog2(CACHE_BLOCK_W/WLEN);
 
     // Index part into address value, to parse the cache blocks
     localparam INDEX_IX = OFFSET_IX + OFFSET_W;
     localparam INDEX_W = $clog2(CACHE_DEPTH);
 
-    // Tag part, address's MSB stored along the data values, -2 because the
-    // address is byte-oriented but we address dword (ILEN)
+    // Tag part, address's MSB stored along the data values,
     localparam TAG_IX = INDEX_IX + INDEX_W;
-    localparam TAG_W = ADDR_W - INDEX_W - OFFSET_W - 2;
+    localparam TAG_W = ADDR_W - INDEX_W - OFFSET_W - OFFSET_IX;
 
     // Number of isntruction per block, used to parse the words to write
-    localparam NB_INST_PER_BLK = CACHE_BLOCK_W / ILEN;
+    localparam NB_INST_PER_BLK = CACHE_BLOCK_W / WLEN;
 
     // Cache block width, tag + data + set bit
     localparam FULL_BLOCK_W = CACHE_BLOCK_W + TAG_W + 1;
@@ -145,7 +144,7 @@ module friscv_cache_blocks
         $fwrite(f, "    - index 0x%x\n", p``PNUM``_rindex);\
         $fwrite(f, "    - tag 0x%x\n", p``PNUM``_rtag);\
         $fwrite(f, "    - offset 0x%x\n", p``PNUM``_roffset);\
-        $fwrite(f, "    - data 0x%x\n", rblock_data[p``PNUM``_roffset*ILEN+:ILEN]);
+        $fwrite(f, "    - data 0x%x\n", rblock_data[p``PNUM``_roffset*WLEN+:WLEN]);
 
 
     //////////////////////////////////////////////////////////////////////////
@@ -258,17 +257,17 @@ module friscv_cache_blocks
         if (~aresetn) begin
             p1_hit <= 1'b0;
             p1_miss <= 1'b0;
-            p1_rdata <= {ILEN{1'b0}};
+            p1_rdata <= {WLEN{1'b0}};
             p2_hit <= 1'b0;
             p2_miss <= 1'b0;
-            p2_rdata <= {ILEN{1'b0}};
+            p2_rdata <= {WLEN{1'b0}};
         end else if (srst) begin
             p1_hit <= 1'b0;
             p1_miss <= 1'b0;
-            p1_rdata <= {ILEN{1'b0}};
+            p1_rdata <= {WLEN{1'b0}};
             p2_hit <= 1'b0;
             p2_miss <= 1'b0;
-            p2_rdata <= {ILEN{1'b0}};
+            p2_rdata <= {WLEN{1'b0}};
         end else begin
             // - hit indicates the cache line store the expected instruction
             // - miss indicates the cache is not initialized or doesn't contain
@@ -276,14 +275,14 @@ module friscv_cache_blocks
             if (p1_ren) begin
                 p1_hit <= (rblock_set && p1_rtag==rblock_tag) ? 1'b1 : 1'b0;
                 p1_miss <= (~rblock_set || p1_rtag!=rblock_tag) ? 1'b1 : 1'b0;
-                p1_rdata <= rblock_data[p1_roffset*ILEN+:ILEN];
+                p1_rdata <= rblock_data[p1_roffset*WLEN+:WLEN];
                 `ifdef TRACE_BLOCKS
                 `trace_read(1)
                 `endif
             end else if (p2_ren) begin
                 p2_hit <= (rblock_set && p2_rtag==rblock_tag) ? 1'b1 : 1'b0;
                 p2_miss <= (~rblock_set || p2_rtag!=rblock_tag) ? 1'b1 : 1'b0;
-                p2_rdata <= rblock_data[p2_roffset*ILEN+:ILEN];
+                p2_rdata <= rblock_data[p2_roffset*WLEN+:WLEN];
                 `ifdef TRACE_BLOCKS
                 `trace_read(2)
                 `endif

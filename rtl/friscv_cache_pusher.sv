@@ -13,19 +13,10 @@ module friscv_cache_pusher
 
         // Name used for tracer file name
         parameter NAME = "pusher",
-        // Instruction length (always 32, whatever the architecture)
-        parameter ILEN = 32,
         // RISCV Architecture
         parameter XLEN = 32,
         // Number of outstanding requests supported
         parameter OSTDREQ_NUM = 4,
-        // IO regions for direct read/write access
-        parameter IO_REGION_NUMBER = 1,
-        // IO address ranges, organized by memory region as END-ADDR_START-ADDR:
-        // > 0xEND-MEM2_START-MEM2_END_MEM1-STARr-MEM1_END-MEM0_START-MEM0
-        // IO mapping can be contiguous or sparse, no restriction on the number,
-        // the size or the range if it fits into the XLEN addressable space
-        parameter [XLEN*2*IO_REGION_NUMBER-1:0] IO_MAP = 64'h001000FF_00100000,
 
         ///////////////////////////////////////////////////////////////////////
         // Interface Setup
@@ -60,6 +51,7 @@ module friscv_cache_pusher
         output logic                           mst_awready,
         input  wire  [AXI_ADDR_W         -1:0] mst_awaddr,
         input  wire  [3                  -1:0] mst_awprot,
+        input  wire  [4                  -1:0] mst_awcache,
         input  wire  [AXI_ID_W           -1:0] mst_awid,
         input  wire                            mst_wvalid,
         output logic                           mst_wready,
@@ -181,8 +173,9 @@ module friscv_cache_pusher
                 mst_wdata_r <= mst_wdata;
                 mst_wstrb_r <= mst_wstrb;
             // Grab a new write request to check if present in the cache to be udpated
+            // Don't do anything if the write request is not cachable
             end else begin
-                if (mst_awvalid && mst_awready) begin
+                if (mst_awvalid && mst_awready && !mst_awcache[1]) begin
                     if (!mst_wvalid) wait_data_channel <= 1'b1;
                     else wait_data_channel <= 1'b0;
                     cache_ren <= 1'b1;

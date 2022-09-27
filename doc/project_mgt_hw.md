@@ -84,6 +84,14 @@ https://www.youtube.com/channel/UCPSsA8oxlSBjidJsSPdpjsQ/videos
 
 Verification/Validation:
 
+- [ ] Testsuite C
+    - [ ] Tiny tracer
+        - [ ] https://github.com/Naitsirc98/Tiny-Ray-Tracer
+        - [ ] https://github.com/ssloy/tinyraytracer
+    - [ ] Use little script lang Beariish/little: A small, easily embedded language implemented in a single .c file
+    - [ ] Testcase C de mult/div
+    - [ ] Testcase C (Rand access) pour les ORs de memory
+    - [ ] Testcase C matrix
 - [ ] Update synthesis flow
     - [ ] Standard cells library for Yosys
     - [ ] https://github.com/dpretet/ascend-freepdk45/tree/master/lib
@@ -97,6 +105,8 @@ Verification/Validation:
     - [ ] stream the event like a write memory error
     - [ ] log error in a file
     - [ ] Support GDB:  https://tomverbeure.github.io/2021/07/18/VexRiscv-OpenOCD-and-Traps.html
+- [ ] Testsuite Rust https://danielmangum.com/posts/risc-v-bytes-rust-cross-compilation/
+- [ ] Build a dCache testbench
 
 Hardware Test:
 - [ ] Support LiteX: https://github.com/litex-hub/litex-boards, https://pcotret.gitlab.io/blog/processor_in_litex/

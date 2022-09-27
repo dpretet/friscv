@@ -34,7 +34,16 @@ module friscv_processing
         // Internal FIFO depth, buffering the instruction to execute
         parameter INST_QUEUE_DEPTH  = 0,
         // Number of outstanding requests used by the LOAD/STORE unit
-        parameter DATA_OSTDREQ_NUM  = 8
+        parameter DATA_OSTDREQ_NUM  = 8,
+        // Reorder read completion internally in Memfy, not in dCache
+        parameter AXI_REORDER_CPL = 0,
+        // IO regions for direct read/write access
+        parameter IO_MAP_NB = 1,
+        // IO address ranges, organized by memory region as END-ADDR_START-ADDR:
+        // > 0xEND-MEM2_START-MEM2_END-MEM1_START-MEM1_END-MEM0_START-MEM0
+        // IO mapping can be contiguous or sparse, no restriction on the number,
+        // the size or the range if it fits into the XLEN addressable space
+        parameter [XLEN*2*IO_MAP_NB-1:0] IO_MAP = 64'h001000FF_00100000
     )(
         // clock & reset
         input  wire                         aclk,
@@ -61,6 +70,7 @@ module friscv_processing
         input  wire                         awready,
         output logic [AXI_ADDR_W      -1:0] awaddr,
         output logic [3               -1:0] awprot,
+        output logic [4               -1:0] awcache,
         output logic [AXI_ID_W        -1:0] awid,
         output logic                        wvalid,
         input  wire                         wready,
@@ -74,6 +84,7 @@ module friscv_processing
         input  wire                         arready,
         output logic [AXI_ADDR_W      -1:0] araddr,
         output logic [3               -1:0] arprot,
+        output logic [4               -1:0] arcache,
         output logic [AXI_ID_W        -1:0] arid,
         input  wire                         rvalid,
         output logic                        rready,
@@ -284,12 +295,15 @@ module friscv_processing
 
     friscv_memfy
     #(
-        .XLEN         (XLEN),
-        .MAX_OR       (DATA_OSTDREQ_NUM),
-        .AXI_ADDR_W   (AXI_ADDR_W),
-        .AXI_ID_W     (AXI_ID_W),
-        .AXI_DATA_W   (AXI_DATA_W),
-        .AXI_ID_MASK  (AXI_ID_MASK)
+        .XLEN              (XLEN),
+        .MAX_OR            (DATA_OSTDREQ_NUM),
+        .AXI_ADDR_W        (AXI_ADDR_W),
+        .AXI_ID_W          (AXI_ID_W),
+        .AXI_DATA_W        (AXI_DATA_W),
+        .AXI_ID_MASK       (AXI_ID_MASK),
+        .AXI_REORDER_CPL   (AXI_REORDER_CPL),
+        .IO_MAP_NB         (IO_MAP_NB),
+        .IO_MAP            (IO_MAP)
     )
     memfy
     (
@@ -314,6 +328,7 @@ module friscv_processing
         .awready            (awready),
         .awaddr             (awaddr),
         .awprot             (awprot),
+        .awcache            (awcache),
         .awid               (awid),
         .wvalid             (wvalid),
         .wready             (wready),
@@ -327,6 +342,7 @@ module friscv_processing
         .arready            (arready),
         .araddr             (araddr),
         .arprot             (arprot),
+        .arcache            (arcache),
         .arid               (arid),
         .rvalid             (rvalid),
         .rready             (rready),

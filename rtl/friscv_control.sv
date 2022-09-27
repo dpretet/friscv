@@ -27,8 +27,8 @@ module friscv_control
         parameter AXI_ID_W = 8,
         // AXI4 data width, independant of control unit width
         parameter AXI_DATA_W = XLEN,
-        // Fast jump mode tracks the register usage and avoid wait state in control unit
-        parameter FAST_JUMP = 0,
+        // ID used to identify the dta abus in the infrastructure
+        parameter AXI_ID_MASK = 'h10,
         // Number of outstanding requests supported
         parameter OSTDREQ_NUM = 4,
         // Primary address to boot to load the firmware
@@ -97,6 +97,8 @@ module friscv_control
     // Parameters and variables declarations
     //
     ///////////////////////////////////////////////////////////////////////////
+
+    localparam MAX_ID = AXI_ID_MASK + OSTDREQ_NUM - 1;
 
     // Decoded instructions
     logic [`OPCODE_W   -1:0] opcode;
@@ -237,11 +239,13 @@ module friscv_control
     /////////////////////////////////////////////////////////////////////
     `ifdef USE_SVL
     function automatic string get_mcause_desc(input integer cause);
-        if (cause==1) get_mcause_desc = "Read-only CSR write access";
-        if (cause==0) get_mcause_desc = "Instruction address misaligned";
-        if (cause==4) get_mcause_desc = "LOAD address misaligned";
-        if (cause==6) get_mcause_desc = "STORE address misaligned";
-        if (cause==2) get_mcause_desc = "Instruction decoding error";
+             if (cause==1)  get_mcause_desc = "Read-only CSR write access";
+        else if (cause==0)  get_mcause_desc = "Instruction address misaligned";
+        else if (cause==4)  get_mcause_desc = "LOAD address misaligned";
+        else if (cause==6)  get_mcause_desc = "STORE address misaligned";
+        else if (cause==2)  get_mcause_desc = "Instruction decoding error";
+        else if (cause==11) get_mcause_desc = "Environment call";
+        else                get_mcause_desc = "Unkown cause";
     endfunction
     `endif
 
@@ -267,12 +271,14 @@ module friscv_control
 
 
     //////////////////////////////////////////////////////////////////////
-    // Return next ID during program counter increment during address jump
+    // Return next ID for program counter increment during address jump
     //////////////////////////////////////////////////////////////////////
     function automatic logic [AXI_ID_W-1:0] next_id(
-        input logic  [AXI_ID_W-1:0] id
+        input logic  [AXI_ID_W-1:0] id,
+        input logic  [AXI_ID_W-1:0] max_id,
+        input logic  [AXI_ID_W-1:0] init_id
     );
-        if (id==OSTDREQ_NUM-1) next_id = {AXI_ID_W{1'b0}};
+        if (id==max_id) next_id = init_id;
         else next_id = id + 1'b1;
     endfunction
 
@@ -544,6 +550,7 @@ module friscv_control
                 ///////////////////////////////////////////////////////////////
                 default: begin
 
+                    arid <= AXI_ID_MASK;
                     araddr <= BOOT_ADDR;
                     pc_reg <= BOOT_ADDR;
 
@@ -629,7 +636,7 @@ module friscv_control
                             traps[3] <= 1'b1;
                             flush_fifo <= 1'b1;
                             arvalid <= 1'b0;
-                            arid <= next_id(arid);
+                            arid <= next_id(arid, MAX_ID, AXI_ID_MASK);
                             pc_reg <= mtvec;
                             mepc_wr <= 1'b1;
                             mepc <= pc_reg;
@@ -663,7 +670,7 @@ module friscv_control
                             if (jump_branch && ~cant_jump) begin
                                 flush_fifo <= 1'b1;
                                 arvalid <= 1'b0;
-                                arid <= next_id(arid);
+                                arid <= next_id(arid, MAX_ID, AXI_ID_MASK);
                                 cfsm <= RELOAD;
                             end
 
@@ -681,7 +688,7 @@ module friscv_control
                                 traps[0] <= 1'b1;
                                 flush_fifo <= 1'b1;
                                 arvalid <= 1'b0;
-                                arid <= next_id(arid);
+                                arid <= next_id(arid, MAX_ID, AXI_ID_MASK);
                                 pc_reg <= mtvec;
                                 mepc_wr <= 1'b1;
                                 mepc <= pc_reg;
@@ -714,7 +721,7 @@ module friscv_control
                                 flush_fifo <= 1'b1;
                                 traps[2] <= 1'b1;
                                 arvalid <= 1'b0;
-                                arid <= next_id(arid);
+                                arid <= next_id(arid, MAX_ID, AXI_ID_MASK);
                                 pc_reg <= sb_mepc;
                                 mstatus_wr <= 1'b1;
                                 mstatus <= mstatus_for_mret;
@@ -732,7 +739,7 @@ module friscv_control
                                 flush_reqs <= 1'b0;
                                 pc_reg <= pc;
                                 arvalid <= 1'b0;
-                                arid <= next_id(arid);
+                                arid <= next_id(arid, MAX_ID, AXI_ID_MASK);
                                 pc_reg <= pc;
                                 cfsm <= FENCE_I;
 
@@ -842,7 +849,7 @@ module friscv_control
                         traps[3] <= 1'b1;
                         flush_fifo <= 1'b1;
                         arvalid <= 1'b0;
-                        arid <= next_id(arid);
+                        arid <= next_id(arid, MAX_ID, AXI_ID_MASK);
                         araddr <= mtvec;
                         pc_reg <= mtvec;
                         // mepc_wr <= 1'b1;

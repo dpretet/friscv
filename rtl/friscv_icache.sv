@@ -35,13 +35,6 @@ module friscv_icache
         parameter XLEN = 32,
         // Number of outstanding requests supported
         parameter OSTDREQ_NUM = 4,
-        // IO regions for direct read/write access
-        parameter IO_REGION_NUMBER = 1,
-        // IO address ranges, organized by memory region as END-ADDR_START-ADDR:
-        // > 0xEND-MEM2_START-MEM2_END_MEM1-STARr-MEM1_END-MEM0_START-MEM0
-        // IO mapping can be contiguous or sparse, no restriction on the number,
-        // the size or the range if it fits into the XLEN addressable space
-        parameter [XLEN*2*IO_REGION_NUMBER-1:0] IO_MAP = 64'h001000FF_00100000,
 
         ///////////////////////////////////////////////////////////////////////
         // Interface Setup
@@ -66,11 +59,7 @@ module friscv_icache
         // Line width defining only the data payload, in bits
         parameter CACHE_BLOCK_W = 128,
         // Number of lines in the cache
-        parameter CACHE_DEPTH = 512,
-        // Enable pipeline on cache
-        //   - bit 0: use pass-thru mode in fetcher's FIFOs
-        parameter CACHE_PIPELINE = 32'h00000001
-
+        parameter CACHE_DEPTH = 512
     )(
         // Clock / Reset
         input  wire                       aclk,
@@ -115,39 +104,41 @@ module friscv_icache
 
 
     // Signals driving the cache lines pool
-    logic                     cache_wen;
-    logic [AXI_ADDR_W   -1:0] cache_waddr;
-    logic [CACHE_BLOCK_W-1:0] cache_wdata;
-    logic                     cache_ren;
-    logic [AXI_ADDR_W   -1:0] cache_raddr;
-    logic [ILEN         -1:0] cache_rdata;
-    logic                     cache_hit;
-    logic                     cache_miss;
-    logic                     cache_loading;
+
+    logic                          cache_ren;
+    logic [AXI_ADDR_W        -1:0] cache_raddr;
+    logic [ILEN              -1:0] cache_rdata;
+    logic                          cache_hit;
+    logic                          cache_miss;
     // Memory controller interface
-    logic                     memctrl_arvalid;
-    logic                     memctrl_arready;
-    logic [AXI_ADDR_W   -1:0] memctrl_araddr;
-    logic [3            -1:0] memctrl_arprot;
-    logic [AXI_ID_W     -1:0] memctrl_arid;
+    logic                          memctrl_arvalid;
+    logic                          memctrl_arready;
+    logic [AXI_ADDR_W        -1:0] memctrl_araddr;
+    logic [3                 -1:0] memctrl_arprot;
+    logic [AXI_ID_W          -1:0] memctrl_arid;
+    logic                          memctrl_rvalid;
+    logic                          memctrl_rcache;
+    logic                          memctrl_rready;
+    logic [AXI_ADDR_W        -1:0] memctrl_raddr;
+    logic [CACHE_BLOCK_W     -1:0] memctrl_rdata_blk;
+    logic [AXI_ID_W          -1:0] memctrl_rid;
+    logic [2                 -1:0] memctrl_rresp;
 
     // Signal to control the flush operation
-    logic                     flushing;
-    logic                     flush_ack_fetcher;
-    logic                     flush_ack_memctrl;
+    logic                         flushing;
+    logic                         flush_ack_fetcher;
+    logic                         flush_ack_memctrl;
 
     ///////////////////////////////////////////////////////////////////////////
     // Cache sequencer
     ///////////////////////////////////////////////////////////////////////////
 
-    friscv_cache_fetcher
+    friscv_cache_block_fetcher
     #(
         .NAME             ("iCache-fetcher"),
         .ILEN             (ILEN),
         .XLEN             (XLEN),
         .OSTDREQ_NUM      (OSTDREQ_NUM),
-        .IO_REGION_NUMBER (IO_REGION_NUMBER),
-        .IO_MAP           (IO_MAP),
         .AXI_ADDR_W       (AXI_ADDR_W),
         .AXI_ID_W         (AXI_ID_W),
         .AXI_DATA_W       (AXI_DATA_W)
@@ -157,28 +148,34 @@ module friscv_icache
         .aclk            (aclk),
         .aresetn         (aresetn),
         .srst            (srst),
+        // status flags for ordering rules
         .pending_wr      (1'b0),
         .pending_rd      (),
+        // flush control flow to empty the front-end FIFO
         .flush_reqs      (flush_reqs),
         .flush_blocks    (flush_blocks),
         .flush_ack       (flush_ack_fetcher),
+        // read address channel from the application
         .mst_arvalid     (ctrl_arvalid),
         .mst_arready     (ctrl_arready),
         .mst_araddr      (ctrl_araddr),
         .mst_arprot      (ctrl_arprot),
         .mst_arid        (ctrl_arid),
+        // read data completion to read completion manager
         .mst_rvalid      (ctrl_rvalid),
         .mst_rready      (ctrl_rready),
         .mst_rid         (ctrl_rid),
         .mst_rresp       (ctrl_rresp),
         .mst_rdata       (ctrl_rdata),
+        // read request to the memory controller
         .memctrl_arvalid (memctrl_arvalid),
         .memctrl_arready (memctrl_arready),
         .memctrl_araddr  (memctrl_araddr),
         .memctrl_arprot  (memctrl_arprot),
         .memctrl_arid    (memctrl_arid),
-        .cache_writing   (cache_wen),
-        .cache_loading   (cache_loading),
+        // status flag of the memory controller
+        .cache_writing   (memctrl_rvalid & !memctrl_rcache),
+        // cache block read interface port 1
         .cache_ren       (cache_ren),
         .cache_raddr     (cache_raddr),
         .cache_rdata     (cache_rdata),
@@ -193,7 +190,7 @@ module friscv_icache
     friscv_cache_blocks
     #(
         .NAME          ("iCache-blocks"),
-        .ILEN          (ILEN),
+        .WLEN          (ILEN),
         .ADDR_W        (AXI_ADDR_W),
         .CACHE_BLOCK_W (CACHE_BLOCK_W),
         .CACHE_DEPTH   (CACHE_DEPTH)
@@ -204,10 +201,10 @@ module friscv_icache
         .aresetn    (aresetn),
         .srst       (srst),
         .flush      (flushing),
-        .p1_wen     (cache_wen),
-        .p1_waddr   (cache_waddr),
-        .p1_wdata   (cache_wdata),
+        .p1_wen     (memctrl_rvalid & !memctrl_rcache),
         .p1_wstrb   ({CACHE_BLOCK_W/8{1'b1}}),
+        .p1_waddr   (memctrl_raddr),
+        .p1_wdata   (memctrl_rdata_blk),
         .p1_ren     (cache_ren),
         .p1_raddr   (cache_raddr),
         .p1_rdata   (cache_rdata),
@@ -224,6 +221,7 @@ module friscv_icache
         .p2_miss    ()
     );
 
+    assign memctrl_rready = 1'b1;
 
     ///////////////////////////////////////////////////////////////////////////
     // AXI4 memory controller to read external memory
@@ -231,13 +229,14 @@ module friscv_icache
 
     friscv_cache_memctrl
     #(
-        .ILEN          (ILEN),
+        .NAME          ("iCache-MemCtrl"),
         .XLEN          (XLEN),
         .OSTDREQ_NUM   (OSTDREQ_NUM),
         .AXI_ADDR_W    (AXI_ADDR_W),
         .AXI_ID_W      (AXI_ID_W),
         .AXI_DATA_W    (AXI_DATA_W),
         .AXI_ID_MASK   (AXI_ID_MASK),
+        .AXI_IN_ORDER  (1),
         .CACHE_BLOCK_W (CACHE_BLOCK_W),
         .CACHE_DEPTH   (CACHE_DEPTH)
     )
@@ -246,18 +245,32 @@ module friscv_icache
         .aclk           (aclk),
         .aresetn        (aresetn),
         .srst           (srst),
+        // flush block interface
         .flush_blocks   (flush_blocks),
         .flush_ack      (flush_ack_memctrl),
         .flushing       (flushing),
+        // AXI4-lite read address channels from fetcher stage
         .mst_arvalid    (memctrl_arvalid),
         .mst_arready    (memctrl_arready),
         .mst_araddr     (memctrl_araddr),
         .mst_arprot     (memctrl_arprot),
+        .mst_arcache    (4'b0),
         .mst_arid       (memctrl_arid),
+        // AXI4-lite read data channel to cache block and read completion module
+        .mst_rvalid     (memctrl_rvalid),
+        .mst_rready     (memctrl_rready),
+        .mst_rcache     (memctrl_rcache),
+        .mst_raddr      (memctrl_raddr),
+        .mst_rid        (memctrl_rid),
+        .mst_rresp      (memctrl_rresp),
+        .mst_rdata_blk  (memctrl_rdata_blk),
+        .mst_rdata      (),
+        // AXI4-lite write channels - Unused for instruction
         .mst_awvalid    (1'b0),
         .mst_awready    (),
         .mst_awaddr     ({AXI_ADDR_W{1'b0}}),
         .mst_awprot     (3'b0),
+        .mst_awcache    (4'b0),
         .mst_awid       ({AXI_ID_W{1'b0}}),
         .mst_wvalid     (1'b0),
         .mst_wready     (),
@@ -267,6 +280,7 @@ module friscv_icache
         .mst_bready     (1'b0),
         .mst_bid        (),
         .mst_bresp      (),
+        // AXI channels to central memory
         .mem_awvalid    (),
         .mem_awready    (1'b0),
         .mem_awaddr     (),
@@ -305,11 +319,7 @@ module friscv_icache
         .mem_rid        (icache_rid),
         .mem_rresp      (icache_rresp),
         .mem_rdata      (icache_rdata),
-        .mem_rlast      (icache_rlast),
-        .cache_loading  (cache_loading),
-        .cache_wen      (cache_wen),
-        .cache_waddr    (cache_waddr),
-        .cache_wdata    (cache_wdata)
+        .mem_rlast      (icache_rlast)
     );
 
     assign flush_ack = flush_ack_fetcher & flush_ack_memctrl;

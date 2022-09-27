@@ -82,7 +82,7 @@ The FSM sequencing the operations manages the PC (program counter) and acts depe
 instructions. It activates the processing unit, manages the jump/branch instruction or read/write
 the CSRs.
 
-The control unit fetches the next instructions through an AXI4-lite interface, using its
+The control unit pre-loads the next instructions through an AXI4-lite interface, using its
 non-blocking nature to read multiple outstanding requests and so unleash the performance of the
 core. In case a jump or a branching is necessary, it will drop the next useless incoming requests
 and reboot a new batch of requests up to the next jump.
@@ -99,6 +99,9 @@ ease this batch identification.
 The FIFO present as a front-end of the module is very important to store incoming instructions in
 case the processing unit, the CSRs are not ready to execute an instruction (for instance if reading
 the external central memory).
+
+In case the control unit pre-loaded too much instruction while a branch needs to be taken, it can
+flush the front-end FIFO and the iCache buffer and restarts faster to follow the new branch.
 
 The controls unit also manages the exceptions occuring and the traps (asynchronous or synchronous).
 

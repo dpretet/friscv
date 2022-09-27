@@ -74,6 +74,14 @@ module friscv_rv32i_core
         parameter ICACHE_BLOCK_W     = XLEN*4,
         // Number of blocks in the cache
         parameter ICACHE_DEPTH       = 512,
+            
+        // IO regions for direct read/write access
+        parameter IO_MAP_NB = 0,
+        // IO address ranges, organized by memory region as END-ADDR_START-ADDR:
+        // > 0xEND-MEM2_START-MEM2_END-MEM1_START-MEM1_END-MEM0_START-MEM0
+        // IO mapping can be contiguous or sparse, no restriction on the number,
+        // the size or the range if it fits into the XLEN addressable space
+        parameter [XLEN*2*IO_MAP_NB-1:0] IO_MAP = 64'h001000FF_00100000,
 
         // Enable cache block prefetch
         parameter DCACHE_PREFETCH_EN = 0,
@@ -81,7 +89,9 @@ module friscv_rv32i_core
         // integer multiple of XLEN (power of two)
         parameter DCACHE_BLOCK_W     = XLEN*4,
         // Number of blocks in the cache
-        parameter DCACHE_DEPTH       = 512
+        parameter DCACHE_DEPTH       = 512,
+        // Reorder read completion for Memfy
+        parameter DCACHE_REORDER_CPL = 0
     )(
         // Clock/reset interface
         input  wire                       aclk,
@@ -189,6 +199,7 @@ module friscv_rv32i_core
     logic                            memfy_awready;
     logic [AXI_ADDR_W          -1:0] memfy_awaddr;
     logic [3                   -1:0] memfy_awprot;
+    logic [4                   -1:0] memfy_awcache;
     logic [AXI_ID_W            -1:0] memfy_awid;
     logic                            memfy_wvalid;
     logic                            memfy_wready;
@@ -202,6 +213,7 @@ module friscv_rv32i_core
     logic                            memfy_arready;
     logic [AXI_ADDR_W          -1:0] memfy_araddr;
     logic [3                   -1:0] memfy_arprot;
+    logic [4                   -1:0] memfy_arcache;
     logic [AXI_ID_W            -1:0] memfy_arid;
     logic                            memfy_rvalid;
     logic                            memfy_rready;
@@ -365,6 +377,7 @@ module friscv_rv32i_core
         .RV32E          (RV32E),
         .AXI_ADDR_W     (AXI_ADDR_W),
         .AXI_ID_W       (AXI_ID_W),
+        .AXI_ID_MASK    (AXI_IMEM_MASK),
         .AXI_DATA_W     (XLEN),
         .OSTDREQ_NUM    (INST_OSTDREQ_NUM),
         .BOOT_ADDR      (BOOT_ADDR)
@@ -483,7 +496,7 @@ module friscv_rv32i_core
     assign inst_arready_s = imem_arready;
     assign imem_araddr = inst_araddr_s;
     assign imem_arprot = inst_arprot_s;
-    assign imem_arid = AXI_IMEM_MASK;
+    assign imem_arid = inst_arid_s;
     assign inst_rvalid_s = imem_rvalid;
     assign imem_rready = inst_rready_s;
     assign inst_rid_s = imem_rid;
@@ -557,11 +570,14 @@ module friscv_rv32i_core
         .AXI_ID_W          (AXI_ID_W),
         .AXI_DATA_W        (XLEN),
         .AXI_ID_MASK       (AXI_DMEM_MASK),
+        .AXI_REORDER_CPL   (0),
         .NB_UNIT           (NB_ALU_UNIT),
         .MAX_UNIT          (MAX_ALU_UNIT),
         .DATA_OSTDREQ_NUM  (DATA_OSTDREQ_NUM),
         .INST_BUS_PIPELINE (PROCESSING_BUS_PIPELINE),
-        .INST_QUEUE_DEPTH  (PROCESSING_QUEUE_DEPTH)
+        .INST_QUEUE_DEPTH  (PROCESSING_QUEUE_DEPTH),
+        .IO_MAP_NB         (IO_MAP_NB),
+        .IO_MAP            (IO_MAP)
     )
     processing
     (
@@ -586,6 +602,7 @@ module friscv_rv32i_core
         .awready            (memfy_awready),
         .awaddr             (memfy_awaddr),
         .awprot             (memfy_awprot),
+        .awcache            (memfy_awcache),
         .awid               (memfy_awid),
         .wvalid             (memfy_wvalid),
         .wready             (memfy_wready),
@@ -599,6 +616,7 @@ module friscv_rv32i_core
         .arready            (memfy_arready),
         .araddr             (memfy_araddr),
         .arprot             (memfy_arprot),
+        .arcache            (memfy_arcache),
         .arid               (memfy_arid),
         .rvalid             (memfy_rvalid),
         .rready             (memfy_rready),
@@ -620,6 +638,8 @@ module friscv_rv32i_core
             .AXI_ID_W          (AXI_ID_W),
             .AXI_DATA_W        (AXI_DMEM_W),
             .AXI_ID_MASK       (AXI_DMEM_MASK),
+            .AXI_REORDER_CPL   (DCACHE_REORDER_CPL),
+            .IO_MAP_NB         (IO_MAP_NB),
             .CACHE_PREFETCH_EN (DCACHE_PREFETCH_EN),
             .CACHE_BLOCK_W     (DCACHE_BLOCK_W),
             .CACHE_DEPTH       (DCACHE_DEPTH)
@@ -633,6 +653,7 @@ module friscv_rv32i_core
             .memfy_awready   (memfy_awready),
             .memfy_awaddr    (memfy_awaddr),
             .memfy_awprot    (memfy_awprot),
+            .memfy_awcache   (memfy_awcache),
             .memfy_awid      (memfy_awid),
             .memfy_wvalid    (memfy_wvalid),
             .memfy_wready    (memfy_wready),
@@ -646,6 +667,7 @@ module friscv_rv32i_core
             .memfy_arready   (memfy_arready),
             .memfy_araddr    (memfy_araddr),
             .memfy_arprot    (memfy_arprot),
+            .memfy_arcache   (memfy_arcache),
             .memfy_arid      (memfy_arid),
             .memfy_rvalid    (memfy_rvalid),
             .memfy_rready    (memfy_rready),
@@ -695,33 +717,33 @@ module friscv_rv32i_core
 
     end else begin: DCACHE_OFF
 
-    assign dmem_awvalid = memfy_awvalid;
-    assign memfy_awready = dmem_awready;
-    assign dmem_awaddr = memfy_awaddr;
-    assign dmem_awprot = memfy_awprot;
-    assign dmem_awid = AXI_DMEM_MASK;
+        assign dmem_awvalid = memfy_awvalid;
+        assign memfy_awready = dmem_awready;
+        assign dmem_awaddr = memfy_awaddr;
+        assign dmem_awprot = memfy_awprot;
+        assign dmem_awid = memfy_awid;
 
-    assign dmem_wvalid = memfy_wvalid;
-    assign memfy_wready = dmem_wready;
-    assign dmem_wdata = memfy_wdata;
-    assign dmem_wstrb = memfy_wstrb;
+        assign dmem_wvalid = memfy_wvalid;
+        assign memfy_wready = dmem_wready;
+        assign dmem_wdata = memfy_wdata;
+        assign dmem_wstrb = memfy_wstrb;
 
-    assign memfy_bvalid = dmem_bvalid;
-    assign dmem_bready = memfy_bready;
-    assign memfy_bid = dmem_bid;
-    assign memfy_bresp = dmem_bresp;
+        assign memfy_bvalid = dmem_bvalid;
+        assign dmem_bready = memfy_bready;
+        assign memfy_bid = dmem_bid;
+        assign memfy_bresp = dmem_bresp;
 
-    assign dmem_arvalid = memfy_arvalid;
-    assign memfy_arready = dmem_arready;
-    assign dmem_araddr = memfy_araddr;
-    assign dmem_arprot = memfy_arprot;
-    assign dmem_arid = AXI_DMEM_MASK;
+        assign dmem_arvalid = memfy_arvalid;
+        assign memfy_arready = dmem_arready;
+        assign dmem_araddr = memfy_araddr;
+        assign dmem_arprot = memfy_arprot;
+        assign dmem_arid = memfy_arid;
 
-    assign memfy_rvalid = dmem_rvalid;
-    assign dmem_rready = memfy_rready;
-    assign memfy_rid = dmem_rid;
-    assign memfy_rresp = dmem_rresp;
-    assign memfy_rdata = dmem_rdata;
+        assign memfy_rvalid = dmem_rvalid;
+        assign dmem_rready = memfy_rready;
+        assign memfy_rid = dmem_rid;
+        assign memfy_rresp = dmem_rresp;
+        assign memfy_rdata = dmem_rdata;
 
     end
     endgenerate

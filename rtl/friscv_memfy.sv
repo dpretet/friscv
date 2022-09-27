@@ -28,8 +28,8 @@
 //
 // The module uses a single AXI4-lite ID, setup with AXI_ID_MASK. The FSM handles outstanding
 // requests in both directions, read and write, and wait for a direction received all its
-// completions to serve requets in another direction. The module provides flags infdicating
-// pending read/write requests to sequence instructions into the processing modules.
+// completions to serve requests in another direction. The module provides flags indicating
+// pending read/write requests to sequence instructions into the processing module.
 //
 // This module doesn't handle unaligned transfer, it will serve them anyway but will forward an
 // exception to the central controller thru a dedicated bus.
@@ -38,7 +38,7 @@
 
 module friscv_memfy
 
-    #(
+    #(  
         // Architecture selection
         parameter XLEN              = 32,
         // Address bus width defined for both control and AXI4 address signals
@@ -49,8 +49,17 @@ module friscv_memfy
         parameter AXI_DATA_W        = XLEN,
         // ID used to identify the dta abus in the infrastructure
         parameter AXI_ID_MASK       = 'h20,
+        // Reorder read completion for Memfy
+        parameter AXI_REORDER_CPL = 0,
         // Maximum outstanding request supported
-        parameter MAX_OR = 8
+        parameter MAX_OR = 8,
+        // IO regions for direct read/write access
+        parameter IO_MAP_NB = 1,
+        // IO address ranges, organized by memory region as END-ADDR_START-ADDR:
+        // > 0xEND-MEM2_START-MEM2_END-MEM1_START-MEM1_END-MEM0_START-MEM0
+        // IO mapping can be contiguous or sparse, no restriction on the number,
+        // the size or the range if it fits into the XLEN addressable space
+        parameter [XLEN*2*IO_MAP_NB-1:0] IO_MAP = 64'h001000FF_00100000
     )(
         // clock & reset
         input  wire                         aclk,
@@ -79,6 +88,7 @@ module friscv_memfy
         input  wire                         awready,
         output logic [AXI_ADDR_W      -1:0] awaddr,
         output logic [3               -1:0] awprot,
+        output logic [4               -1:0] awcache,
         output logic [AXI_ID_W        -1:0] awid,
         output logic                        wvalid,
         input  wire                         wready,
@@ -92,6 +102,7 @@ module friscv_memfy
         input  wire                         arready,
         output logic [AXI_ADDR_W      -1:0] araddr,
         output logic [3               -1:0] arprot,
+        output logic [4               -1:0] arcache,
         output logic [AXI_ID_W        -1:0] arid,
         input  wire                         rvalid,
         output logic                        rready,
@@ -288,6 +299,9 @@ module friscv_memfy
     logic                           stall_bus;
     logic                           waiting_rd_cpl;
     logic                           waiting_wr_cpl;
+    logic        [IO_MAP_NB   -1:0] io_map_hit;
+    logic                           is_io_req;
+    logic        [4           -1:0] acache;
 
     typedef enum logic[1:0] {
         IDLE = 0,
@@ -321,13 +335,14 @@ module friscv_memfy
 
         if (aresetn == 1'b0) begin
             awaddr <= {AXI_ADDR_W{1'b0}};
+            awcache <= 4'b0;
             awvalid <= 1'b0;
             wvalid <= 1'b0;
             wdata <= {XLEN{1'b0}};
             wstrb <= {XLEN/8{1'b0}};
             araddr <= {AXI_ADDR_W{1'b0}};
             arvalid <= 1'b0;
-            arvalid <= 1'b0;
+            arcache <= 4'b0;
             opcode_r <= 7'b0;
             state <= IDLE;
             memfy_ready_fsm <= 1'b0;
@@ -339,7 +354,7 @@ module friscv_memfy
             wstrb <= {XLEN/8{1'b0}};
             araddr <= {AXI_ADDR_W{1'b0}};
             arvalid <= 1'b0;
-            arvalid <= 1'b0;
+            arcache <= 4'b0;
             opcode_r <= 7'b0;
             state <= IDLE;
             memfy_ready_fsm <= 1'b0;
@@ -366,6 +381,8 @@ module friscv_memfy
 
                         awaddr <= addr;
                         araddr <= addr;
+                        awcache <= acache;
+                        arcache <= acache;
 
                         opcode_r <= opcode;
 
@@ -563,9 +580,28 @@ module friscv_memfy
     // Constant AXI4-lite signals
     //////////////////////////////////////////////////////////////////////////
 
-    // Always use the same IDs for in-order execution / completion
+    // Always use the same IDs to ensure in-order execution / completion
     assign awid = AXI_ID_MASK;
     assign arid = AXI_ID_MASK;
+
+    generate 
+
+    if (IO_MAP_NB > 1) begin
+
+        for (genvar i=0;i<IO_MAP_NB;i=i+1) begin
+            assign io_map_hit = (addr>=IO_MAP[i*2*XLEN+:XLEN] && addr<=IO_MAP[i*2*XLEN+XLEN+:XLEN]);
+        end
+
+        assign is_io_req = |io_map_hit;
+
+    end else begin
+
+        assign is_io_req = 1'b0;
+
+    end
+    endgenerate
+
+    assign acache = {2'b00, is_io_req, 1'b1};
 
     // Access permissions
     // [0] Unprivileged or privileged
@@ -574,7 +610,7 @@ module friscv_memfy
     assign awprot = 3'b000;
     assign arprot = 3'b000;
 
-    // Completion are always ready
+    // Completion are always accepted
     assign bready = 1'b1;
     assign rready = 1'b1;
 

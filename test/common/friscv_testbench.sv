@@ -142,10 +142,6 @@ module friscv_testbench(
     // Minimum program counter value a test needs to reach
     parameter MIN_PC = `MIN_PC;
 
-
-    integer                    timer;
-    string                     tcname;
-
 `ifndef VERILATOR
     logic                      aclk;
     logic                      aresetn;
@@ -238,6 +234,9 @@ module friscv_testbench(
     logic                      uart_rts;
     logic                      uart_cts;
     string                     stop_msg;
+    integer                    timer;
+    string                     tcname;
+
 
     // iCache write channels driven to 0 while unused
     assign imem_awvalid = 1'b0;
@@ -260,10 +259,10 @@ module friscv_testbench(
                 end else begin
                     cnt <= cnt + 1;
                     ext_irq <= 1'b0;
-                end 
+                end
             end
         end
-    `else 
+    `else
         assign ext_irq = 1'b0;
     `endif
 

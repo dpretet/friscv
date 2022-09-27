@@ -19,7 +19,7 @@
 ///////////////////////////////////////////////////////////////////////////
 
 
-module friscv_cache_fetcher
+module friscv_cache_block_fetcher
 
     #(
         ///////////////////////////////////////////////////////////////////////
@@ -27,20 +27,14 @@ module friscv_cache_fetcher
         ///////////////////////////////////////////////////////////////////////
 
         // Name used for tracer file name
-        parameter NAME = "fetcher",
+        parameter NAME = "block-fetcher",
         // Instruction length (always 32, whatever the architecture)
         parameter ILEN = 32,
         // RISCV Architecture
         parameter XLEN = 32,
         // Number of outstanding requests supported
         parameter OSTDREQ_NUM = 4,
-        // IO regions for direct read/write access
-        parameter IO_REGION_NUMBER = 1,
-        // IO address ranges, organized by memory region as END-ADDR_START-ADDR:
-        // > 0xEND-MEM2_START-MEM2_END_MEM1-STARr-MEM1_END-MEM0_START-MEM0
-        // IO mapping can be contiguous or sparse, no restriction on the number,
-        // the size or the range if it fits into the XLEN addressable space
-        parameter [XLEN*2*IO_REGION_NUMBER-1:0] IO_MAP = 64'h001000FF_00100000,
+
         ///////////////////////////////////////////////////////////////////////
         // Interface Setup
         ///////////////////////////////////////////////////////////////////////
@@ -83,7 +77,6 @@ module friscv_cache_fetcher
         output logic [AXI_ID_W      -1:0] memctrl_arid,
         // Cache line read interface
         input  wire                       cache_writing,
-        input  wire                       cache_loading,
         output logic                      cache_ren,
         output logic [AXI_ADDR_W    -1:0] cache_raddr,
         input  wire  [ILEN          -1:0] cache_rdata,
@@ -151,6 +144,8 @@ module friscv_cache_fetcher
     // A flag to drive all request to miss fetch FIFO in case a first
     // read in the block in a burst read
     logic                     cache_miss_r;
+    // flag tracking a read request has been issued
+    logic                     cache_loading;
 
     // Tracer setup
     `ifdef TRACE_CACHE
@@ -518,6 +513,22 @@ module friscv_cache_fetcher
         end
     end
 
+    ///////////////////////////////////////////////////////////////////////////
+    // Flag indicating a memory read request is occuring, waiting for a 
+    // completion thus blocking any further execution
+    ///////////////////////////////////////////////////////////////////////////
+    
+    always @ (posedge aclk or negedge aresetn) begin
+
+        if (aresetn == 1'b0) begin
+            cache_loading <= 1'b0;
+        end else if (srst == 1'b1) begin
+            cache_loading <= 1'b0;
+        end else begin
+            if (memctrl_arready && memctrl_arvalid) cache_loading <= 1'b1;
+            else if (cache_writing) cache_loading <= 1'b0;
+        end
+    end
 endmodule
 
 `resetall
