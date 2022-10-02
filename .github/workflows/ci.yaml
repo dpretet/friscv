@@ -22,7 +22,10 @@ jobs:
       - run: brew install verilator
       - run: verilator -V
       - run: git submodule update --init --recursive
-      - run: ./flow.sh sim wba-testsuite
+      - run: ./flow.sh sim wba-testsuite CORE icarus
+      - run: ./flow.sh sim wba-testsuite CORE verilator
+      - run: ./flow.sh sim wba-testsuite PLATFORM icarus
+      - run: ./flow.sh sim wba-testsuite PLATFORM verilator
   RISCV-Compliance:
    runs-on: macos-latest
    steps:
@@ -32,7 +35,10 @@ jobs:
      - run: brew install verilator
      - run: verilator -V
      - run: git submodule update --init --recursive
-     - run: ./flow.sh sim riscv-testsuite
+     - run: ./flow.sh sim riscv-testsuite CORE icarus
+     - run: ./flow.sh sim riscv-testsuite CORE verilator
+     - run: ./flow.sh sim riscv-testsuite PLATFORM icarus
+     - run: ./flow.sh sim riscv-testsuite PLATFORM verilator
   C-testsuite:
    runs-on: macos-latest
    steps:
@@ -42,4 +48,7 @@ jobs:
      - run: brew install verilator
      - run: verilator -V
      - run: git submodule update --init --recursive
-     - run: ./flow.sh sim c-testsuite
+     - run: ./flow.sh sim c-testsuite CORE icarus
+     - run: ./flow.sh sim c-testsuite CORE verilator
+     - run: ./flow.sh sim c-testsuite PLATFORM icarus
+     - run: ./flow.sh sim c-testsuite PLATFORM verilator

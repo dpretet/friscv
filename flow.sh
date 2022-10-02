@@ -18,6 +18,9 @@ Blue='\033[0;34m'
 # Reset
 NC='\033[0m'
 
+TB="all"
+SIM="all"
+
 function printerror {
     echo -e "${Red}ERROR: ${1}${NC}"
 }
@@ -71,10 +74,23 @@ help() {
 }
 
 run_sims() {
-    ./run.sh --simulator verilator --tb CORE --nocompile 1
-    ./run.sh --simulator verilator --tb PLATFORM --nocompile 1
-    ./run.sh --simulator icarus --tb CORE --nocompile 1
-    ./run.sh --simulator icarus --tb PLATFORM --nocompile 1
+
+    if [[ $1 == "CORE" ]] || [[ $1 == "all" ]]; then
+        if [[ $2 == "icarus" ]] || [[ $2 == "all" ]]; then
+            ./run.sh --simulator icarus --tb CORE --nocompile 1
+        fi
+        if [[ $2 == "verilator" ]] || [[ $2 == "all" ]]; then
+            ./run.sh --simulator verilator --tb CORE --nocompile 1
+        fi
+    fi
+    if [[ $1 == "PLATFORM" ]] || [[ $1 == "all" ]]; then
+        if [[ $2 == "icarus" ]] || [[ $2 == "all" ]]; then
+            ./run.sh --simulator icarus --tb PLATFORM --nocompile 1
+        fi
+        if [[ $2 == "verilator" ]] || [[ $2 == "all" ]]; then
+            ./run.sh --simulator verilator --tb PLATFORM --nocompile 1
+        fi
+    fi
 }
 
 main() {
@@ -151,6 +167,9 @@ main() {
 
         source script/setup.sh
 
+        [[ -n $3 ]] && TB="$3"
+        [[ -n $4 ]] && SIMULATOR="$4"
+
         if [[ ! $(type iverilog) ]]; then
             printerror "Icarus-Verilog is not installed"
             exit 1
@@ -172,7 +191,7 @@ main() {
             echo ""
             printinfo "Start WBA Simulation flow"
             cd "${FRISCV_DIR}/test/wba_testsuite"
-            run_sims
+            run_sims "$TB" "$SIMULATOR"
 
         fi
 
@@ -180,7 +199,7 @@ main() {
             echo ""
             printinfo "Start RISCV Compliance flow"
             cd "${FRISCV_DIR}/test/riscv-tests"
-            run_sims
+            run_sims "$TB" "$SIMULATOR"
 
         fi
 
@@ -188,7 +207,7 @@ main() {
             echo ""
             printinfo "Start C Simulation flow"
             cd "${FRISCV_DIR}/test/c_testsuite"
-            run_sims
+            run_sims "$TB" "$SIMULATOR"
         fi
 
         exit 0
