@@ -37,6 +37,8 @@ module friscv_cache_memctrl
         // Interface Setup
         ///////////////////////////////////////////////////////////////////////
 
+        // Generate a write channel, 0=read-only, 1=read-write
+        parameter RW_MODE = 0,
         // Address bus width defined for both control and AXI4 address signals
         parameter AXI_ADDR_W = 10,
         // AXI ID width, setup by default to 8 and unused
@@ -52,22 +54,14 @@ module friscv_cache_memctrl
         // Cache Setup
         ///////////////////////////////////////////////////////////////////////
 
-        // Generate a write channel, 0=read-only, 1=read-write
-        parameter RW_MODE = 0,
         // Cache block width defining only the data payload, in bits
-        parameter CACHE_BLOCK_W = 128,
-        // Number of lines in the cache
-        parameter CACHE_DEPTH = 512
+        parameter CACHE_BLOCK_W = 128
 
     )(
         // Global signals
         input  wire                       aclk,
         input  wire                       aresetn,
         input  wire                       srst,
-        // Flush interface
-        input  wire                       flush_blocks,
-        output logic                      flush_ack,
-        output logic                      flushing,
         // ctrl read address interface
         input  wire                       mst_arvalid,
         output logic                      mst_arready,
@@ -147,17 +141,10 @@ module friscv_cache_memctrl
     // Parameters and signals
     //////////////////////////////////////////////////////////////////////////
 
-    // Control fsm
-    typedef enum logic[1:0] {
-        IDLE = 0,
-        FLUSH = 1,
-        ACK = 2
-    } ctrl_fsm;
 
-    ctrl_fsm cfsm;
+    localparam NB_TAG_W = $clog2(OSTDREQ_NUM);
 
     localparam ADDR_LSB_W = $clog2(AXI_DATA_W/8);
-    localparam MAX_CACHE_ADDR = CACHE_DEPTH << $clog2(CACHE_BLOCK_W/8);
 
     localparam SCALE = AXI_DATA_W / XLEN;
     localparam SCALE_W = $clog2(SCALE);
@@ -240,7 +227,7 @@ module friscv_cache_memctrl
         friscv_scfifo
         #(
             .PASS_THRU  (0),
-            .ADDR_WIDTH ($clog2(OSTDREQ_NUM)),
+            .ADDR_WIDTH (NB_TAG_W),
             .DATA_WIDTH (AXI_ADDR_W + 1 /*ARCACHE[1]*/)
         )
         araddr_fifo
@@ -264,16 +251,16 @@ module friscv_cache_memctrl
 
         friscv_ram
         #(
-            .ADDR_WIDTH ($clog2(OSTDREQ_NUM)),
+            .ADDR_WIDTH (NB_TAG_W),
             .DATA_WIDTH (AXI_ADDR_W + 1 /*ARCACHE[1]*/)
         )
         araddr_ram
         (
             .aclk       (aclk),
             .wr_en      (mst_arvalid & mst_arready),
-            .addr_in    (arid_m),
+            .addr_in    (arid_m[NB_TAG_W-1:0]),
             .data_in    ({mst_arcache[1], mst_araddr}),
-            .addr_out   (rid_m),
+            .addr_out   (rid_m[NB_TAG_W-1:0]),
             .data_out   ({arcache, araddr})
         );
 
@@ -315,81 +302,16 @@ module friscv_cache_memctrl
     //    for both instruction and data cache
     ///////////////////////////////////////////////////////////////////////////
 
-    assign mst_rvalid = (cfsm==IDLE) ? mem_rvalid : erase_wen;
+    assign mst_rvalid = mem_rvalid;
     assign mem_rready = mst_rready;
-    assign mst_rid = (cfsm==IDLE) ? mem_rid : {AXI_ID_W{1'b0}};
-    assign mst_rresp = (cfsm==IDLE) ? mem_rresp : 2'b0;
+    assign mst_rid = mem_rid ;
+    assign mst_rresp = mem_rresp;
     assign mst_rdata = mem_rdata[XLEN*roffset+:XLEN];
     // custom signals
-    assign mst_raddr = (cfsm==IDLE) ? araddr : erase_addr[AXI_ADDR_W-1:0];
-    assign mst_rcache = (cfsm==IDLE) ? (rch_empty) ? 1'b0 : arcache : 1'b0;
-    assign mst_rdata_blk = (cfsm==IDLE) ? mem_rdata : {CACHE_BLOCK_W{1'b0}};
+    assign mst_raddr = araddr;
+    assign mst_rcache = (rch_empty) ? 1'b0 : arcache;
+    assign mst_rdata_blk = mem_rdata;
 
-
-    ///////////////////////////////////////////////////////////////////////////
-    // Flush support on FENCE.i instruction execution
-    //
-    // flush_ack is asserted for one cycle once flush_blocks has been asserted 
-    // and the entire cache lines have been erased
-    ///////////////////////////////////////////////////////////////////////////
-
-
-    always @ (posedge aclk or negedge aresetn) begin
-
-        if (aresetn == 1'b0) begin
-            cfsm <= IDLE;
-            flush_ack <= 1'b0;
-            flushing <= 1'b0;
-            erase_wen <= 1'b0;
-            erase_addr <= {AXI_ADDR_W+1{1'b0}};
-            blocks_zeroed <= 1'b0;
-        end else if (srst == 1'b1) begin
-            cfsm <= IDLE;
-            flush_ack <= 1'b0;
-            flushing <= 1'b0;
-            erase_wen <= 1'b0;
-            erase_addr <= {AXI_ADDR_W+1{1'b0}};
-            blocks_zeroed <= 1'b0;
-        end else begin
-
-            case (cfsm)
-                // Wait for flush request
-                default: begin
-                    flushing <= 1'b0;
-                    flush_ack <= 1'b0;
-                    if (flush_blocks || RW_MODE && !blocks_zeroed) begin
-                        flushing <= 1'b1;
-                        erase_wen <= 1'b1;
-                        cfsm <= FLUSH;
-                    end
-                end
-                FLUSH: begin
-                    flushing <= 1'b1;
-                    erase_wen <= 1'b1;
-                    // Increment erase address by the number of byte per cache block
-                    erase_addr <= erase_addr + CACHE_BLOCK_W/8;
-                    if (erase_addr==MAX_CACHE_ADDR) begin
-                        blocks_zeroed <= 1'b1;
-                        erase_wen <= 1'b0;
-                        erase_addr <= {AXI_ADDR_W+1{1'b0}};
-                        flushing <= 1'b0;
-                        cfsm <= ACK;
-                    end
-                end
-                // Once cache has been erased wait for req deassertion
-                ACK: begin
-                    flushing <= 1'b0;
-                    if (~flush_blocks) begin
-                        flush_ack <= 1'b0;
-                        cfsm <= IDLE;
-                    end else  begin
-                        flush_ack <= 1'b1;
-                    end
-                end
-            endcase
-
-        end
-    end
 
     ///////////////////////////////////////////////////////////////////////////
     // Write channels
@@ -423,7 +345,7 @@ module friscv_cache_memctrl
         friscv_scfifo
         #(
             .PASS_THRU  (0),
-            .ADDR_WIDTH ($clog2(OSTDREQ_NUM)),
+            .ADDR_WIDTH (NB_TAG_W),
             .DATA_WIDTH (SCALE_W)
         )
         wroffset_fifo

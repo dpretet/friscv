@@ -1,10 +1,10 @@
-#include "build/Vfriscv_icache_testbench.h"
+#include "build/Vfriscv_dcache_testbench.h"
 #include "verilated.h"
 
 int main(int argc, char** argv, char** env) {
 
     Verilated::commandArgs(argc, argv);
-    Vfriscv_icache_testbench* top = new Vfriscv_icache_testbench;
+    Vfriscv_dcache_testbench* top = new Vfriscv_dcache_testbench;
     int timer = 0;
 
     // Simulate until $finish()

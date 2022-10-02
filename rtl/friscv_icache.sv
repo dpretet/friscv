@@ -129,6 +129,11 @@ module friscv_icache
     logic                         flush_ack_fetcher;
     logic                         flush_ack_memctrl;
 
+    // cache write interface
+    logic                          cache_wren;
+    logic [AXI_ADDR_W        -1:0] cache_waddr;
+    logic [CACHE_BLOCK_W     -1:0] cache_wdata;
+
     ///////////////////////////////////////////////////////////////////////////
     // Cache sequencer
     ///////////////////////////////////////////////////////////////////////////
@@ -201,10 +206,10 @@ module friscv_icache
         .aresetn    (aresetn),
         .srst       (srst),
         .flush      (flushing),
-        .p1_wen     (memctrl_rvalid & !memctrl_rcache),
+        .p1_wen     (memctrl_rvalid & !memctrl_rcache | cache_wren),
         .p1_wstrb   ({CACHE_BLOCK_W/8{1'b1}}),
-        .p1_waddr   (memctrl_raddr),
-        .p1_wdata   (memctrl_rdata_blk),
+        .p1_waddr   ((cache_wren) ? cache_waddr : memctrl_raddr),
+        .p1_wdata   ((cache_wren) ? cache_wdata : memctrl_rdata_blk),
         .p1_ren     (cache_ren),
         .p1_raddr   (cache_raddr),
         .p1_rdata   (cache_rdata),
@@ -221,11 +226,35 @@ module friscv_icache
         .p2_miss    ()
     );
 
-    assign memctrl_rready = 1'b1;
+
+    friscv_cache_flusher 
+    #(
+        .NAME          ("iCache-Flusher"),
+        .CACHE_BLOCK_W (CACHE_BLOCK_W),
+        .CACHE_DEPTH   (CACHE_DEPTH),
+        .AXI_ADDR_W    (AXI_ADDR_W)
+    )
+    flusher 
+    (
+        .aclk         (aclk),
+        .aresetn      (aresetn),
+        .srst         (srst),
+        .flush_blocks (flush_blocks),
+        .flush_ack    (flush_ack_memctrl),
+        .flushing     (flushing),
+        .cache_wren   (cache_wren),
+        .cache_waddr  (cache_waddr),
+        .cache_wdata  (cache_wdata)
+    );
+
+    assign flush_ack = flush_ack_fetcher & flush_ack_memctrl;
+
 
     ///////////////////////////////////////////////////////////////////////////
     // AXI4 memory controller to read external memory
     ///////////////////////////////////////////////////////////////////////////
+
+    assign memctrl_rready = 1'b1;
 
     friscv_cache_memctrl
     #(
@@ -237,18 +266,13 @@ module friscv_icache
         .AXI_DATA_W    (AXI_DATA_W),
         .AXI_ID_MASK   (AXI_ID_MASK),
         .AXI_IN_ORDER  (1),
-        .CACHE_BLOCK_W (CACHE_BLOCK_W),
-        .CACHE_DEPTH   (CACHE_DEPTH)
+        .CACHE_BLOCK_W (CACHE_BLOCK_W)
     )
     mem_ctrl
     (
         .aclk           (aclk),
         .aresetn        (aresetn),
         .srst           (srst),
-        // flush block interface
-        .flush_blocks   (flush_blocks),
-        .flush_ack      (flush_ack_memctrl),
-        .flushing       (flushing),
         // AXI4-lite read address channels from fetcher stage
         .mst_arvalid    (memctrl_arvalid),
         .mst_arready    (memctrl_arready),
@@ -321,8 +345,6 @@ module friscv_icache
         .mem_rdata      (icache_rdata),
         .mem_rlast      (icache_rlast)
     );
-
-    assign flush_ack = flush_ack_fetcher & flush_ack_memctrl;
 
 endmodule
 

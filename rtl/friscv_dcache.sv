@@ -5,6 +5,7 @@
 `default_nettype none
 
 `include "friscv_h.sv"
+`include "friscv_checkers.sv"
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -230,8 +231,20 @@ module friscv_dcache
     // substituted tag, provided by the Out-of-Order manager if present
     logic [AXI_ID_W          -1:0] memfy_arid_next;
 
+    // cache write interface
+    logic                          cache_wren;
+    logic [AXI_ADDR_W        -1:0] cache_waddr;
+    logic [CACHE_BLOCK_W     -1:0] cache_wdata;
 
-    // TODO: Add checkers for AXI setup
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Parameters setup checks
+    ///////////////////////////////////////////////////////////////////////////
+
+    initial begin
+        `CHECKER((AXI_REORDER_CPL==0 && IO_MAP_NB), "IO map described but AXI_REORDER_CPL is not activated");
+    end
+
 
     ///////////////////////////////////////////////////////////////////////////
     // Cache fetchers, IO and block
@@ -426,7 +439,7 @@ module friscv_dcache
         .blk_fetcher_rdata  (blk_fetcher_rdata),
         // read datacompletion from memory controller for IO R/W
         .io_fetcher_rvalid  (memctrl_rvalid & memctrl_rcache),
-        .io_fetcher_rready  (),
+        .io_fetcher_rready  (memctrl_rready),
         .io_fetcher_rid     (memctrl_rid),
         .io_fetcher_rresp   (memctrl_rresp),
         .io_fetcher_rdata   (memctrl_rdata),
@@ -517,7 +530,6 @@ module friscv_dcache
         .cache_wdata     (pusher_cache_wdata)
     );
 
-
     ///////////////////////////////////////////////////////////////////////////
     // Cache blocks Storage
     ///////////////////////////////////////////////////////////////////////////
@@ -536,10 +548,10 @@ module friscv_dcache
         .aresetn    (aresetn),
         .srst       (srst),
         .flush      (flushing),
-        .p1_wen     (memctrl_rvalid & !memctrl_rcache),
+        .p1_wen     (memctrl_rvalid & !memctrl_rcache | cache_wren),
         .p1_wstrb   ({CACHE_BLOCK_W/8{1'b1}}),
-        .p1_waddr   (memctrl_raddr),
-        .p1_wdata   (memctrl_rdata_blk),
+        .p1_waddr   ((cache_wren) ? cache_waddr : memctrl_raddr),
+        .p1_wdata   ((cache_wren) ? cache_wdata : memctrl_rdata_blk),
         .p1_ren     (fetcher_cache_ren),
         .p1_raddr   (fetcher_cache_raddr),
         .p1_rdata   (fetcher_cache_rdata),
@@ -557,13 +569,31 @@ module friscv_dcache
     );
 
 
+    friscv_cache_flusher
+    #(
+        .NAME          ("dCache-Flusher"),
+        .CACHE_BLOCK_W (CACHE_BLOCK_W),
+        .CACHE_DEPTH   (CACHE_DEPTH),
+        .AXI_ADDR_W    (AXI_ADDR_W)
+    )
+    flusher
+    (
+        .aclk         (aclk),
+        .aresetn      (aresetn),
+        .srst         (srst),
+        .flush_blocks (1'b0),
+        .flush_ack    (),
+        .flushing     (flushing),
+        .cache_wren   (cache_wren),
+        .cache_waddr  (cache_waddr),
+        .cache_wdata  (cache_wdata)
+    );
+
+
     ///////////////////////////////////////////////////////////////////////////
     // AXI4 memory controller to read external memory
     ///////////////////////////////////////////////////////////////////////////
 
-    // read data channel is always ready, whatever the OoO manager or not. It always
-    // accept a completion as well the cache blocks
-    assign memctrl_rready = 1'b1;
 
     friscv_cache_memctrl
     #(
@@ -576,18 +606,13 @@ module friscv_dcache
         .AXI_DATA_W    (AXI_DATA_W),
         .AXI_ID_MASK   (AXI_ID_MASK),
         .AXI_IN_ORDER  (0),
-        .CACHE_BLOCK_W (CACHE_BLOCK_W),
-        .CACHE_DEPTH   (CACHE_DEPTH)
+        .CACHE_BLOCK_W (CACHE_BLOCK_W)
     )
     mem_ctrl
     (
         .aclk           (aclk),
         .aresetn        (aresetn),
         .srst           (srst),
-        // flush block interface
-        .flush_blocks   (1'b0),
-        .flush_ack      (),
-        .flushing       (flushing),
         // AXI4-lite read address channels from fetchers stage
         .mst_arvalid    (memctrl_arvalid),
         .mst_arready    (memctrl_arready),

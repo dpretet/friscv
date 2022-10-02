@@ -46,7 +46,6 @@ MAX_TRAFFIC=1000
 # Clean compiled programs
 #------------------------------------------------------------------------------
 clean() {
-    make -C ./tests clean
     rm -f ./rv*.*v
     rm -f ./*.vcd
     rm -f ./*.txt

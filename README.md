@@ -71,6 +71,7 @@ The core is verified with several testsuites, present in [test](./test) folder:
 - [Icarus Verilog 11](https://github.com/steveicarus/iverilog)
 - [Verilator 4.2](https://github.com/verilator)
 - [SVUT](https://github.com/dpretet/svut)
+- [RISCV toolchain](https://github.com/riscv-collab/riscv-gnu-toolchain)
 
 
 ## Validation environment
