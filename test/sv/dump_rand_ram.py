@@ -5,7 +5,7 @@
 # https://opensource.org/licenses/mit-license.php
 
 """
-Doc string to describe the module
+Dump the RAM content into some files to load in the testbench's RAM model
 """
 
 import secrets
@@ -44,6 +44,6 @@ def write_file(name, data, inst_per_line=4):
 
 if __name__ == '__main__':
 
-    inst = gen_random_data()
-    write_file('ram_32b.txt', inst, 1)
-    write_file('ram_128b.txt', inst, 4)
+    inst_ram = gen_random_data()
+    write_file('ram_32b.txt', inst_ram, 1)
+    write_file('ram_128b.txt', inst_ram, 4)

@@ -1,115 +1,125 @@
 [*]
 [*] GTKWave Analyzer v3.3.107 (w)1999-2020 BSI
-[*] Sun Oct  2 08:10:10 2022
+[*] Sun Oct  2 11:44:15 2022
 [*]
-[dumpfile] "/Users/damien/workspace/hdl/friscv/test/wba_testsuite/tests/rv32ui-p-test0.vcd"
-[dumpfile_mtime] "Sun Oct  2 08:09:42 2022"
-[dumpfile_size] 769516
+[dumpfile] "/Users/damien/workspace/hdl/friscv/test/wba_testsuite/tests/rv32ui-p-test6.vcd"
+[dumpfile_mtime] "Sun Oct  2 11:44:07 2022"
+[dumpfile_size] 3143671
 [savefile] "/Users/damien/workspace/hdl/friscv/test/common/debug_core_icarus.gtkw"
-[timestart] 924100
-[size] 2560 1324
+[timestart] 1445300
+[size] 2560 1440
 [pos] -1 -1
-*-15.000122 1169700 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-16.000122 1741290 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] $DUP0.
+[treeopen] dut.
+[treeopen] dut.cache_blocks.
+[treeopen] dut.DCACHE_ON.
+[treeopen] dut.DCACHE_ON.dcache.
+[treeopen] fetcher.
 [treeopen] friscv_testbench.
 [treeopen] friscv_testbench.genblk1.
 [treeopen] genblk2.
+[treeopen] mem_ctrl.
+[treeopen] mem_ctrl.IN_ORDER_CPL.
+[treeopen] mem_ctrl.IN_ORDER_CPL.araddr_fifo.
+[treeopen] mem_ctrl.WRITE_CHANNELS.
+[treeopen] mf_fifo.
 [treeopen] processing.
 [treeopen] USE_ICACHE.
 [treeopen] USE_ICACHE.icache.
-[treeopen] USE_ICACHE.icache.cache_blocks.
 [sst_width] 339
 [signals_width] 367
 [sst_expanded] 1
-[sst_vpaned_height] 666
-@800201
+[sst_vpaned_height] 604
+@c00200
 -Control
-@29
+@28
 control.aclk
-@800201
+@c00200
 -AXI4-lite
-@23
+@22
 control.araddr[31:0]
-@29
+@28
 control.aresetn
-@23
+@22
 control.arid[7:0]
-@29
+@28
 control.arprot[2:0]
 control.arready
 control.arvalid
-@201
+@200
 -
-@23
+@22
 control.rdata[31:0]
-@29
+@28
 control.rvalid
-@23
+@22
 control.rid[7:0]
-@29
+@28
 control.rready
 control.rresp[1:0]
-@1000201
+@1401200
 -AXI4-lite
-@23
+@22
 friscv_testbench.genblk1.axi4l_ram.p1_araddr_s[31:0]
 friscv_testbench.genblk1.axi4l_ram.p1_arid[7:0]
 friscv_testbench.genblk1.axi4l_ram.p1_arid_s[7:0]
-@29
+@28
 friscv_testbench.genblk1.axi4l_ram.p1_arprot[2:0]
 friscv_testbench.genblk1.axi4l_ram.p1_arready
-@23
+@22
 friscv_testbench.genblk1.axi4l_ram.p1_arready_lfsr[31:0]
-@29
+@28
 friscv_testbench.genblk1.axi4l_ram.p1_arvalid
-@23
+@22
 friscv_testbench.genblk1.axi4l_ram.p1_rdata[127:0]
 friscv_testbench.genblk1.axi4l_ram.p1_rid[7:0]
-@29
+@28
 friscv_testbench.genblk1.axi4l_ram.p1_rready
 friscv_testbench.genblk1.axi4l_ram.p1_rresp[1:0]
 friscv_testbench.genblk1.axi4l_ram.p1_rvalid
-@201
+@200
 -
-@29
+@28
 control.cant_jump
 control.cant_lui_auipc
 control.cant_process
 control.cant_sys
 control.sync_trap_occuring
 control.trap_occuring
-@201
+@200
 -
-@23
+@22
 control.pc[31:0]
-@201
+@200
 -
-@23
+@22
 control.sys[5:0]
-@29
+@28
 control.fence[1:0]
-@201
+@200
 -
-@23
+@22
 control.cfsm[3:0]
 control.pc_reg[31:0]
 control.instruction[31:0]
-@29
+@28
 control.fifo_empty
 control.pull_inst
-@201
+@200
 -
-@29
+@28
 control.csr_ready
 control.proc_busy
 control.proc_ready
-@201
+@200
 -
-@29
+@28
 control.flush_fifo
 control.flush_ack
 control.flush_blocks
 control.flush_reqs
-@1000201
+@1401200
 -Control
 @c00200
 -ISA Regs
@@ -164,21 +174,13 @@ isa_registers.x30_t5[31:0]
 isa_registers.x31_t6[31:0]
 @1401200
 -ISA Regs
-@c00200
+@800200
 -Fetcher
 @200
 -
 -
 -
--
--
--
--
--
--
--
--
-@1401200
+@1000200
 -Fetcher
 @c00200
 -Memfy
@@ -426,5 +428,72 @@ USE_ICACHE.icache.cache_blocks.p1_wtag[18:0]
 -
 @1401200
 -iCache
+@28
+dut.DCACHE_ON.dcache.OOO_MGT.ooo_mgt.aclk
+dut.DCACHE_ON.dcache.OOO_MGT.ooo_mgt.aresetn
+@22
+dut.DCACHE_ON.dcache.OOO_MGT.ooo_mgt.blk_fetcher_rdata[31:0]
+dut.DCACHE_ON.dcache.OOO_MGT.ooo_mgt.blk_fetcher_rid[7:0]
+dut.DCACHE_ON.dcache.OOO_MGT.ooo_mgt.blk_fetcher_rid_m[7:0]
+@28
+dut.DCACHE_ON.dcache.OOO_MGT.ooo_mgt.blk_fetcher_rready
+dut.DCACHE_ON.dcache.OOO_MGT.ooo_mgt.blk_fetcher_rresp[1:0]
+dut.DCACHE_ON.dcache.OOO_MGT.ooo_mgt.blk_fetcher_rvalid
+@22
+dut.DCACHE_ON.dcache.OOO_MGT.ooo_mgt.cpl_tag_pt[3:0]
+dut.DCACHE_ON.dcache.OOO_MGT.ooo_mgt.io_fetcher_rdata[31:0]
+dut.DCACHE_ON.dcache.OOO_MGT.ooo_mgt.io_fetcher_rid[7:0]
+dut.DCACHE_ON.dcache.OOO_MGT.ooo_mgt.io_fetcher_rid_m[7:0]
+@28
+dut.DCACHE_ON.dcache.OOO_MGT.ooo_mgt.io_fetcher_rready
+dut.DCACHE_ON.dcache.OOO_MGT.ooo_mgt.io_fetcher_rresp[1:0]
+dut.DCACHE_ON.dcache.OOO_MGT.ooo_mgt.io_fetcher_rvalid
+@22
+dut.DCACHE_ON.dcache.OOO_MGT.ooo_mgt.mst_rdata[31:0]
+dut.DCACHE_ON.dcache.OOO_MGT.ooo_mgt.mst_rid[7:0]
+@28
+dut.DCACHE_ON.dcache.OOO_MGT.ooo_mgt.mst_rready
+dut.DCACHE_ON.dcache.OOO_MGT.ooo_mgt.mst_rresp[1:0]
+dut.DCACHE_ON.dcache.OOO_MGT.ooo_mgt.mst_rvalid
+@22
+dut.DCACHE_ON.dcache.OOO_MGT.ooo_mgt.next_tag[7:0]
+@28
+dut.DCACHE_ON.dcache.OOO_MGT.ooo_mgt.pending_rd
+@22
+dut.DCACHE_ON.dcache.OOO_MGT.ooo_mgt.req_tag_pt[3:0]
+dut.DCACHE_ON.dcache.OOO_MGT.ooo_mgt.slv_araddr[31:0]
+dut.DCACHE_ON.dcache.OOO_MGT.ooo_mgt.slv_arid[7:0]
+@28
+dut.DCACHE_ON.dcache.OOO_MGT.ooo_mgt.slv_arready
+dut.DCACHE_ON.dcache.OOO_MGT.ooo_mgt.slv_arvalid
+dut.DCACHE_ON.dcache.OOO_MGT.ooo_mgt.srst
+@22
+dut.DCACHE_ON.dcache.OOO_MGT.ooo_mgt.tags[31:0]
+@200
+-
+@800200
+-dCache MemCtrl
+@22
+mem_ctrl.mst_araddr[31:0]
+mem_ctrl.mst_arcache[3:0]
+mem_ctrl.mst_arid[7:0]
+@28
+mem_ctrl.mst_arprot[2:0]
+mem_ctrl.mst_arready
+mem_ctrl.mst_arvalid
+@22
+mem_ctrl.mst_raddr[31:0]
+@28
+mem_ctrl.mst_rcache
+@22
+mem_ctrl.mst_rdata[31:0]
+mem_ctrl.mst_rdata_blk[127:0]
+mem_ctrl.mst_rid[7:0]
+@28
+mem_ctrl.mst_rready
+mem_ctrl.mst_rresp[1:0]
+mem_ctrl.mst_rvalid
+@1000200
+-dCache MemCtrl
 [pattern_trace] 1
 [pattern_trace] 0

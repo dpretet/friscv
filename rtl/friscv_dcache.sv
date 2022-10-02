@@ -461,6 +461,7 @@ module friscv_dcache
         assign memfy_rdata = blk_fetcher_rdata;
         assign memfy_rresp = blk_fetcher_rresp;
         assign memfy_rid = blk_fetcher_rid;
+        assign memctrl_rready = 1'b1;
     end
     endgenerate
 
@@ -605,7 +606,7 @@ module friscv_dcache
         .AXI_ID_W      (AXI_ID_W),
         .AXI_DATA_W    (AXI_DATA_W),
         .AXI_ID_MASK   (AXI_ID_MASK),
-        .AXI_IN_ORDER  (0),
+        .AXI_IN_ORDER  (IO_MAP_NB==0),
         .CACHE_BLOCK_W (CACHE_BLOCK_W)
     )
     mem_ctrl
