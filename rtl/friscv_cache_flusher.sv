@@ -116,7 +116,7 @@ module friscv_cache_flusher
                         cache_wren <= 1'b0;
                         cache_waddr <= {AXI_ADDR_W{1'b0}};
                         flushing <= 1'b0;
-                    flush_ack <= 1'b1;
+                        flush_ack <= 1'b1;
                         cfsm <= ACK;
                     end
                 end

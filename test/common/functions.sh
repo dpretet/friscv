@@ -55,7 +55,7 @@ TC=
 [[ -z $NO_VCD ]] && NO_VCD=0
 # INTERACTIVE enable a UART to read/write from Verilator
 [[ -z $INTERACTIVE ]] && INTERACTIVE=0
-# Generate an external IRQ in the core 
+# Generate an external IRQ in the core
 [[ -z $GEN_EIRQ ]] && GEN_EIRQ=0
 
 [[ -z $TRACE_CONTROL ]] && TRACE_CONTROL=1
@@ -169,7 +169,6 @@ run_tests() {
 
         # Grab the return code used later to determine the compliance status
         test_ret=$((test_ret+$?))
-        echo "Test return code: $test_ret"
 
         # Copy the VCD generated for further debug
         if [ -f "./friscv_testbench.vcd" ]; then
@@ -182,6 +181,7 @@ run_tests() {
                                --otrace "tests/${test_name}_trace.csv" \
                                --symbols "tests/${test_name}.symbols"
         fi
+
     done
 
 }
@@ -224,7 +224,6 @@ check_status() {
 
     if [[ $ec != 0 || $test_ret != 0 ]]; then
         echo -e "${RED}ERROR: Testsuite failed!${NC}"
-        grep -i "Failling" simulation.log
         exit 1
     fi
 }
@@ -256,9 +255,9 @@ get_args() {
             ;;
             --tb )
                 shift
-                if [ "$1" == "CORE" ]; then
+                if [ "$1" == "core" ]; then
                     TB_CHOICE=0
-                elif [ "$1" == "PLATFORM" ]; then
+                elif [ "$1" == "platform" ]; then
                     TB_CHOICE=1
                 else
                     usage
@@ -314,7 +313,7 @@ usage: bash ./run.sh ...
 -t    | --timeout           Timeout in number of cycles before the simulation stops (10000 by default, 0 inactivate it)
         --cache_en          Enable instruction and data caches (Enabled by default)
         --cache_block       Cache line width in bits (128 bits by default)
-        --tb                CORE or PLATFORM (CORE by default)
+        --tb                'core' or 'platform' ('core' by default)
         --tc                A specific testcase to launch, can use wildcard if enclosed with ' (Run all by default)
         --simulator         Choose between icarus or verilator (icarus is default)
         --novcd             Don't dump VCD during simulation (Dump by default)

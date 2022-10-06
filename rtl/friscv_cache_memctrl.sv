@@ -141,35 +141,34 @@ module friscv_cache_memctrl
     // Parameters and signals
     //////////////////////////////////////////////////////////////////////////
 
-
+    // Used along the module to buffer the outstanding requests' IDs
     localparam NB_TAG_W = $clog2(OSTDREQ_NUM);
-
+    // Lowest part of teh address replaced by 0 to access a complete cache block
+    // (AXI_DATA_W = CACHE_BLOCK_W is the only setup supported)
     localparam ADDR_LSB_W = $clog2(AXI_DATA_W/8);
 
-    localparam SCALE = AXI_DATA_W / XLEN;
-    localparam SCALE_W = $clog2(SCALE);
-
     // Offset part into address to index a DWORD or QWORD
+    localparam SCALE = AXI_DATA_W / XLEN;
     localparam OFFSET_IX = (XLEN==32) ? 2 : 3;
-    localparam OFFSET_W = $clog2(AXI_DATA_W/XLEN);
+    localparam OFFSET_W = $clog2(SCALE);
 
     // Used on flush request to erase the cache content
-    logic                  erase_wen;
-    logic [AXI_ADDR_W  :0] erase_addr;
-
     logic [AXI_ADDR_W-1:0] araddr;
+    logic [3         -1:0] asize;
     logic                  arcache;
     logic [OFFSET_W  -1:0] roffset;
     logic                  rch_full;
     logic                  wch_full;
     logic                  rch_empty;
     logic                  wch_empty;
-    logic                  push_wch_fifo;
-    logic                  pull_wch_fifo;
-    logic                  blocks_zeroed;
-    logic [3         -1:0] asize;
-    logic [SCALE_W   -1:0] wr_position;
-    logic [SCALE_W   -1:0] wr_position_ff;
+    logic                  wch_aempty;
+    logic                  push_wch;
+    logic                  push_wch_r;
+    logic                  pull_wch;
+
+    logic [OFFSET_W  -1:0] wr_position;
+    logic [OFFSET_W  -1:0] wr_position_ff;
+
     logic [AXI_ID_W  -1:0] arid_m;
     logic [AXI_ID_W  -1:0] rid_m;
 
@@ -239,9 +238,11 @@ module friscv_cache_memctrl
             .data_in  ({mst_arcache[1], mst_araddr}),
             .push     (mst_arvalid & mst_arready),
             .full     (rch_full),
+            .afull    (),
             .data_out ({arcache, araddr}),
             .pull     (mem_rvalid & mem_rready),
-            .empty    (rch_empty)
+            .empty    (rch_empty),
+            .aempty   ()
         );
 
         assign arid_m = {AXI_ID_W{1'b0}};
@@ -346,7 +347,7 @@ module friscv_cache_memctrl
         #(
             .PASS_THRU  (0),
             .ADDR_WIDTH (NB_TAG_W),
-            .DATA_WIDTH (SCALE_W)
+            .DATA_WIDTH (OFFSET_W)
         )
         wroffset_fifo
         (
@@ -354,17 +355,19 @@ module friscv_cache_memctrl
             .aresetn  (aresetn),
             .srst     (srst),
             .flush    (1'b0),
-            .data_in  (mst_awaddr[2+:SCALE_W]),
-            .push     (push_wch_fifo),
+            .data_in  (mst_awaddr[OFFSET_IX +:OFFSET_W]),
+            .push     (push_wch),
             .full     (wch_full),
+            .afull    (),
             .data_out (wr_position_ff),
-            .pull     (pull_wch_fifo),
-            .empty    (wch_empty)
+            .pull     (pull_wch),
+            .empty    (wch_empty),
+            .aempty   (wch_aempty)
         );
 
-        assign push_wch_fifo = mem_awvalid & mem_awready & mem_wvalid & !mem_wready;
-        assign pull_wch_fifo = mem_wvalid & mem_wready;
-        assign wr_position = (wch_empty) ? mst_awaddr[2+:SCALE_W] : wr_position_ff;
+        assign push_wch = mem_awvalid & mem_awready & (mem_wvalid & !mem_wready | push_wch_r);
+        assign pull_wch = mem_wvalid & mem_wready;
+        assign wr_position = (wch_empty) ? mst_awaddr[OFFSET_IX+:OFFSET_W] : wr_position_ff;
 
         always @ (*) begin: GEN_WSTRB
             for (int i=0;i<SCALE;i=i+1) begin
@@ -372,6 +375,20 @@ module friscv_cache_memctrl
                     mem_wstrb[i*XLEN/8+:XLEN/8] = mst_wstrb;
                 end else begin: WSTRB_OFF
                     mem_wstrb[i*XLEN/8+:XLEN/8] = {XLEN/8{1'b0}};
+                end
+            end
+        end
+
+        always @ (posedge aclk or negedge aresetn) begin
+            if (!aresetn) begin
+                push_wch_r <= 1'b0;
+            end else if (srst) begin
+                push_wch_r <= 1'b0;
+            end else begin
+                if (mem_awvalid & mem_awready & (mem_wvalid & !mem_wready)) begin
+                    push_wch_r <= 1'b1;
+                end else if (wch_aempty && !(pull_wch & push_wch)) begin
+                    push_wch_r <= 1'b0;
                 end
             end
         end
@@ -400,7 +417,15 @@ module friscv_cache_memctrl
         assign mem_wdata = {AXI_DATA_W{1'b0}};
         assign mem_wstrb = {AXI_DATA_W/8{1'b0}};
         assign mem_bready = 1'b1;
-
+        
+        assign wr_position = {OFFSET_W{1'b0}};
+        assign wr_position_ff = {OFFSET_W{1'b0}};
+        assign wch_full = 1'b0;
+        assign wch_empty = 1'b0;
+        assign wch_aempty = 1'b0;
+        assign push_wch = 1'b0;
+        assign push_wch_r = 1'b0;
+        assign pull_wch = 1'b0;
     end
     endgenerate
 

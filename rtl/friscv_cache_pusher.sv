@@ -265,17 +265,17 @@ module friscv_cache_pusher
         .srst     (srst),
         .flush    (1'b0),
         .data_in  ({mst_awid, mst_awaddr}),
-        .push     (mst_awvalid),
+        .push     (mst_awvalid & !pending_rd),
         .full     (addr_fifo_full),
         .afull    (),
         .data_out ({memctrl_awid, memctrl_awaddr}),
-        .pull     (memctrl_awready & !pending_rd),
+        .pull     (memctrl_awready),
         .empty    (addr_fifo_empty),
         .aempty   ()
     );
 
     assign mst_awready = !addr_fifo_full;
-    assign memctrl_awvalid = !addr_fifo_empty & !pending_rd;
+    assign memctrl_awvalid = !addr_fifo_empty;
 
     friscv_scfifo
     #(
@@ -290,17 +290,17 @@ module friscv_cache_pusher
         .srst     (srst),
         .flush    (1'b0),
         .data_in  ({mst_wstrb, mst_wdata}),
-        .push     (mst_wvalid),
+        .push     (mst_wvalid & !pending_rd),
         .full     (data_fifo_full),
         .afull    (),
         .data_out ({memctrl_wstrb, memctrl_wdata}),
-        .pull     (memctrl_wready & !pending_rd),
+        .pull     (memctrl_wready),
         .empty    (data_fifo_empty),
         .aempty   ()
     );
 
     assign mst_wready = !data_fifo_full;
-    assign memctrl_wvalid = !data_fifo_empty & !pending_rd;
+    assign memctrl_wvalid = !data_fifo_empty;
     assign memctrl_awprot = 3'b0;
 
     ///////////////////////////////////////////////////////////////////////////
@@ -320,8 +320,8 @@ module friscv_cache_pusher
         .aclk           (aclk),
         .aresetn        (aresetn),
         .srst           (srst),
-        .awvalid        (memctrl_awvalid),
-        .awready        (memctrl_awready),
+        .awvalid        (mst_awvalid),
+        .awready        (mst_awready),
         .bvalid         (memctrl_bvalid),
         .bready         (memctrl_bready),
         .arvalid        (1'b0),

@@ -244,6 +244,7 @@ module friscv_cache_block_fetcher
     assign cache_prot = (!fifo_empty_mf) ? arprot_mf : arprot_if;
 
     // Pending read request flag, indicating some read completion still need to be issued
+    // TODO: Check empty_if shouldn't be here
     assign pending_rd = !fifo_empty_mf | cache_loading;
 
     // Read address request handshake if able to receive
@@ -283,6 +284,7 @@ module friscv_cache_block_fetcher
                     `ifdef TRACE_CACHE
                     $fwrite(f, "@ %0t: Finished flush procedure\n", $realtime);
                     `endif
+                    read_addr_if <= 1'b1;
                     flush_ack <= 1'b0;
                 end
             // Must start a flush block procedure, this module clears its buffers while the

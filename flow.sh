@@ -68,30 +68,68 @@ help() {
     echo ""
     echo "      ./flow.sh sim"
     echo ""
-    echo "      Launch all available testsuites"
+    echo "      List all available testsuites and options"
+    echo ""
+    echo "      ./flow.sh sim wba-testsuite core icarus"
+    echo ""
+    echo "      Run a specific testsuite using a particular testbench and simulator"
     echo ""
     echo -e "${NC}"
 }
 
+
 run_sims() {
 
-    if [[ $1 == "CORE" ]] || [[ $1 == "all" ]]; then
+    if [[ $1 == "core" ]] || [[ $1 == "all" ]]; then
         if [[ $2 == "icarus" ]] || [[ $2 == "all" ]]; then
-            ./run.sh --simulator icarus --tb CORE --nocompile 1
+            ./run.sh --simulator icarus --tb core --nocompile 1
         fi
         if [[ $2 == "verilator" ]] || [[ $2 == "all" ]]; then
-            ./run.sh --simulator verilator --tb CORE --nocompile 1
+            ./run.sh --simulator verilator --tb core --nocompile 1
         fi
     fi
-    if [[ $1 == "PLATFORM" ]] || [[ $1 == "all" ]]; then
+    if [[ $1 == "platform" ]] || [[ $1 == "all" ]]; then
         if [[ $2 == "icarus" ]] || [[ $2 == "all" ]]; then
-            ./run.sh --simulator icarus --tb PLATFORM --nocompile 1
+            ./run.sh --simulator icarus --tb platform --nocompile 1
         fi
         if [[ $2 == "verilator" ]] || [[ $2 == "all" ]]; then
-            ./run.sh --simulator verilator --tb PLATFORM --nocompile 1
+            ./run.sh --simulator verilator --tb platform --nocompile 1
         fi
     fi
 }
+
+
+print_testsuites() {
+
+    printerror "Plese specify a testsuite to run:"
+    echo "  - wba-testsuite"
+    echo "  - riscv-testsuite"
+    echo "  - c-testsuite"
+    echo "  - all"
+    echo ""
+
+    printerror "Other options:"
+    echo "  - core or platform (default both)"
+    echo "  - icarus or verilator (default both)"
+
+    exit 1
+}
+
+
+check_setup() {
+
+    source script/setup.sh
+
+    if [[ ! $(type iverilog) ]]; then
+        printerror "Icarus-Verilog is not installed"
+        exit 1
+    fi
+    if [[ ! $(type verilator) ]]; then
+        printerror "Verilator is not installed"
+        exit 1
+    fi
+}
+
 
 main() {
 
@@ -165,34 +203,17 @@ main() {
 
     if [[ $1 == "sim" ]]; then
 
-        source script/setup.sh
+        check_setup
 
+        [[ -z "$2" ]] && print_testsuites
         [[ -n $3 ]] && TB="$3"
         [[ -n $4 ]] && SIMULATOR="$4"
-
-        if [[ ! $(type iverilog) ]]; then
-            printerror "Icarus-Verilog is not installed"
-            exit 1
-        fi
-        if [[ ! $(type verilator) ]]; then
-            printerror "Verilator is not installed"
-            exit 1
-        fi
-
-        if [[ -z "$2" ]]; then
-            printerror "Plese specify a testsuite to run:"
-            echo "  - wba-testsuite"
-            echo "  - riscv-testsuite"
-            echo "  - c-testsuite"
-            echo "  - all"
-        fi
 
         if [ "$2" == "wba-testsuite" ] || [ "$2" == "all" ]; then
             echo ""
             printinfo "Start WBA Simulation flow"
             cd "${FRISCV_DIR}/test/wba_testsuite"
             run_sims "$TB" "$SIMULATOR"
-
         fi
 
         if [ "$2" == "riscv-testsuite" ] || [ "$2" == "all" ]; then
@@ -200,7 +221,6 @@ main() {
             printinfo "Start RISCV Compliance flow"
             cd "${FRISCV_DIR}/test/riscv-tests"
             run_sims "$TB" "$SIMULATOR"
-
         fi
 
         if [ "$2" == "c-testsuite" ] || [ "$2" == "all" ]; then

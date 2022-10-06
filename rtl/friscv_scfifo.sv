@@ -103,6 +103,7 @@ module friscv_scfifo
     assign empty_flag = (wrptr == rdptr) ? 1'b1 : 1'b0;
     assign full = ((wrptr - rdptr) == {1'b1,{ADDR_WIDTH{1'b0}}}) ? 1'b1 : 1'b0;
 
+    // TODO: Verify the almost flags
     assign aempty = ((wrptr-1) == rdptr) ? 1'b1 : 1'b0;
     assign afull = ((wrptr - rdptr) == {1'b0,{ADDR_WIDTH{1'b1}}}) ? 1'b1 : 1'b0;
 

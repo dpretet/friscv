@@ -627,7 +627,7 @@ module friscv_rv32i_core
 
     generate
 
-    if (CACHE_EN) begin: DCACHE_ON
+    if (CACHE_EN) begin: USE_DCACHE
 
         friscv_dcache
         #(
