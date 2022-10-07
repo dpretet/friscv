@@ -60,11 +60,14 @@ module friscv_cache_ooo_mgt
 
         // Next tag usable, substituted in place of original tag in fetchers' input
         output logic [AXI_ID_W      -1:0] next_tag,
+        // Next tag is available
+        output logic                      tag_avlb,
+        // Status flag for ordering rules
         output logic                      pending_rd,
 
         // IO / block fetchers' read address channel
         input  wire                       slv_arvalid,
-        output logic                      slv_arready,
+        input  wire                       slv_arready,
         input  wire  [AXI_ADDR_W    -1:0] slv_araddr,
         input  wire  [AXI_ID_W      -1:0] slv_arid,
 
@@ -147,7 +150,7 @@ module friscv_cache_ooo_mgt
     //
     ////////////////////////////////////////////////////////////////////////////////
 
-    assign slv_arready = (tags[2*req_tag_pt+:2] == FREE);
+    assign tag_avlb = (tags[2*req_tag_pt+:2] == FREE);
     assign next_tag = req_tag_pt | AXI_ID_MASK;
     assign pending_rd = |tags;
 
@@ -165,16 +168,11 @@ module friscv_cache_ooo_mgt
                     tags[2*i+REQ] <= 1'b1;
 
                 // Receive a completion using this tag, so make it ready to finalize completion
-                else if (blk_fetcher_rvalid && blk_fetcher_rready && i[0+:AXI_ID_W]==blk_fetcher_rid_m)
-                    if (blk_fetcher_rid_m==cpl_tag_pt)
-                        tags[2*i+:2] <= FREE;
-                    else
-                        tags[2*i+CPL] <= 1'b1;
-                else if (io_fetcher_rvalid && io_fetcher_rready && i[0+:AXI_ID_W]==io_fetcher_rid_m)
-                    if (io_fetcher_rid_m==cpl_tag_pt)
-                        tags[2*i+:2] <= FREE;
-                    else
-                        tags[2*i+CPL] <= 1'b1;
+                else if (blk_fetcher_rvalid && i[0+:AXI_ID_W]==blk_fetcher_rid_m)
+                    tags[2*i+CPL] <= 1'b1;
+
+                else if (io_fetcher_rvalid && i[0+:AXI_ID_W]==io_fetcher_rid_m)
+                    tags[2*i+CPL] <= 1'b1;
 
                 // Send back the final completion with this tag, so free it
                 else if (mst_rvalid && mst_rready && i[0+:NB_TAG_W]==cpl_tag_pt)
@@ -194,7 +192,7 @@ module friscv_cache_ooo_mgt
             end else if (srst) begin
                 meta_ram[i] <= {AXI_ID_W{1'b0}};
             end else begin
-                if (slv_arvalid && slv_arready)
+                if (slv_arvalid && slv_arready && i[0+:NB_TAG_W]==req_tag_pt)
                     meta_ram[i] <= slv_arid;
             end
         end
@@ -216,6 +214,8 @@ module friscv_cache_ooo_mgt
 
     ////////////////////////////////////////////////////////////////////////////////
     // Pointer management for request and completion
+    // TODO: Replace with a FIFO to better use tags and be opportunistic
+    // to avoid blocking the request
     ////////////////////////////////////////////////////////////////////////////////
 
     always @ (posedge aclk or negedge aresetn) begin
@@ -242,44 +242,13 @@ module friscv_cache_ooo_mgt
 
 
     //////////////////////////////////////////////////////////////////////////
-    // Completion management, store the incoming completion and route it 
-    // in-order to the application
+    // Completion management
     //////////////////////////////////////////////////////////////////////////
 
-    always @ (posedge aclk or negedge aresetn) begin
-
-        if (!aresetn) begin
-            mst_rvalid <= 1'b0;
-            mst_rdata <= {XLEN{1'b0}};
-            mst_rid <= {AXI_ID_W{1'b0}};
-            mst_rresp <= 2'b0;
-        end else if (srst) begin
-            mst_rvalid <= 1'b0;
-            mst_rdata <= {XLEN{1'b0}};
-            mst_rid <= {AXI_ID_W{1'b0}};
-            mst_rresp <= 2'b0;
-        end else begin
-
-            mst_rid <= meta_ram[cpl_tag_pt];
-
-            if (tags[2*cpl_tag_pt+:2]==RCVD) begin
-                mst_rvalid <= 1'b1;
-                mst_rdata <= cpl_ram[cpl_tag_pt][0+:XLEN];
-                mst_rresp <= cpl_ram[cpl_tag_pt][XLEN+:2];
-            end else if (io_fetcher_rvalid && io_fetcher_rid_m==cpl_tag_pt) begin
-                mst_rvalid <= 1'b1;
-                mst_rdata <= io_fetcher_rdata;
-                mst_rresp <= io_fetcher_rresp;
-            end else if (blk_fetcher_rvalid && blk_fetcher_rid_m==cpl_tag_pt) begin
-                mst_rvalid <= 1'b1;
-                mst_rdata <= blk_fetcher_rdata;
-                mst_rresp <= blk_fetcher_rresp;
-            end else begin
-                mst_rvalid <= 1'b0;
-            end
-        end
-    end
-
+    assign mst_rvalid = tags[2*cpl_tag_pt+CPL];
+    assign mst_rid = meta_ram[cpl_tag_pt][0+:AXI_ID_W];
+    assign mst_rdata = cpl_ram[cpl_tag_pt][0+:XLEN];
+    assign mst_rresp = cpl_ram[cpl_tag_pt][XLEN+:2];
 
 endmodule
 

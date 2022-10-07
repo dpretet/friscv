@@ -34,7 +34,7 @@ module friscv_icache
         // RISCV Architecture
         parameter XLEN = 32,
         // Number of outstanding requests supported
-        parameter OSTDREQ_NUM = 4,
+        parameter OSTDREQ_NUM = 8,
 
         ///////////////////////////////////////////////////////////////////////
         // Interface Setup
@@ -45,7 +45,7 @@ module friscv_icache
         // AXI ID width, setup by default to 8 and unused
         parameter AXI_ID_W = 8,
         // AXI4 data width, independant of control unit width
-        parameter AXI_DATA_W = 8,
+        parameter AXI_DATA_W = 128,
         // ID Mask to apply to identify the instruction cache in the AXI4
         // infrastructure
         parameter AXI_ID_MASK = 'h10,
@@ -65,6 +65,7 @@ module friscv_icache
         input  wire                       aclk,
         input  wire                       aresetn,
         input  wire                       srst,
+        output logic                      cache_ready,
         // Flush control to clear outstanding request in buffers
         input  wire                       flush_reqs,
         // Flush control to execute FENCE.i
@@ -189,7 +190,7 @@ module friscv_icache
     );
 
     ///////////////////////////////////////////////////////////////////////////
-    // Cache blocks Storage
+    // Cache Blocks Storage
     ///////////////////////////////////////////////////////////////////////////
 
     friscv_cache_blocks
@@ -239,6 +240,7 @@ module friscv_icache
         .aclk         (aclk),
         .aresetn      (aresetn),
         .srst         (srst),
+        .ready        (cache_ready),
         .flush_blocks (flush_blocks),
         .flush_ack    (flush_ack_memctrl),
         .flushing     (flushing),

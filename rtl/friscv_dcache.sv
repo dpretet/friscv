@@ -41,7 +41,7 @@ module friscv_dcache
         ///////////////////////////////////////////////////////////////////////
 
         // Address bus width defined for both control and AXI4 address signals
-        parameter AXI_ADDR_W = 8,
+        parameter AXI_ADDR_W = 32,
         // AXI ID width
         parameter AXI_ID_W = 8,
         // AXI4 data width, to setup to cache block width
@@ -69,6 +69,7 @@ module friscv_dcache
         input  wire                       aclk,
         input  wire                       aresetn,
         input  wire                       srst,
+        output logic                      cache_ready,
 
         // memfy memory interface
         input  wire                       memfy_awvalid,
@@ -225,7 +226,7 @@ module friscv_dcache
     logic                          flushing;
     // mix of ready flags between fetchers and read completer
     logic                          slv_arready;
-    logic                          rdcpl_arready;
+    logic                          rtag_avlb;
     // Intermediate signal to drive ARID regarding AXI_REORDER_CPL
     logic [AXI_ID_W          -1:0] memfy_arid_w;
     // substituted tag, provided by the Out-of-Order manager if present
@@ -256,10 +257,10 @@ module friscv_dcache
     generate
     if (IO_MAP_NB > 0) begin: ARCH_MEMFY_MUX
 
-        assign memfy_arvalid_io = (memfy_arcache[1]) ? memfy_arvalid & rdcpl_arready : 1'b0;
-        assign memfy_arvalid_blk = (!memfy_arcache[1]) ? memfy_arvalid & rdcpl_arready : 1'b0;
+        assign memfy_arvalid_io = (memfy_arcache[1]) ? memfy_arvalid & rtag_avlb : 1'b0;
+        assign memfy_arvalid_blk = (!memfy_arcache[1]) ? memfy_arvalid & rtag_avlb : 1'b0;
         assign slv_arready = (memfy_arcache[1]) ? memfy_arready_io : memfy_arready_blk;
-        assign memfy_arready = slv_arready & rdcpl_arready;
+        assign memfy_arready = slv_arready & rtag_avlb;
 
         if (AXI_REORDER_CPL==0) begin
             assign memfy_arid_w = memfy_arid;
@@ -422,13 +423,15 @@ module friscv_dcache
         .aclk               (aclk),
         .aresetn            (aresetn),
         .srst               (srst),
-        // tag used for read address channel in both fetchers
+        // Tag to use for read address channel in both fetchers
         .next_tag           (memfy_arid_next),
+        // Next tag is available
+        .tag_avlb           (rtag_avlb),
         // status flags for ordering rules
         .pending_rd         (pending_rd_cpl),
         // read address channel from the application
         .slv_arvalid        (memfy_arvalid),
-        .slv_arready        (rdcpl_arready),
+        .slv_arready        (memfy_arready),
         .slv_araddr         (memfy_araddr),
         .slv_arid           (memfy_arid),
         // read data completion from cache block
@@ -454,7 +457,7 @@ module friscv_dcache
     end else begin: NO_OOO_MGT
 
         assign pending_rd_cpl = 1'b0;
-        assign rdcpl_arready = 1'b0;
+        assign rtag_avlb = 1'b0;
         assign memfy_arid_next = {AXI_ID_W{1'b0}};
         assign memfy_rvalid = blk_fetcher_rvalid;
         assign blk_fetcher_rready = memfy_rready;
@@ -582,6 +585,7 @@ module friscv_dcache
         .aclk         (aclk),
         .aresetn      (aresetn),
         .srst         (srst),
+        .ready        (cache_ready),
         .flush_blocks (1'b0),
         .flush_ack    (),
         .flushing     (flushing),

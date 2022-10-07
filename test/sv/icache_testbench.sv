@@ -1,6 +1,5 @@
 // Mandatory file to be able to launch SVUT flow
 `include "svut_h.sv"
-// Specify the module to load or on files.f
 `timescale 1 ns / 100 ps
 
 module icache_testbench();
@@ -11,7 +10,7 @@ module icache_testbench();
     // Variables and parameters
     ///////////////////////////////////////////////////////////////////////////////
 
-    // Maximum request the driver must issue during the simulation of a testcase
+    // Maximum request the driver must issue during the execution of a testcase
     `ifdef MAX_TRAFFIC
         parameter MAX_TRAFFIC = `MAX_TRAFFIC;
     `else
@@ -26,22 +25,22 @@ module icache_testbench();
     // LFSR key init
     parameter KEY = 32'h28346450;
     parameter ILEN = 32;
-    parameter XLEN = 32;
-    parameter OSTDREQ_NUM = 4;
-    parameter AXI_ADDR_W = 32;
+    parameter XLEN = ILEN;
+    parameter OSTDREQ_NUM = 8;
+    parameter AXI_ADDR_W = ILEN;
     parameter AXI_ID_W = 8;
     parameter AXI_DATA_W = 128;
     parameter AXI_ID_MASK = 'h10;
     parameter CACHE_PREFETCH_EN = 0;
     parameter CACHE_BLOCK_W = AXI_DATA_W;
     parameter CACHE_DEPTH = 512;
-    parameter CACHE_PIPELINE = 32'h00000001;
 
     logic                       aclk;
     logic                       aresetn;
     logic                       srst;
     logic                       error;
     logic                       en;
+    logic                       cache_ready;
     logic                       check_flush_reqs;
     logic                       check_flush_blocks;
     logic                       flush_reqs;
@@ -100,16 +99,34 @@ module icache_testbench();
         .aresetn            (aresetn),
         .srst               (srst),
         .en                 (en),
+        .cache_ready        (cache_ready),
         .error              (error),
         .check_flush_reqs   (check_flush_reqs),
         .check_flush_blocks (check_flush_blocks),
         .flush_reqs         (flush_reqs),
         .flush_blocks       (flush_blocks),
         .flush_ack          (flush_ack),
+        .gen_io_req         (1'b0),
+        .gen_mem_req        (1'b0),
+        .awvalid            (),
+        .awready            (1'b0),
+        .awaddr             (),
+        .awprot             (),
+        .awcache            (),
+        .awid               (),
+        .wvalid             (),
+        .wready             (1'b0),
+        .wdata              (),
+        .wstrb              (),
+        .bvalid             (1'b0),
+        .bready             (),
+        .bid                ({AXI_ID_W{1'b0}}),
+        .bresp              (2'b0),
         .arvalid            (ctrl_arvalid),
         .arready            (ctrl_arready),
         .araddr             (ctrl_araddr),
         .arprot             (ctrl_arprot),
+        .arcache            (),
         .arid               (ctrl_arid),
         .rvalid             (ctrl_rvalid),
         .rready             (ctrl_rready),
@@ -129,14 +146,14 @@ module icache_testbench();
         .AXI_ID_MASK       (AXI_ID_MASK),
         .CACHE_PREFETCH_EN (CACHE_PREFETCH_EN),
         .CACHE_BLOCK_W     (CACHE_BLOCK_W),
-        .CACHE_DEPTH       (CACHE_DEPTH),
-        .CACHE_PIPELINE    (CACHE_PIPELINE)
+        .CACHE_DEPTH       (CACHE_DEPTH)
     )
     icache
     (
         .aclk            (aclk),
         .aresetn         (aresetn),
         .srst            (srst),
+        .cache_ready     (cache_ready),
         .flush_reqs      (flush_reqs),
         .flush_blocks    (flush_blocks),
         .flush_ack       (flush_ack),
@@ -232,22 +249,24 @@ module icache_testbench();
         .p2_rdata   ()
     );
 
+    assign icache_rlast = 1'b1;
+
     ///////////////////////////////////////////////////////////////////////////////
     // Testbench internals
     ///////////////////////////////////////////////////////////////////////////////
 
-    // To create a clock:
     initial aclk = 0;
     always #2 aclk = ~aclk;
 
+    `ifdef TRACE_VCD
     // To dump data for visualization:
     initial begin
-        `INFO("Tracing to friscv_testbench.vcd");
+        `INFO("Tracing into icache_testbench.vcd");
         $dumpfile("icache_testbench.vcd");
         $dumpvars(0, icache_testbench);
         `INFO("Model running...");
     end
-
+    `endif
 
     // Setup time format when printing with $realtime()
     initial $timeformat(-9, 1, "ns", 8);
@@ -276,7 +295,7 @@ module icache_testbench();
 
     task teardown(msg="");
     begin
-        // teardown() runs when a test ends
+        check_results;
     end
     endtask
 
@@ -306,6 +325,7 @@ module icache_testbench();
 
     `TEST_SUITE(tbname)
 
+
     `UNIT_TEST("Randomized traffic -flush_reqs -FENCE.i")
 
         en = 1'b1;
@@ -314,9 +334,8 @@ module icache_testbench();
 
         run_testcase;
 
-        check_results;
-
     `UNIT_TEST_END
+
 
     `UNIT_TEST("Randomized traffic +flush_reqs -FENCE.i")
 
@@ -326,9 +345,8 @@ module icache_testbench();
 
         run_testcase;
 
-        check_results;
-
     `UNIT_TEST_END
+
 
     `UNIT_TEST("Randomized traffic -flush_reqs +FENCE.i")
 
@@ -338,11 +356,9 @@ module icache_testbench();
 
         run_testcase;
 
-        check_results;
-
     `UNIT_TEST_END
 
-    /*
+
     `UNIT_TEST("Randomized traffic +flush_reqs +FENCE.i")
 
         en = 1'b1;
@@ -351,10 +367,8 @@ module icache_testbench();
 
         run_testcase;
 
-        check_results;
-
     `UNIT_TEST_END
-    */
+
 
     `TEST_SUITE_END
 

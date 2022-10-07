@@ -38,6 +38,8 @@ module friscv_control
         input  wire                       aclk,
         input  wire                       aresetn,
         input  wire                       srst,
+        input  wire                       cache_ready,
+        // Debug interface
         output logic [5             -1:0] traps,
         output logic [XLEN          -1:0] pc_val,
         // Flush control to clear outstanding request in buffers
@@ -557,9 +559,8 @@ module friscv_control
                     priv_mode <= `MMODE; // Machine-mode by default after a reset
 
                     // 2. Once flushed, boot the processor
-                    if (flush_ack) begin
+                    if (cache_ready) begin
                         arvalid <= 1'b1;
-                        flush_blocks <= 1'b0;
                         `ifdef TRACE_CONTROL
                         $fwrite(f, "@ %0t,%x\n", $realtime, BOOT_ADDR);
                         `endif
@@ -567,10 +568,6 @@ module friscv_control
                         log.info("IDLE -> Boot the processor");
                         `endif
                         cfsm <= FETCH;
-                    // 1. Start to erase the cache to be sure the first requests will be clean.
-                    //    The iCache RAM with X would lead to a wrong start-up state
-                    end else if (!arvalid) begin
-                        flush_blocks <= 1'b1;
                     end
 
                 end

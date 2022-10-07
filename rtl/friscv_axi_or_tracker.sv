@@ -36,8 +36,7 @@ module friscv_axi_or_tracker
     //
     ///////////////////////////////////////////////////////////////////////////
 
-    localparam MAX_OR_CMP = MAX_OR - 1;
-    localparam MAX_OR_W = $clog2(MAX_OR);
+    localparam MAX_OR_W = $clog2(MAX_OR) + 1;
 
     logic [MAX_OR_W    -1:0] wr_or_cnt;
     logic                    max_wr_or;
@@ -74,23 +73,23 @@ module friscv_axi_or_tracker
             //synthesis translate_off
             //synopsys translate_off
             if (awvalid && awready && !bvalid && max_wr_or) begin
-                $display("ERROR: %s: Reached maximum write OR number but continue to issue requests", NAME);
+                $display("ERROR: (@%0t) %s: Reached maximum write OR number but continue to issue requests", $realtime, NAME);
             end else if (!awvalid && bvalid && bready && wr_or_cnt=={MAX_OR_W{1'b0}}) begin
-                $display("ERROR: %s: Freeing a write OR but counter is already 0", NAME);
+                $display("ERROR: (@%0t) %s: Freeing a write OR but counter is already 0", $realtime, NAME);
             end
 
             if (arvalid && arready && !rvalid && max_rd_or) begin
-                $display("ERROR: %s: Reached maximum write OR number but continue to issue requests", NAME);
+                $display("ERROR: (@%0t) %s: Reached maximum read OR number but continue to issue requests", $realtime, NAME);
             end else if (!arvalid && rvalid && rready && rd_or_cnt=={MAX_OR_W{1'b0}}) begin
-                $display("ERROR: %s: Freeing a write OR but counter is already 0", NAME);
+                $display("ERROR: (@%0t) %s: Freeing a read OR but counter is already 0", $realtime, NAME);
             end
             //synopsys translate_on
             //synthesis translate_on
         end
     end
 
-    assign max_wr_or = (wr_or_cnt==MAX_OR_CMP[MAX_OR_W-1:0]) ? 1'b1 : 1'b0;
-    assign max_rd_or = (rd_or_cnt==MAX_OR_CMP[MAX_OR_W-1:0]) ? 1'b1 : 1'b0;
+    assign max_wr_or = (wr_or_cnt==MAX_OR[MAX_OR_W-1:0]) ? 1'b1 : 1'b0;
+    assign max_rd_or = (rd_or_cnt==MAX_OR[MAX_OR_W-1:0]) ? 1'b1 : 1'b0;
 
     assign waiting_wr_cpl = (wr_or_cnt!={MAX_OR_W{1'b0}}) ? 1'b1 : 1'b0;
     assign waiting_rd_cpl = (rd_or_cnt!={MAX_OR_W{1'b0}}) ? 1'b1 : 1'b0;

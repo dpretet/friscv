@@ -105,6 +105,7 @@ print_testsuites() {
     echo "  - wba-testsuite"
     echo "  - riscv-testsuite"
     echo "  - c-testsuite"
+    echo "  - sv-testsuite"
     echo "  - all"
     echo ""
 
@@ -230,6 +231,12 @@ main() {
             run_sims "$TB" "$SIMULATOR"
         fi
 
+        if [ "$2" == "sv-testsuite" ] || [ "$2" == "all" ]; then
+            echo ""
+            printinfo "Start SV Simulation flow"
+            cd "${FRISCV_DIR}/test/sv"
+            ./run.sh -m 10000 --timeout 100000 --tb "$3_testbench.sv"
+        fi
         exit 0
     fi
 

@@ -39,6 +39,7 @@ module friscv_cache_flusher
         input  wire                       aclk,
         input  wire                       aresetn,
         input  wire                       srst,
+        output logic                      ready,
         // Flush interface
         input  wire                       flush_blocks,
         output logic                      flush_ack,
@@ -130,6 +131,8 @@ module friscv_cache_flusher
 
         end
     end
+
+    assign ready = blocks_zeroed;
 
 endmodule
 

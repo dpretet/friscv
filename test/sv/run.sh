@@ -20,33 +20,32 @@ GREEN='\033[0;32m'
 NC='\033[0m' # No Color
 
 # Instruction width
-ILEN=32
+XLEN=32
 # Cache block width in bits
 CACHE_BLOCK_W=128
-# Number of instruction per cache block
-INST_PER_BLOCK=$((CACHE_BLOCK_W/ILEN))
+# Number of fetch requests issued by the driver
+MAX_TRAFFIC=1000
 # Timeout upon which the simulation is ran
-[[ -z $TIMEOUT ]] && TIMEOUT=10000
+TIMEOUT=$((MAX_TRAFFIC*10))
 # Testbench to use
 TB="./icache_testbench.sv"
 # Use Icarus Verilog simulator
 [[ -z $SIM ]] && SIM="icarus"
 # Don't dump VCD during simulation
 [[ -z $NO_VCD ]] && NO_VCD=0
-# Force run without trying to compile again C or ASM programs
-NO_COMPILE=0
-# Number of fetch requests issued by the driver
-MAX_TRAFFIC=1000
-
-
 #------------------------------------------------------------------------------
 
+TRACE_CACHE=0
+TRACE_BLOCKS=0
+TRACE_FETCHER=0
+TRACE_PUSHER=0
+TRACE_TB_RAM=0
+TRACE_VCD=0
 
 #------------------------------------------------------------------------------
 # Clean compiled programs
 #------------------------------------------------------------------------------
 clean() {
-    rm -f ./rv*.*v
     rm -f ./*.vcd
     rm -f ./*.txt
     rm -f data.v
@@ -62,16 +61,19 @@ run_tests() {
 
     # Print testcase description and its configuration
     echo ""
-    echo -e "${BLUE}INFO: Execute ${test}${NC}"
+    echo -e "${BLUE}INFO: Execute ${TB}${NC}"
     echo ""
     echo "  - CACHE_BLOCK_W:    $CACHE_BLOCK_W"
     echo "  - TIMEOUT:          $TIMEOUT"
     echo "  - TB:               $TB"
     echo "  - SIMULATOR:        $SIM"
     echo "  - MAX_TRAFFIC:      $MAX_TRAFFIC"
-    if [[ -n $NO_RAM_LOG ]]; then
-        echo "  - NO_RAM_LOG:    $NO_RAM_LOG"
-    fi
+    echo "  - XLEN:             $XLEN"
+    echo "  - TRACE_BLOCKS:     $TRACE_BLOCKS"
+    echo "  - TRACE_FETCHER:    $TRACE_FETCHER"
+    echo "  - TRACE_PUSHER:     $TRACE_PUSHER"
+    echo "  - TRACE_TB_RAM:     $TRACE_TB_RAM"
+    echo "  - TRACE_VCD:        $TRACE_VCD"
 
     # build defines list passed to the testbench
     if [[ $SIM == "icarus" ]]; then
@@ -89,10 +91,14 @@ run_tests() {
     DEFINES="${DEFINES}TIMEOUT=$TIMEOUT;"
     DEFINES="${DEFINES}NO_VCD=$NO_VCD;"
     DEFINES="${DEFINES}MAX_TRAFFIC=$MAX_TRAFFIC;"
-    if [[ -n $NO_RAM_LOG ]]; then
-        DEFINES="${DEFINES}NO_RAM_LOG=$NO_RAM_LOG;"
-    fi
-    DEFINES="${DEFINES}TBNAME=${TB}"
+    DEFINES="${DEFINES}XLEN=$XLEN;"
+    DEFINES="${DEFINES}TBNAME=${TB};"
+    [[ $TRACE_CACHE   -eq 1 ]] && DEFINES="${DEFINES}TRACE_CACHE=$TRACE_CACHE;"
+    [[ $TRACE_BLOCKS  -eq 1 ]] && DEFINES="${DEFINES}TRACE_BLOCKS=$TRACE_BLOCKS;"
+    [[ $TRACE_FETCHER -eq 1 ]] && DEFINES="${DEFINES}TRACE_FETCHER=$TRACE_FETCHER;"
+    [[ $TRACE_PUSHER  -eq 1 ]] && DEFINES="${DEFINES}TRACE_PUSHER=$TRACE_PUSHER;"
+    [[ $TRACE_TB_RAM  -eq 1 ]] && DEFINES="${DEFINES}TRACE_TB_RAM=$TRACE_TB_RAM;"
+    [[ $TRACE_VCD     -eq 1 ]] && DEFINES="${DEFINES}TRACE_VCD=$TRACE_VCD;"
 
     # Execute the testcase with SVUT
     svutRun -t $TB \
@@ -104,8 +110,6 @@ run_tests() {
     # Grab the return code used later to determine the status
     test_ret=$((test_ret+$?))
     echo "Test return code: $test_ret"
-
-
 }
 #------------------------------------------------------------------------------
 
@@ -195,10 +199,6 @@ get_args() {
                 shift
                 NO_VCD=1
             ;;
-            --nocompile )
-                shift
-                NO_COMPILE=$1
-            ;;
             -h | --help )
                 usage
                 exit 0
@@ -227,9 +227,9 @@ usage: bash ./run.sh ...
 -c    | --clean             Clean-up and exit
 -m    | --max-traffic       Maximun number of requests injected by the driver
         --tb                Testbench file path
+-x    | --xlen              XLEN, 32 or 64 bits (32 is default)
         --simulator         Choose between icarus or verilator. icarus is default
         --novcd             Don't dump VCD during simulation
-        --nocompile         Don't try to compile C or assembler (CI tests only)
 EOF
 }
 #------------------------------------------------------------------------------
@@ -255,7 +255,6 @@ main() {
 
     # Then clean temp files into testcase folders
     if [ $do_clean -eq 1 ]; then clean; fi
-
 
     run_testsuite "$TB"
 

@@ -1,21 +1,21 @@
 [*]
 [*] GTKWave Analyzer v3.3.107 (w)1999-2020 BSI
-[*] Sun Aug 28 08:40:41 2022
+[*] Sun Oct  9 13:15:00 2022
 [*]
 [dumpfile] "/Users/damien/workspace/hdl/friscv/test/sv/icache_testbench.vcd"
-[dumpfile_mtime] "Sat Aug 27 20:11:59 2022"
-[dumpfile_size] 258954412
+[dumpfile_mtime] "Sun Oct  9 13:12:55 2022"
+[dumpfile_size] 624678
 [savefile] "/Users/damien/workspace/hdl/friscv/test/sv/icache_testbench.gtkw"
 [timestart] 0
-[size] 2560 1327
-[pos] -2 -1
-*-15.638897 58000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[size] 2560 1324
+[pos] -1 -1
+*-20.638897 58000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] icache.
 [treeopen] icache.cache_blocks.
 [sst_width] 436
 [signals_width] 461
 [sst_expanded] 1
-[sst_vpaned_height] 530
+[sst_vpaned_height] 1083
 @c00200
 -Testbench
 @28
@@ -65,10 +65,8 @@ driver.arready
 driver.arvalid
 @200
 -
-@24
-[color] 7
-driver.req_or_cnt
 @22
+[color] 7
 driver.rd_orreq[63:0]
 @200
 -
@@ -88,10 +86,8 @@ driver.block_rch
 driver.rvalid_s
 @200
 -
-@24
-[color] 7
-driver.cpl_or_cnt
 @22
+[color] 7
 driver.rd_orreq[63:0]
 driver.rd_orreq_rdata[2047:0]
 driver.rd_orreq_id[511:0]
@@ -115,11 +111,13 @@ driver.rid_error[63:0]
 driver.ror_error[63:0]
 @1401200
 -driver
-@c00200
+@800200
 -iCache
 @28
 icache.aclk
 icache.aresetn
+@29
+icache.cache_ready
 @200
 -
 @22
@@ -153,7 +151,7 @@ icache.icache_rlast
 icache.icache_rready
 icache.icache_rresp[1:0]
 icache.icache_rvalid
-@1401200
+@1000200
 -iCache
 @c00200
 -iCache Fetcher

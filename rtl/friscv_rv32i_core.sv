@@ -224,6 +224,8 @@ module friscv_rv32i_core
     logic                            flush_reqs;
     logic                            flush_blocks;
     logic                            flush_ack;
+    logic                            icache_ready;
+    logic                            dcache_ready;
 
     logic [5                   -1:0] traps;
 
@@ -387,6 +389,7 @@ module friscv_rv32i_core
         .aclk               (aclk),
         .aresetn            (aresetn),
         .srst               (srst),
+        .cache_ready        (icache_ready & dcache_ready),
         .traps              (traps),
         .pc_val             (dbg_regs[`PC*XLEN+:XLEN]),
         .flush_reqs         (flush_reqs),
@@ -456,6 +459,7 @@ module friscv_rv32i_core
         .aclk              (aclk),
         .aresetn           (aresetn),
         .srst              (srst),
+        .cache_ready       (icache_ready),
         .flush_reqs        (flush_reqs),
         .flush_blocks      (flush_blocks),
         .flush_ack         (flush_ack),
@@ -505,6 +509,8 @@ module friscv_rv32i_core
 
     // Always assert ack if requesting a cache flush to avoid deadlock
     assign flush_ack = 1'b1;
+
+    assign icache_ready = 1'b1;
 
     end
     endgenerate
@@ -649,6 +655,7 @@ module friscv_rv32i_core
             .aclk            (aclk),
             .aresetn         (aresetn),
             .srst            (srst),
+            .cache_ready     (dcache_ready),
             .memfy_awvalid   (memfy_awvalid),
             .memfy_awready   (memfy_awready),
             .memfy_awaddr    (memfy_awaddr),
@@ -744,6 +751,8 @@ module friscv_rv32i_core
         assign memfy_rid = dmem_rid;
         assign memfy_rresp = dmem_rresp;
         assign memfy_rdata = dmem_rdata;
+
+        assign dcache_ready = 1'b1;
 
     end
     endgenerate
