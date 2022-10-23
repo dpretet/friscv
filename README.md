@@ -27,8 +27,8 @@ FRISCV is a SystemVerilog implementation of the [RISCV ISA](https://riscv.org):
 - Support global and software interrupts
 - Clint extension
 - In-order execution
-- Instruction & data cache
 - AXI4-lite for instruction and data bus
+- Instruction & data cache units
 
 The core is [compliant](./test/riscv-tests/README.md) with the official RISCV
 testsuite.

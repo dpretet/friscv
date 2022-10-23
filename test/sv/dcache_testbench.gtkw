@@ -1,28 +1,28 @@
 [*]
 [*] GTKWave Analyzer v3.3.107 (w)1999-2020 BSI
-[*] Tue Oct 11 18:15:00 2022
+[*] Thu Oct 20 19:53:14 2022
 [*]
 [dumpfile] "/Users/damien/workspace/hdl/friscv/test/sv/dcache_testbench.vcd"
-[dumpfile_mtime] "Tue Oct 11 18:14:48 2022"
-[dumpfile_size] 311142
+[dumpfile_mtime] "Thu Oct 20 19:25:07 2022"
+[dumpfile_size] 522312144
 [savefile] "/Users/damien/workspace/hdl/friscv/test/sv/dcache_testbench.gtkw"
-[timestart] 18000
+[timestart] 49774000
 [size] 2560 1440
 [pos] -1 -1
-*-18.244406 2126000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-15.039545 49846200 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] dcache_testbench.
 [treeopen] dut.
 [treeopen] genblk2.
-[treeopen] OOO_MGT.
+[treeopen] pusher.
 [sst_width] 436
 [signals_width] 461
 [sst_expanded] 1
-[sst_vpaned_height] 333
+[sst_vpaned_height] 823
 @c00200
 -Testbench
 @1401200
 -Testbench
-@c00200
+@800200
 -driver
 @28
 driver.aclk
@@ -36,24 +36,38 @@ driver.flush_blocks
 driver.flush_reqs
 driver.gen_io_req
 driver.gen_mem_req
+[color] 3
+driver.seq
 driver.rden
+[color] 1
 driver.wren
 driver.artimeout
 driver.awtimeout
 driver.wtimeout
 @200
 -
-@800200
+@c00200
 -read channels
+@200
+-
+@28
+driver.aclk
+@420
+driver.arbeat_cnt
+driver.rbatch_len
+@200
+-
 @22
 driver.araddr[31:0]
 driver.arid[7:0]
 @28
 driver.arprot[2:0]
-driver.arready
 driver.arvalid
+driver.arready
 @200
 -
+@420
+driver.rreq_or_cnt
 @22
 [color] 7
 driver.rd_orreq[63:0]
@@ -98,8 +112,18 @@ driver.artimer
 @22
 driver.rid_error[63:0]
 driver.ror_error[63:0]
-@1000200
+@1401200
 -read channels
+@800200
+-write channels
+@28
+driver.aclk
+@420
+driver.awbeat_cnt
+@421
+driver.wbatch_len
+@420
+driver.wreq_or_cnt
 @200
 -
 @22
@@ -108,9 +132,18 @@ driver.awcache[3:0]
 driver.awid[7:0]
 @28
 driver.awprot[2:0]
-driver.awready
-driver.awtimeout
 driver.awvalid
+driver.awready
+@200
+-
+@22
+driver.wdata[31:0]
+driver.wstrb[3:0]
+@28
+driver.wvalid
+driver.wready
+@200
+-
 @22
 driver.bid[7:0]
 driver.bid_error[63:0]
@@ -121,10 +154,13 @@ driver.bready
 driver.bresp[1:0]
 @200
 -
+@28
+driver.awtimeout
 @22
 driver.wr_orreq[63:0]
 driver.wr_orreq_id[511:0]
-@1401200
+@1000200
+-write channels
 -driver
 @800200
 -dCache
@@ -132,8 +168,6 @@ driver.wr_orreq_id[511:0]
 dut.aclk
 dut.aresetn
 dut.cache_ready
-@200
--
 @c00200
 -Memfy IFs
 @22
@@ -193,8 +227,6 @@ dut.memfy_bresp[1:0]
 dut.memfy_bvalid
 @1401200
 -Memfy IFs
-@200
--
 @c00200
 -Memory IFs
 @22
@@ -285,7 +317,7 @@ block_fetcher.cache_rdata[31:0]
 block_fetcher.cache_rid[7:0]
 @1401200
 -Block Fetcher
-@c00201
+@c00200
 -OoO Mgt
 @28
 OOO_MGT.ooo_mgt.aclk
@@ -302,8 +334,8 @@ OOO_MGT.ooo_mgt.next_tag[7:0]
 OOO_MGT.ooo_mgt.slv_araddr[31:0]
 OOO_MGT.ooo_mgt.slv_arid[7:0]
 @28
-OOO_MGT.ooo_mgt.slv_arready
 OOO_MGT.ooo_mgt.slv_arvalid
+OOO_MGT.ooo_mgt.slv_arready
 @200
 -
 @22
@@ -381,10 +413,120 @@ OOO_MGT.ooo_mgt.mst_rid[7:0]
 OOO_MGT.ooo_mgt.mst_rresp[1:0]
 OOO_MGT.ooo_mgt.mst_rvalid
 OOO_MGT.ooo_mgt.mst_rready
-@1401201
+@1401200
 -OoO Mgt
+@800200
+-Pusher
+@28
+pusher.aclk
+pusher.aresetn
 @200
 -
+@28
+pusher.cache_ren
+@22
+pusher.cache_raddr[31:0]
+pusher.cache_raddr_r[31:0]
+@28
+pusher.cache_hit
+pusher.cache_miss
+@200
+-
+@28
+pusher.cache_wen
+pusher.wait_data_channel
+pusher.wr_position[1:0]
+@22
+pusher.cache_waddr[31:0]
+pusher.cache_wdata[127:0]
+pusher.cache_wdata_r[31:0]
+@200
+-
+@22
+pusher.mst_awaddr[31:0]
+pusher.mst_awcache[3:0]
+pusher.mst_awid[7:0]
+@28
+pusher.mst_awprot[2:0]
+pusher.mst_awready
+pusher.mst_awvalid
+@200
+-
+@22
+pusher.mst_wdata[31:0]
+pusher.mst_wdata_r[31:0]
+@28
+pusher.mst_wready
+@22
+pusher.mst_wstrb[3:0]
+pusher.mst_wstrb_r[3:0]
+@28
+pusher.mst_wvalid
+@200
+-
+@22
+pusher.mst_bid[7:0]
+@28
+pusher.mst_bready
+pusher.mst_bresp[1:0]
+pusher.mst_bvalid
+@200
+-
+@28
+pusher.pending_rd
+pusher.pending_wr
+pusher.pending_wr_or
+@200
+-
+@22
+pusher.memctrl_awaddr[31:0]
+pusher.memctrl_awid[7:0]
+@28
+pusher.memctrl_awprot[2:0]
+pusher.memctrl_awready
+pusher.memctrl_awvalid
+@200
+-
+@22
+pusher.memctrl_wdata[31:0]
+@28
+pusher.memctrl_wready
+@22
+pusher.memctrl_wstrb[3:0]
+@28
+pusher.memctrl_wvalid
+@200
+-
+@22
+pusher.memctrl_bid[7:0]
+@28
+pusher.memctrl_bresp[1:0]
+pusher.memctrl_bvalid
+pusher.memctrl_bready
+@200
+-
+@28
+outstanding_request_tracker.aclk
+outstanding_request_tracker.aresetn
+@200
+-
+@28
+outstanding_request_tracker.awready
+outstanding_request_tracker.awvalid
+@200
+-
+@28
+outstanding_request_tracker.bready
+outstanding_request_tracker.bvalid
+@200
+-
+@28
+outstanding_request_tracker.waiting_wr_cpl
+outstanding_request_tracker.max_wr_or
+@22
+outstanding_request_tracker.wr_or_cnt[3:0]
+@1000200
+-Pusher
 @c00200
 -MemCtrl
 @22

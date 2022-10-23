@@ -1,5 +1,7 @@
 # Architecture
 
+All draws have been created with draw.io, the document being stored in `doc` folder.
+
 ## Interfaces & Communication Protocol
 
 The core connects internally its modules with AMBA philosophy. AMBA proposes a simple way to connect
@@ -136,6 +138,7 @@ Features:
 - Direct-mapped placement policy
 - Parametrizable cache depth
 - Parametrizable cache line width
+- Parametrizable number of outstanding requests
 - Software-based flush control with FENCE.i instruction
 - Transparent operation for user, no need of any kind of management
 - Cache prefetch can be activated in the internal memory controller to enhance efficiency
@@ -174,6 +177,75 @@ addr = | tag | index | offset |
 - tag:    the remaining MSBs, the part helping to determine a cache hit/miss
 
 
+#### Data Cache
+
+<p align="center"> <img src="./assets/dCache-top.png"> </p>
+
+The data cache (dCache) relies on the same read flow than iCache. The differences are the dCache
+implements a write flow and manages read re-ordering.
+
+Features:
+
+- Direct-mapped placement policy
+- Write-through policy for write management
+- Parametrizable cache depth
+- Parametrizable cache line width
+- Parametrizable number of outstanding requests
+- IO Region configurable to manage uncachable requests
+- Cache prefetch can be activated in the internal memory controller to enhance efficiency
+- AXI4-lite slave interface to fetch an instruction
+- AXI4 master interface to read/write the system memory
+
+##### Write Path
+
+<p align="center"> <img src="./assets/dCache-pusher.png"> </p>
+
+Pusher stage manages the write path, updating the cache blocks if the address to write is cached
+and issuing write request to the memory. It can buffer a certain number of write requests to unleash 
+performance, this number being configurable with a parameter. If a write request targets an IO
+region, the application indicates with AWCACHE the request is not cachable and need to be directly 
+written in the system memory and not in the cache blocks.
+
+##### Read Path
+
+<p align="center"> <img src="./assets/dCache-read-path.png"> </p>
+
+The read path, if needs to manage IO region (uncachable) read multiplex the Block-Fetcher and 
+IO-Fetcher modules based on the ARCACHE attribute. IO-Fetcher is always serviced first to issue
+request to the memory controller.
+
+
+##### Read Out-Of-Order Management
+
+<p align="center"> <img src="./assets/dCache-ooo.png"> </p>
+
+Read request can target either an IO region or a cachable region, the application needs to
+indicate this information with ARCACHE. Block-Fetcher stage (same module than iCache) manages the
+read request in the cache blocks, IO-Fetcher manages the IO request to route directly in the memory
+with the memory controller. Because read request can come back out-of-order with the latency
+different between block and memory, the dCache uses one more module to manage that. The OoO Manager
+module substitutes ARID to make it unique for each read request and uses them to reorder the read 
+data completion to the application. This stage can be deactivated if not necessary, if the
+application can manage by itself the reordering or if doesn't target IO region (Block-Fetcher always
+completes requets in-order).
+
+The module also manages the data interface resizing, the cache block and memory interface being
+always wider than XLEN (32 or 64 bits).
+
+##### AXI4 Ordering Rules
+
+AXI doesn't provide advanced ordering rules and instructs the user to issue first a sequence of
+write then a sequence of read only once write completions have been all received (and vice versa).
+Internally, the cache could still processing or waiting for write requests while the application is
+already able to issue new series of R/W requests. The cache manages that situation by monitoring all
+read and write modules and block any situation that could lead to read / write collision and data
+integrity corruption.
+
+However, the read and write path always buffer request with FIFO, preventing to slow down the
+application performance. Only the processing of the request will be stopped, the communication with
+the cache will remain active as long the FIFO are not full.
+
+
 ### CSR Unit
 
 The core implements in a dedicated module the supported registers described in the ISA manuel volume
@@ -192,6 +264,9 @@ The core implements the following CSR registers into the dedicated module:
 - mepc (RW)
 - mcause (RW)
 - mtval (RW)
+- rdcycle (RO)
+- rdtime (RO)
+- rdinstret (RO)
 
 Next CSRs are available as a memory-mapped peripheral:
 
@@ -220,25 +295,25 @@ The core always handles in its clock domain the interrupts by synchronizing them
 FFDs.
 
 
-##### Register 0: MSIP Output [RW] - Address 0x0
+#### MSIP Output [RW] - Address 0x0
 
 Output software interrupt MSIP to trigger another core (1 bit)
 
-##### Register 1: MTIME LSB [RW] - Address 0x4
+#### MTIME LSB [RW] - Address 0x4
 
-MTIME CSR, bits 0 to 31
+MTIME CSR, `bit 31:0`
 
-##### Register 1: MTIME MSB [RW] - Address 0x8
+#### MTIME MSB [RW] - Address 0x8
 
-MTIME CSR, bits 32 to 63
+MTIME CSR, `bit 63:32`
 
-##### Register 1: MTIMECMP LSB [RW] - Address 0xC
+#### MTIMECMP LSB [RW] - Address 0xC
 
-MTIMECMP CSR, bits 0 to 31
+MTIMECMP CSR, `bit 31:0`
 
-##### Register 1: MTIMECMP MSB [RW] - Address 0x10
+#### MTIMECMP MSB [RW] - Address 0x10
 
-MTIMECMP CSR, bits 32 to 63
+MTIMECMP CSR, `bit 63:32`
 
 
 ### IO Peripherals
@@ -251,11 +326,11 @@ an APB interconnect
 
 The GPIOs are binded behind two registers:
 
-##### Register 0: Outputs [RW] - Address 0x0
+##### OUTPUTS [RW] - Address 0x0
 
 XLEN wide general purpose outputs
 
-##### Register 1: Inputs [RW] - Address 0x4
+##### INPUTS [RW] - Address 0x4
 
 XLEN wide general purpose inputs
 
@@ -266,70 +341,70 @@ Reading and writing a GPIOs' register is never blocking.
 
 The UART uses few IOs:
 
-- rx: serial input, data from an external transmitter
-- tx: serial output, data to an external receiver
-- rts: back-pressure flag to indicate the core can't receive anymore data
-- cts: back-pressure flag to indicate the external receiver can't receive data anymore
+- `rx`: serial input, data from an external transmitter
+- `tx`: serial output, data to an external receiver
+- `rts`: back-pressure flag to indicate the core can't receive anymore data
+- `cts`: back-pressure flag to indicate the external receiver can't receive data anymore
 
 The UART uses a FIFO to store data to transmit, and another to store data received. If the FIFOs are
 full, the UART can't receive anymore data and rises the RTS flag, or can't transmit anymore and
 block the APB bus until the receiver desasserts its CTS flag.
 
-The UART owns few registers. Any attempt to write in a read-only (RO) register or a reserved field
+The UART owns few registers. Any attempt to write in a read-only (`RO`) register or a reserved field
 will be without effect and can't change the register content neither the engine behavior. Read-write
-(RW) registers can be written partially by setting properly the WSTRB signal. A read in a write-only
-(WO) register is not garanteed to return a valid value written previously.
+(`RW`) registers can be written partially by setting properly the WSTRB signal. A read in a write-only
+(`WO`) register is not garanteed to return a valid value written previously.
 
 If a transfer (RX or TX) is active and the enable bit is setup back to 0, the transfer will
 terminate only after the complete frame transmission.
 
 
-##### Register 0: Control and Status [RW/RO] - Address 0x0
+##### CONTROL AND STATUS [RW/RO] - Address 0x0
 
-- bit 0     : Enable the UART engine (both RX and TX) [RW]
-- bit 1     : Loopback mode, every received data will be stored in RX FIFO and forwarded back to TX [RW]
-- bit 2     : Enable parity bit [RW]
-- bit 3     : 0 for even parity, 1 for odd parity [RW]
-- bit 4     : 0 for one stop bit, 1 for two stop bits [RW]
-- bit 7:5   : Reserved
-- bit 8     : Busy flag, the UART engine is processing (RX or TX) [RO]
-- bit 9     : TX FIFO is empty [RO]
-- bit 10    : TX FIFO is full [RO]
-- bit 11    : RX FIFO is empty [RO]
-- bit 12    : RX FIFO is full [RO]
-- bit 13    : UART RTS, flagging it can't receive anymore data [RO]
-- bit 14    : UART CTS, flagging it can't send anymore data [RO]
-- bit 15    : Parity error of the last RX transaction [RO]
-- bit 31:16 : Reserved
+- `Bit 0`       : Enable the UART engine (both RX and TX) [RW]
+- `Bit 1`       : Loopback mode, every received data will be stored in RX FIFO and forwarded back to TX [RW]
+- `Bit 2`       : Enable parity bit [RW]
+- `Bit 3`       : 0 for even parity, 1 for odd parity [RW]
+- `Bit 4`       : 0 for one stop bit, 1 for two stop bits [RW]
+- `Bit 7:5`     : Reserved
+- `Bit 8`       : Busy flag, the UART engine is processing (RX or TX) [RO]
+- `Bit 9`       : TX FIFO is empty [RO]
+- `Bit 10`      : TX FIFO is full [RO]
+- `Bit 11`      : RX FIFO is empty [RO]
+- `Bit 12`      : RX FIFO is full [RO]
+- `Bit 13`      : UART RTS, flagging it can't receive anymore data [RO]
+- `Bit 14`      : UART CTS, flagging it can't send anymore data [RO]
+- `Bit 15`      : Parity error of the last RX transaction [RO]
+- `Bit 31:16`   : Reserved
 
 
-##### Register 1: UART Clock Divider [RW] - Address 0x4
+##### UART CLOCK DIVIDER [RW] - Address 0x4
 
 The number of CPU core cycles to divide down to get the UART data bit rate (baud rate).
 
-- Bit 15:0  : Clock divider
-- Bit 31:16 : Reserved
+- `Bit 15:0`  : Clock divider
+- `Bit 31:16` : Reserved
 
 An update during an ongoing operation will certainly lead to compromise the transfer integrity and
 possibly make unstable the UART engine. The user is advised to configure the baud rate during
 start-up and be sure the engine is disabled before changing this value.
 
-##### Register 2: TX FIFO [WO] - Address 0x8
+##### TX FIFO [WO] - Address 0x8
 
 Push data into TX FIFO. Writing into this register will block the APB write request if TX FIFO is
 full, until the engine transmit a new word.
 
-- Bit 7:0  : data to write
-- Bit 31:8 : Reserved
+- `Bit 7:0`  : data to write
+- `Bit 31:8` : Reserved
 
 
-##### Register 3: RX FIFO [RO] - Address 0xC
+##### RX FIFO [RO] - Address 0xC
 
 Pull data from RX FIFO. Reading into this register will block the APB read request if FIFO is empty,
 until the engine receives a new word.
 
-- Bit 7:0  : data ready to be read
-- Bit 31:8 : Reserved
+- `Bit 7:0`  : data ready to be read
+- `Bit 31:8` : Reserved
 
 Current limitations:
 - only support 8 bits wide data word
