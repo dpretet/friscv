@@ -378,7 +378,7 @@ terminate only after the complete frame transmission.
 - `Bit 31:16`   : Reserved
 
 
-##### UART CLOCK DIVIDER [RW] - Address 0x4
+##### CLOCK DIVIDER [RW] - Address 0x4
 
 The number of CPU core cycles to divide down to get the UART data bit rate (baud rate).
 

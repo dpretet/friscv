@@ -1,12 +1,5 @@
 # DOING
 
-- [~] Develop dCache
-    - [~] Uncachable access for IOs region
-    - [X] Derive from iCache
-    - [X] Add pusher stage for write access
-    - [X] APROT[2] pour instruction or data hint
-
-
 # BACKLOG
 
 N.B. :
@@ -59,6 +52,8 @@ AXI4 Infrastructure
     - [ ] Reduce latency in switching logic
     - [ ] Ajouter PERROR sur l’APB, to log on error reporting bus
 - [ ] Implement a L2 cache stage
+- [ ] Update acache usage to better use ACACHE dor dCache
+- [ ] Ooo write completion, response needs to come from the destination if IO write 
 
 
 Control:
@@ -129,6 +124,12 @@ Hardware Test:
 
 # DONE
 
+- [X] Develop dCache
+    - [X] Uncachable access for IOs region
+    - [X] Derive from iCache
+    - [X] Add pusher stage for write access
+    - [X] APROT[2] pour instruction or data hint
+- [X] Develop dCache testbench
 - [X] Fix lint error code management in CI
 - [X] Memfy:
     - [X] Support outstanding read/write request
