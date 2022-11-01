@@ -274,7 +274,22 @@ MSIP(i) inputs are directly connected in the CSR management module described abo
 
 The IOs are connected to a master port of the crossbar through a sub-system interconnect. The IO
 modules use APB protocol, so requests from the core are first translated from/to AXI4-lite with
-an APB interconnect
+an APB interconnect. Only one module can be read at a time, meaning if the requseter use an
+interface wider than 32 bits (usually the case to maximize cache blocks width), one can't read 
+4 registers in one read request, but only one, register per register.
+
+If the interface is 128 bits wide, a requester could read up to four 32 bits registers, but the read 
+completion will be regarding the offset:
+
+```
+Addr 0x0 : 0x00000000 - 0x00000000 - 0x00000000 - 0xABCD4321
+Addr 0x4 : 0x00000000 - 0x00000000 - 0xABCD4321 - 0x00000000
+Addr 0x8 : 0x00000000 - 0xABCD4321 - 0x00000000 - 0x00000000
+Addr 0xc : 0xABCD4321 - 0x00000000 - 0x00000000 - 0x00000000
+```
+
+`0xABCD4321` being an hypothetic register value. This is transparent for software while always reading
+up to 32 bits for RV32i. The AXI4-lite bridge only manages 32 bits aligned address. 
 
 ### GPIOS
 

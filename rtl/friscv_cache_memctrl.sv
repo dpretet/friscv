@@ -143,7 +143,7 @@ module friscv_cache_memctrl
 
     // Used along the module to buffer the outstanding requests' IDs
     localparam NB_TAG_W = $clog2(OSTDREQ_NUM);
-    // Lowest part of teh address replaced by 0 to access a complete cache block
+    // Lowest part of the address replaced by 0 to access a complete cache block
     // (AXI_DATA_W = CACHE_BLOCK_W is the only setup supported)
     localparam ADDR_LSB_W = $clog2(AXI_DATA_W/8);
 
@@ -216,7 +216,7 @@ module friscv_cache_memctrl
     assign mem_arvalid = mst_arvalid;
     assign mst_arready = mem_arready && !rch_full;
 
-    assign mem_araddr = {mst_araddr[AXI_ADDR_W-1:ADDR_LSB_W],{ADDR_LSB_W{1'b0}}};
+    assign mem_araddr = mst_araddr;
     assign mem_arprot = mst_arprot;
     assign mem_arid = mst_arid;
 
@@ -322,7 +322,7 @@ module friscv_cache_memctrl
         // Write address channel
         assign mem_awvalid = mst_awvalid & !wch_full;
         assign mst_awready = mem_awready & !wch_full;
-        assign mem_awaddr = {mst_awaddr[AXI_ADDR_W-1:ADDR_LSB_W],{ADDR_LSB_W{1'b0}}};
+        assign mem_awaddr = mst_awaddr;
         // Single beat request
         assign mem_awlen = 8'b0;
         // No narrow request support

@@ -586,7 +586,7 @@ module friscv_memfy
 
     generate 
 
-    if (IO_MAP_NB > 1) begin
+    if (IO_MAP_NB > 0) begin
 
         for (genvar i=0;i<IO_MAP_NB;i=i+1) begin
             assign io_map_hit = (addr>=IO_MAP[i*2*XLEN+:XLEN] && addr<=IO_MAP[i*2*XLEN+XLEN+:XLEN]);

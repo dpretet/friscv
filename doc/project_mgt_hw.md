@@ -53,7 +53,7 @@ AXI4 Infrastructure
     - [ ] Ajouter PERROR sur l’APB, to log on error reporting bus
 - [ ] Implement a L2 cache stage
 - [ ] Update acache usage to better use ACACHE dor dCache
-- [ ] Ooo write completion, response needs to come from the destination if IO write 
+- [ ] Ooo write completion, response needs to come from the destination if IO write
 
 
 Control:

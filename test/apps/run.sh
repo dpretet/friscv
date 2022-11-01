@@ -21,24 +21,21 @@ MIN_PC=65692
 # Don't drop VCD, to avoid storing GB of raw data
 NO_VCD=0
 
-# Enable UART link to the processor (Platform only)
+# Enable UART link to the processor (platform only)
 INTERACTIVE=1
 
-# Disable AXI4-lite RAM logging
-NO_RAM_LOG=1
-
-# Testbench configuration
-TB_CHOICE=1 # PLATFORM
+# Testbench configuration, platform only
+TB_CHOICE=1
 
 # Don't assert a testbench error if X31 is asserted
 ERROR_STATUS_X31=0
 
-TRACE_CONTROL=0
-TRACE_CACHE=0
-TRACE_BLOCKS=0
-TRACE_FETCHER=0
-TRACE_PUSHER=0
-TRACE_TB_RAM=0
+TRACE_CONTROL=1
+TRACE_CACHE=1
+TRACE_BLOCKS=1
+TRACE_FETCHER=1
+TRACE_PUSHER=1
+TRACE_TB_RAM=1
 
 source ../common/functions.sh
 

@@ -16,7 +16,7 @@
 #define SPACE 32
 #define TAB 9
 
-// Two defines to setup max args / max arg's size when 
+// Two defines to setup max args / max arg's size when
 // building the command from UART
 #define MAX_ARGS 4
 #define MAX_ARGS_SIZE 10
@@ -69,7 +69,7 @@ int main() {
                 }
             }
 
-        // Once finish to empty the FIFO, execute the command and print a new prompt
+        // Once finish to empty the FIFO, execute the command and print a new prompt marker
         } else {
 
             // Echo

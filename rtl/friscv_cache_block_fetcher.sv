@@ -88,6 +88,10 @@ module friscv_cache_block_fetcher
     // Parameters and signals
     ///////////////////////////////////////////////////////////////////////////
 
+    // Lowest part of the address replaced by 0 to access a complete cache block
+    // (AXI_DATA_W = CACHE_BLOCK_W is the only setup supported)
+    localparam ADDR_LSB_W = $clog2(AXI_DATA_W/8);
+
     // Missed-fetch FIFO depth
     localparam MF_FIFO_DEPTH = 8;
     localparam PASS_THRU_MODE = 0;
@@ -476,7 +480,9 @@ module friscv_cache_block_fetcher
                 default: begin
                     if (cache_miss) begin
                         memctrl_arvalid <= 1'b1;
-                        memctrl_araddr <= araddr_ffd;
+                        // Always fetch a complete cache blocks
+                        // TODO: Adapt based on cache block vs axi data width
+                        memctrl_araddr <= {araddr_ffd[AXI_ADDR_W-1:ADDR_LSB_W],{ADDR_LSB_W{1'b0}}};
                         memctrl_arid <= arid_ffd;
                         memctrl_arprot <= arprot_ffd;
                         loader <= LOAD;

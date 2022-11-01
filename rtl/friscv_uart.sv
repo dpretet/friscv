@@ -167,7 +167,7 @@ module friscv_uart
 
     always @ (posedge aclk or negedge aresetn) begin
 
-        if (~aresetn) begin
+        if (!aresetn) begin
             enable <= 1'b1;
             loopback_mode <= 1'b0;
             parity_en <= 1'b0;
@@ -234,7 +234,7 @@ module friscv_uart
                 end else if (slv_addr=={{(ADDRW-4){1'b0}},4'h8}) begin
                     if (slv_wr) begin
                         // Wait until the FIFO can store a new word
-                        if (~tx_full) begin
+                        if (!tx_full) begin
                             if (slv_strb[0]) register2[0+:8] <= slv_wdata[0+:8];
                             tx_push <= 1'b1;
                             slv_ready <= 1'b1;
@@ -286,7 +286,7 @@ module friscv_uart
 
     always @ (posedge aclk or negedge aresetn) begin
 
-        if (~aresetn) begin
+        if (!aresetn) begin
             tx_pull <= 1'b0;
             tx_data_srr <= 8'b0;
             tx_bit_cnt <= 4'b0;
@@ -361,36 +361,36 @@ module friscv_uart
 
     friscv_bit_sync 
     #(
-    .DEFAULT_LEVEL (1),
-    .DEPTH (2)
+        .DEFAULT_LEVEL (1),
+        .DEPTH (2)
     )
     rx_sync 
     (
-    .aclk    (aclk),
-    .aresetn (aresetn),
-    .srst    (srst),
-    .bit_i   (uart_rx),
-    .bit_o   (uart_rx_sync)
+        .aclk    (aclk),
+        .aresetn (aresetn),
+        .srst    (srst),
+        .bit_i   (uart_rx),
+        .bit_o   (uart_rx_sync)
     );
 
     friscv_bit_sync 
     #(
-    .DEFAULT_LEVEL (1),
-    .DEPTH (2)
+        .DEFAULT_LEVEL (1),
+        .DEPTH (2)
     )
     cts_sync 
     (
-    .aclk    (aclk),
-    .aresetn (aresetn),
-    .srst    (srst),
-    .bit_i   (uart_cts),
-    .bit_o   (uart_cts_sync)
+        .aclk    (aclk),
+        .aresetn (aresetn),
+        .srst    (srst),
+        .bit_i   (uart_cts),
+        .bit_o   (uart_cts_sync)
     );
 
 
     always @ (posedge aclk or negedge aresetn) begin
 
-        if (~aresetn) begin
+        if (!aresetn) begin
             rx_push <= 1'b0;
             rx_data <= 8'b0;
             rx_bit_cnt <= 4'b0;
