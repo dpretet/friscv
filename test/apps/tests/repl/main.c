@@ -6,6 +6,7 @@
 
 #include "uart.h"
 #include "system.h"
+#include "sleep.h"
 #include "irq.h"
 #include "clint.h"
 #include "tty.h"
@@ -24,19 +25,25 @@
 int main() {
 
     // Supported command
-    const char * c_sleep = "sleep";
     const char * c_echo = "echo";
+    const char * c_sleep = "sleep";
     const char * c_shutdown = "shutdown";
     const char * c_exit = "exit";
     const char * c_ebreak = "ebreak";
     const char * c_help = "help";
 
-    // command line received from UART
     int inChar;
     int eot = 0;
-    int ix;
-    int argc;
-    char argv[MAX_ARGS][MAX_ARGS_SIZE];
+    int ix = 0;
+    int argc = 0;
+
+    // TODO: Manage with malloc()
+    char * argv[MAX_ARGS_SIZE] = {
+        "          ",
+        "          ",
+        "          ",
+        "          "
+    };
 
     SUCCESS("\n\nWelcome to FRISCV\n");
     uart_putchar(EOT);
@@ -48,13 +55,16 @@ int main() {
         // Reading the input command line until receiving a EOT (ASCII=4)
         if (!eot) {
 
+            // TODO: Check argc & ix doesn't overflow argv
+
             if (uart_is_empty() == 0) {
 
                 inChar = uart_getchar();
 
-                if (inChar==EOT) {
+                if (inChar == EOT) {
                     argv[argc][ix] = '\0';
                     argc += 1;
+                    ix = 0;
                     eot = 1;
                 } else {
 
@@ -66,31 +76,30 @@ int main() {
                         argv[argc][ix] = inChar;
                         ix += 1;
                     }
+                    eot = 0;
                 }
             }
 
         // Once finish to empty the FIFO, execute the command and print a new prompt marker
         } else {
-
+                print_s("\nargc ");
+                print_i(argc);
+                print_s("\nargv ");
+                print_s(argv[0]);
+                print_s("\n");
+                /*
             // Echo
             if (strncmp(argv[0], c_echo, 4) == 0) {
                 echo(argc, argv);
 
             // Sleep during N cycles
             } else if (strncmp(argv[0], c_sleep, 5) == 0) {
-                irq_on();
-                clint_set_mtime(0, 0);
-                clint_set_mtimecmp(100, 0);
-                mtip_irq_on();
-                wfi();
-                mtip_irq_off();
-                INFO("Slept!\n");
+                sleep(argc, argv);
 
             // Shutdown / ebreak / exit
             } else if (strncmp(argv[0], c_shutdown, 8) == 0 ||
-                        strncmp(argv[0], c_exit, 4) == 0 ||
-                        strncmp(argv[0], c_ebreak, 6) == 0
-            ) {
+                       strncmp(argv[0], c_exit, 4) == 0 ||
+                       strncmp(argv[0], c_ebreak, 6) == 0) {
                 SUCCESS("Exiting... See you!");
                 shutdown();
 
@@ -105,9 +114,14 @@ int main() {
                 MSG("   shutdown: same than exit\n");
 
             } else {
-                ERROR("Unrecognized command");
+                ERROR("Unrecognized command\n");
+                print_s("\nargc ");
+                print_i(argc);
+                print_s("\nargv ");
+                print_s(argv[0]);
+                print_s("\n");
             }
-
+            */
             eot = 0;
             ix = 0;
             argc = 0;

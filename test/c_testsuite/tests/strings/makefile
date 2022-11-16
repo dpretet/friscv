@@ -12,7 +12,6 @@ RISCV_NM      = $(RISCV_NAME)-nm
 RISCV_CLIB="/opt/homebrew/Cellar/riscv-gnu-toolchain/main/riscv64-unknown-elf/include/"
 
 SRCS =	$(wildcard *.c) \
-        $(wildcard *.h) \
         $(wildcard *.S)
 
 
@@ -20,7 +19,7 @@ SRCS =	$(wildcard *.c) \
 CFLAGS +=	-march=rv32im \
 			-mabi=ilp32 \
 			-O0 \
-			-g \
+			-fstack-usage \
 			-I./ \
 			-mcmodel=medany \
 			-static \
@@ -83,7 +82,7 @@ clean:
 	rm -f $(OBJDIR)/*.v
 	rm -f $(OBJDIR)/*.asm
 	rm -f $(OBJDIR)/*.o
-	rm -f $(OBJDIR)/*.su
+	rm -f $(OBJDIR)/*.symbols
 
 
 #.SECONDARY: $(OBJS)

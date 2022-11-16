@@ -6,7 +6,6 @@
 
 
 void print_s(const char * str) {
-
     while (*str != 0) {
         uart_putchar(*(str++));
     }

@@ -149,16 +149,12 @@ run_tests() {
         test_file=$(basename "$test")
         test_name=${test_file%%.*}
 
-        # Check simulator to use with lower case
-        if [[ ${SIM} == "icarus" ]]; then
-            # Use SVlogger only with Icarus, Verilator systemverilog support being too limited
+        ## SVLogger and so extra logging/tracing can be deactivated. Usefull for Apps testsuite
+        if [[ -z $NO_SVL ]]; then
             DEFINES="FRISV_SIM=1;USE_SVL=1;"
-            SIM="icarus"
         else
             DEFINES="FRISV_SIM=1;"
-            SIM="verilator"
         fi
-
         get_defines
 
         # Execute the testcase with SVUT

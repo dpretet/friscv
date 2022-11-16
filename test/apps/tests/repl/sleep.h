@@ -4,5 +4,7 @@
 #ifndef SLEEP_INCLUDE
 #define SLEEP_INCLUDE
 
+int sleep(int argc, char * argv[]);
+
 #endif // SLEEP_INCLUDE
 

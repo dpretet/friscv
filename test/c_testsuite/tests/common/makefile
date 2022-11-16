@@ -19,11 +19,12 @@ SRCS =	$(wildcard *.c) \
 CFLAGS +=	-march=rv32im \
 			-mabi=ilp32 \
 			-O0 \
+			-g \
 			-fstack-usage \
 			-I./ \
-			-mcmodel=medany \
-			-static \
-			-std=gnu99
+			-static
+			#-mcmodel=medany \
+			#-std=gnu99
 
 # -e_start: Specify that the program entry point is _start
 # -nostartfiles: Do not use the standard system startup files when linking
@@ -83,6 +84,3 @@ clean:
 	rm -f $(OBJDIR)/*.asm
 	rm -f $(OBJDIR)/*.o
 	rm -f $(OBJDIR)/*.symbols
-
-
-#.SECONDARY: $(OBJS)

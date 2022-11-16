@@ -244,24 +244,28 @@ module friscv_testbench(
     assign imem_bready = 1'b1;
 
     `ifdef GEN_EIRQ
-        always @ (posedge aclk or negedge aresetn) begin
-            integer cnt;
-            if (!aresetn) begin
-                ext_irq <= 1'b0;
-                cnt <= 0;
-            end else if (srst) begin
-                ext_irq <= 1'b0;
-                cnt <= 0;
-            end else begin
-                if (cnt == 100) begin
-                    cnt <= 0;
-                    ext_irq <= 1'b1;
-                end else begin
-                    cnt <= cnt + 1;
+        generate
+        if (`GEN_EIRQ>0) begin
+            always @ (posedge aclk or negedge aresetn) begin
+                integer cnt;
+                if (!aresetn) begin
                     ext_irq <= 1'b0;
+                    cnt <= 0;
+                end else if (srst) begin
+                    ext_irq <= 1'b0;
+                    cnt <= 0;
+                end else begin
+                    if (cnt == 100) begin
+                        cnt <= 0;
+                        ext_irq <= 1'b1;
+                    end else begin
+                        cnt <= cnt + 1;
+                        ext_irq <= 1'b0;
+                    end
                 end
             end
         end
+        endgenerate
     `else
         assign ext_irq = 1'b0;
     `endif
