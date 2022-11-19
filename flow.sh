@@ -4,7 +4,7 @@
 # -u: treat unset variable as an error
 # -f: disable filename expansion upon seeing *, ?, ...
 # -o pipefail: causes a pipeline to fail if any command fails
-set -e -o pipefail
+set -e -o pipefail -x
 
 # Current script path; doesn't support symlink
 FRISCV_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
@@ -19,7 +19,7 @@ Blue='\033[0;34m'
 NC='\033[0m'
 
 TB="all"
-SIM="all"
+SIMULATOR="all"
 
 function printerror {
     echo -e "${Red}ERROR: ${1}${NC}"
@@ -82,18 +82,18 @@ run_sims() {
 
     if [[ $1 == "core" ]] || [[ $1 == "all" ]]; then
         if [[ $2 == "icarus" ]] || [[ $2 == "all" ]]; then
-            ./run.sh -c && ./run.sh --simulator icarus --tb core --nocompile 1
+            rm -f rtl.md5 && ./run.sh --simulator icarus --tb core --nocompile 1
         fi
         if [[ $2 == "verilator" ]] || [[ $2 == "all" ]]; then
-            ./run.sh -c && ./run.sh --simulator verilator --tb core --nocompile 1
+            rm -f rtl.md5 && ./run.sh --simulator verilator --tb core --nocompile 1
         fi
     fi
     if [[ $1 == "platform" ]] || [[ $1 == "all" ]]; then
         if [[ $2 == "icarus" ]] || [[ $2 == "all" ]]; then
-            ./run.sh -c && ./run.sh --simulator icarus --tb platform --nocompile 1
+            rm -f rtl.md5 && ./run.sh --simulator icarus --tb platform --nocompile 1
         fi
         if [[ $2 == "verilator" ]] || [[ $2 == "all" ]]; then
-            ./run.sh -c && ./run.sh --simulator verilator --tb platform --nocompile 1
+            rm -f rtl.md5 && ./run.sh --simulator verilator --tb platform --nocompile 1
         fi
     fi
 }

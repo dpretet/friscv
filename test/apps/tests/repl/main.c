@@ -37,13 +37,12 @@ int main() {
     int ix = 0;
     int argc = 0;
 
-    // TODO: Manage with malloc()
-    char * argv[MAX_ARGS_SIZE] = {
-        "          ",
-        "          ",
-        "          ",
-        "          "
-    };
+    char argv[MAX_ARGS][MAX_ARGS_SIZE];
+    char * pargv[MAX_ARGS];
+
+    for (int i=0;i<MAX_ARGS;i++) {
+        pargv[i] = &argv[i][0];
+    }
 
     SUCCESS("\n\nWelcome to FRISCV\n");
     uart_putchar(EOT);
@@ -82,19 +81,15 @@ int main() {
 
         // Once finish to empty the FIFO, execute the command and print a new prompt marker
         } else {
-                print_s("\nargc ");
-                print_i(argc);
-                print_s("\nargv ");
-                print_s(argv[0]);
-                print_s("\n");
-                /*
+
+            // echo(argc, pargv);
             // Echo
             if (strncmp(argv[0], c_echo, 4) == 0) {
-                echo(argc, argv);
+                echo(argc, pargv);
 
             // Sleep during N cycles
             } else if (strncmp(argv[0], c_sleep, 5) == 0) {
-                sleep(argc, argv);
+                sleep(argc, pargv);
 
             // Shutdown / ebreak / exit
             } else if (strncmp(argv[0], c_shutdown, 8) == 0 ||
@@ -121,7 +116,6 @@ int main() {
                 print_s(argv[0]);
                 print_s("\n");
             }
-            */
             eot = 0;
             ix = 0;
             argc = 0;

@@ -25,7 +25,7 @@ source ../common/functions.sh
 
 main() {
 
-    echo "INFO: Start RISCV Compliance Testsuite"
+    echo "INFO: Start Testsuite"
     PID=$$
     echo "PID: $PID"
 
