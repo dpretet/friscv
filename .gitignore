@@ -145,3 +145,4 @@ test/*/*.txt
 *.bkp
 *.csv
 *.symbols
+rtl.md5*

@@ -77,6 +77,7 @@ clean() {
     rm -f ./*.txt
     rm -f ./*.csv
     rm -f ./*.out
+    rm -f ./rtl.md5*
     exit 0
 }
 
@@ -134,12 +135,56 @@ get_defines() {
 }
 
 #------------------------------------------------------------------------------
+# Check the RTL files changed. If yes, rerun the complete build, else only run
+# Returns:
+#   - 1 if never has been compiled
+#   - 1 if sources didn't changed
+#   - 0 otherwise
+#------------------------------------------------------------------------------
+code_changed() {
+
+    md5sum ../../rtl/* ./friscv_testbench.sv > rtl.md5.new
+
+    if [ ! -e rtl.md5 ]; then
+        mv rtl.md5.new rtl.md5
+        return 1
+    else
+        diff rtl.md5 rtl.md5.new
+        diff_ret=$?
+        if [ "$diff_ret" -eq 1 ]; then
+            mv rtl.md5.new rtl.md5
+            return 1
+        fi
+        return 0
+    fi
+}
+
+#------------------------------------------------------------------------------
 # Tests execution
 #------------------------------------------------------------------------------
 run_tests() {
 
+    # Check first if we need to compile the sources
+    code_changed
+    to_compile=$?
+    if [ "$to_compile" -eq 1 ]; then
+        run_only=""
+    else
+        run_only="-run-only"
+        echo "INFO: Sources didn't change, will not compile the testbench"
+    fi
+
+    did_compile=0
+
     # Execute one by one the available tests
     for test in $1; do
+
+        # Go to run-only once we know the testbench has been compiled one time
+        if [[ $did_compile -eq 1 ]]; then
+            run_only="-run-only"
+            did_compile=0
+            echo "Sources didn't change, will not compile the testbench"
+        fi
 
         # Convert the verilog content into a file to init the RAM
         # and grab first address written, expected to be the boot adddress
@@ -161,8 +206,12 @@ run_tests() {
         svutRun -t ./friscv_testbench.sv \
                 -define "$DEFINES" \
                 -sim $SIM \
+                $run_only \
                 -include ../../dep/svlogger ../../rtl ../../dep/axi-crossbar/rtl \
                 | tee -a simulation.log
+
+        # A flag to indicate next test run within a testsuite can be run-only
+        did_compile=1
 
         # Grab the return code used later to determine the compliance status
         test_ret=$((test_ret+$?))
@@ -193,7 +242,6 @@ run_testsuite() {
     echo "Start testsuite execution"
 
     # Erase first the temporary files
-    rm -fr ./build
     rm -f ./test*.v
     rm -f ./*.log
     rm -f ./*.txt

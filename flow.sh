@@ -82,18 +82,18 @@ run_sims() {
 
     if [[ $1 == "core" ]] || [[ $1 == "all" ]]; then
         if [[ $2 == "icarus" ]] || [[ $2 == "all" ]]; then
-            ./run.sh --simulator icarus --tb core --nocompile 1
+            ./run.sh -c && ./run.sh --simulator icarus --tb core --nocompile 1
         fi
         if [[ $2 == "verilator" ]] || [[ $2 == "all" ]]; then
-            ./run.sh --simulator verilator --tb core --nocompile 1
+            ./run.sh -c && ./run.sh --simulator verilator --tb core --nocompile 1
         fi
     fi
     if [[ $1 == "platform" ]] || [[ $1 == "all" ]]; then
         if [[ $2 == "icarus" ]] || [[ $2 == "all" ]]; then
-            ./run.sh --simulator icarus --tb platform --nocompile 1
+            ./run.sh -c && ./run.sh --simulator icarus --tb platform --nocompile 1
         fi
         if [[ $2 == "verilator" ]] || [[ $2 == "all" ]]; then
-            ./run.sh --simulator verilator --tb platform --nocompile 1
+            ./run.sh -c && ./run.sh --simulator verilator --tb platform --nocompile 1
         fi
     fi
 }
