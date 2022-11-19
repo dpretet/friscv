@@ -21,6 +21,7 @@ jobs:
       - run: iverilog -V
       - run: brew install verilator
       - run: verilator -V
+      - run: brew install md5sha1sum
       - run: git submodule update --init --recursive
       - run: ./flow.sh sim wba-testsuite core icarus
       - run: ./flow.sh sim wba-testsuite core verilator
@@ -34,6 +35,7 @@ jobs:
       - run: iverilog -V
       - run: brew install verilator
       - run: verilator -V
+      - run: brew install md5sha1sum
       - run: git submodule update --init --recursive
       - run: ./flow.sh sim riscv-testsuite core icarus
       - run: ./flow.sh sim riscv-testsuite core verilator
@@ -47,6 +49,7 @@ jobs:
       - run: iverilog -V
       - run: brew install verilator
       - run: verilator -V
+      - run: brew install md5sha1sum
       - run: git submodule update --init --recursive
       - run: ./flow.sh sim c-testsuite core icarus
       - run: ./flow.sh sim c-testsuite core verilator
