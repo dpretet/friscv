@@ -17,7 +17,7 @@ module friscv_io_subsystem
 
     #(
         parameter ADDRW           = 16,
-        parameter DATAW           = 32,
+        parameter DATAW           = 128,
         parameter IDW             = 16,
         parameter XLEN            = 32,
         parameter SLV0_ADDR       = 0,
@@ -66,9 +66,9 @@ module friscv_io_subsystem
         output logic                      uart_tx,
         output logic                      uart_rts,
         input  wire                       uart_cts,
-        // software interrupt 
+        // software interrupt
         output logic                      sw_irq,
-        // timer interrupt 
+        // timer interrupt
         output logic                      timer_irq
     );
 
@@ -130,7 +130,7 @@ module friscv_io_subsystem
     // FSM converting AXI4-lite to APB
     ///////////////////////////////////////////////////////////////////////////
 
-    always @ (*) 
+    always @ (*)
     begin
         if (mst_addr>=SLV0_ADDR && mst_addr<(SLV0_ADDR+SLV0_SIZE)) begin
             misroute = 1'b0;
@@ -366,12 +366,12 @@ module friscv_io_subsystem
         .uart_cts  (uart_cts)
     );
 
-    friscv_clint 
+    friscv_clint
     #(
         .ADDRW (ADDRW),
         .XLEN  (XLEN)
     )
-    clint 
+    clint
     (
         .aclk      (aclk),
         .aresetn   (aresetn),

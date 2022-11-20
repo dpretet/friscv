@@ -5,9 +5,6 @@
 
 int echo(int argc, char * argv[]) {
 
-    // Manage options, just echo if invalid
-    // -n to avoid printing last new line
-    
     // Just exit, we except at least argv[0]
     if (argc==0) {
         print_s("No argument here");

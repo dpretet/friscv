@@ -239,6 +239,8 @@ module friscv_uart
                             tx_push <= 1'b1;
                             slv_ready <= 1'b1;
                         end
+                    end else begin
+                        slv_ready <= 1'b1;
                     end
                     slv_rdata <= {24'b0, register2};
 

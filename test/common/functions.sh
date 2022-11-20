@@ -6,6 +6,7 @@
 # -e: exit if one command fails
 # -o pipefail: causes a pipeline to fail if any command fails
 # set -e -o pipefail
+set -x
 
 #------------------------------------------------------------------------------
 # Variables and setup
@@ -65,6 +66,8 @@ TRACE_FETCHER=1
 TRACE_PUSHER=1
 [[ -z $TRACE_TB_RAM ]] && TRACE_TB_RAM=1
 
+# Variable used to check if RTL sources or testbench changed. Only compile if 1
+to_compile=0
 
 #------------------------------------------------------------------------------
 # Clean compiled programs
@@ -143,19 +146,20 @@ get_defines() {
 #------------------------------------------------------------------------------
 code_changed() {
 
+    echo "INFO: Check design changes"
     md5sum ../../rtl/* ./friscv_testbench.sv > rtl.md5.new
 
     if [ ! -e rtl.md5 ]; then
+        echo "No precompiled RTL found"
         mv rtl.md5.new rtl.md5
-        return 1
+        to_compile=1
     else
-        diff rtl.md5 rtl.md5.new
-        diff_ret=$?
-        if [ "$diff_ret" -eq 1 ]; then
+        if ! cmp "./rtl.md5" "./rtl.md5.new" > /dev/null 2>&1
+        then
+            echo "RTL changed. Will recompile it"
             mv rtl.md5.new rtl.md5
-            return 1
+            to_compile=1
         fi
-        return 0
     fi
 }
 
@@ -166,8 +170,9 @@ run_tests() {
 
     # Check first if we need to compile the sources
     code_changed
-    to_compile=$?
-    if [ "$to_compile" -eq 1 ]; then
+
+    if [[ "$to_compile" -gt 0 ]]; then
+        echo "INFO: Compile testbench and sources"
         run_only=""
     else
         run_only="-run-only"

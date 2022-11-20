@@ -4,8 +4,13 @@
 
 Misc.
 
+- [ ] Testsuite Rust https://danielmangum.com/posts/risc-v-bytes-rust-cross-compilation/
+- [ ] Testsuite Go
+
 C app
 
+- [ ] Enhance print, tend to have native printf
+- [ ] Inline print
 - [ ] Inline Clint.h
 - [ ] Interrupt
     - [ ] EIP SIP générée depuis le cpp
@@ -15,12 +20,18 @@ C app
 - [ ] Binary tree
 - [ ] Sorting (bitonic)
 - [ ] Matrix computation
+- [ ] Neural network like layer
+- [ ] Binary tree
+- [ ] Msgpk like library 
+- [ ] Tiny tracer
+    - [ ] https://github.com/Naitsirc98/Tiny-Ray-Tracer
+    - [ ] https://github.com/ssloy/tinyraytracer
+- [ ] Use little script lang Beariish/little: A small, easily embedded language implemented in a single .c file
+- [ ] Testcase C de mult/div
+- [ ] Testcase C (Rand access) pour les ORs de memory
+
 
 Minimalistic Unix
-    - Execute, each function must use argc argv > Rewrite application, read original code source
-        - [ ] sleep
-        - [ ] help
-        - [ ] reboot
     - How heap works? Manage malloc/free
     - tool to trace: https://github.com/janestreet/magic-trace
     - Support privileged instructions, supervisor mode & user mode
@@ -63,3 +74,9 @@ Minimalistic Unix
     - Able to update the FPGA bitstream with the new program
 - [ ] Implement a neural network with the processor and TF lite
 - [ ] Retro gaming platform
+
+DONE:
+- [X] Execute, each function must use argc argv > Rewrite application, read original code source
+    - [X] sleep
+    - [X] help
+    - [X] reboot

@@ -243,6 +243,8 @@ module friscv_testbench(
     assign imem_wvalid = 1'b0;
     assign imem_bready = 1'b1;
 
+    initial ext_irq = 1'b0;
+
     `ifdef GEN_EIRQ
         generate
         if (`GEN_EIRQ>0) begin
@@ -266,8 +268,6 @@ module friscv_testbench(
             end
         end
         endgenerate
-    `else
-        assign ext_irq = 1'b0;
     `endif
 
     // Run the testbench by using only the CPU core

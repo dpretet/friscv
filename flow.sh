@@ -79,6 +79,8 @@ help() {
 
 
 run_sims() {
+    # Run all simulation specified for CI run
+    # rm -f rtl.md5 force to rebuild the testbench and the sources
 
     if [[ $1 == "core" ]] || [[ $1 == "all" ]]; then
         if [[ $2 == "icarus" ]] || [[ $2 == "all" ]]; then

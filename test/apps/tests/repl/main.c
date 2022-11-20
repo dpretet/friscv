@@ -28,7 +28,6 @@ int main() {
     const char * c_echo = "echo";
     const char * c_sleep = "sleep";
     const char * c_shutdown = "shutdown";
-    const char * c_exit = "exit";
     const char * c_ebreak = "ebreak";
     const char * c_help = "help";
 
@@ -93,7 +92,6 @@ int main() {
 
             // Shutdown / ebreak / exit
             } else if (strncmp(argv[0], c_shutdown, 8) == 0 ||
-                       strncmp(argv[0], c_exit, 4) == 0 ||
                        strncmp(argv[0], c_ebreak, 6) == 0) {
                 SUCCESS("Exiting... See you!");
                 shutdown();
@@ -104,7 +102,6 @@ int main() {
                 MSG("   help: print this menu\n");
                 MSG("   echo: print the chars passed\n");
                 MSG("   sleep: pause during the time specified\n");
-                MSG("   exit: stop the processor (execute EBREAK)\n");
                 MSG("   ebreak: same than exit\n");
                 MSG("   shutdown: same than exit\n");
 

@@ -8,10 +8,6 @@ static inline void shutdown() {
     asm volatile("ebreak");
 }
 
-static inline void exit() {
-    asm volatile("ebreak");
-}
-
 static inline void ebreak() {
     asm volatile("ebreak");
 }
