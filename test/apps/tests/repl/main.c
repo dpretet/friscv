@@ -11,6 +11,7 @@
 #include "clint.h"
 #include "tty.h"
 #include "echo.h"
+#include "benchmark.h"
 
 // ASCII codes
 #define EOT 4
@@ -30,6 +31,7 @@ int main() {
     const char * c_shutdown = "shutdown";
     const char * c_ebreak = "ebreak";
     const char * c_help = "help";
+    const char * c_benchmark = "benchmark";
 
     int inChar;
     int eot = 0;
@@ -81,7 +83,6 @@ int main() {
         // Once finish to empty the FIFO, execute the command and print a new prompt marker
         } else {
 
-            // echo(argc, pargv);
             // Echo
             if (strncmp(argv[0], c_echo, 4) == 0) {
                 echo(argc, pargv);
@@ -89,6 +90,10 @@ int main() {
             // Sleep during N cycles
             } else if (strncmp(argv[0], c_sleep, 5) == 0) {
                 sleep(argc, pargv);
+
+            // Benchmark the processor by computing some algorithms
+            } else if (strncmp(argv[0], c_benchmark, 9) == 0) {
+                benchmark(argc, pargv);
 
             // Shutdown / ebreak / exit
             } else if (strncmp(argv[0], c_shutdown, 8) == 0 ||

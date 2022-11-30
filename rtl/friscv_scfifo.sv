@@ -53,6 +53,7 @@ module friscv_scfifo
     logic                  wr_en;
     logic [ADDR_WIDTH  :0] wrptr;
     logic [ADDR_WIDTH  :0] rdptr;
+    logic [ADDR_WIDTH  :0] ptr_diff;
     logic                  empty_flag;
     logic                  pass_thru;
     logic [DATA_WIDTH-1:0] data_fifo;
@@ -100,12 +101,13 @@ module friscv_scfifo
     // Full and empty flags
     ///////////////////////////////////////////////////////////////////////////
 
+    assign ptr_diff = wrptr - rdptr;
     assign empty_flag = (wrptr == rdptr) ? 1'b1 : 1'b0;
-    assign full = ((wrptr - rdptr) == {1'b1,{ADDR_WIDTH{1'b0}}}) ? 1'b1 : 1'b0;
+    assign full = (ptr_diff == {1'b1,{ADDR_WIDTH{1'b0}}}) ? 1'b1 : 1'b0;
 
     // TODO: Verify the almost flags
-    assign aempty = ((wrptr-1) == rdptr) ? 1'b1 : 1'b0;
-    assign afull = ((wrptr - rdptr) == {1'b0,{ADDR_WIDTH{1'b1}}}) ? 1'b1 : 1'b0;
+    assign aempty = (ptr_diff == {{ADDR_WIDTH{1'b0}}, 1'b1}) ? 1'b1 : 1'b0;
+    assign afull = (ptr_diff == {1'b0,{ADDR_WIDTH{1'b1}}}) ? 1'b1 : 1'b0;
 
     ///////////////////////////////////////////////////////////////////////////
     // Internal RAM

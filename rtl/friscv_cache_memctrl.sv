@@ -162,12 +162,13 @@ module friscv_cache_memctrl
     logic                  rch_empty;
     logic                  wch_empty;
     logic                  wch_aempty;
-    logic                  push_wch;
-    logic                  push_wch_r;
-    logic                  pull_wch;
+    logic                  push_woffset;
+    logic                  push_woffset_r;
+    logic                  pull_woffset;
 
-    logic [OFFSET_W  -1:0] wr_position;
-    logic [OFFSET_W  -1:0] wr_position_ff;
+    logic [OFFSET_W  -1:0] wr_strb_pos;
+    logic [OFFSET_W  -1:0] woffset;
+    logic [OFFSET_W  -1:0] woffset_r;
 
     logic [AXI_ID_W  -1:0] arid_m;
     logic [AXI_ID_W  -1:0] rid_m;
@@ -343,6 +344,17 @@ module friscv_cache_memctrl
         assign mem_wlast = 1'b1;
         assign mem_wdata = {SCALE{mst_wdata}};
 
+        always @ (*) begin: GEN_WSTRB
+            for (int i=0;i<SCALE;i=i+1) begin
+                if (i==wr_strb_pos) begin: WSTRB_ON
+                    mem_wstrb[i*XLEN/8+:XLEN/8] = mst_wstrb;
+                end else begin: WSTRB_OFF
+                    mem_wstrb[i*XLEN/8+:XLEN/8] = {XLEN/8{1'b0}};
+                end
+            end
+        end
+
+
         friscv_scfifo
         #(
             .PASS_THRU  (0),
@@ -355,40 +367,34 @@ module friscv_cache_memctrl
             .aresetn  (aresetn),
             .srst     (srst),
             .flush    (1'b0),
-            .data_in  (mst_awaddr[OFFSET_IX +:OFFSET_W]),
-            .push     (push_wch),
+            .data_in  (woffset),
+            .push     (push_woffset),
             .full     (wch_full),
             .afull    (),
-            .data_out (wr_position_ff),
-            .pull     (pull_wch),
+            .data_out (woffset_r),
+            .pull     (pull_woffset),
             .empty    (wch_empty),
             .aempty   (wch_aempty)
         );
 
-        assign push_wch = mem_awvalid & mem_awready & (mem_wvalid & !mem_wready | push_wch_r);
-        assign pull_wch = mem_wvalid & mem_wready;
-        assign wr_position = (wch_empty) ? mst_awaddr[OFFSET_IX+:OFFSET_W] : wr_position_ff;
+        assign woffset = mst_awaddr[OFFSET_IX+:OFFSET_W];
 
-        always @ (*) begin: GEN_WSTRB
-            for (int i=0;i<SCALE;i=i+1) begin
-                if (i==wr_position) begin: WSTRB_ON
-                    mem_wstrb[i*XLEN/8+:XLEN/8] = mst_wstrb;
-                end else begin: WSTRB_OFF
-                    mem_wstrb[i*XLEN/8+:XLEN/8] = {XLEN/8{1'b0}};
-                end
-            end
-        end
+        // Push in the FIFO if data channel not ready or if previous request on data channel has
+        // been stalled
+        assign push_woffset = mem_awvalid & mem_awready & (mem_wvalid & (!mem_wready | push_woffset_r));
+        assign pull_woffset = mem_wvalid & mem_wready & push_woffset_r;
+        assign wr_strb_pos = (wch_empty) ? woffset : woffset_r;
 
         always @ (posedge aclk or negedge aresetn) begin
             if (!aresetn) begin
-                push_wch_r <= 1'b0;
+                push_woffset_r <= 1'b0;
             end else if (srst) begin
-                push_wch_r <= 1'b0;
+                push_woffset_r <= 1'b0;
             end else begin
-                if (mem_awvalid & mem_awready & (mem_wvalid & !mem_wready)) begin
-                    push_wch_r <= 1'b1;
-                end else if (wch_aempty && !(pull_wch & push_wch)) begin
-                    push_wch_r <= 1'b0;
+                if (mem_awvalid && mem_awready && (mem_wvalid && !mem_wready)) begin
+                    push_woffset_r <= 1'b1;
+                end else if (wch_aempty && pull_woffset && !push_woffset) begin
+                    push_woffset_r <= 1'b0;
                 end
             end
         end
@@ -417,15 +423,15 @@ module friscv_cache_memctrl
         assign mem_wdata = {AXI_DATA_W{1'b0}};
         assign mem_wstrb = {AXI_DATA_W/8{1'b0}};
         assign mem_bready = 1'b1;
-        
-        assign wr_position = {OFFSET_W{1'b0}};
-        assign wr_position_ff = {OFFSET_W{1'b0}};
+        assign wr_strb_pos = {OFFSET_W{1'b0}};
+        assign woffset = {OFFSET_W{1'b0}};
+        assign woffset_r = {OFFSET_W{1'b0}};
         assign wch_full = 1'b0;
         assign wch_empty = 1'b0;
         assign wch_aempty = 1'b0;
-        assign push_wch = 1'b0;
-        assign push_wch_r = 1'b0;
-        assign pull_wch = 1'b0;
+        assign push_woffset = 1'b0;
+        assign push_woffset_r = 1'b0;
+        assign pull_woffset = 1'b0;
     end
     endgenerate
 

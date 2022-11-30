@@ -41,7 +41,7 @@ TRACE_TB_RAM=0
 GEN_EIRQ=0
 
 # Disable SVlogger at compile to avoid useless logs
-NO_SVL=0
+NO_SVL=1
 
 source ../common/functions.sh
 
