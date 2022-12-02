@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include "clint.h"
 #include "irq.h"
+#include "printf.h"
 #include "tty.h"
 #include "system.h"
 
@@ -15,7 +16,7 @@ int sleep(int argc, char * argv[]) {
 
     // Just sleep 100 cycles
     if (argc==0) {
-        print_s("Will sleep 1000 cycles");
+        _print("Will sleep 1000 cycles");
     }
 
     // Just output a new line

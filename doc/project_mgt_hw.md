@@ -42,8 +42,8 @@ Misc.
 - [ ] UART: Support 9/10 bits & parity
 - [ ] Removed the 2 LSBs in instruction cache while always 2'b11 (6.25% saving)
 - [ ] Branch prediction
-    https://blog.cloudflare.com/branch-predictor/
-    https://github.com/BrunoLevy/learn-fpga/blob/master/FemtoRV/TUTORIALS/FROM_BLINKER_TO_RISCV/PIPELINE.md
+    - https://blog.cloudflare.com/branch-predictor/
+    - https://github.com/BrunoLevy/learn-fpga/blob/master/FemtoRV/TUTORIALS/FROM_BLINKER_TO_RISCV/PIPELINE.md
 
 
 AXI4 Infrastructure
@@ -54,7 +54,6 @@ AXI4 Infrastructure
     - [ ] Reduce latency in switching logic
     - [ ] Ajouter PERROR sur l’APB, to log on error reporting bus
 - [ ] Implement a L2 cache stage
-- [ ] Update acache usage to better use ACACHE dor dCache
 - [ ] Ooo write completion, response needs to come from the destination if IO write
 
 
@@ -99,18 +98,18 @@ Hardware Test:
 - [ ] Support LiteX: https://github.com/litex-hub/litex-boards, https://pcotret.gitlab.io/blog/processor_in_litex/
 - [ ] Azure: https://www.xilinx.com/products/boards-and-kits/alveo/cloud-solutions/microsoft-azure.html
 - [ ] AWS: https://www.xilinx.com/products/design-tools/acceleration-zone/aws.html
+- [ ] Openlane submission
 
 
 # Ideas / Applications
 
 - [ ] Next CPU architecture:
-    - Study SIMD architecture
-    - Study vector architecture
+    - SIMD architecture
+    - Vector architecture
     - Application to GPGPU area
-    - Many-core / NoC architecture (power/interupt consideration)
+    - Many-core / NoC architecture (power/interrupt consideration)
     - Support float16 & float8, more generaly low-precision arithmetic like int8...
 - [ ] Build a testing platform to validate IPs
-- [ ] Openlane submission
 - [ ] Secure platform https://msrc-blog.microsoft.com/2022/09/06/whats-the-smallest-variety-of-cheri/
 
 

@@ -10,6 +10,7 @@
 #include "irq.h"
 #include "clint.h"
 #include "tty.h"
+#include "printf.h"
 #include "echo.h"
 #include "benchmark.h"
 
@@ -112,11 +113,8 @@ int main() {
 
             } else {
                 ERROR("Unrecognized command\n");
-                print_s("\nargc ");
-                print_i(argc);
-                print_s("\nargv ");
-                print_s(argv[0]);
-                print_s("\n");
+                _print("\nargc: %x", argc);
+                _print("\nargv: %s\n", argv[0]);
             }
             eot = 0;
             ix = 0;

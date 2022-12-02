@@ -54,6 +54,7 @@ Minimalistic Unix
     - [ ] Run SPEC benchmark
     - [ ] Run NBench
     - [ ] https://github.com/darklife/darkriscv/tree/master/src/coremark 
+- [ ] Code Pong with AI for auto game
 - [ ] Run Doom
 - [ ] Code the game of life
 - [ ] Code Tetris
@@ -76,6 +77,8 @@ Minimalistic Unix
 - [ ] Retro gaming platform
 
 DONE:
+- [X] Benchmark function
+    - chacha20
 - [X] Execute, each function must use argc argv > Rewrite application, read original code source
     - [X] sleep
     - [X] help

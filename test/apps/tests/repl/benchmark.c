@@ -3,6 +3,7 @@
 
 #include "chacha20.h"
 #include <stdint.h>
+#include "tty.h"
 
 int chacha20_bench(int max_iterations);
 
@@ -59,7 +60,20 @@ char ciphertext[128] = {
  */
 int benchmark(int argc, char *argv[]) {
 
-    chacha20_bench(1);
+    int bench_start, bench_end;
+
+    // asm volatile("csrr %0, rdcycle" : "=r"(bench_start));
+
+    int ret=0;
+    ret = chacha20_bench(1);
+
+    // asm volatile("csrr %0, rdcycle" : "=r"(bench_end));
+
+    if (ret)
+        ERROR("Benchmark failed\n");
+    else
+        SUCCESS("Benchmark finished successfully\n");
+
     return 0;
 }
 
@@ -85,7 +99,6 @@ int chacha20_bench(int max_iterations) {
         block_counter = 0x1;
 
         chacha20_block(key, &block_counter, nonce, block1);
-        /*
         chacha20_serialize(block1, serial);
 
         for (int i=0;i<64;i++) {
@@ -104,7 +117,6 @@ int chacha20_bench(int max_iterations) {
             if (data[i]!=ciphertext[i])
                 ret += 1;
         }
-        */
         nb_loop += 1;
     }
 

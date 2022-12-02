@@ -4,6 +4,8 @@
 #ifndef TTY_H
 #define TTY_H
 
+#include "printf.h"
+
 // Regular text
 #define BLK "\e[0;30m"
 #define RED "\e[0;31m"
@@ -78,17 +80,12 @@
 #define CRESET "\e[0m"
 #define COLOR_RESET "\e[0m"
 
-// Print string, almost eauivalent to printf but doesn't access arguments
-void print_s(const char * str);
-// Print a number, single digit only
-void print_i(int i);
-
 // Standardized print function for logging
-#define MSG(str) print_s(WHT str CRESET)
-#define SUCCESS(str) print_s(GRN str CRESET)
-#define INFO(str) print_s(BLU "INFO: " str CRESET)
-#define WARNING(str) print_s(YEL "WARNING: " str CRESET)
-#define CRITICAL(str) print_s(MAG "CRITICAL: " str CRESET)
-#define ERROR(str) print_s(RED "ERROR: " str CRESET)
+#define MSG(str) _print(WHT str CRESET)
+#define SUCCESS(str) _print(GRN str CRESET)
+#define INFO(str) _print(BLU "INFO: " str CRESET)
+#define WARNING(str) _print(YEL "WARNING: " str CRESET)
+#define CRITICAL(str) _print(MAG "CRITICAL: " str CRESET)
+#define ERROR(str) _print(RED "ERROR: " str CRESET)
 
 #endif // TTY_H

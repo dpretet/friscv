@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include "tty.h"
+#include "printf.h"
 #include "clint.h"
 #include "system.h"
 #include "irq.h"
@@ -18,21 +19,21 @@ void handle_interrupt(int mcause) {
 
     // MSIP
     if (mcause == 0x80000003) {
-        print_s("Software interrupt\n");
+        _print("Software interrupt\n");
         msip_irq_off();
     
     // MTIP
     } else if (mcause == 0x80000007) {
-        print_s("Timer interrupt\n");
+        _print("Timer interrupt\n");
         mtip_irq_off();
 
     // MEIP
     } else if (mcause == 0x8000000B) {
-        print_s("External interrupt\n");
+        _print("External interrupt\n");
         meip_irq_off();
 
     } else {
-        print_s("Unknown interrupt");
+        _print("Unknown interrupt");
         shutdown();
     }
 }
@@ -40,30 +41,30 @@ void handle_interrupt(int mcause) {
 void handle_exception(int mcause) {
 
     if (mcause == 0x0) {
-        print_s("Instruction address misaligned");
+        _print("Instruction address misaligned");
         shutdown();
     } else if (mcause == 0x1) {
-        print_s("Instruction access fault");
+        _print("Instruction access fault");
         shutdown();
     } else if (mcause == 0x2) {
-        print_s("Illegal instruction");
+        _print("Illegal instruction");
         shutdown();
     } else if (mcause == 0x8) {
-        print_s("ECALL (U-mode)");
+        _print("ECALL (U-mode)");
     } else if (mcause == 0x9) {
-        print_s("ECALL (S-mode)");
+        _print("ECALL (S-mode)");
     } else if (mcause == 0xB) {
-        print_s("ECALL (M-mode)");
+        _print("ECALL (M-mode)");
     } else if (mcause == 0x3) {
-        print_s("EBREAK");
+        _print("EBREAK");
     } else if (mcause == 0x6) {
-        print_s("Store misalign");
+        _print("Store misalign");
         shutdown();
     } else if (mcause == 0x4) {
-        print_s("Load misalign");
+        _print("Load misalign");
         shutdown();
     } else {
-        print_s("Unknown exception");
+        _print("Unknown exception");
         shutdown();
     }
     
@@ -77,15 +78,13 @@ void handle_trap() {
     asm volatile("csrr %0, mcause" : "=r"(mcause));
     asm volatile("csrr %0, mepc" : "=r"(mepc));
 
-    print_s("Handling trap: MCAUSE=");
-    print_i(mcause);
-    print_s("\n");
+    _print("Handling trap: MCAUSE=%x\n", mcause);
 
     if (mcause >> 31) {
-        print_s("Handling interrupt\n");
+        _print("Handling interrupt\n");
         handle_interrupt(mcause);
     } else {
-        print_s("Handling exception\n");
+        _print("Handling exception\n");
         handle_exception(mcause);
         asm volatile("csrr t0, mepc");
         asm volatile("addi t0, t0, 0x4");
