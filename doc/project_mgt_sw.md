@@ -59,7 +59,6 @@ Minimalistic Unix
 - [ ] Build a synth
 - [ ] Built-in TCP/UDP engine, streamed thru the UART or any other interface
 - [ ] Be able to inject ASM in the processor with the UART and run a test
-
 - [ ] Build an Amiga: Emulate M68K and build an emulation platform
 - [ ] Logicstic regression to setup optimized procesor configuration
 - [ ] Possibility to use a program executed upon a testbench or on board
@@ -76,9 +75,12 @@ Minimalistic Unix
 
 DONE:
 - [X] Enhance print, tend to have native printf
-- [X] Benchmark function
+- [X] Benchmark command
     - chacha20
-- [X] Execute, each function must use argc argv > Rewrite application, read original code source
+    - matrix computation
+- [X] Dev some basic commands
+    - [X] must use argc argv 
     - [X] sleep
     - [X] help
     - [X] reboot
+    - [X] exit

@@ -57,6 +57,8 @@ TC=
 [[ -z $INTERACTIVE ]] && INTERACTIVE=0
 # Generate an external IRQ in the core
 [[ -z $GEN_EIRQ ]] && GEN_EIRQ=0
+# RAM is by default in compliance mode
+[[ -z $RAM_MODE ]] && RAM_MODE="compliance"
 
 [[ -z $TRACE_CONTROL ]] && TRACE_CONTROL=1
 [[ -z $TRACE_CACHE ]] && TRACE_CACHE=1
@@ -107,6 +109,7 @@ get_defines() {
     echo "  - INTERACTIVE:      $INTERACTIVE"
     echo "  - ERROR_STATUS_X31: $ERROR_STATUS_X31"
     echo "  - GEN_EIRQ:         $GEN_EIRQ"
+    echo "  - RAM_MODE:         $RAM_MODE"
     echo "  - TRACE_CONTROL:    $TRACE_CONTROL"
     echo "  - TRACE_CACHE:      $TRACE_CACHE"
     echo "  - TRACE_BLOCKS:     $TRACE_BLOCKS"
@@ -126,6 +129,9 @@ get_defines() {
     DEFINES="${DEFINES}INTERACTIVE=$INTERACTIVE;"
     DEFINES="${DEFINES}ERROR_STATUS_X31=$ERROR_STATUS_X31;"
     DEFINES="${DEFINES}GEN_EIRQ=$GEN_EIRQ;"
+
+    [[ $RAM_MODE == "performance" ]] && DEFINES="${DEFINES}RAM_MODE_PERF=1;"
+
     [[ $TRACE_CONTROL -eq 1 ]] && DEFINES="${DEFINES}TRACE_CONTROL=$TRACE_CONTROL;"
     [[ $TRACE_CACHE   -eq 1 ]] && DEFINES="${DEFINES}TRACE_CACHE=$TRACE_CACHE;"
     [[ $TRACE_BLOCKS  -eq 1 ]] && DEFINES="${DEFINES}TRACE_BLOCKS=$TRACE_BLOCKS;"

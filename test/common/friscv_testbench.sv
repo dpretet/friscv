@@ -141,6 +141,12 @@ module friscv_testbench(
     parameter TIMEOUT = `TIMEOUT;
     // Minimum program counter value a test needs to reach
     parameter MIN_PC = `MIN_PC;
+    
+    `ifdef RAM_MODE_PERF
+    parameter RAM_MODE = 1;
+    `else
+    parameter RAM_MODE = 0;
+    `endif
 
 `ifndef VERILATOR
     logic                      aclk;
@@ -352,6 +358,11 @@ module friscv_testbench(
 
         axi4l_ram
         #(
+            `ifdef RAM_MODE_PERF
+                .MODE ("performance"),
+            `else
+                .MODE ("compliance"),
+            `endif
             .INIT             ("test.v"),
             .AXI_ADDR_W       (AXI_ADDR_W),
             .AXI_ID_W         (AXI_ID_W),
@@ -526,6 +537,11 @@ module friscv_testbench(
 
         axi4l_ram
         #(
+            `ifdef RAM_MODE_PERF
+                .MODE ("performance"),
+            `else
+                .MODE ("compliance"),
+            `endif
             .INIT             ("test.v"),
             .AXI_ADDR_W       (AXI_ADDR_W),
             .AXI_ID_W         (AXI_ID_W),

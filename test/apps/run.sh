@@ -43,6 +43,9 @@ GEN_EIRQ=0
 # Disable SVlogger at compile to avoid useless logs
 NO_SVL=1
 
+# Use the RAM with performance mode, complete requests at full speed
+RAM_MODE="performance"
+
 source ../common/functions.sh
 
 
