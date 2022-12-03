@@ -13,7 +13,6 @@ int echo(int argc, char * argv[]) {
 
     // Just output a new line
     if (argc==1) {
-        _print("Just one argument here\n");
         return 0;
     }
 

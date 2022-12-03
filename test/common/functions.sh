@@ -61,8 +61,8 @@ TC=
 [[ -z $TRACE_CONTROL ]] && TRACE_CONTROL=1
 [[ -z $TRACE_CACHE ]] && TRACE_CACHE=1
 [[ -z $TRACE_BLOCKS ]] && TRACE_BLOCKS=1
-TRACE_FETCHER=1
-TRACE_PUSHER=1
+[[ -z $TRACE_FETCHER ]] && TRACE_FETCHER=1
+[[ -z $TRACE_PUSHER ]] && TRACE_PUSHER=1
 [[ -z $TRACE_TB_RAM ]] && TRACE_TB_RAM=1
 
 # Variable used to check if RTL sources or testbench changed. Only compile if 1

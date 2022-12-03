@@ -76,10 +76,8 @@ int _print(char * msg, ...) {
 
             // Integer support in base 10
             if (*msg=='d') {
-                // Grab from argument and convert as char *
                 int_to_print = va_arg(params, int);
                 todecstr(int_to_print, int_as_str);
-                // Print it
                 if (int_as_str[10] == '-')
                     uart_putchar('-');
                 while (int_as_str[i]!='\0') {

@@ -70,6 +70,7 @@ module friscv_axi_or_tracker
                 rd_or_cnt <= rd_or_cnt - 1'b1;
             end
 
+            `ifdef TRACE_PUSHER
             //synthesis translate_off
             //synopsys translate_off
             if (awvalid && awready && !bvalid && max_wr_or) begin
@@ -85,6 +86,7 @@ module friscv_axi_or_tracker
             end
             //synopsys translate_on
             //synthesis translate_on
+            `endif
         end
     end
 

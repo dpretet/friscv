@@ -33,6 +33,7 @@ int main() {
     const char * c_ebreak = "ebreak";
     const char * c_help = "help";
     const char * c_benchmark = "benchmark";
+    const char * c_exit = "exit";
 
     int inChar;
     int eot = 0;
@@ -98,6 +99,7 @@ int main() {
 
             // Shutdown / ebreak / exit
             } else if (strncmp(argv[0], c_shutdown, 8) == 0 ||
+                       strncmp(argv[0], c_exit, 4) == 0 ||
                        strncmp(argv[0], c_ebreak, 6) == 0) {
                 SUCCESS("Exiting... See you!");
                 shutdown();

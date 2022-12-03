@@ -2,16 +2,8 @@
 
 # BACKLOG
 
-Misc.
-
-- [ ] Testsuite Rust https://danielmangum.com/posts/risc-v-bytes-rust-cross-compilation/
-- [ ] Testsuite Go
-
 C app
 
-- [ ] Enhance print, tend to have native printf
-- [ ] Inline print
-- [ ] Inline Clint.h
 - [ ] Interrupt
     - [ ] EIP SIP générée depuis le cpp
     - [ ] https://mullerlee.cyou/2020/07/09/riscv-exception-interrupt/#How-to-run-my-code
@@ -30,14 +22,20 @@ C app
 - [ ] Testcase C de mult/div
 - [ ] Testcase C (Rand access) pour les ORs de memory
 
+Misc.
+
+- [ ] Testsuite Rust https://danielmangum.com/posts/risc-v-bytes-rust-cross-compilation/
+- [ ] Testsuite Go
+
+
 
 Minimalistic Unix
-    - How heap works? Manage malloc/free
-    - tool to trace: https://github.com/janestreet/magic-trace
-    - Support privileged instructions, supervisor mode & user mode
-    - Add counters
-    - 64 bits support
-    - Support MMU extension
+- How heap works? Manage malloc/free
+- tool to trace: https://github.com/janestreet/magic-trace
+- Support privileged instructions, supervisor mode & user mode
+- Add counters
+- 64 bits support
+- Support MMU extension
 
 - [ ] Processor profiling
     - https://github.com/LucasKl/riscv-function-profiling
@@ -77,6 +75,7 @@ Minimalistic Unix
 - [ ] Retro gaming platform
 
 DONE:
+- [X] Enhance print, tend to have native printf
 - [X] Benchmark function
     - chacha20
 - [X] Execute, each function must use argc argv > Rewrite application, read original code source

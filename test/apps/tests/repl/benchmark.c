@@ -5,11 +5,18 @@
 #include <stdint.h>
 #include "tty.h"
 
-int chacha20_bench(int max_iterations);
+// -----------------------------------------------------------------------------------------------
+// Benchmarks global variables
+// -----------------------------------------------------------------------------------------------
 
+int chacha20_bench(int max_iterations);
+int matrix_bench(int max_iterations);
+
+int chacha20_exe_time;
+int matrix_exe_time = 0;
 
 // -----------------------------------------------------------------------------------------------
-/* Chacha20 global variables */
+// Chacha20 global variables
 // -----------------------------------------------------------------------------------------------
 
 uint32_t key[32] = {
@@ -48,8 +55,17 @@ char ciphertext[128] = {
     0x5a,0xf9,0x0b,0xbf,0x74,0xa3,0x5b,0xe6,0xb4,0x0b,0x8e,0xed,0xf2,0x78,0x5e,0x42,
     0x87,0x4d,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
 };
+
+// -----------------------------------------------------------------------------------------------
+// Matrix global variables
 // -----------------------------------------------------------------------------------------------
 
+int mtxa[3][3] = {{1,1,1}, {1,1,1}, {1,1,1}};
+int mtxb[3][3] = {{2,2,2}, {2,2,2}, {2,2,2}};
+int mtxc[3][3] = {{3,3,3}, {3,3,3}, {3,3,3}};
+int mtxd[3][3] = {{4,4,4}, {4,4,4}, {4,4,4}};
+
+int c_mult_d[3][3] = {{12,12,12}, {12,12,12}, {12,12,12}};
 
 /*  Benchmark function to measure the performance of the core
  *
@@ -60,14 +76,30 @@ char ciphertext[128] = {
  */
 int benchmark(int argc, char *argv[]) {
 
-    int bench_start, bench_end;
-
-    // asm volatile("csrr %0, rdcycle" : "=r"(bench_start));
-
     int ret=0;
-    ret = chacha20_bench(1);
+    int bench_start, bench_end;
+    chacha20_exe_time = 0;
+    matrix_exe_time = 0;
 
-    // asm volatile("csrr %0, rdcycle" : "=r"(bench_end));
+    asm volatile("csrr %0, 0xC00" : "=r"(bench_start));
+
+    if (chacha20_bench(1))
+        _print("Chacha20 computation failed\n");
+
+    if (matrix_bench(1))
+        _print("Matrix computation failed\n");
+
+    asm volatile("csrr %0, 0xC00" : "=r"(bench_end));
+
+    _print("Start time: %x\n", bench_start);
+    _print("End time: %x\n", bench_end);
+    _print("Total elapsed time: %x cycles\n", bench_end-bench_start);
+
+    if (chacha20_exe_time)
+        _print("Chacha20 execution: %x cycles\n", chacha20_exe_time);
+
+    if (matrix_exe_time)
+        _print("Matrix execution: %x cycles\n", matrix_exe_time);
 
     if (ret)
         ERROR("Benchmark failed\n");
@@ -93,6 +125,10 @@ int chacha20_bench(int max_iterations) {
     int ret = 0;
     int nb_loop=0;
     char data[128]; 
+    int start = 0;
+    int end = 0;
+
+    asm volatile("csrr %0, 0xC00" : "=r"(start));
 
     while (nb_loop<max_iterations) {
 
@@ -120,6 +156,111 @@ int chacha20_bench(int max_iterations) {
         nb_loop += 1;
     }
 
+    asm volatile("csrr %0, 0xC00" : "=r"(end));
+
+    chacha20_exe_time = end - start;
+
     return ret;
 }
 
+int matrix_bench(int max_iterations) {
+
+    int ret = 0;
+    int nb_loop=0;
+    int start = 0;
+    int end = 0;
+
+    int matrix[3][3];
+
+    asm volatile("csrr %0, 0xC00" : "=r"(start));
+
+    while (nb_loop<max_iterations) {
+
+        // a + b = x
+        for (int i=0;i<3;i++)
+            for (int j=0;j<3;j++)
+                matrix[i][j] = mtxa[i][j] + mtxb[i][j];
+
+        for (int i=0;i<3;i++)
+            for (int j=0;j<3;j++)
+                if (matrix[i][j] != mtxc[i][j])
+                    ret += 1;
+
+        // b - a = a
+        for (int i=0;i<3;i++)
+            for (int j=0;j<3;j++)
+                matrix[i][j] = mtxb[i][j] - mtxa[i][j];
+
+        for (int i=0;i<3;i++)
+            for (int j=0;j<3;j++)
+                if (matrix[i][j] != mtxa[i][j])
+                    ret += 1;
+
+        // c * d = mtx
+        for (int i=0;i<3;i++)
+            for (int j=0;j<3;j++)
+                matrix[i][j] = mtxc[i][j] * mtxd[i][j];
+
+        for (int i=0;i<3;i++)
+            for (int j=0;j<3;j++)
+                if (matrix[i][j] != c_mult_d[i][j])
+                    ret += 1;
+        // a * b = b
+        for (int i=0;i<3;i++)
+            for (int j=0;j<3;j++)
+                matrix[i][j] = mtxa[i][j] * mtxb[i][j];
+
+        for (int i=0;i<3;i++)
+            for (int j=0;j<3;j++)
+                if (matrix[i][j] != mtxb[i][j])
+                    ret += 1;
+
+        // a * c = c
+        for (int i=0;i<3;i++)
+            for (int j=0;j<3;j++)
+                matrix[i][j] = mtxa[i][j] * mtxc[i][j];
+
+        for (int i=0;i<3;i++)
+            for (int j=0;j<3;j++)
+                if (matrix[i][j] != mtxc[i][j])
+                    ret += 1;
+
+        // a * d = d
+        for (int i=0;i<3;i++)
+            for (int j=0;j<3;j++)
+                matrix[i][j] = mtxa[i][j] * mtxd[i][j];
+
+        for (int i=0;i<3;i++)
+            for (int j=0;j<3;j++)
+                if (matrix[i][j] != mtxd[i][j])
+                    ret += 1;
+
+        // d / 2 = b
+        for (int i=0;i<3;i++)
+            for (int j=0;j<3;j++)
+                matrix[i][j] = mtxd[i][j] / 2;
+
+        for (int i=0;i<3;i++)
+            for (int j=0;j<3;j++)
+                if (matrix[i][j] != mtxb[i][j])
+                    ret += 1;
+
+        //  c / a = c
+        for (int i=0;i<3;i++)
+            for (int j=0;j<3;j++)
+                matrix[i][j] = mtxc[i][j] / mtxa[i][j];
+
+        for (int i=0;i<3;i++)
+            for (int j=0;j<3;j++)
+                if (matrix[i][j] != mtxc[i][j])
+                    ret += 1;
+
+        nb_loop += 1;
+    }
+
+    asm volatile("csrr %0, 0xC00" : "=r"(end));
+
+    matrix_exe_time = end - start;
+
+    return ret;
+}
