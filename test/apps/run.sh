@@ -19,7 +19,7 @@ TIMEOUT=0
 MIN_PC=65692
 
 # Don't drop VCD, to avoid storing GB of raw data
-NO_VCD=1
+NO_VCD=0
 
 # Enable UART link to the processor (platform only)
 INTERACTIVE=1

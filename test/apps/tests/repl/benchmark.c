@@ -11,9 +11,11 @@
 
 int chacha20_bench(int max_iterations);
 int matrix_bench(int max_iterations);
+int printf_bench(int max_iterations);
 
 int chacha20_exe_time;
 int matrix_exe_time = 0;
+int printf_exe_time = 0;
 
 // -----------------------------------------------------------------------------------------------
 // Chacha20 global variables
@@ -80,6 +82,7 @@ int benchmark(int argc, char *argv[]) {
     int bench_start, bench_end;
     chacha20_exe_time = 0;
     matrix_exe_time = 0;
+    printf_exe_time = 0;
 
     asm volatile("csrr %0, 0xC00" : "=r"(bench_start));
 
@@ -88,6 +91,9 @@ int benchmark(int argc, char *argv[]) {
 
     if (matrix_bench(1))
         _print("Matrix computation failed\n");
+
+    if (printf_bench(1))
+        _print("Printf computation failed\n");
 
     asm volatile("csrr %0, 0xC00" : "=r"(bench_end));
 
@@ -100,6 +106,9 @@ int benchmark(int argc, char *argv[]) {
 
     if (matrix_exe_time)
         _print("Matrix execution: %x cycles\n", matrix_exe_time);
+
+    if (printf_exe_time)
+        _print("Printf execution: %x cycles\n", printf_exe_time);
 
     if (ret)
         ERROR("Benchmark failed\n");
@@ -261,6 +270,54 @@ int matrix_bench(int max_iterations) {
     asm volatile("csrr %0, 0xC00" : "=r"(end));
 
     matrix_exe_time = end - start;
+
+    return ret;
+}
+
+int printf_bench(int max_iterations) {
+
+    int nb_loop;
+    int ret = 0;
+    int start = 0;
+    int end = 0;
+
+    asm volatile("csrr %0, 0xC00" : "=r"(start));
+
+    while (nb_loop<max_iterations) {
+
+        ret += _print("Single digit integer:\n");
+        ret += _print("Zero: %d\n", 0);
+        ret += _print("One: %d\n", 1);
+        ret += _print("Minus five: %d\n", -5);
+        ret += _print("Multi digit integers:\n");
+        ret += _print("%d\n", 47);
+        ret += _print("%d\n", -234);
+        ret += _print("%d\n", 234);
+        ret += _print("%d\n", 9876);
+        ret += _print("%d\n", 2147483647);
+        ret += _print("Integer in hexadecimal: %x\n", 0xFDC0ACBD);
+        ret += _print("A char: %c\n", 'X');
+        ret += _print("Line mixing char and int:\n");
+        ret += _print("int: %d char: %c\n", 9, 'Y');
+        ret += _print("Empty new line:\n");
+        ret += _print("\n");
+        ret += _print("A string: %s\n", "I am a string");
+        ret += _print("Multi strings printed in a line:\n");
+        ret += _print("String: %s\nString: %s\n", "a first", "the second");
+        ret += _print("Another multi string, bullets, using new line and tabulation:\n");
+        ret += _print("\t- abc\n");
+        ret += _print("\t- def\n");
+        ret += _print("Unsupported formatting, leaved as is:\n");
+        ret += _print("%f\n", 'z');
+        ret += _print("%o\n", 'z');
+        ret += _print("Escaped backslash or lonely percent symbol\n");
+        ret += _print("\\ % \n");
+        nb_loop += 1;
+    }
+
+    asm volatile("csrr %0, 0xC00" : "=r"(end));
+
+    printf_exe_time = end - start;
 
     return ret;
 }

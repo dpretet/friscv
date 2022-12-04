@@ -8,13 +8,16 @@ C app
     - [ ] EIP SIP générée depuis le cpp
     - [ ] https://mullerlee.cyou/2020/07/09/riscv-exception-interrupt/#How-to-run-my-code
 - [ ] Micro kermel
+- [ ] Pool arena / malloc
 - [ ] Unit test framework
-- [ ] Binary tree
 - [ ] Sorting (bitonic)
 - [ ] Matrix computation
 - [ ] Neural network like layer
 - [ ] Binary tree
-- [ ] Msgpk like library 
+- [ ] Msgpk like library
+- [ ] Graphic tests and rendering
+    - Generate images and convert in ASCII
+    - fractal: https://en.m.wikipedia.org/wiki/Menger_sponge
 - [ ] Tiny tracer
     - [ ] https://github.com/Naitsirc98/Tiny-Ray-Tracer
     - [ ] https://github.com/ssloy/tinyraytracer
@@ -26,7 +29,11 @@ Misc.
 
 - [ ] Testsuite Rust https://danielmangum.com/posts/risc-v-bytes-rust-cross-compilation/
 - [ ] Testsuite Go
-
+- [ ] Jeu utilisant le moins de KB possible
+    - [ ] Lldvelh
+    - [ ] Zelda like
+    - [ ] Casse tête
+    - [ ] 2048
 
 
 Minimalistic Unix
@@ -51,7 +58,7 @@ Minimalistic Unix
     - [ ] https://github.com/riscv-software-src/riscv-tests
     - [ ] Run SPEC benchmark
     - [ ] Run NBench
-    - [ ] https://github.com/darklife/darkriscv/tree/master/src/coremark 
+    - [ ] https://github.com/darklife/darkriscv/tree/master/src/coremark
 - [ ] Code Pong with AI for auto game
 - [ ] Run Doom
 - [ ] Code the game of life
@@ -79,7 +86,7 @@ DONE:
     - chacha20
     - matrix computation
 - [X] Dev some basic commands
-    - [X] must use argc argv 
+    - [X] must use argc argv
     - [X] sleep
     - [X] help
     - [X] reboot

@@ -24,7 +24,7 @@ CFLAGS +=	-march=rv32im \
 			-I./ \
 			-mcmodel=medany \
 			-static \
-			-std=gnu99
+			-std=gnu99 \
 
 # -e_start: Specify that the program entry point is _start
 # -nostartfiles: Do not use the standard system startup files when linking

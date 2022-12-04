@@ -5,7 +5,7 @@ int _print(char * msg, ...);
 
 int toint(char str[]);
 
-void todecstr(int num, char str[]);
+void todecstr(int num, char * str);
 
 void tohexstr(int num, char * str);
 
@@ -107,13 +107,9 @@ int _print(char * msg, ...) {
                     ++str_ptr;
                 }
             // Handles the case a simple % char is expected
-            } else if (*msg==' ') {
-                uart_putchar('%');
-
-            // All othe formatting is unsupported
             } else {
-                _print("Format not supported: %c\n", *msg);
-                return 1;
+                uart_putchar('%');
+                _print("%c", *msg);
             }
 
         //-----------------------------------
@@ -168,45 +164,49 @@ void tohexstr(int num, char * str) {
         mask = temp & 0xF;
         temp >>= 4;
         switch (mask) {
-            // case 0xF: str[i] = 'F'; break;
-            // case 0xE: str[i] = 'E'; break;
-            // case 0xD: str[i] = 'D'; break;
-            // case 0xC: str[i] = 'C'; break;
-            // case 0xB: str[i] = 'B'; break;
-            // case 0xA: str[i] = 'A'; break;
-            // case 0x9: str[i] = '9'; break;
-            // case 0x8: str[i] = '8'; break;
-            // case 0x7: str[i] = '7'; break;
-            // case 0x6: str[i] = '6'; break;
-            // case 0x5: str[i] = '5'; break;
-            // case 0x4: str[i] = '4'; break;
-            // case 0x3: str[i] = '3'; break;
-            // case 0x2: str[i] = '2'; break;
-            // case 0x1: str[i] = '1'; break;
-            // default:  str[i] = '0'; break;
-            case 0xF: str[i] = int_l + 5; break;
-            case 0xE: str[i] = int_l + 4; break;
-            case 0xD: str[i] = int_l + 3; break;
-            case 0xC: str[i] = int_l + 2; break;
-            case 0xB: str[i] = int_l + 1; break;
-            case 0xA: str[i] = int_l + 0; break;
-            case 0x9: str[i] = int_c + 9; break;
-            case 0x8: str[i] = int_c + 8; break;
-            case 0x7: str[i] = int_c + 7; break;
-            case 0x6: str[i] = int_c + 6; break;
-            case 0x5: str[i] = int_c + 5; break;
-            case 0x4: str[i] = int_c + 4; break;
-            case 0x3: str[i] = int_c + 3; break;
-            case 0x2: str[i] = int_c + 2; break;
-            case 0x1: str[i] = int_c + 1; break;
-            default:  str[i] = int_c; break;
+            case 0xF: str[i] = 'F'; break;
+            case 0xE: str[i] = 'E'; break;
+            case 0xD: str[i] = 'D'; break;
+            case 0xC: str[i] = 'C'; break;
+            case 0xB: str[i] = 'B'; break;
+            case 0xA: str[i] = 'A'; break;
+            case 0x9: str[i] = '9'; break;
+            case 0x8: str[i] = '8'; break;
+            case 0x7: str[i] = '7'; break;
+            case 0x6: str[i] = '6'; break;
+            case 0x5: str[i] = '5'; break;
+            case 0x4: str[i] = '4'; break;
+            case 0x3: str[i] = '3'; break;
+            case 0x2: str[i] = '2'; break;
+            case 0x1: str[i] = '1'; break;
+            default:  str[i] = '0'; break;
+            // case 0xF: str[i] = int_l + 5; break;
+            // case 0xE: str[i] = int_l + 4; break;
+            // case 0xD: str[i] = int_l + 3; break;
+            // case 0xC: str[i] = int_l + 2; break;
+            // case 0xB: str[i] = int_l + 1; break;
+            // case 0xA: str[i] = int_l + 0; break;
+            // case 0x9: str[i] = int_c + 9; break;
+            // case 0x8: str[i] = int_c + 8; break;
+            // case 0x7: str[i] = int_c + 7; break;
+            // case 0x6: str[i] = int_c + 6; break;
+            // case 0x5: str[i] = int_c + 5; break;
+            // case 0x4: str[i] = int_c + 4; break;
+            // case 0x3: str[i] = int_c + 3; break;
+            // case 0x2: str[i] = int_c + 2; break;
+            // case 0x1: str[i] = int_c + 1; break;
+            // default:  str[i] = int_c; break;
         }
     }
 }
 
-void todecstr(int num, char str[])
+void todecstr(int num, char * str)
 {
-    int i, rem, len = 0, n, pnum;
+    int i = 0;
+    int rem = 0;
+    int len = 0;
+    int n = 0;
+    int pnum = 0;
 
     // Convert in positive integer and save the sign
     if (num<0) {
@@ -218,9 +218,9 @@ void todecstr(int num, char str[])
     }
     pnum = n;
 
-    // Search the number of relevant digits, != 0
+    // Search the number of relevant digits
     while (n != 0) {
-        len++;
+        ++len;
         n /= 10;
     }
 
@@ -230,5 +230,10 @@ void todecstr(int num, char str[])
         pnum = pnum / 10;
         str[len - (i + 1)] = rem + '0';
     }
-    str[len] = '\0';
+    if (len>0) {
+        str[len] = '\0';
+    } else {
+        str[0] = '0';
+        str[1] = '\0';
+    }
 }

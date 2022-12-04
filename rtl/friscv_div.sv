@@ -11,7 +11,7 @@
 // support signed division.
 //
 // TODO: Save bandwidth by avoiding moving back and forth IDLE/OP if valid is 
-// already asserted when divisin is finished
+// already asserted when division is finished
 // TODO: manage pow2 division with a simple mux
 // TODO: save computation time by check the first MSB to use different than 0
 //
@@ -114,7 +114,6 @@ module friscv_div
                     // if slave is ready, move to the next operation from IDLE state
                     if (o_ready) begin
                         computing <= 1'b0;
-                        i_ready <= 1'b1;
                         step_cnt <= {CWIDTH{1'b0}};
                     end
 
@@ -147,6 +146,7 @@ module friscv_div
                 else _divs <= divs;
 
                 o_valid <= 1'b0;
+                i_ready <= 1'b1;
                 step_cnt <= {CWIDTH{1'b0}};
 
                 // Complete ASAP if trying to divide by zero

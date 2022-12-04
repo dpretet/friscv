@@ -1,4 +1,27 @@
+# Planning: Next big topics
+
+- [-] Enhance globally performance
+- [ ] User & supervisor modes
+- [ ] 64bits support
+- [ ] Atomic ops
+- [ ] F extension
+- [ ] Division enhancement
+
 # DOING
+
+Mesure et amélioration des performances
+- [ ] Print et save des registres CSRs pour chaque test, garde la trace des performances dans Git
+- [ ] Ajouter d’autres compteurs de performances pour les processing et caches
+- [ ] point de mesure des différents bus en bandwidth et latence pour les reqs et completions
+    - [ ] min & max
+    - [ ] moyenne
+    - [ ] Écart type
+- [ ] CPI
+- [ ] Enhance read outstanding requests in MemFy et OoO
+- [ ] Augmenter le nombre d’OR max de dCache 
+- [ ] Reduce cache jump
+- [ ] Branch prediction
+- [ ] Cache ooo queue vs compteur
 
 # BACKLOG
 
@@ -17,11 +40,12 @@ Cache Stage Enhancement:
 - [ ] Support datapath adaptation from memory controller
     - Narrow transfer support?
     - Gather/merge multiple continuous transactions?
+- [ ] Cache OoO manager to use queue vs compteur
 
 Misc.
+- [ ] Random peripheral
 - [ ] Support cache disable in testbench
 - [ ] Put in place profiling
-- [ ] Add Zihpm
 - [ ] Print des tests qui ne marchent pas dans le bash et svut_h.sv pour verilator
 - [ ] Rework pipeline to avoid double not
 - [ ] 64 bits support
@@ -56,6 +80,13 @@ AXI4 Infrastructure
 - [ ] Implement a L2 cache stage
 - [ ] Ooo write completion, response needs to come from the destination if IO write
 
+dCache - OoO off
+- [ ] Voir le memory model et fence
+- [ ] Serait applicable si le processeur est OoO
+- [ ] Handled by app
+- [ ] IDs must be issued from 0
+- [ ] IDs must be all different
+- [ ] Out-of-order in memfy
 
 Control:
 - [ ] Detect IO requests to forward info for FENCE execution
@@ -115,6 +146,8 @@ Hardware Test:
 
 # DONE
 
+- [X] Add Zihpm
+- [X] Fix TX read of UART which is blocking
 - [X] Develop dCache
     - [X] Uncachable access for IOs region
     - [X] Derive from iCache

@@ -21,6 +21,7 @@ FRISCV is a SystemVerilog implementation of the [RISCV ISA](https://riscv.org):
 - Support Zifencei
 - Support Zicsr
 - Support Zicntr
+- Support Zihpm
 - Support M extension (multiply/divide)
 - Machine-mode only
 - Implement a 3-stage pipeline
