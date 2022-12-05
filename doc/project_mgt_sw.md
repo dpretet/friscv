@@ -56,8 +56,7 @@ Minimalistic Unix
 
 # Ideas / Applications
 
-- [ ] Support Linux / FreeBSD / NetBSD
-
+- [ ] Support Linux / FreeBSD / NetBSD: https://github.com/cnlohr/mini-rv32ima
 - [ ] Code Pong with AI for auto game
 - [ ] Run Doom: https://www.youtube.com/watch?v=uZMNK17VCMU&list=WL&index=1&t=2s
 - [ ] Code the game of life
