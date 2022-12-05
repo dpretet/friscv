@@ -1,7 +1,6 @@
 # DOING
 
 - [X] Benchmark
-    - [ ] Run SPEC benchmark
     - [ ] Run NBench
     - [ ] https://github.com/darklife/darkriscv/tree/master/src/coremark
     - [ ] Tiny tracer
@@ -34,7 +33,6 @@ C app
 
 Misc.
 
-- [ ] Testcase C de mult/div
 - [ ] Testcase C (Rand access) pour les ORs de memory
 - [ ] Testsuite Rust https://danielmangum.com/posts/risc-v-bytes-rust-cross-compilation/
 - [ ] Testsuite Go
@@ -79,6 +77,10 @@ Minimalistic Unix
 - [ ] Retro gaming platform
 
 DONE:
+
+- [X] Add Xoshiro++ benchmark
+- [X] Testcase C de mult/div: done in matrix and printf
+- [X] Testcase WBA div / mult
 - [X] Enhance print, tend to have native printf
 - [X] Benchmark command
     - chacha20

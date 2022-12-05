@@ -51,7 +51,7 @@ TC=
 [[ -z $SIM ]] && SIM="icarus"
 # Minimum program counter value a test needs to reach, in bytes
 [[ -z $MIN_PC ]] && MIN_PC=65908
-# Don't dump VCD during simulation
+# Don't dump VCD during simulation, dump by default
 [[ -z $NO_VCD ]] && NO_VCD=0
 # INTERACTIVE enable a UART to read/write from Verilator
 [[ -z $INTERACTIVE ]] && INTERACTIVE=0

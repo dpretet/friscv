@@ -2,6 +2,7 @@
 // https://opensource.org/licenses/mit-license.php
 
 #include "chacha20.h"
+#include "xoshiro128plusplus.h"
 #include <stdint.h>
 #include "tty.h"
 
@@ -12,10 +13,17 @@
 int chacha20_bench(int max_iterations);
 int matrix_bench(int max_iterations);
 int printf_bench(int max_iterations);
+int xoshi_bench(int max_iterations);
 
-int chacha20_exe_time;
+int chacha20_exe_time = 0;
 int matrix_exe_time = 0;
 int printf_exe_time = 0;
+int xoshi_exe_time = 0;
+
+int chacha20_instret = 0;
+int matrix_instret = 0;
+int printf_instret = 0;
+int xoshi_instret = 0;
 
 // -----------------------------------------------------------------------------------------------
 // Chacha20 global variables
@@ -69,6 +77,7 @@ int mtxd[3][3] = {{4,4,4}, {4,4,4}, {4,4,4}};
 
 int c_mult_d[3][3] = {{12,12,12}, {12,12,12}, {12,12,12}};
 
+
 /*  Benchmark function to measure the performance of the core
  *
  *  Arguments: the name of a specific test (chacha20, matrix ...) or all
@@ -80,43 +89,77 @@ int benchmark(int argc, char *argv[]) {
 
     int ret=0;
     int bench_start, bench_end;
+    int instret_start, instret_end;
+
     chacha20_exe_time = 0;
     matrix_exe_time = 0;
     printf_exe_time = 0;
+    xoshi_exe_time = 0;
+
+    chacha20_instret = 0;
+    matrix_instret = 0;
+    printf_instret = 0;
+    xoshi_instret = 0;
 
     asm volatile("csrr %0, 0xC00" : "=r"(bench_start));
+    asm volatile("csrr %0, 0xC02" : "=r"(instret_start));
 
-    if (chacha20_bench(1))
+
+    // -----------------------------------------------------------------
+    // Execute benchmarks
+    // -----------------------------------------------------------------
+
+    if (chacha20_bench(1)) {
+        ret += 1;
         printf("Chacha20 computation failed\n");
+    }
 
-    if (matrix_bench(1))
+    if (matrix_bench(1)) {
+        ret += 1;
         printf("Matrix computation failed\n");
+    }
 
-    if (printf_bench(1))
+    if (printf_bench(1)) {
+        ret += 1;
         printf("Printf computation failed\n");
+    }
+
+    if (xoshi_bench(1)) {
+        ret += 1;
+        printf("Xoshiro128++ computation failed\n");
+    }
 
     asm volatile("csrr %0, 0xC00" : "=r"(bench_end));
+    asm volatile("csrr %0, 0xC02" : "=r"(instret_end));
 
-    printf("Start time: %x\n", bench_start);
-    printf("End time: %x\n", bench_end);
-    printf("Total elapsed time: %x cycles\n", bench_end-bench_start);
+    int cycle_div = (bench_end-bench_start) / (instret_end-instret_start);
+    int cycle_rem = (bench_end-bench_start) % (instret_end-instret_start);
 
-    if (chacha20_exe_time)
-        printf("Chacha20 execution: %x cycles\n", chacha20_exe_time);
+    // -----------------------------------------------------------------
+    // Print statistics
+    // -----------------------------------------------------------------
 
-    if (matrix_exe_time)
-        printf("Matrix execution: %x cycles\n", matrix_exe_time);
+    printf("\nReporting:\n");
 
-    if (printf_exe_time)
-        printf("Printf execution: %x cycles\n", printf_exe_time);
+    printf("- Start time: %d\n", bench_start);
+    printf("- End time: %d\n", bench_end);
+    printf("- Total elapsed time: %d cycles\n", bench_end-bench_start);
+    printf("- Retired instructions: %d\n", instret_end-instret_start);
+    printf("- cycle/instruction: ~%d.%d\n", cycle_div, cycle_rem);
+
+    printf("- Chacha20 execution: %d cycles\n", chacha20_exe_time);
+    printf("- Matrix execution: %d cycles\n", matrix_exe_time);
+    printf("- Printf execution: %d cycles\n", printf_exe_time);
+    printf("- Xoshiro128++ execution: %d cycles\n", xoshi_exe_time);
 
     if (ret)
         ERROR("Benchmark failed\n");
     else
         SUCCESS("Benchmark finished successfully\n");
 
-    return 0;
+    return ret;
 }
+
 
 /* Execute Chacha20 on test vector proposed by the specification
  *
@@ -283,6 +326,8 @@ int printf_bench(int max_iterations) {
 
     asm volatile("csrr %0, 0xC00" : "=r"(start));
 
+    printf("\nPrintf debug information:\n");
+
     while (nb_loop<max_iterations) {
 
         ret += printf("Single digit integer:\n");
@@ -318,6 +363,28 @@ int printf_bench(int max_iterations) {
     asm volatile("csrr %0, 0xC00" : "=r"(end));
 
     printf_exe_time = end - start;
+
+    return ret;
+}
+
+
+// xoshiro128++ algorithm used to generate random number for 32 bits architecture
+// Run over 1024 iterations
+int xoshi_bench(int max_iterations) {
+
+    int nb_loop;
+    int ret = 0;
+    int start = 0;
+    int end = 0;
+
+    asm volatile("csrr %0, 0xC00" : "=r"(start));
+
+    for (int i=0; i<1024;i++)
+        xoshiro128plusplus();
+
+    asm volatile("csrr %0, 0xC00" : "=r"(end));
+
+    xoshi_exe_time = end - start;
 
     return ret;
 }
