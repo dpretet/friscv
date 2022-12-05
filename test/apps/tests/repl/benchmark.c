@@ -87,28 +87,28 @@ int benchmark(int argc, char *argv[]) {
     asm volatile("csrr %0, 0xC00" : "=r"(bench_start));
 
     if (chacha20_bench(1))
-        _print("Chacha20 computation failed\n");
+        printf("Chacha20 computation failed\n");
 
     if (matrix_bench(1))
-        _print("Matrix computation failed\n");
+        printf("Matrix computation failed\n");
 
     if (printf_bench(1))
-        _print("Printf computation failed\n");
+        printf("Printf computation failed\n");
 
     asm volatile("csrr %0, 0xC00" : "=r"(bench_end));
 
-    _print("Start time: %x\n", bench_start);
-    _print("End time: %x\n", bench_end);
-    _print("Total elapsed time: %x cycles\n", bench_end-bench_start);
+    printf("Start time: %x\n", bench_start);
+    printf("End time: %x\n", bench_end);
+    printf("Total elapsed time: %x cycles\n", bench_end-bench_start);
 
     if (chacha20_exe_time)
-        _print("Chacha20 execution: %x cycles\n", chacha20_exe_time);
+        printf("Chacha20 execution: %x cycles\n", chacha20_exe_time);
 
     if (matrix_exe_time)
-        _print("Matrix execution: %x cycles\n", matrix_exe_time);
+        printf("Matrix execution: %x cycles\n", matrix_exe_time);
 
     if (printf_exe_time)
-        _print("Printf execution: %x cycles\n", printf_exe_time);
+        printf("Printf execution: %x cycles\n", printf_exe_time);
 
     if (ret)
         ERROR("Benchmark failed\n");
@@ -285,33 +285,33 @@ int printf_bench(int max_iterations) {
 
     while (nb_loop<max_iterations) {
 
-        ret += _print("Single digit integer:\n");
-        ret += _print("Zero: %d\n", 0);
-        ret += _print("One: %d\n", 1);
-        ret += _print("Minus five: %d\n", -5);
-        ret += _print("Multi digit integers:\n");
-        ret += _print("%d\n", 47);
-        ret += _print("%d\n", -234);
-        ret += _print("%d\n", 234);
-        ret += _print("%d\n", 9876);
-        ret += _print("%d\n", 2147483647);
-        ret += _print("Integer in hexadecimal: %x\n", 0xFDC0ACBD);
-        ret += _print("A char: %c\n", 'X');
-        ret += _print("Line mixing char and int:\n");
-        ret += _print("int: %d char: %c\n", 9, 'Y');
-        ret += _print("Empty new line:\n");
-        ret += _print("\n");
-        ret += _print("A string: %s\n", "I am a string");
-        ret += _print("Multi strings printed in a line:\n");
-        ret += _print("String: %s\nString: %s\n", "a first", "the second");
-        ret += _print("Another multi string, bullets, using new line and tabulation:\n");
-        ret += _print("\t- abc\n");
-        ret += _print("\t- def\n");
-        ret += _print("Unsupported formatting, leaved as is:\n");
-        ret += _print("%f\n", 'z');
-        ret += _print("%o\n", 'z');
-        ret += _print("Escaped backslash or lonely percent symbol\n");
-        ret += _print("\\ % \n");
+        ret += printf("Single digit integer:\n");
+        ret += printf("Zero: %d\n", 0);
+        ret += printf("One: %d\n", 1);
+        ret += printf("Minus five: %d\n", -5);
+        ret += printf("Multi digit integers:\n");
+        ret += printf("%d\n", 47);
+        ret += printf("%d\n", -234);
+        ret += printf("%d\n", 234);
+        ret += printf("%d\n", 9876);
+        ret += printf("%d\n", 2147483647);
+        ret += printf("Integer in hexadecimal: %x\n", 0xFDC0ACBD);
+        ret += printf("A char: %c\n", 'X');
+        ret += printf("Line mixing char and int:\n");
+        ret += printf("int: %d char: %c\n", 9, 'Y');
+        ret += printf("Empty new line:\n");
+        ret += printf("\n");
+        ret += printf("A string: %s\n", "I am a string");
+        ret += printf("Multi strings printed in a line:\n");
+        ret += printf("String: %s\nString: %s\n", "a first", "the second");
+        ret += printf("Another multi string, bullets, using new line and tabulation:\n");
+        ret += printf("\t- abc\n");
+        ret += printf("\t- def\n");
+        ret += printf("Unsupported formatting, leaved as is:\n");
+        ret += printf("%f\n", 'z');
+        ret += printf("%o\n", 'z');
+        ret += printf("Escaped backslash or lonely percent symbol\n");
+        ret += printf("\\ % \n");
         nb_loop += 1;
     }
 

@@ -19,21 +19,21 @@ void handle_interrupt(int mcause) {
 
     // MSIP
     if (mcause == 0x80000003) {
-        _print("Software interrupt\n");
+        printf("Software interrupt\n");
         msip_irq_off();
     
     // MTIP
     } else if (mcause == 0x80000007) {
-        _print("Timer interrupt\n");
+        printf("Timer interrupt\n");
         mtip_irq_off();
 
     // MEIP
     } else if (mcause == 0x8000000B) {
-        _print("External interrupt\n");
+        printf("External interrupt\n");
         meip_irq_off();
 
     } else {
-        _print("Unknown interrupt");
+        printf("Unknown interrupt");
         shutdown();
     }
 }
@@ -41,30 +41,30 @@ void handle_interrupt(int mcause) {
 void handle_exception(int mcause) {
 
     if (mcause == 0x0) {
-        _print("Instruction address misaligned");
+        printf("Instruction address misaligned");
         shutdown();
     } else if (mcause == 0x1) {
-        _print("Instruction access fault");
+        printf("Instruction access fault");
         shutdown();
     } else if (mcause == 0x2) {
-        _print("Illegal instruction");
+        printf("Illegal instruction");
         shutdown();
     } else if (mcause == 0x8) {
-        _print("ECALL (U-mode)");
+        printf("ECALL (U-mode)");
     } else if (mcause == 0x9) {
-        _print("ECALL (S-mode)");
+        printf("ECALL (S-mode)");
     } else if (mcause == 0xB) {
-        _print("ECALL (M-mode)");
+        printf("ECALL (M-mode)");
     } else if (mcause == 0x3) {
-        _print("EBREAK");
+        printf("EBREAK");
     } else if (mcause == 0x6) {
-        _print("Store misalign");
+        printf("Store misalign");
         shutdown();
     } else if (mcause == 0x4) {
-        _print("Load misalign");
+        printf("Load misalign");
         shutdown();
     } else {
-        _print("Unknown exception");
+        printf("Unknown exception");
         shutdown();
     }
     
@@ -78,13 +78,13 @@ void handle_trap() {
     asm volatile("csrr %0, mcause" : "=r"(mcause));
     asm volatile("csrr %0, mepc" : "=r"(mepc));
 
-    _print("Handling trap: MCAUSE=%x\n", mcause);
+    printf("Handling trap: MCAUSE=%x\n", mcause);
 
     if (mcause >> 31) {
-        _print("Handling interrupt\n");
+        printf("Handling interrupt\n");
         handle_interrupt(mcause);
     } else {
-        _print("Handling exception\n");
+        printf("Handling exception\n");
         handle_exception(mcause);
         asm volatile("csrr t0, mepc");
         asm volatile("addi t0, t0, 0x4");

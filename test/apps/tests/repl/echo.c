@@ -7,7 +7,7 @@ int echo(int argc, char * argv[]) {
 
     // Just exit, we except at least argv[0]
     if (argc==0) {
-        _print("No argument here\n");
+        printf("No argument here\n");
         return 1;
     }
 
@@ -18,7 +18,7 @@ int echo(int argc, char * argv[]) {
 
     // Print one by one the remaining argv
     for (int i=1;i<argc;++i) {
-        _print("%s ", argv[i]);
+        printf("%s ", argv[i]);
     }
 
     return 0;

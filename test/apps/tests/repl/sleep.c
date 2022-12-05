@@ -16,7 +16,7 @@ int sleep(int argc, char * argv[]) {
 
     // Just sleep 100 cycles
     if (argc==0) {
-        _print("Will sleep 1000 cycles");
+        printf("Will sleep 1000 cycles");
     }
 
     // Just output a new line

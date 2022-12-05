@@ -115,8 +115,8 @@ int main() {
 
             } else {
                 ERROR("Unrecognized command\n");
-                _print("\nargc: %x", argc);
-                _print("\nargv: %s\n", argv[0]);
+                printf("\nargc: %x", argc);
+                printf("\nargv: %s\n", argv[0]);
             }
             eot = 0;
             ix = 0;

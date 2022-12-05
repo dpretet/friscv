@@ -1,40 +1,43 @@
 # DOING
 
+- [X] Benchmark
+    - [ ] Run SPEC benchmark
+    - [ ] Run NBench
+    - [ ] https://github.com/darklife/darkriscv/tree/master/src/coremark
+    - [ ] Tiny tracer
+        - [ ] https://github.com/Naitsirc98/Tiny-Ray-Tracer
+        - [ ] https://github.com/ssloy/tinyraytracer
+
 # BACKLOG
 
 C app
 
-- [ ] Interrupt
-    - [ ] EIP SIP générée depuis le cpp
-    - [ ] https://mullerlee.cyou/2020/07/09/riscv-exception-interrupt/#How-to-run-my-code
-- [ ] Micro kermel
-- [ ] Pool arena / malloc
+- [ ] Micro kernel
+    - [ ] Interrupt
+        - [ ] EIP SIP générée depuis le cpp
+        - [ ] https://mullerlee.cyou/2020/07/09/riscv-exception-interrupt/#How-to-run-my-code
+    - [ ] Use little script lang Beariish/little
+- [ ] Pool arena / malloc-free
 - [ ] Unit test framework
 - [ ] Sorting (bitonic)
-- [ ] Matrix computation
 - [ ] Neural network like layer
 - [ ] Binary tree
 - [ ] Msgpk like library
 - [ ] Graphic tests and rendering
     - Generate images and convert in ASCII
     - fractal: https://en.m.wikipedia.org/wiki/Menger_sponge
-- [ ] Tiny tracer
-    - [ ] https://github.com/Naitsirc98/Tiny-Ray-Tracer
-    - [ ] https://github.com/ssloy/tinyraytracer
-- [ ] Use little script lang Beariish/little: A small, easily embedded language implemented in a single .c file
-- [ ] Testcase C de mult/div
-- [ ] Testcase C (Rand access) pour les ORs de memory
-
-Misc.
-
-- [ ] Testsuite Rust https://danielmangum.com/posts/risc-v-bytes-rust-cross-compilation/
-- [ ] Testsuite Go
 - [ ] Jeu utilisant le moins de KB possible
     - [ ] Lldvelh
     - [ ] Zelda like
     - [ ] Casse tête
     - [ ] 2048
 
+Misc.
+
+- [ ] Testcase C de mult/div
+- [ ] Testcase C (Rand access) pour les ORs de memory
+- [ ] Testsuite Rust https://danielmangum.com/posts/risc-v-bytes-rust-cross-compilation/
+- [ ] Testsuite Go
 
 Minimalistic Unix
 - How heap works? Manage malloc/free
@@ -54,13 +57,9 @@ Minimalistic Unix
 # Ideas / Applications
 
 - [ ] Support Linux / FreeBSD / NetBSD
-- [ ] Benchmark
-    - [ ] https://github.com/riscv-software-src/riscv-tests
-    - [ ] Run SPEC benchmark
-    - [ ] Run NBench
-    - [ ] https://github.com/darklife/darkriscv/tree/master/src/coremark
+
 - [ ] Code Pong with AI for auto game
-- [ ] Run Doom
+- [ ] Run Doom: https://www.youtube.com/watch?v=uZMNK17VCMU&list=WL&index=1&t=2s
 - [ ] Code the game of life
 - [ ] Code Tetris
 - [ ] Build a synth
