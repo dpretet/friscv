@@ -15,15 +15,20 @@ int matrix_bench(int max_iterations);
 int printf_bench(int max_iterations);
 int xoshi_bench(int max_iterations);
 
-int chacha20_exe_time = 0;
-int matrix_exe_time = 0;
-int printf_exe_time = 0;
-int xoshi_exe_time = 0;
+struct meter {
+    int cycle_start;
+    int cycle_end;
+    int instret_start;
+    int instret_end;
+    int cycles;
+    int instret;
+};
 
-int chacha20_instret = 0;
-int matrix_instret = 0;
-int printf_instret = 0;
-int xoshi_instret = 0;
+struct meter bench;
+struct meter chacha20;
+struct meter matrix;
+struct meter print;
+struct meter xoshi;
 
 // -----------------------------------------------------------------------------------------------
 // Chacha20 global variables
@@ -87,53 +92,51 @@ int c_mult_d[3][3] = {{12,12,12}, {12,12,12}, {12,12,12}};
  */
 int benchmark(int argc, char *argv[]) {
 
+    int nb_iterations = 10;
     int ret=0;
-    int bench_start, bench_end;
-    int instret_start, instret_end;
 
-    chacha20_exe_time = 0;
-    matrix_exe_time = 0;
-    printf_exe_time = 0;
-    xoshi_exe_time = 0;
+    bench.cycle_start = 0;
+    bench.cycle_end = 0;
+    bench.instret_start = 0;
+    bench.instret_end = 0;
+    bench.cycles = 0;
+    bench.instret = 0;
 
-    chacha20_instret = 0;
-    matrix_instret = 0;
-    printf_instret = 0;
-    xoshi_instret = 0;
-
-    asm volatile("csrr %0, 0xC00" : "=r"(bench_start));
-    asm volatile("csrr %0, 0xC02" : "=r"(instret_start));
-
+    asm volatile("csrr %0, 0xC00" : "=r"(bench.cycle_start));
+    asm volatile("csrr %0, 0xC02" : "=r"(bench.instret_start));
 
     // -----------------------------------------------------------------
     // Execute benchmarks
     // -----------------------------------------------------------------
 
-    if (chacha20_bench(1)) {
+    if (chacha20_bench(nb_iterations)) {
         ret += 1;
         printf("Chacha20 computation failed\n");
     }
 
-    if (matrix_bench(1)) {
+    if (matrix_bench(nb_iterations)) {
         ret += 1;
         printf("Matrix computation failed\n");
     }
 
-    if (printf_bench(1)) {
+    if (printf_bench(nb_iterations)) {
         ret += 1;
         printf("Printf computation failed\n");
     }
 
-    if (xoshi_bench(1)) {
+    if (xoshi_bench(nb_iterations)) {
         ret += 1;
         printf("Xoshiro128++ computation failed\n");
     }
 
-    asm volatile("csrr %0, 0xC00" : "=r"(bench_end));
-    asm volatile("csrr %0, 0xC02" : "=r"(instret_end));
+    asm volatile("csrr %0, 0xC00" : "=r"(bench.cycle_end));
+    asm volatile("csrr %0, 0xC02" : "=r"(bench.instret_end));
 
-    int cycle_div = (bench_end-bench_start) / (instret_end-instret_start);
-    int cycle_rem = (bench_end-bench_start) % (instret_end-instret_start);
+    bench.cycles = bench.cycle_end - bench.cycle_start;
+    bench.instret = bench.instret_end - bench.instret_start;
+
+    int cycle_div = (bench.cycles) / (bench.instret);
+    int cycle_rem = (bench.cycles) % (bench.instret);
 
     // -----------------------------------------------------------------
     // Print statistics
@@ -141,16 +144,18 @@ int benchmark(int argc, char *argv[]) {
 
     printf("\nReporting:\n");
 
-    printf("- Start time: %d\n", bench_start);
-    printf("- End time: %d\n", bench_end);
-    printf("- Total elapsed time: %d cycles\n", bench_end-bench_start);
-    printf("- Retired instructions: %d\n", instret_end-instret_start);
+    printf("- Start time: %d\n", bench.cycle_start);
+    printf("- End time: %d\n", bench.cycle_end);
+    printf("- Total elapsed time: %d cycles\n", bench.cycles);
+    printf("- Instret start: %d\n", bench.instret_start);
+    printf("- Instret end: %d\n", bench.instret_end);
+    printf("- Retired instructions: %d\n", bench.instret);
     printf("- cycle/instruction: ~%d.%d\n", cycle_div, cycle_rem);
 
-    printf("- Chacha20 execution: %d cycles\n", chacha20_exe_time);
-    printf("- Matrix execution: %d cycles\n", matrix_exe_time);
-    printf("- Printf execution: %d cycles\n", printf_exe_time);
-    printf("- Xoshiro128++ execution: %d cycles\n", xoshi_exe_time);
+    printf("- Chacha20 execution: %d cycles\n", chacha20.cycles);
+    printf("- Matrix execution: %d cycles\n", matrix.cycles);
+    printf("- Printf execution: %d cycles\n", print.cycles);
+    printf("- Xoshiro128++ execution: %d cycles\n", xoshi.cycles);
 
     if (ret)
         ERROR("Benchmark failed\n");
@@ -177,10 +182,12 @@ int chacha20_bench(int max_iterations) {
     int ret = 0;
     int nb_loop=0;
     char data[128]; 
-    int start = 0;
-    int end = 0;
 
-    asm volatile("csrr %0, 0xC00" : "=r"(start));
+    chacha20.cycle_start = 0;
+    chacha20.cycle_end = 0;
+    chacha20.cycles = 0;
+
+    asm volatile("csrr %0, 0xC00" : "=r"(chacha20.cycle_start));
 
     while (nb_loop<max_iterations) {
 
@@ -208,9 +215,9 @@ int chacha20_bench(int max_iterations) {
         nb_loop += 1;
     }
 
-    asm volatile("csrr %0, 0xC00" : "=r"(end));
+    asm volatile("csrr %0, 0xC00" : "=r"(chacha20.cycle_end));
 
-    chacha20_exe_time = end - start;
+    chacha20.cycles = chacha20.cycle_end - chacha20.cycle_start;
 
     return ret;
 }
@@ -219,100 +226,101 @@ int matrix_bench(int max_iterations) {
 
     int ret = 0;
     int nb_loop=0;
-    int start = 0;
-    int end = 0;
+    matrix.cycle_start = 0;
+    matrix.cycle_end = 0;
+    matrix.cycles = 0;
 
-    int matrix[3][3];
+    int mtx[3][3];
 
-    asm volatile("csrr %0, 0xC00" : "=r"(start));
+    asm volatile("csrr %0, 0xC00" : "=r"(matrix.cycle_start));
 
     while (nb_loop<max_iterations) {
 
         // a + b = x
         for (int i=0;i<3;i++)
             for (int j=0;j<3;j++)
-                matrix[i][j] = mtxa[i][j] + mtxb[i][j];
+                mtx[i][j] = mtxa[i][j] + mtxb[i][j];
 
         for (int i=0;i<3;i++)
             for (int j=0;j<3;j++)
-                if (matrix[i][j] != mtxc[i][j])
+                if (mtx[i][j] != mtxc[i][j])
                     ret += 1;
 
         // b - a = a
         for (int i=0;i<3;i++)
             for (int j=0;j<3;j++)
-                matrix[i][j] = mtxb[i][j] - mtxa[i][j];
+                mtx[i][j] = mtxb[i][j] - mtxa[i][j];
 
         for (int i=0;i<3;i++)
             for (int j=0;j<3;j++)
-                if (matrix[i][j] != mtxa[i][j])
+                if (mtx[i][j] != mtxa[i][j])
                     ret += 1;
 
         // c * d = mtx
         for (int i=0;i<3;i++)
             for (int j=0;j<3;j++)
-                matrix[i][j] = mtxc[i][j] * mtxd[i][j];
+                mtx[i][j] = mtxc[i][j] * mtxd[i][j];
 
         for (int i=0;i<3;i++)
             for (int j=0;j<3;j++)
-                if (matrix[i][j] != c_mult_d[i][j])
+                if (mtx[i][j] != c_mult_d[i][j])
                     ret += 1;
         // a * b = b
         for (int i=0;i<3;i++)
             for (int j=0;j<3;j++)
-                matrix[i][j] = mtxa[i][j] * mtxb[i][j];
+                mtx[i][j] = mtxa[i][j] * mtxb[i][j];
 
         for (int i=0;i<3;i++)
             for (int j=0;j<3;j++)
-                if (matrix[i][j] != mtxb[i][j])
+                if (mtx[i][j] != mtxb[i][j])
                     ret += 1;
 
         // a * c = c
         for (int i=0;i<3;i++)
             for (int j=0;j<3;j++)
-                matrix[i][j] = mtxa[i][j] * mtxc[i][j];
+                mtx[i][j] = mtxa[i][j] * mtxc[i][j];
 
         for (int i=0;i<3;i++)
             for (int j=0;j<3;j++)
-                if (matrix[i][j] != mtxc[i][j])
+                if (mtx[i][j] != mtxc[i][j])
                     ret += 1;
 
         // a * d = d
         for (int i=0;i<3;i++)
             for (int j=0;j<3;j++)
-                matrix[i][j] = mtxa[i][j] * mtxd[i][j];
+                mtx[i][j] = mtxa[i][j] * mtxd[i][j];
 
         for (int i=0;i<3;i++)
             for (int j=0;j<3;j++)
-                if (matrix[i][j] != mtxd[i][j])
+                if (mtx[i][j] != mtxd[i][j])
                     ret += 1;
 
         // d / 2 = b
         for (int i=0;i<3;i++)
             for (int j=0;j<3;j++)
-                matrix[i][j] = mtxd[i][j] / 2;
+                mtx[i][j] = mtxd[i][j] / 2;
 
         for (int i=0;i<3;i++)
             for (int j=0;j<3;j++)
-                if (matrix[i][j] != mtxb[i][j])
+                if (mtx[i][j] != mtxb[i][j])
                     ret += 1;
 
         //  c / a = c
         for (int i=0;i<3;i++)
             for (int j=0;j<3;j++)
-                matrix[i][j] = mtxc[i][j] / mtxa[i][j];
+                mtx[i][j] = mtxc[i][j] / mtxa[i][j];
 
         for (int i=0;i<3;i++)
             for (int j=0;j<3;j++)
-                if (matrix[i][j] != mtxc[i][j])
+                if (mtx[i][j] != mtxc[i][j])
                     ret += 1;
 
         nb_loop += 1;
     }
 
-    asm volatile("csrr %0, 0xC00" : "=r"(end));
+    asm volatile("csrr %0, 0xC00" : "=r"(matrix.cycle_end));
 
-    matrix_exe_time = end - start;
+    matrix.cycles = matrix.cycle_end - matrix.cycle_start;
 
     return ret;
 }
@@ -321,10 +329,11 @@ int printf_bench(int max_iterations) {
 
     int nb_loop;
     int ret = 0;
-    int start = 0;
-    int end = 0;
+    print.cycle_start = 0;
+    print.cycle_end = 0;
+    print.cycles = 0;
 
-    asm volatile("csrr %0, 0xC00" : "=r"(start));
+    asm volatile("csrr %0, 0xC00" : "=r"(print.cycle_start));
 
     printf("\nPrintf debug information:\n");
 
@@ -360,9 +369,9 @@ int printf_bench(int max_iterations) {
         nb_loop += 1;
     }
 
-    asm volatile("csrr %0, 0xC00" : "=r"(end));
+    asm volatile("csrr %0, 0xC00" : "=r"(print.cycle_end));
 
-    printf_exe_time = end - start;
+    print.cycles = print.cycle_end - print.cycle_start;
 
     return ret;
 }
@@ -374,17 +383,18 @@ int xoshi_bench(int max_iterations) {
 
     int nb_loop;
     int ret = 0;
-    int start = 0;
-    int end = 0;
+    xoshi.cycle_start = 0;
+    xoshi.cycle_end = 0;
+    xoshi.cycles = 0;
 
-    asm volatile("csrr %0, 0xC00" : "=r"(start));
+    asm volatile("csrr %0, 0xC00" : "=r"(xoshi.cycle_start));
 
     for (int i=0; i<1024;i++)
         xoshiro128plusplus();
 
-    asm volatile("csrr %0, 0xC00" : "=r"(end));
+    asm volatile("csrr %0, 0xC00" : "=r"(xoshi.cycle_end));
 
-    xoshi_exe_time = end - start;
+    xoshi.cycles = xoshi.cycle_end - xoshi.cycle_start;
 
     return ret;
 }
