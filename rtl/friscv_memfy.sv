@@ -13,10 +13,10 @@
 // The module transforms ISA LOAD/STORE instructions in AXI4-lite Read/Write requests. The module
 // handles outstanding requests as the AMBA protocol permits it and apply AMBA ordering rules being
 // for a master using a single ID. Follow AMBA specification about ordering model:
-// 
+//
 // '''
 //   - Transactions to any single peripheral device, must arrive at the peripheral in the order in
-//     which they are issued, regardless of the addresses of the transactions. 
+//     which they are issued, regardless of the addresses of the transactions.
 //   - Memory transactions that use the same, or overlapping, addresses must arrive at the memory in
 //     the order in which they are issued.
 //   - Read and write address channels are independent and in this specification, are defined to be
@@ -38,7 +38,7 @@
 
 module friscv_memfy
 
-    #(  
+    #(
         // Architecture selection
         parameter XLEN              = 32,
         // Address bus width defined for both control and AXI4 address signals
@@ -365,7 +365,7 @@ module friscv_memfy
                 // IDLE: LOAD or STORE instruction acknowledgment to instruction controller
                 default: begin
 
-                    if ((arvalid && !arready) || 
+                    if ((arvalid && !arready) ||
                         (awvalid && !awready) || (wvalid && !wready))
                     begin
 
@@ -466,7 +466,7 @@ module friscv_memfy
                         end
                     end
 
-                end 
+                end
 
                 // WAIT: Wait for all write completion have been received before moving to LOAD
                 WAIT: begin
@@ -480,7 +480,7 @@ module friscv_memfy
                         wvalid <= 1'b1;
                     end
                 end
-            
+
             endcase
         end
     end
@@ -494,13 +494,13 @@ module friscv_memfy
     assign push_rd_or = memfy_valid & memfy_ready & (opcode==`LOAD);
 
     // Store outstanding read request info for data alignment of the completion
-    friscv_scfifo 
+    friscv_scfifo
     #(
         .PASS_THRU  (0),
         .ADDR_WIDTH ($clog2(MAX_OR)),
         .DATA_WIDTH (10)
     )
-    rd_or_fifo 
+    rd_or_fifo
     (
         .aclk     (aclk),
         .aresetn  (aresetn),
@@ -517,12 +517,12 @@ module friscv_memfy
     );
 
 
-    friscv_axi_or_tracker 
+    friscv_axi_or_tracker
     #(
         .NAME   ("Memfy"),
         .MAX_OR (MAX_OR)
     )
-    outstanding_request_tracker 
+    outstanding_request_tracker
     (
         .aclk           (aclk),
         .aresetn        (aresetn),
@@ -584,12 +584,12 @@ module friscv_memfy
     assign awid = AXI_ID_MASK;
     assign arid = AXI_ID_MASK;
 
-    generate 
+    generate
 
     if (IO_MAP_NB > 0) begin
 
         for (genvar i=0;i<IO_MAP_NB;i=i+1) begin
-            assign io_map_hit = (addr>=IO_MAP[i*2*XLEN+:XLEN] && addr<=IO_MAP[i*2*XLEN+XLEN+:XLEN]);
+            assign io_map_hit[i] = (addr>=IO_MAP[i*2*XLEN+:XLEN] && addr<=IO_MAP[i*2*XLEN+XLEN+:XLEN]);
         end
 
         assign is_io_req = |io_map_hit;
