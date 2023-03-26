@@ -1,11 +1,16 @@
-# Planning: Next big topics
+# Planning: Next Big Topics
 
 - [-] Enhance globally performance
+- [ ] Create a HW platform
 - [ ] User & supervisor modes
 - [ ] 64bits support
 - [ ] Atomic ops
 - [ ] F extension
 - [ ] Division enhancement
+- [ ] Add registers to configure the core
+- [ ] Support completly a profile, like RVA20
+- [ ] Manage AXI bus errors in a queue or a register and raise an exceptions
+
 
 # DOING
 
@@ -18,9 +23,10 @@ Mesure et amélioration des performances
     - [ ] Écart type
 - [ ] CPI
 - [ ] Enhance read outstanding requests in MemFy et OoO
-- [ ] Augmenter le nombre d’OR max de dCache 
+- [ ] Augmenter le nombre d’OR max de dCache
 - [ ] Reduce cache jump
 - [ ] Branch prediction
+- [ ] Out-of-order execution
 - [ ] Cache ooo queue vs compteur
 
 # BACKLOG
@@ -51,13 +57,14 @@ Misc.
 - [ ] 64 bits support
 - [ ] Atomic operations
 - [ ] Support privileged instructions, supervisor mode & user mode
-      https://danielmangum.com/posts/risc-v-bytes-privilege-levels/
-      https://mobile.twitter.com/hasheddan/status/1514581031092899843?s=12&t=MMNTY_iRC48CjykLQBdTkQ
-      https://man7.org/linux/man-pages/man2/syscall.2.html
-      https://www.youtube.com/watch?app=desktop&v=1-8oYzL_Thk
-      https://jborza.com/emulation/2021/04/22/ecalls-and-syscalls.html
+      - voir les CSRs dans la privileged mode, implementer les compteurs par mode
+      - https://danielmangum.com/posts/risc-v-bytes-privilege-levels/
+      - https://mobile.twitter.com/hasheddan/status/1514581031092899843?s=12&t=MMNTY_iRC48CjykLQBdTkQ
+      - https://man7.org/linux/man-pages/man2/syscall.2.html
+      - https://www.youtube.com/watch?app=desktop&v=1-8oYzL_Thk
+      - https://jborza.com/emulation/2021/04/22/ecalls-and-syscalls.html
 - [ ] Support MMU extension
-- [ ] JTAG interface / GDB Usage / OpenOCD
+- [ ] Debug Support / JTAG interface / GDB Usage / OpenOCD
         - https://tomverbeure.github.io/2021/07/18/VexRiscv-OpenOCD-and-Traps.html
         - https://tomverbeure.github.io/2022/02/20/GDBWave-Post-Simulation-RISCV-SW-Debugging.html
         - https://github.com/BLangOS/VexRiscV_with_HW-GDB_Server
@@ -114,6 +121,7 @@ Verification/Validation:
 - [ ] Update synthesis flow
     - [ ] Standard cells library for Yosys
     - [ ] https://github.com/dpretet/ascend-freepdk45/tree/master/lib
+    - [ ] https://github.com/The-OpenROAD-Project/asap7
     - [ ] https://github.com/chipsalliance/Surelog
     - [ ] https://stackoverflow.com/questions/65534532/how-to-estimation-a-chip-size-with-standard-cell-library
 - [ ] Core config

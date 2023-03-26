@@ -1,23 +1,28 @@
 # DOING
 
-- [X] Benchmark
-    - [ ] Run NBench
-    - [ ] https://github.com/darklife/darkriscv/tree/master/src/coremark
+- [-] Benchmark
+    - [ ] Compression
+    - [ ] Fractals generation
+    - [ ] Image generation
+    - [ ] FFT
     - [ ] Tiny tracer
         - [ ] https://github.com/Naitsirc98/Tiny-Ray-Tracer
         - [ ] https://github.com/ssloy/tinyraytracer
+    - [ ] Type conversion
+    - [ ] Image resizer
 
 # BACKLOG
 
-C app
+C Apps
 
 - [ ] Micro kernel
     - [ ] Interrupt
         - [ ] EIP SIP générée depuis le cpp
         - [ ] https://mullerlee.cyou/2020/07/09/riscv-exception-interrupt/#How-to-run-my-code
     - [ ] Use little script lang Beariish/little
-- [ ] Pool arena / malloc-free
-- [ ] Unit test framework
+    - [ ] Use linux ABI
+    - [ ] Use linux elf format
+- [ ] Unit test framework adapted to embedded platform
 - [ ] Sorting (bitonic)
 - [ ] Neural network like layer
 - [ ] Binary tree
@@ -32,10 +37,8 @@ C app
     - [ ] 2048
 
 Misc.
-
 - [ ] Testcase C (Rand access) pour les ORs de memory
 - [ ] Testsuite Rust https://danielmangum.com/posts/risc-v-bytes-rust-cross-compilation/
-- [ ] Testsuite Go
 
 Minimalistic Unix
 - How heap works? Manage malloc/free
@@ -78,6 +81,8 @@ Minimalistic Unix
 
 DONE:
 
+- [X] Pool arena / malloc-free / integrated in benchmark
+- [X] Support %p dans printf
 - [X] Add Xoshiro++ benchmark
 - [X] Testcase C de mult/div: done in matrix and printf
 - [X] Testcase WBA div / mult

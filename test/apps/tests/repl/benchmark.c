@@ -1,9 +1,11 @@
 // distributed under the mit license
 // https://opensource.org/licenses/mit-license.php
 
+#include <stdlib.h>
+#include <stdint.h>
 #include "chacha20.h"
 #include "xoshiro128plusplus.h"
-#include <stdint.h>
+#include "pool_arena.h"
 #include "tty.h"
 
 // -----------------------------------------------------------------------------------------------
@@ -14,6 +16,7 @@ int chacha20_bench(int max_iterations);
 int matrix_bench(int max_iterations);
 int printf_bench(int max_iterations);
 int xoshi_bench(int max_iterations);
+int pool_arena_bench(int max_iterations);
 
 struct meter {
     int cycle_start;
@@ -29,6 +32,10 @@ struct meter chacha20;
 struct meter matrix;
 struct meter print;
 struct meter xoshi;
+struct meter arena;
+
+#define ARENA_SIZE 1024
+#define MAX_CHUNK  8
 
 // -----------------------------------------------------------------------------------------------
 // Chacha20 global variables
@@ -129,6 +136,10 @@ int benchmark(int argc, char *argv[]) {
         printf("Xoshiro128++ computation failed\n");
     }
 
+    if (pool_arena_bench(nb_iterations)) {
+        ret += 1;
+        printf("Pool Arena computation failed\n");
+    }
     asm volatile("csrr %0, 0xC00" : "=r"(bench.cycle_end));
     asm volatile("csrr %0, 0xC02" : "=r"(bench.instret_end));
 
@@ -156,6 +167,7 @@ int benchmark(int argc, char *argv[]) {
     printf("- Matrix execution: %d cycles\n", matrix.cycles);
     printf("- Printf execution: %d cycles\n", print.cycles);
     printf("- Xoshiro128++ execution: %d cycles\n", xoshi.cycles);
+    printf("- Pool Arena execution: %d cycles\n", arena.cycles);
 
     if (ret)
         ERROR("Benchmark failed\n");
@@ -168,7 +180,7 @@ int benchmark(int argc, char *argv[]) {
 
 /* Execute Chacha20 on test vector proposed by the specification
  *
- * Arguments: 
+ * Arguments:
  *      max_iterations: number of repetitions to execute
  * Returns:
  *      the number of error detected between the reference and the computed data
@@ -181,7 +193,7 @@ int chacha20_bench(int max_iterations) {
     char serial[64];
     int ret = 0;
     int nb_loop=0;
-    char data[128]; 
+    char data[128];
 
     chacha20.cycle_start = 0;
     chacha20.cycle_end = 0;
@@ -397,4 +409,84 @@ int xoshi_bench(int max_iterations) {
     xoshi.cycles = xoshi.cycle_end - xoshi.cycle_start;
 
     return ret;
+}
+
+int pool_arena_bench(int max_iterations) {
+
+	char pool[ARENA_SIZE];
+	int p=0;
+	void * pts[MAX_CHUNK];
+	unsigned int chunk_size = 1;
+	char * array;
+
+    arena.cycle_start = 0;
+    arena.cycle_end = 0;
+    arena.cycles = 0;
+
+    asm volatile("csrr %0, 0xC00" : "=r"(arena.cycle_start));
+
+	// Erase first the pool memory zone
+	for (int i=0;i<ARENA_SIZE;i++)
+		pool[i] = '\0';
+	// Create a pool arena in memory
+	pool_init(&pool, ARENA_SIZE);
+	printf("Pool arena: %p\n", &pool);
+
+	while (chunk_size < ARENA_SIZE) {
+		// Erase pointers
+		for (int i=0;i<16;i++) {
+			pts[i] = NULL;
+		}
+		// Allocate as much blocks as possible and stop at first fail
+		/* printf("Allocate chunks\n"); */
+		p = 0;
+		while (p<MAX_CHUNK) {
+			pts[p] = pool_malloc(chunk_size);
+			if (pts[p] == NULL)
+				break;
+			printf("%p\n", pts[p]);
+			p++;
+		}
+
+
+		// Init the chunks with data
+		for (int i=0;i<16;i++) {
+			if (pts[i] != NULL) {
+				array = pts[i];
+				for (int j=0;j<chunk_size;j++)
+					array[j] = i;
+			}
+		}
+		// Check back data
+		for (int i=0;i<16;i++) {
+			if (pts[i] != NULL) {
+				array = pts[i];
+				for (int j=0;j<chunk_size;j++)
+					if (array[j] != i) {
+						printf("ERROR: pool arena failed during data check\n");
+						return 1;
+					}
+			}
+		}
+		// Free the pointers
+		/* printf("Free chunks\n"); */
+		p = 0;
+		while (p<MAX_CHUNK) {
+			if (pts[p] != NULL)
+				pool_free(pts[p]);
+			else
+				break;
+			p++;
+		}
+
+		pool_check();
+		chunk_size += 1;
+	}
+
+    asm volatile("csrr %0, 0xC00" : "=r"(arena.cycle_end));
+
+    arena.cycles = arena.cycle_end - arena.cycle_start;
+
+
+	return 0;
 }

@@ -55,7 +55,7 @@ int _print(char * msg, ...) {
                 }
 
             // Integer support in base 16
-            } else if (*msg=='x') {
+            } else if (*msg=='x' || *msg=='p') {
                 int_to_print = va_arg(params, int);
                 tohexstr(int_to_print, int_as_str);
                 while (int_as_str[i]!='\0') {
