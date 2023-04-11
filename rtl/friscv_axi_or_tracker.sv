@@ -74,15 +74,15 @@ module friscv_axi_or_tracker
             //synthesis translate_off
             //synopsys translate_off
             if (awvalid && awready && !bvalid && max_wr_or) begin
-                $display("ERROR: (@%0t) %s: Reached maximum write OR number but continue to issue requests", $realtime, NAME);
+                $display("CRITICAL: (@%0t) %s: Reached maximum write OR number but continue to issue requests", $realtime, NAME);
             end else if (!awvalid && bvalid && bready && wr_or_cnt=={MAX_OR_W{1'b0}}) begin
-                $display("ERROR: (@%0t) %s: Freeing a write OR but counter is already 0", $realtime, NAME);
+                $display("CRITICAL: (@%0t) %s: Freeing a write OR but counter is already 0", $realtime, NAME);
             end
 
             if (arvalid && arready && !rvalid && max_rd_or) begin
-                $display("ERROR: (@%0t) %s: Reached maximum read OR number but continue to issue requests", $realtime, NAME);
+                $display("CRITICAL: (@%0t) %s: Reached maximum read OR number but continue to issue requests", $realtime, NAME);
             end else if (!arvalid && rvalid && rready && rd_or_cnt=={MAX_OR_W{1'b0}}) begin
-                $display("ERROR: (@%0t) %s: Freeing a read OR but counter is already 0", $realtime, NAME);
+                $display("CRITICAL: (@%0t) %s: Freeing a read OR but counter is already 0", $realtime, NAME);
             end
             //synopsys translate_on
             //synthesis translate_on

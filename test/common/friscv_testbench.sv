@@ -90,8 +90,10 @@ module friscv_testbench(
     parameter RV32E = 0;
     // Boot address used by the control unit
     parameter BOOT_ADDR = `BOOT_ADDR;
-    // Number of outstanding requests used by the control unit
-    parameter INST_OSTDREQ_NUM = 8;
+	// Number of outstanding requests used by the control unit and icache
+	parameter INST_OSTDREQ_NUM  = 8;
+	// Number of outstanding requests used by the LOAD/STORE unit and dcache
+	parameter DATA_OSTDREQ_NUM  = 8;
     // MHART ID CSR register
     parameter HART_ID = 0;
 
@@ -290,6 +292,7 @@ module friscv_testbench(
             .XLEN                       (XLEN),
             .BOOT_ADDR                  (BOOT_ADDR),
             .INST_OSTDREQ_NUM           (INST_OSTDREQ_NUM),
+            .DATA_OSTDREQ_NUM           (DATA_OSTDREQ_NUM),
             .HART_ID                    (HART_ID),
             .RV32E                      (RV32E),
             .M_EXTENSION                (M_EXTENSION),
@@ -476,6 +479,7 @@ module friscv_testbench(
             .XLEN                       (XLEN),
             .BOOT_ADDR                  (BOOT_ADDR),
             .INST_OSTDREQ_NUM           (INST_OSTDREQ_NUM),
+            .DATA_OSTDREQ_NUM           (DATA_OSTDREQ_NUM),
             .HART_ID                    (HART_ID),
             .RV32E                      (RV32E),
             .M_EXTENSION                (M_EXTENSION),

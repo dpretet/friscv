@@ -9,24 +9,21 @@
 - [ ] Division enhancement
 - [ ] Add registers to configure the core
 - [ ] Support completly a profile, like RVA20
-- [ ] Manage AXI bus errors in a queue or a register and raise an exceptions
+- [ ] Manage AXI bus errors in a queue or a register and raise an exception
 
 
 # DOING
 
 Mesure et amélioration des performances
-- [ ] Print et save des registres CSRs pour chaque test, garde la trace des performances dans Git
-- [ ] Ajouter d’autres compteurs de performances pour les processing et caches
-- [ ] point de mesure des différents bus en bandwidth et latence pour les reqs et completions
+- [X] Print et save des registres CSRs pour chaque test, garde la trace des performances dans Git
+- [ ] IP point de mesure des différents bus en bandwidth et latence pour les reqs et completions
     - [ ] min & max
     - [ ] moyenne
-    - [ ] Écart type
-- [ ] CPI
+- [X] CPI
 - [ ] Enhance read outstanding requests in MemFy et OoO
 - [ ] Augmenter le nombre d’OR max de dCache
 - [ ] Reduce cache jump
 - [ ] Branch prediction
-- [ ] Out-of-order execution
 - [ ] Cache ooo queue vs compteur
 
 # BACKLOG
@@ -49,11 +46,13 @@ Cache Stage Enhancement:
 - [ ] Cache OoO manager to use queue vs compteur
 
 Misc.
+- [ ] Rework IO APB interconnect
+	- Fix IO subsystem misrouted
+	- Fix IO subsystem bridge
 - [ ] Random peripheral
 - [ ] Support cache disable in testbench
 - [ ] Put in place profiling
 - [ ] Print des tests qui ne marchent pas dans le bash et svut_h.sv pour verilator
-- [ ] Rework pipeline to avoid double not
 - [ ] 64 bits support
 - [ ] Atomic operations
 - [ ] Support privileged instructions, supervisor mode & user mode
@@ -75,6 +74,7 @@ Misc.
 - [ ] Branch prediction
     - https://blog.cloudflare.com/branch-predictor/
     - https://github.com/BrunoLevy/learn-fpga/blob/master/FemtoRV/TUTORIALS/FROM_BLINKER_TO_RISCV/PIPELINE.md
+- [ ] Out-of-order execution
 
 
 AXI4 Infrastructure
@@ -88,12 +88,12 @@ AXI4 Infrastructure
 - [ ] Ooo write completion, response needs to come from the destination if IO write
 
 dCache - OoO off
-- [ ] Voir le memory model et fence
-- [ ] Serait applicable si le processeur est OoO
-- [ ] Handled by app
-- [ ] IDs must be issued from 0
-- [ ] IDs must be all different
-- [ ] Out-of-order in memfy
+- [C] Voir le memory model et fence
+- [C] Serait applicable si le processeur est OoO
+- [C] Handled by app
+- [C] IDs must be issued from 0
+- [C] IDs must be all different
+- [C] Out-of-order in memfy
 
 Control:
 - [ ] Detect IO requests to forward info for FENCE execution
@@ -132,6 +132,7 @@ Verification/Validation:
     - [ ] stream the event like a write memory error
     - [ ] log error in a file
     - [ ] Support GDB:  https://tomverbeure.github.io/2021/07/18/VexRiscv-OpenOCD-and-Traps.html
+- [ ] Update RISCV testsuite sources
 
 Hardware Test:
 - [ ] Support LiteX: https://github.com/litex-hub/litex-boards, https://pcotret.gitlab.io/blog/processor_in_litex/

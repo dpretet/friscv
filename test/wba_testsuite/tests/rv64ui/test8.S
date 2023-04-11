@@ -4,10 +4,11 @@
 #include "riscv_test.h"
 #include "test_macros.h"
 
-# Test 8: Stress out WFI
-
-# x3/gp is the tes number in the unit test flow, must be greater than 0
-# 0 means the processor din't move out the initialization correctly and is stucked
+# Test 8: Stress out WFI. The core enable interrupts and wait for an interrupt and wait for
+# it with WFI. No smartness here, the core just jump in the trap and wait for the 
+# end of the EIRQ assertion (multipple WARNING are printed). If it fails, just mean the IRQ
+# is not observed or the core doesn't handle it correctly, so the testcase will timeout. Else
+# everything is OK.
 
 # Machine interrupt enable (MSTATUS)
 .equ MIE_ON,    0x00000008
@@ -22,8 +23,7 @@ RVTEST_CODE_BEGIN
 j TEST
 
 TEST:
-    # x3/gp is the tes number in the unit test flow, must be greater than 0
-    # 0 means the processor din't move out the initialization correctly and is stucked
+	// Test number
     li  x3, 0
 
 TEST1:

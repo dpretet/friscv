@@ -109,7 +109,9 @@ int main() {
                 MSG("FRISCV help:\n");
                 MSG("   help: print this menu\n");
                 MSG("   echo: print the chars passed\n");
+                MSG("   benchmark: executer a set of tests to monitor performance\n");
                 MSG("   sleep: pause during the time specified\n");
+                MSG("   exit: stop the core and shutdown the testbench\n");
                 MSG("   ebreak: same than exit\n");
                 MSG("   shutdown: same than exit\n");
 

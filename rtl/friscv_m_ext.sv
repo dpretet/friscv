@@ -9,6 +9,9 @@
 module friscv_m_ext
 
     #(
+		// Number of integer registers (RV32I = 32, RV32E = 16)
+        parameter NB_INT_REG        = 32,
+        // Architecture selection
         parameter XLEN  = 32
     )(
         // clock & reset
@@ -19,6 +22,8 @@ module friscv_m_ext
         input  wire                       m_valid,
         output logic                      m_ready,
         input  wire  [`INST_BUS_W   -1:0] m_instbus,
+		output logic [NB_INT_REG    -1:0] m_regs_sts,
+		output logic                      div_pending,
         // register source 1 query interface
         output logic [5             -1:0] m_rs1_addr,
         input  wire  [XLEN          -1:0] m_rs1_val,
@@ -62,6 +67,10 @@ module friscv_m_ext
     logic                    m_valid_div;
     logic                    signed_div;
 
+	localparam MAX_OR   = 1;
+    localparam MAX_OR_W = $clog2(MAX_OR) + 1;
+
+	logic [MAX_OR_W    -1:0] regs_or[NB_INT_REG-1:0];
 
 
     ///////////////////////////////////////////////////////////////////////////
@@ -76,6 +85,37 @@ module friscv_m_ext
     assign rs1    = m_instbus[`RS1    +: `RS1_W   ];
     assign rs2    = m_instbus[`RS2    +: `RS2_W   ];
     assign rd     = m_instbus[`RD     +: `RD_W    ];
+
+	////////////////////////////////////////////////////////////////////////
+	// Track which integer registers is used by an outstanding request
+	////////////////////////////////////////////////////////////////////////
+
+    always @ (posedge aclk or negedge aresetn) begin
+
+		if (!aresetn) regs_or[0] <= '0;
+		else          regs_or[0] <= '0;
+
+		for (int i=1;i<NB_INT_REG;i++) begin
+			if (!aresetn) begin
+				regs_or[i] <= '0;
+			end else begin
+				if ((m_valid && m_ready && rd == i[4:0]) &&
+				   !(m_rd_wr && m_rd_addr==i[4:0]))
+			   begin
+						regs_or[i] <= regs_or[i] + 1;
+
+				end else if (!(m_valid && m_ready && rd == i[4:0]) &&
+							  (m_rd_wr && m_rd_addr==i[4:0]))
+				begin
+						regs_or[i] <= regs_or[i] - 1;
+				end
+			end
+		end
+	end
+
+	for (genvar i=0;i<NB_INT_REG;i++) begin
+		assign m_regs_sts[i] = regs_or[i] == '0;
+	end
 
 
     ///////////////////////////////////////////////////////////////////////////
@@ -138,19 +178,20 @@ module friscv_m_ext
     )
     div32
     (
-        .aclk       (aclk),
-        .aresetn    (aresetn),
-        .srst       (srst),
-        .i_valid    (m_valid_div),
-        .i_ready    (m_ready),
-        .signed_div (signed_div),
-        .divd       (m_rs1_val),
-        .divs       (m_rs2_val),
-        .o_valid    (rd_wr_div),
-        .o_ready    (1'b1),
-        .zero_div   (),
-        .quot       (quot),
-        .rem        (rem)
+        .aclk        	(aclk),
+        .aresetn     	(aresetn),
+        .srst        	(srst),
+		.div_pending 	(div_pending), 
+        .i_valid     	(m_valid_div),
+        .i_ready     	(m_ready),
+        .signed_div  	(signed_div),
+        .divd        	(m_rs1_val),
+        .divs        	(m_rs2_val),
+        .o_valid     	(rd_wr_div),
+        .o_ready     	(1'b1),
+        .zero_div    	(),
+        .quot        	(quot),
+        .rem         	(rem)
     );
 
 

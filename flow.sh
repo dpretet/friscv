@@ -84,18 +84,18 @@ run_sims() {
 
     if [[ $1 == "core" ]] || [[ $1 == "all" ]]; then
         if [[ $2 == "icarus" ]] || [[ $2 == "all" ]]; then
-            rm -f rtl.md5 && ./run.sh --simulator icarus --tb core --nocompile 1
+            rm -f rtl.md5 && ./run.sh --simulator icarus --tb core --nocompile 1 --timeout 100000
         fi
         if [[ $2 == "verilator" ]] || [[ $2 == "all" ]]; then
-            rm -f rtl.md5 && ./run.sh --simulator verilator --tb core --nocompile 1
+            rm -f rtl.md5 && ./run.sh --simulator verilator --tb core --nocompile 1 --timeout 100000
         fi
     fi
     if [[ $1 == "platform" ]] || [[ $1 == "all" ]]; then
         if [[ $2 == "icarus" ]] || [[ $2 == "all" ]]; then
-            rm -f rtl.md5 && ./run.sh --simulator icarus --tb platform --nocompile 1
+            rm -f rtl.md5 && ./run.sh --simulator icarus --tb platform --nocompile 1 --timeout 100000
         fi
         if [[ $2 == "verilator" ]] || [[ $2 == "all" ]]; then
-            rm -f rtl.md5 && ./run.sh --simulator verilator --tb platform --nocompile 1
+            rm -f rtl.md5 && ./run.sh --simulator verilator --tb platform --nocompile 1 --timeout 100000
         fi
     fi
 }
@@ -237,7 +237,10 @@ main() {
             echo ""
             printinfo "Start SV Simulation flow"
             cd "${FRISCV_DIR}/test/sv"
-            ./run.sh -m 10000 --timeout 100000 --tb "$3_testbench.sv"
+			./run.sh -c
+            ./run.sh -m 10000 --timeout 100000 --tb "icache_testbench.sv"
+			./run.sh -c
+            ./run.sh -m 10000 --timeout 100000 --tb "dcache_testbench.sv"
         fi
         exit 0
     fi

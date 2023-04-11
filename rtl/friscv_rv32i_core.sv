@@ -28,9 +28,9 @@ module friscv_rv32i_core
         parameter XLEN              = 32,
         // Boot address used by the control unit
         parameter BOOT_ADDR         = 0,
-        // Number of outstanding requests used by the control unit
+        // Number of outstanding requests used by the control unit and icache
         parameter INST_OSTDREQ_NUM  = 8,
-        // Number of outstanding requests used by the LOAD/STORE unit
+        // Number of outstanding requests used by the LOAD/STORE unit and dcache
         parameter DATA_OSTDREQ_NUM  = 8,
         // Core Hart ID
         parameter HART_ID          = 0,

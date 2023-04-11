@@ -1,74 +1,37 @@
 [*]
 [*] GTKWave Analyzer v3.3.107 (w)1999-2020 BSI
-[*] Mon Apr 25 14:43:15 2022
+[*] Sat Apr  8 19:08:50 2023
 [*]
-[dumpfile] "/Users/damien/workspace/hdl/friscv/test/c_testsuite/tests/functions.vcd"
-[dumpfile_mtime] "Mon Apr 25 14:42:30 2022"
-[dumpfile_size] 28885215
-[savefile] "/Users/damien/workspace/hdl/friscv/test/c_testsuite/debug_platform_icarus.gtkw"
-[timestart] 25754100
-[size] 2560 1440
+[dumpfile] "/Users/damien/workspace/hdl/friscv/test/wba_testsuite/friscv_testbench.vcd"
+[dumpfile_mtime] "Sat Apr  8 18:46:56 2023"
+[dumpfile_size] 15754861
+[savefile] "/Users/damien/workspace/hdl/friscv/test/common/debug_platform_icarus.gtkw"
+[timestart] 6448900
+[size] 2560 1324
 [pos] -1 -1
-*-14.419258 25838200 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-14.811535 6553000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] control.
 [treeopen] dut.
 [treeopen] dut.cpu0.
 [treeopen] friscv_testbench.
-[treeopen] friscv_testbench.genblk3.
-[treeopen] friscv_testbench.genblk3.axi4l_ram.
 [treeopen] processing.
+[treeopen] processing.memfy.
 [sst_width] 618
 [signals_width] 447
 [sst_expanded] 1
-[sst_vpaned_height] 453
+[sst_vpaned_height] 397
 @28
 control.aclk
 @200
 -
-@800200
+@c00200
 -AXI4-lite RAM
-@23
-friscv_testbench.genblk3.axi4l_ram.p1_araddr[31:0]
-friscv_testbench.genblk3.axi4l_ram.p1_arid[7:0]
-@29
-friscv_testbench.genblk3.axi4l_ram.p1_arready
-friscv_testbench.genblk3.axi4l_ram.p1_arvalid
 @200
 -
-@23
-friscv_testbench.genblk3.axi4l_ram.p1_rdata[127:0]
-friscv_testbench.genblk3.axi4l_ram.p1_rid[7:0]
-@29
-friscv_testbench.genblk3.axi4l_ram.p1_rready
-friscv_testbench.genblk3.axi4l_ram.p1_rresp[1:0]
-friscv_testbench.genblk3.axi4l_ram.p1_rvalid
-@200
 -
-@23
-friscv_testbench.genblk3.axi4l_ram.p1_awid[7:0]
-friscv_testbench.genblk3.axi4l_ram.p1_awaddr[31:0]
-@29
-friscv_testbench.genblk3.axi4l_ram.p1_awready
-friscv_testbench.genblk3.axi4l_ram.p1_awvalid
-@200
 -
-@23
-friscv_testbench.genblk3.axi4l_ram.p1_wdata[127:0]
-@29
-friscv_testbench.genblk3.axi4l_ram.p1_wready
-@23
-friscv_testbench.genblk3.axi4l_ram.p1_wstrb[15:0]
-@29
-friscv_testbench.genblk3.axi4l_ram.p1_wvalid
-@200
 -
-@23
-friscv_testbench.genblk3.axi4l_ram.p1_bid[7:0]
-@29
-friscv_testbench.genblk3.axi4l_ram.p1_bready
-friscv_testbench.genblk3.axi4l_ram.p1_bresp[1:0]
-friscv_testbench.genblk3.axi4l_ram.p1_bvalid
-@1000200
+@1401200
 -AXI4-lite RAM
 @200
 -
@@ -142,8 +105,9 @@ control.ctrl_rs2_val[31:0]
 -Control
 @200
 -
-@c00200
+@800200
 -ISA Regs
+@c00200
 -IFs
 @22
 isa_registers.csr_rd_addr[4:0]
@@ -180,39 +144,38 @@ isa_registers.proc_rs2_val[95:0]
 @200
 -
 @22
-isa_registers.x0[31:0]
-isa_registers.x1[31:0]
-isa_registers.x2[31:0]
-isa_registers.x3[31:0]
-isa_registers.x4[31:0]
-isa_registers.x5[31:0]
-isa_registers.x6[31:0]
-isa_registers.x7[31:0]
-isa_registers.x8[31:0]
-isa_registers.x9[31:0]
-isa_registers.x10[31:0]
-isa_registers.x11[31:0]
-isa_registers.x12[31:0]
-isa_registers.x13[31:0]
-isa_registers.x14[31:0]
-isa_registers.x15[31:0]
-isa_registers.x16[31:0]
-isa_registers.x17[31:0]
-isa_registers.x18[31:0]
-isa_registers.x19[31:0]
-isa_registers.x20[31:0]
-isa_registers.x21[31:0]
-isa_registers.x22[31:0]
-isa_registers.x23[31:0]
-isa_registers.x24[31:0]
-isa_registers.x25[31:0]
-isa_registers.x26[31:0]
-isa_registers.x27[31:0]
-isa_registers.x28[31:0]
-isa_registers.x29[31:0]
-isa_registers.x30[31:0]
-isa_registers.x31[31:0]
-@1401200
+isa_registers.x1_ra[31:0]
+isa_registers.x2_sp[31:0]
+isa_registers.x3_gp[31:0]
+isa_registers.x4_tp[31:0]
+isa_registers.x5_t0[31:0]
+isa_registers.x6_t1[31:0]
+isa_registers.x7_t2[31:0]
+isa_registers.x8_s0_fp[31:0]
+isa_registers.x9_s1[31:0]
+isa_registers.x10_a0[31:0]
+isa_registers.x11_a1[31:0]
+isa_registers.x12_a2[31:0]
+isa_registers.x13_a3[31:0]
+isa_registers.x14_a4[31:0]
+isa_registers.x15_a5[31:0]
+isa_registers.x16_a6[31:0]
+isa_registers.x17_a7[31:0]
+isa_registers.x18_s2[31:0]
+isa_registers.x19_s3[31:0]
+isa_registers.x20_s4[31:0]
+isa_registers.x21_s5[31:0]
+isa_registers.x22_s6[31:0]
+isa_registers.x23_s7[31:0]
+isa_registers.x24_s8[31:0]
+isa_registers.x25_s9[31:0]
+isa_registers.x26_s10[31:0]
+isa_registers.x27_s11[31:0]
+isa_registers.x28_t3[31:0]
+isa_registers.x29_t4[31:0]
+isa_registers.x30_t5[31:0]
+isa_registers.x31_t6[31:0]
+@1000200
 -ISA Regs
 @200
 -
@@ -225,6 +188,17 @@ processing.memfy.memfy_instbus[85:0]
 @28
 processing.memfy.memfy_ready
 processing.memfy.memfy_valid
+@22
+processing.memfy.rd[4:0]
+@200
+-
+@28
+processing.memfy.state[1:0]
+processing.memfy.memfy_ready_fsm
+processing.memfy.rd_or_empty
+processing.memfy.rd_or_full
+processing.memfy.waiting_rd_cpl
+processing.memfy.waiting_wr_cpl
 @200
 -
 @22
@@ -243,7 +217,6 @@ processing.memfy.rid[7:0]
 processing.memfy.rready
 processing.memfy.rvalid
 @200
--
 -
 @22
 processing.memfy.awaddr[31:0]
@@ -278,7 +251,71 @@ processing.memfy.memfy_rd_wr
 processing.memfy.memfy_rd_addr[4:0]
 processing.memfy.memfy_rd_strb[3:0]
 processing.memfy.memfy_rd_val[31:0]
+@200
+-
+@22
+processing.memfy.memfy_regs_sts[31:0]
+@200
+-
 @1000200
 -Memfy
+@28
+processing.proc_valid
+processing.proc_ready
+@29
+processing.memfy_pending_read
+@28
+processing.memfy_pending_write
+@200
+-
+@28
+processing.proc_valid_p
+processing.proc_ready_p
+@200
+-
+@28
+processing.proc_busy
+@200
+-
+-
+@28
+processing.i_inst
+processing.alu_valid
+processing.alu_ready
+@200
+-
+@28
+processing.ls_inst
+processing.memfy_valid
+processing.memfy_ready
+@200
+-
+@28
+processing.m_inst
+processing.m_valid
+processing.m_ready
+@200
+-
+@28
+processing.memfy.memfy_rd_wr
+@22
+processing.memfy.memfy_rd_addr[4:0]
+processing.memfy.memfy_rd_strb[3:0]
+processing.memfy.memfy_rd_val[31:0]
+@200
+-
+@28
+processing.alu.alu_rd_wr
+@22
+processing.alu.alu_rd_addr[4:0]
+processing.alu.alu_rd_strb[3:0]
+processing.alu.alu_rd_val[31:0]
+@200
+-
+@22
+processing.alu.alu_rs1_addr[4:0]
+processing.alu.alu_rs1_val[31:0]
+processing.alu.alu_rs2_addr[4:0]
+processing.alu.alu_rs2_val[31:0]
 [pattern_trace] 1
 [pattern_trace] 0

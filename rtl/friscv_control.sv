@@ -241,13 +241,19 @@ module friscv_control
     /////////////////////////////////////////////////////////////////////
     `ifdef USE_SVL
     function automatic string get_mcause_desc(input integer cause);
-             if (cause==1)  get_mcause_desc = "Read-only CSR write access";
-        else if (cause==0)  get_mcause_desc = "Instruction address misaligned";
-        else if (cause==4)  get_mcause_desc = "LOAD address misaligned";
-        else if (cause==6)  get_mcause_desc = "STORE address misaligned";
-        else if (cause==2)  get_mcause_desc = "Instruction decoding error";
-        else if (cause==11) get_mcause_desc = "Environment call";
-        else                get_mcause_desc = "Unkown cause";
+		// Synchronous Trap
+             if (cause=='h1)  get_mcause_desc = "Read-only CSR write access";
+        else if (cause=='h0)  get_mcause_desc = "Instruction address misaligned";
+        else if (cause=='h4)  get_mcause_desc = "LOAD address misaligned";
+        else if (cause=='h6)  get_mcause_desc = "STORE address misaligned";
+        else if (cause=='h2)  get_mcause_desc = "Instruction decoding error";
+        else if (cause=='hB)  get_mcause_desc = "Environment call";
+		// Asynchronous Trap
+        else if (cause=='h80000003)  get_mcause_desc = "Machine Software Interrupt";
+        else if (cause=='h80000007)  get_mcause_desc = "Machine Timer Interrupt";
+        else if (cause=='h8000000B)  get_mcause_desc = "Machine External Interrupt";
+		// All other unknown interrupts
+        else get_mcause_desc = "Unkown Trap Cause";
     endfunction
     `endif
 

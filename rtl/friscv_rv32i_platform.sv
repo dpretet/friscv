@@ -29,8 +29,10 @@ module friscv_rv32i_platform
         parameter XLEN               = 32,
         // Boot address used by the control unit
         parameter BOOT_ADDR          = 0,
-        // Number of outstanding requests used by the control unit
-        parameter INST_OSTDREQ_NUM   = 8,
+        // Number of outstanding requests used by the control unit and icache
+        parameter INST_OSTDREQ_NUM  = 8,
+        // Number of outstanding requests used by the LOAD/STORE unit and dcache
+        parameter DATA_OSTDREQ_NUM  = 8,
         // Core Hart ID
         parameter HART_ID            = 0,
         // RV32E architecture, limits integer registers to 16, else 32 available
@@ -321,6 +323,7 @@ module friscv_rv32i_platform
         .PROCESSING_BUS_PIPELINE (PROCESSING_BUS_PIPELINE),
         .BOOT_ADDR (BOOT_ADDR),
         .INST_OSTDREQ_NUM (INST_OSTDREQ_NUM),
+        .DATA_OSTDREQ_NUM (DATA_OSTDREQ_NUM),
         .HART_ID (HART_ID),
         .RV32E (RV32E),
         .AXI_ADDR_W (AXI_ADDR_W),

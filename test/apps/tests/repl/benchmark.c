@@ -430,7 +430,7 @@ int pool_arena_bench(int max_iterations) {
 		pool[i] = '\0';
 	// Create a pool arena in memory
 	pool_init(&pool, ARENA_SIZE);
-	printf("Pool arena: %p\n", &pool);
+	/* printf("Pool arena: %p\n", &pool); */
 
 	while (chunk_size < ARENA_SIZE) {
 		// Erase pointers

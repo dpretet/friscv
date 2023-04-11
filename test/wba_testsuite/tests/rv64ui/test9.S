@@ -44,7 +44,7 @@ TEST2:
     div x2, x11, x10
     bne x2, x12, fail
 
-# Stress out mul surounded by load store
+# Stress out mul surrounded by load store
 TEST3:
     li x3, 3
     li x10, 2
@@ -55,7 +55,7 @@ TEST3:
     lw x2, 0(x0)
     bne x2, x12, fail
 
-# Stress out div surounded by load store
+# Stress out div surrounded by load store
 TEST4:
     li x3, 4
     li x10, 2
