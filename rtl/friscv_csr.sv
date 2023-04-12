@@ -83,12 +83,6 @@ module friscv_csr
     logic [XLEN        -1:0] oldval;
     logic [XLEN        -1:0] newval;
 
-    logic [`FUNCT3_W   -1:0] funct3_r;
-    logic [`CSR_W      -1:0] csr_r;
-    logic [`ZIMM_W     -1:0] zimm_r;
-    logic [5           -1:0] rs1_addr_r;
-    logic [XLEN        -1:0] rs1_val_r;
-
     logic                    ext_irq_sync;
     logic                    timer_irq_sync;
     logic                    sw_irq_sync;
@@ -182,6 +176,7 @@ module friscv_csr
 
     assign rs1_addr = rs1;
 
+	assign ready = 1'b1;
 
     //////////////////////////////////////////////////////////////////////////
     // Synchronize the IRQs in the core's clock domain
@@ -234,119 +229,96 @@ module friscv_csr
     always @ (posedge aclk or negedge aresetn) begin
         if (aresetn==1'b0) begin
             rd_wr_en <= 1'b0;
-            rd_wr_val <= {XLEN{1'b0}};
-            ready <= 1'b0;
-            csr_wren <= 1'b0;
-            newval <= {XLEN{1'b0}};
-            funct3_r <= {`FUNCT3_W{1'b0}};
-            csr_r <= {`CSR_W{1'b0}};
-            zimm_r <= {`ZIMM_W{1'b0}};
-            rs1_addr_r <= 5'b0;
-            rs1_val_r <= {XLEN{1'b0}};
             rd_wr_addr <= 5'b0;
-            cfsm <= IDLE;
+            rd_wr_val <= {XLEN{1'b0}};
         end else if (srst) begin
             rd_wr_en <= 1'b0;
-            rd_wr_val <= {XLEN{1'b0}};
-            ready <= 1'b0;
-            csr_wren <= 1'b0;
-            newval <= {XLEN{1'b0}};
-            funct3_r <= {`FUNCT3_W{1'b0}};
-            csr_r <= {`CSR_W{1'b0}};
-            zimm_r <= {`ZIMM_W{1'b0}};
-            rs1_addr_r <= 5'b0;
-            rs1_val_r <= {XLEN{1'b0}};
             rd_wr_addr <= 5'b0;
-            cfsm <= IDLE;
+            rd_wr_val <= {XLEN{1'b0}};
         end else begin
-
-            // Wait for a new instruction
-            case (cfsm)
-
-                default: begin
-
-                    csr_wren <= 1'b0;
-                    rd_wr_en <= 1'b0;
-                    ready <= 1'b1;
-
-                    if (valid) begin
-                        ready <= 1'b0;
-                        funct3_r <= funct3;
-                        csr_r <= csr;
-                        zimm_r <= zimm;
-                        rs1_addr_r <= rs1;
-                        rs1_val_r <= rs1_val;
-                        rd_wr_addr <= rd;
-                        cfsm <= COMPUTE;
-                    end
-                end
-
-                // Compute the new CSR value and drive
-                // the ISA register
-                COMPUTE: begin
-
-                    cfsm <= STORE;
-
-                    // Swap RS1 and CSR
-                    if (funct3_r==`CSRRW) begin
-                        csr_wren <= 1'b1;
-                        rd_wr_en <= 1'b1;
-                        rd_wr_val <= oldval;
-                        newval <= rs1_val_r;
-
-                    // Save CSR in RS1 and apply a set mask with rs1
-                    end else if (funct3_r==`CSRRS) begin
-                        rd_wr_en <= 1'b1;
-                        rd_wr_val <= oldval;
-                        if (rs1_addr_r!=5'b0) begin
-                            csr_wren <= 1'b1;
-                            newval <= oldval | rs1_val_r;
-                        end
-
-                    // Save CSR in RS1 then apply a clear mask fwith rs1
-                    end else if (funct3_r==`CSRRC) begin
-                        rd_wr_en <= 1'b1;
-                        rd_wr_val <= oldval;
-                        if (rs1_addr_r!=5'b0) begin
-                            csr_wren <= 1'b1;
-                            newval <= oldval & rs1_val_r;
-                        end
-
-                    // Store CSR in RS1 then set CSR to Zimm
-                    end else if (funct3_r==`CSRRWI) begin
-                        csr_wren <= 1'b1;
-                        rd_wr_en <= 1'b1;
-                        rd_wr_val <= oldval;
-                        newval <= {{XLEN-5{1'b0}}, zimm_r};
-
-                    // Save CSR in RS1 and apply a set mask with Zimm
-                    end else if (funct3_r==`CSRRSI) begin
-                        rd_wr_en <= 1'b1;
-                        rd_wr_val <= oldval;
-                        if (zimm_r!=5'b0) begin
-                            csr_wren <= 1'b1;
-                            newval <= oldval | {{(XLEN-`ZIMM_W){1'b0}}, zimm_r};
-                        end
-
-                    // Save CSR in RS1 and apply a clear mask with Zimm
-                    end else if (funct3_r==`CSRRCI) begin
-                        rd_wr_en <= 1'b1;
-                        rd_wr_val <= oldval;
-                        if (zimm_r!=5'b0) begin
-                            csr_wren <= 1'b1;
-                            newval <= oldval & {{(XLEN-`ZIMM_W){1'b0}}, zimm_r};
-                        end
-
-                    end
-                end
-
-                STORE: begin
-                    cfsm <= IDLE;
-                    ready <= 1'b1;
-                end
-
-            endcase
+			rd_wr_en <= valid;
+			rd_wr_addr <= rd;
+			rd_wr_val <= oldval;
         end
+    end
+
+
+    //////////////////////////////////////////////////////////////////////////
+	// Activation of write in CSR and preparation of the new value
+    //////////////////////////////////////////////////////////////////////////
+	always_comb begin
+
+		if (valid) begin
+
+			csr_wren = 1'b0;
+			newval = '0;
+
+			if (funct3==`CSRRW) begin
+				csr_wren = 1'b1;
+				newval = rs1_val;
+
+			// Save CSR in RS1 and apply a set mask with rs1
+			end else if (funct3==`CSRRS) begin
+				if (rs1_addr!=5'b0) begin
+					csr_wren = 1'b1;
+					newval = oldval | rs1_val;
+				end
+
+			// Save CSR in RS1 then apply a clear mask fwith rs1
+			end else if (funct3==`CSRRC) begin
+				if (rs1_addr!=5'b0) begin
+					csr_wren = 1'b1;
+					newval = oldval & rs1_val;
+				end
+
+			// Store CSR in RS1 then set CSR to Zimm
+			end else if (funct3==`CSRRWI) begin
+				csr_wren = 1'b1;
+				newval = {{XLEN-5{1'b0}}, zimm};
+
+			// Save CSR in RS1 and apply a set mask with Zimm
+			end else if (funct3==`CSRRSI) begin
+				if (zimm!=5'b0) begin
+					csr_wren = 1'b1;
+					newval = oldval | {{(XLEN-`ZIMM_W){1'b0}}, zimm};
+				end
+
+			// Save CSR in RS1 and apply a clear mask with Zimm
+			end else if (funct3==`CSRRCI) begin
+				if (zimm!=5'b0) begin
+					csr_wren = 1'b1;
+					newval = oldval & {{(XLEN-`ZIMM_W){1'b0}}, zimm};
+				end
+
+			end
+		end else begin
+			csr_wren = 1'b0;
+			newval = '0;
+		end
+	end
+
+    //////////////////////////////////////////////////////////////////////////
+    // Read circuit
+    //////////////////////////////////////////////////////////////////////////
+
+    always_comb begin
+		     if (csr==MSTATUS) 		oldval = mstatus;
+		else if (csr==MISA) 		oldval = misa;
+		else if (csr==MIE)  		oldval = mie;
+		else if (csr==MTVEC)  		oldval = mtvec;
+		else if (csr==MSCRATCH)  	oldval = mscratch;
+		else if (csr==MEPC)  		oldval = mepc;
+		else if (csr==MCAUSE)  		oldval = mcause;
+		else if (csr==MTVAL)  		oldval = mtval;
+		else if (csr==MIP)  		oldval = mip;
+		else if (csr==RDCYCLE)  	oldval = rdcycle[0+:XLEN];
+		else if (csr==RDTIME)  		oldval = rdtime[0+:XLEN];
+		else if (csr==RDINSTRET)  	oldval = rdinstret[0+:XLEN];
+		else if (csr==RDCYCLEH)  	oldval = rdcycle[32+:32];
+		else if (csr==RDTIMEH)  	oldval = rdtime[32+:32];
+		else if (csr==RDINSTRETH)  	oldval = rdinstret[32+:32];
+		else if (csr==MHART_ID)  	oldval = mhartid;
+		else  						oldval = {XLEN{1'b0}};
     end
 
 
@@ -444,7 +416,7 @@ module friscv_csr
                             ctrl_mstatus[8:7], 1'b0, ctrl_mstatus[5:3], 1'b0,
                             ctrl_mstatus[1:0]};
             end else if (csr_wren) begin
-                if (csr_r==MSTATUS) begin
+                if (csr==MSTATUS) begin
                     mstatus <= {newval[31], 8'b0, newval[22:11], 2'b0,
                                 newval[8:7], 1'b0, newval[5:3], 1'b0,
                                 newval[1:0]};
@@ -463,7 +435,7 @@ module friscv_csr
             mie <= {XLEN{1'b0}};
         end else begin
             if (csr_wren) begin
-                if (csr_r==MIE) begin
+                if (csr==MIE) begin
                     mie <= newval;
                 end
             end
@@ -480,7 +452,7 @@ module friscv_csr
             mtvec <= {XLEN{1'b0}};
         end else begin
             if (csr_wren) begin
-                if (csr_r==MTVEC) begin
+                if (csr==MTVEC) begin
                     mtvec <= newval;
                 end
             end
@@ -497,7 +469,7 @@ module friscv_csr
             mscratch <= {XLEN{1'b0}};
         end else begin
             if (csr_wren) begin
-                if (csr_r==MSCRATCH) begin
+                if (csr==MSCRATCH) begin
                     mscratch <= newval;
                 end
             end
@@ -516,7 +488,7 @@ module friscv_csr
             if (ctrl_mepc_wr) begin
                 mepc <= {ctrl_mepc[XLEN-1:2], 2'b0};
             end else if (csr_wren) begin
-                if (csr_r==MEPC) begin
+                if (csr==MEPC) begin
                     mepc <= {newval[XLEN-1:2], 2'b0};
                 end
             end
@@ -535,7 +507,7 @@ module friscv_csr
             if (ctrl_mcause_wr) begin
                 mcause <= ctrl_mcause;
             end else if (csr_wren) begin
-                if (csr_r==MCAUSE) begin
+                if (csr==MCAUSE) begin
                     mcause <= newval;
                 end
             end
@@ -554,7 +526,7 @@ module friscv_csr
             if (ctrl_mtval_wr) begin
                 mtval <= ctrl_mtval;
             end else if (csr_wren) begin
-                if (csr_r==MTVAL) begin
+                if (csr==MTVAL) begin
                     mtval <= newval;
                 end
             end
@@ -591,7 +563,7 @@ module friscv_csr
                     mip[7] <= 1'b0;
                 end
             end else if (csr_wren) begin
-                if (csr_r==MIP) begin
+                if (csr==MIP) begin
                     mip <= newval;
                 end
             end
@@ -624,70 +596,7 @@ module friscv_csr
 
     assign rdinstret = ctrl_rdinstret;
 
-    //////////////////////////////////////////////////////////////////////////
-    // Read circuit
-    //////////////////////////////////////////////////////////////////////////
-
-    always @ (posedge aclk or negedge aresetn) begin
-        if (~aresetn) begin
-            oldval <= {XLEN{1'b0}};
-        end else if (srst) begin
-            oldval <= {XLEN{1'b0}};
-        end else begin
-            if (cfsm==IDLE && valid) begin
-
-                if (csr==MSTATUS) begin
-                    oldval <= mstatus;
-
-                end else if (csr==MISA) begin
-                    oldval <= misa;
-
-                end else if (csr==MIE) begin
-                    oldval <= mie;
-
-                end else if (csr==MTVEC) begin
-                    oldval <= mtvec;
-
-                end else if (csr==MSCRATCH) begin
-                    oldval <= mscratch;
-
-                end else if (csr==MEPC) begin
-                    oldval <= mepc;
-
-                end else if (csr==MCAUSE) begin
-                    oldval <= mcause;
-
-                end else if (csr==MTVAL) begin
-                    oldval <= mtval;
-
-                end else if (csr==MIP) begin
-                    oldval <= mip;
-
-                end else if (csr==RDCYCLE) begin
-                    oldval <= rdcycle[0+:XLEN];
-                end else if (csr==RDTIME) begin
-                    oldval <= rdtime[0+:XLEN];
-                end else if (csr==RDINSTRET) begin
-                    oldval <= rdinstret[0+:XLEN];
-
-                end else if (csr==RDCYCLEH) begin
-                    oldval <= rdcycle[32+:32];
-                end else if (csr==RDTIMEH) begin
-                    oldval <= rdtime[32+:32];
-                end else if (csr==RDINSTRETH) begin
-                    oldval <= rdinstret[32+:32];
-
-                end else if (csr==MHART_ID) begin
-                    oldval <= mhartid;
-
-                end else begin
-                    oldval <= {XLEN{1'b0}};
-                end
-            end
-        end
-    end
-
-
+ 
     //////////////////////////////////////////////////////////////////////////
     // CSR Shared bus, for registers used across the processor
     //////////////////////////////////////////////////////////////////////////
