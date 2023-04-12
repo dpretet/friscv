@@ -518,14 +518,6 @@ module friscv_control
             flush_fifo <= 1'b0;
             arid <= {AXI_ID_W{1'b0}};
             flush_blocks <= 1'b0;
-            mepc_wr <= 1'b0;
-            mepc <= {XLEN{1'b0}};
-            mstatus_wr <= 1'b0;
-            mstatus <= {XLEN{1'b0}};
-            mcause_wr <= 1'b0;
-            mcause <= {XLEN{1'b0}};
-            mtval_wr <= 1'b0;
-            mtval <= {XLEN{1'b0}};
             priv_mode <= `MMODE;
             flush_reqs <= 1'b0;
         end else if (srst == 1'b1) begin
@@ -539,14 +531,6 @@ module friscv_control
             flush_fifo <= 1'b0;
             arid <= {AXI_ID_W{1'b0}};
             flush_blocks <= 1'b0;
-            mepc_wr <= 1'b0;
-            mepc <= {XLEN{1'b0}};
-            mstatus_wr <= 1'b0;
-            mstatus <= {XLEN{1'b0}};
-            mcause_wr <= 1'b0;
-            mcause <= {XLEN{1'b0}};
-            mtval_wr <= 1'b0;
-            mtval <= {XLEN{1'b0}};
             priv_mode <= `MMODE;
             flush_reqs <= 1'b0;
         end else begin
@@ -583,11 +567,6 @@ module friscv_control
                 ///////////////////////////////////////////////////////////////
                 FETCH: begin
 
-                    mepc_wr <= 1'b0;
-                    mstatus_wr <= 1'b0;
-                    mcause_wr <= 1'b0;
-                    mtval_wr <= 1'b0;
-
                     ///////////////////////////////////////////////////////////
                     // Manages read outstanding requests to fetch
                     // new instruction from memory:
@@ -600,6 +579,9 @@ module friscv_control
                         (jump_branch || sys[`IS_ECALL] || sys[`IS_MRET] ||
                          fence[`IS_FENCEI] || trap_occuring))
                     begin
+
+						// Get a new ID for the new batch
+						arid <= next_id(arid, MAX_ID, AXI_ID_MASK);
 
                         // Flush all previous requests made to iCache to save time
                         flush_reqs <= 1'b1;
@@ -639,16 +621,7 @@ module friscv_control
                             traps[3] <= 1'b1;
                             flush_fifo <= 1'b1;
                             arvalid <= 1'b0;
-                            arid <= next_id(arid, MAX_ID, AXI_ID_MASK);
                             pc_reg <= mtvec;
-                            mepc_wr <= 1'b1;
-                            mepc <= pc_reg;
-                            mcause_wr <= 1'b1;
-                            mcause <= mcause_code;
-                            mtval_wr <= 1'b1;
-                            mtval <= mtval_info;
-                            mstatus_wr <= 1'b1;
-                            mstatus <= mstatus_for_trap;
                             cfsm <= RELOAD;
                         end
 
@@ -673,7 +646,6 @@ module friscv_control
                             if (jump_branch && ~cant_jump) begin
                                 flush_fifo <= 1'b1;
                                 arvalid <= 1'b0;
-                                arid <= next_id(arid, MAX_ID, AXI_ID_MASK);
                                 cfsm <= RELOAD;
                             end
 
@@ -691,14 +663,7 @@ module friscv_control
                                 traps[0] <= 1'b1;
                                 flush_fifo <= 1'b1;
                                 arvalid <= 1'b0;
-                                arid <= next_id(arid, MAX_ID, AXI_ID_MASK);
                                 pc_reg <= mtvec;
-                                mepc_wr <= 1'b1;
-                                mepc <= pc_reg;
-                                mcause_wr <= 1'b1;
-                                mcause <= mcause_code;
-                                mtval_wr <= 1'b1;
-                                mtval <= mtval_info;
                                 cfsm <= RELOAD;
 
                             // Reach an EBREAK instruction, need to stall the core
@@ -708,8 +673,6 @@ module friscv_control
                                 print_instruction;
                                 log.info("EBREAK -> Stop the processor");
                                 `endif
-                                mcause_wr <= 1'b1;
-                                mcause <= mcause_code;
                                 flush_fifo <= 1'b1;
                                 traps[1] <= 1'b1;
                                 cfsm <= EBREAK;
@@ -724,10 +687,7 @@ module friscv_control
                                 flush_fifo <= 1'b1;
                                 traps[2] <= 1'b1;
                                 arvalid <= 1'b0;
-                                arid <= next_id(arid, MAX_ID, AXI_ID_MASK);
                                 pc_reg <= sb_mepc;
-                                mstatus_wr <= 1'b1;
-                                mstatus <= mstatus_for_mret;
                                 cfsm <= RELOAD;
 
                             // Reach a FENCE.i instruction, need to flush the cache
@@ -742,11 +702,10 @@ module friscv_control
                                 flush_reqs <= 1'b0;
                                 pc_reg <= pc;
                                 arvalid <= 1'b0;
-                                arid <= next_id(arid, MAX_ID, AXI_ID_MASK);
                                 pc_reg <= pc;
                                 cfsm <= FENCE_I;
 
-                            // Reach an ECALL instruction, jump to trap handler
+                            // Reach an WFI, wait for an interrupt
                             end else if (sys[`IS_WFI] && ~proc_busy && csr_ready) begin
 
                                 `ifdef USE_SVL
@@ -757,10 +716,6 @@ module friscv_control
                                 flush_fifo <= 1'b1;
                                 arvalid <= 1'b0;
                                 pc_reg <= mtvec;
-                                mepc_wr <= 1'b1;
-                                mepc <= pc_plus4;
-                                mtval_wr <= 1'b1;
-                                mtval <= mtval_info;
                                 cfsm <= WFI;
 
                             // CSR instructions
@@ -813,10 +768,6 @@ module friscv_control
                     $fwrite(f, "@ %0t,%x\n", $realtime, araddr);
                     `endif
                     traps <= 5'b0;
-                    mepc_wr <= 1'b0;
-                    mstatus_wr <= 1'b0;
-                    mcause_wr <= 1'b0;
-                    mtval_wr <= 1'b0;
                     arvalid <= 1'b1;
                     flush_fifo <= 1'b0;
                     flush_reqs <= 1'b0;
@@ -855,14 +806,6 @@ module friscv_control
                         arid <= next_id(arid, MAX_ID, AXI_ID_MASK);
                         araddr <= mtvec;
                         pc_reg <= mtvec;
-                        // mepc_wr <= 1'b1;
-                        // mepc <= mepc + {{XLEN-4{1'b0}}, 4'b100};
-                        mcause_wr <= 1'b1;
-                        mcause <= mcause_code;
-                        mtval_wr <= 1'b1;
-                        mtval <= mtval_info;
-                        mstatus_wr <= 1'b1;
-                        mstatus <= mstatus_for_trap;
                         cfsm <= RELOAD;
                     end
                 end
@@ -883,6 +826,102 @@ module friscv_control
 
         end
     end
+
+	// Manage CSRs updates 
+	always @ (posedge aclk or negedge aresetn) begin
+
+        if (aresetn == 1'b0) begin
+            mepc_wr <= 1'b0;
+            mepc <= {XLEN{1'b0}};
+            mstatus_wr <= 1'b0;
+            mstatus <= {XLEN{1'b0}};
+            mcause_wr <= 1'b0;
+            mcause <= {XLEN{1'b0}};
+            mtval_wr <= 1'b0;
+            mtval <= {XLEN{1'b0}};
+        end else if (srst == 1'b1) begin
+            mepc_wr <= 1'b0;
+            mepc <= {XLEN{1'b0}};
+            mstatus_wr <= 1'b0;
+            mstatus <= {XLEN{1'b0}};
+            mcause_wr <= 1'b0;
+            mcause <= {XLEN{1'b0}};
+            mtval_wr <= 1'b0;
+            mtval <= {XLEN{1'b0}};
+        end else begin
+
+			if (cfsm==FETCH) begin
+
+				mepc_wr <= 1'b0;
+				mstatus_wr <= 1'b0;
+				mcause_wr <= 1'b0;
+				mtval_wr <= 1'b0;
+
+				if (~fifo_empty) begin
+
+					if (trap_occuring) begin
+						mepc_wr <= 1'b1;
+						mepc <= pc_reg;
+						mcause_wr <= 1'b1;
+						mcause <= mcause_code;
+						mtval_wr <= 1'b1;
+						mtval <= mtval_info;
+						mstatus_wr <= 1'b1;
+						mstatus <= mstatus_for_trap;
+
+					end else if (|sys || |fence) begin
+
+						// Reach an ECALL instruction, jump to trap handler
+						if (sys[`IS_ECALL] && ~proc_busy && csr_ready) begin
+
+							mepc_wr <= 1'b1;
+							mepc <= pc_reg;
+							mcause_wr <= 1'b1;
+							mcause <= mcause_code;
+							mtval_wr <= 1'b1;
+							mtval <= mtval_info;
+
+						// Reach an EBREAK instruction, need to stall the core
+						end else if (sys[`IS_EBREAK]) begin
+
+							mcause_wr <= 1'b1;
+							mcause <= mcause_code;
+
+						// Reach a MRET instruction, jump to exception return
+						end else if (sys[`IS_MRET] && ~proc_busy && csr_ready) begin
+
+							mstatus_wr <= 1'b1;
+							mstatus <= mstatus_for_mret;
+							cfsm <= RELOAD;
+
+						// Reach an WFI, wait for an interrupt
+						end else if (sys[`IS_WFI] && ~proc_busy && csr_ready) begin
+
+							mepc_wr <= 1'b1;
+							mepc <= pc_plus4;
+							mtval_wr <= 1'b1;
+							mtval <= mtval_info;
+						end
+					end
+				end
+
+			end else if (cfsm==WFI) begin
+				if (csr_sb[`MSIP] || csr_sb[`MTIP] || csr_sb[`MEIP]) begin
+					mcause_wr <= 1'b1;
+					mcause <= mcause_code;
+					mtval_wr <= 1'b1;
+					mtval <= mtval_info;
+					mstatus_wr <= 1'b1;
+					mstatus <= mstatus_for_trap;
+				end
+			end else begin
+				mepc_wr <= 1'b0;
+				mstatus_wr <= 1'b0;
+				mcause_wr <= 1'b0;
+				mtval_wr <= 1'b0;
+			end
+		end
+	end
 
     // Access permissions
     // [0] Unprivileged or privileged
