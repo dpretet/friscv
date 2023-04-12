@@ -554,13 +554,21 @@ module friscv_memfy
 	// Track which integer registers is used by an outstanding request
 	////////////////////////////////////////////////////////////////////////
 
-    always @ (posedge aclk or negedge aresetn) begin
+	always @ (posedge aclk or negedge aresetn) begin
+		if (!aresetn) begin
+			regs_or[0] <= '0;
+		end else if (srst) begin
+			regs_or[0] <= '0;
+		end else begin
+			regs_or[0] <= '0;
+		end 
+	end
 
-		if (!aresetn) regs_or[0] <= '0;
-		else          regs_or[0] <= '0;
-
-		for (int i=1;i<NB_INT_REG;i++) begin
+	for (genvar i=1;i<NB_INT_REG;i++) begin
+		always @ (posedge aclk or negedge aresetn) begin
 			if (!aresetn) begin
+				regs_or[i] <= '0;
+			end else if (srst) begin
 				regs_or[i] <= '0;
 			end else begin
 				if ((memfy_valid && memfy_ready && opcode==`LOAD && !max_rd_or && rd == i[4:0]) &&
