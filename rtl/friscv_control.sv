@@ -241,18 +241,18 @@ module friscv_control
     /////////////////////////////////////////////////////////////////////
     `ifdef USE_SVL
     function automatic string get_mcause_desc(input integer cause);
-		// Synchronous Trap
+        // Synchronous Trap
              if (cause=='h1)  get_mcause_desc = "Read-only CSR write access";
         else if (cause=='h0)  get_mcause_desc = "Instruction address misaligned";
         else if (cause=='h4)  get_mcause_desc = "LOAD address misaligned";
         else if (cause=='h6)  get_mcause_desc = "STORE address misaligned";
         else if (cause=='h2)  get_mcause_desc = "Instruction decoding error";
         else if (cause=='hB)  get_mcause_desc = "Environment call";
-		// Asynchronous Trap
+        // Asynchronous Trap
         else if (cause=='h80000003)  get_mcause_desc = "Machine Software Interrupt";
         else if (cause=='h80000007)  get_mcause_desc = "Machine Timer Interrupt";
         else if (cause=='h8000000B)  get_mcause_desc = "Machine External Interrupt";
-		// All other unknown interrupts
+        // All other unknown interrupts
         else get_mcause_desc = "Unkown Trap Cause";
     endfunction
     `endif
@@ -580,8 +580,8 @@ module friscv_control
                          fence[`IS_FENCEI] || trap_occuring))
                     begin
 
-						// Get a new ID for the new batch
-						arid <= next_id(arid, MAX_ID, AXI_ID_MASK);
+                        // Get a new ID for the new batch
+                        arid <= next_id(arid, MAX_ID, AXI_ID_MASK);
 
                         // Flush all previous requests made to iCache to save time
                         flush_reqs <= 1'b1;
@@ -827,8 +827,8 @@ module friscv_control
         end
     end
 
-	// Manage CSRs updates 
-	always @ (posedge aclk or negedge aresetn) begin
+    // Manage CSRs updates 
+    always @ (posedge aclk or negedge aresetn) begin
 
         if (aresetn == 1'b0) begin
             mepc_wr <= 1'b0;
@@ -850,78 +850,78 @@ module friscv_control
             mtval <= {XLEN{1'b0}};
         end else begin
 
-			if (cfsm==FETCH) begin
+            if (cfsm==FETCH) begin
 
-				mepc_wr <= 1'b0;
-				mstatus_wr <= 1'b0;
-				mcause_wr <= 1'b0;
-				mtval_wr <= 1'b0;
+                mepc_wr <= 1'b0;
+                mstatus_wr <= 1'b0;
+                mcause_wr <= 1'b0;
+                mtval_wr <= 1'b0;
 
-				if (~fifo_empty) begin
+                if (~fifo_empty) begin
 
-					if (trap_occuring) begin
-						mepc_wr <= 1'b1;
-						mepc <= pc_reg;
-						mcause_wr <= 1'b1;
-						mcause <= mcause_code;
-						mtval_wr <= 1'b1;
-						mtval <= mtval_info;
-						mstatus_wr <= 1'b1;
-						mstatus <= mstatus_for_trap;
+                    if (trap_occuring) begin
+                        mepc_wr <= 1'b1;
+                        mepc <= pc_reg;
+                        mcause_wr <= 1'b1;
+                        mcause <= mcause_code;
+                        mtval_wr <= 1'b1;
+                        mtval <= mtval_info;
+                        mstatus_wr <= 1'b1;
+                        mstatus <= mstatus_for_trap;
 
-					end else if (|sys || |fence) begin
+                    end else if (|sys || |fence) begin
 
-						// Reach an ECALL instruction, jump to trap handler
-						if (sys[`IS_ECALL] && ~proc_busy && csr_ready) begin
+                        // Reach an ECALL instruction, jump to trap handler
+                        if (sys[`IS_ECALL] && ~proc_busy && csr_ready) begin
 
-							mepc_wr <= 1'b1;
-							mepc <= pc_reg;
-							mcause_wr <= 1'b1;
-							mcause <= mcause_code;
-							mtval_wr <= 1'b1;
-							mtval <= mtval_info;
+                            mepc_wr <= 1'b1;
+                            mepc <= pc_reg;
+                            mcause_wr <= 1'b1;
+                            mcause <= mcause_code;
+                            mtval_wr <= 1'b1;
+                            mtval <= mtval_info;
 
-						// Reach an EBREAK instruction, need to stall the core
-						end else if (sys[`IS_EBREAK]) begin
+                        // Reach an EBREAK instruction, need to stall the core
+                        end else if (sys[`IS_EBREAK]) begin
 
-							mcause_wr <= 1'b1;
-							mcause <= mcause_code;
+                            mcause_wr <= 1'b1;
+                            mcause <= mcause_code;
 
-						// Reach a MRET instruction, jump to exception return
-						end else if (sys[`IS_MRET] && ~proc_busy && csr_ready) begin
+                        // Reach a MRET instruction, jump to exception return
+                        end else if (sys[`IS_MRET] && ~proc_busy && csr_ready) begin
 
-							mstatus_wr <= 1'b1;
-							mstatus <= mstatus_for_mret;
-							cfsm <= RELOAD;
+                            mstatus_wr <= 1'b1;
+                            mstatus <= mstatus_for_mret;
+                            cfsm <= RELOAD;
 
-						// Reach an WFI, wait for an interrupt
-						end else if (sys[`IS_WFI] && ~proc_busy && csr_ready) begin
+                        // Reach an WFI, wait for an interrupt
+                        end else if (sys[`IS_WFI] && ~proc_busy && csr_ready) begin
 
-							mepc_wr <= 1'b1;
-							mepc <= pc_plus4;
-							mtval_wr <= 1'b1;
-							mtval <= mtval_info;
-						end
-					end
-				end
+                            mepc_wr <= 1'b1;
+                            mepc <= pc_plus4;
+                            mtval_wr <= 1'b1;
+                            mtval <= mtval_info;
+                        end
+                    end
+                end
 
-			end else if (cfsm==WFI) begin
-				if (csr_sb[`MSIP] || csr_sb[`MTIP] || csr_sb[`MEIP]) begin
-					mcause_wr <= 1'b1;
-					mcause <= mcause_code;
-					mtval_wr <= 1'b1;
-					mtval <= mtval_info;
-					mstatus_wr <= 1'b1;
-					mstatus <= mstatus_for_trap;
-				end
-			end else begin
-				mepc_wr <= 1'b0;
-				mstatus_wr <= 1'b0;
-				mcause_wr <= 1'b0;
-				mtval_wr <= 1'b0;
-			end
-		end
-	end
+            end else if (cfsm==WFI) begin
+                if (csr_sb[`MSIP] || csr_sb[`MTIP] || csr_sb[`MEIP]) begin
+                    mcause_wr <= 1'b1;
+                    mcause <= mcause_code;
+                    mtval_wr <= 1'b1;
+                    mtval <= mtval_info;
+                    mstatus_wr <= 1'b1;
+                    mstatus <= mstatus_for_trap;
+                end
+            end else begin
+                mepc_wr <= 1'b0;
+                mstatus_wr <= 1'b0;
+                mcause_wr <= 1'b0;
+                mtval_wr <= 1'b0;
+            end
+        end
+    end
 
     // Access permissions
     // [0] Unprivileged or privileged

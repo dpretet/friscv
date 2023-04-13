@@ -176,7 +176,9 @@ module friscv_csr
 
     assign rs1_addr = rs1;
 
-	assign ready = 1'b1;
+    // Always handshakes the request but htis flag could stop
+    // the transfer if needed in case of extra pipeline
+    assign ready = 1'b1;
 
     //////////////////////////////////////////////////////////////////////////
     // Synchronize the IRQs in the core's clock domain
@@ -236,89 +238,89 @@ module friscv_csr
             rd_wr_addr <= 5'b0;
             rd_wr_val <= {XLEN{1'b0}};
         end else begin
-			rd_wr_en <= valid;
-			rd_wr_addr <= rd;
-			rd_wr_val <= oldval;
+            rd_wr_en <= valid;
+            rd_wr_addr <= rd;
+            rd_wr_val <= oldval;
         end
     end
 
 
     //////////////////////////////////////////////////////////////////////////
-	// Activation of write in CSR and preparation of the new value
+    // Activation of write in CSR and preparation of the new value
     //////////////////////////////////////////////////////////////////////////
-	always_comb begin
+    always_comb begin
 
-		if (valid) begin
+        if (valid) begin
 
-			csr_wren = 1'b0;
-			newval = '0;
+            csr_wren = 1'b0;
+            newval = '0;
 
-			if (funct3==`CSRRW) begin
-				csr_wren = 1'b1;
-				newval = rs1_val;
+            if (funct3==`CSRRW) begin
+                csr_wren = 1'b1;
+                newval = rs1_val;
 
-			// Save CSR in RS1 and apply a set mask with rs1
-			end else if (funct3==`CSRRS) begin
-				if (rs1_addr!=5'b0) begin
-					csr_wren = 1'b1;
-					newval = oldval | rs1_val;
-				end
+            // Save CSR in RS1 and apply a set mask with rs1
+            end else if (funct3==`CSRRS) begin
+                if (rs1_addr!=5'b0) begin
+                    csr_wren = 1'b1;
+                    newval = oldval | rs1_val;
+                end
 
-			// Save CSR in RS1 then apply a clear mask fwith rs1
-			end else if (funct3==`CSRRC) begin
-				if (rs1_addr!=5'b0) begin
-					csr_wren = 1'b1;
-					newval = oldval & rs1_val;
-				end
+            // Save CSR in RS1 then apply a clear mask fwith rs1
+            end else if (funct3==`CSRRC) begin
+                if (rs1_addr!=5'b0) begin
+                    csr_wren = 1'b1;
+                    newval = oldval & rs1_val;
+                end
 
-			// Store CSR in RS1 then set CSR to Zimm
-			end else if (funct3==`CSRRWI) begin
-				csr_wren = 1'b1;
-				newval = {{XLEN-5{1'b0}}, zimm};
+            // Store CSR in RS1 then set CSR to Zimm
+            end else if (funct3==`CSRRWI) begin
+                csr_wren = 1'b1;
+                newval = {{XLEN-5{1'b0}}, zimm};
 
-			// Save CSR in RS1 and apply a set mask with Zimm
-			end else if (funct3==`CSRRSI) begin
-				if (zimm!=5'b0) begin
-					csr_wren = 1'b1;
-					newval = oldval | {{(XLEN-`ZIMM_W){1'b0}}, zimm};
-				end
+            // Save CSR in RS1 and apply a set mask with Zimm
+            end else if (funct3==`CSRRSI) begin
+                if (zimm!=5'b0) begin
+                    csr_wren = 1'b1;
+                    newval = oldval | {{(XLEN-`ZIMM_W){1'b0}}, zimm};
+                end
 
-			// Save CSR in RS1 and apply a clear mask with Zimm
-			end else if (funct3==`CSRRCI) begin
-				if (zimm!=5'b0) begin
-					csr_wren = 1'b1;
-					newval = oldval & {{(XLEN-`ZIMM_W){1'b0}}, zimm};
-				end
+            // Save CSR in RS1 and apply a clear mask with Zimm
+            end else if (funct3==`CSRRCI) begin
+                if (zimm!=5'b0) begin
+                    csr_wren = 1'b1;
+                    newval = oldval & {{(XLEN-`ZIMM_W){1'b0}}, zimm};
+                end
 
-			end
-		end else begin
-			csr_wren = 1'b0;
-			newval = '0;
-		end
-	end
+            end
+        end else begin
+            csr_wren = 1'b0;
+            newval = '0;
+        end
+    end
 
     //////////////////////////////////////////////////////////////////////////
     // Read circuit
     //////////////////////////////////////////////////////////////////////////
 
     always_comb begin
-		     if (csr==MSTATUS) 		oldval = mstatus;
-		else if (csr==MISA) 		oldval = misa;
-		else if (csr==MIE)  		oldval = mie;
-		else if (csr==MTVEC)  		oldval = mtvec;
-		else if (csr==MSCRATCH)  	oldval = mscratch;
-		else if (csr==MEPC)  		oldval = mepc;
-		else if (csr==MCAUSE)  		oldval = mcause;
-		else if (csr==MTVAL)  		oldval = mtval;
-		else if (csr==MIP)  		oldval = mip;
-		else if (csr==RDCYCLE)  	oldval = rdcycle[0+:XLEN];
-		else if (csr==RDTIME)  		oldval = rdtime[0+:XLEN];
-		else if (csr==RDINSTRET)  	oldval = rdinstret[0+:XLEN];
-		else if (csr==RDCYCLEH)  	oldval = rdcycle[32+:32];
-		else if (csr==RDTIMEH)  	oldval = rdtime[32+:32];
-		else if (csr==RDINSTRETH)  	oldval = rdinstret[32+:32];
-		else if (csr==MHART_ID)  	oldval = mhartid;
-		else  						oldval = {XLEN{1'b0}};
+             if (csr==MSTATUS)      oldval = mstatus;
+        else if (csr==MISA)         oldval = misa;
+        else if (csr==MIE)          oldval = mie;
+        else if (csr==MTVEC)        oldval = mtvec;
+        else if (csr==MSCRATCH)     oldval = mscratch;
+        else if (csr==MEPC)         oldval = mepc;
+        else if (csr==MCAUSE)       oldval = mcause;
+        else if (csr==MTVAL)        oldval = mtval;
+        else if (csr==MIP)          oldval = mip;
+        else if (csr==RDCYCLE)      oldval = rdcycle[0+:XLEN];
+        else if (csr==RDTIME)       oldval = rdtime[0+:XLEN];
+        else if (csr==RDINSTRET)    oldval = rdinstret[0+:XLEN];
+        else if (csr==RDCYCLEH)     oldval = rdcycle[32+:32];
+        else if (csr==RDTIMEH)      oldval = rdtime[32+:32];
+        else if (csr==RDINSTRETH)   oldval = rdinstret[32+:32];
+        else if (csr==MHART_ID)     oldval = mhartid;
+        else                        oldval = {XLEN{1'b0}};
     end
 
 

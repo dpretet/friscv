@@ -41,7 +41,7 @@ module friscv_memfy
     #(
         // Architecture selection
         parameter XLEN              = 32,
-		// Number of integer registers (RV32I = 32, RV32E = 16)
+        // Number of integer registers (RV32I = 32, RV32E = 16)
         parameter NB_INT_REG        = 32,
         // Address bus width defined for both control and AXI4 address signals
         parameter AXI_ADDR_W        = XLEN,
@@ -72,7 +72,7 @@ module friscv_memfy
         output logic                        memfy_ready,
         output logic                        memfy_pending_read,
         output logic                        memfy_pending_write,
-		output logic [NB_INT_REG      -1:0] memfy_regs_sts,
+        output logic [NB_INT_REG      -1:0] memfy_regs_sts,
         output logic [4               -1:0] memfy_fenceinfo,
         input  wire  [`INST_BUS_W     -1:0] memfy_instbus,
         output logic [2               -1:0] memfy_exceptions,
@@ -311,12 +311,12 @@ module friscv_memfy
     logic        [4           -1:0] acache;
 
     logic        [MAX_OR_W    -1:0] wr_or_cnt;
-    logic							max_wr_or;
+    logic                           max_wr_or;
     logic        [MAX_OR_W    -1:0] rd_or_cnt;
-    logic							max_rd_or;
+    logic                           max_rd_or;
     logic                           waiting_rd_cpl;
     logic                           waiting_wr_cpl;
-	logic        [MAX_OR_W    -1:0] regs_or[NB_INT_REG-1:0];
+    logic        [MAX_OR_W    -1:0] regs_or[NB_INT_REG-1:0];
 
     typedef enum logic[1:0] {
         IDLE = 0,
@@ -378,20 +378,20 @@ module friscv_memfy
             case (state)
 
                 // IDLE: Manages LOAD or STORE instruction issue to instruction controller
-				// The state is composed by two sub-states:
-				//	- STALL: FSM is stopped because last command issued has
-				//			 not been acknowledged by the slave.
-				//	- READY: FSM will send the request if the instruction bus
-				//			 is loaded
+                // The state is composed by two sub-states:
+                //    - STALL: FSM is stopped because last command issued has
+                //             not been acknowledged by the slave.
+                //    - READY: FSM will send the request if the instruction bus
+                //             is loaded
                 default: begin
 
-					// IDLE.STALL state:
-					// -----------------
-					// Handles a situation during which the address or data
-					// channel is not ready to accept a transaction.
-					// For write, we stop handshaking a channel which acknowledged
-					// For read, only the address channel could have fail, we
-					// do nothing. FSM is not ready anymore and we move to SERVE
+                    // IDLE.STALL state:
+                    // -----------------
+                    // Handles a situation during which the address or data
+                    // channel is not ready to accept a transaction.
+                    // For write, we stop handshaking a channel which acknowledged
+                    // For read, only the address channel could have fail, we
+                    // do nothing. FSM is not ready anymore and we move to SERVE
                     if ((arvalid && !arready) ||
                         (awvalid && !awready) || (wvalid && !wready))
                     begin
@@ -404,9 +404,9 @@ module friscv_memfy
                         state <= SERVE;
                         memfy_ready_fsm <= 1'b0;
 
-					// IDLE.READY state:
-					// -----------------
-					// Will forward a R/W transaction if the instruction is loaded
+                    // IDLE.READY state:
+                    // -----------------
+                    // Will forward a R/W transaction if the instruction is loaded
                     end else if (memfy_valid) begin
 
                         awaddr <= addr;
@@ -446,10 +446,10 @@ module friscv_memfy
                             if (waiting_wr_cpl || awvalid) begin
                                 state <= WAIT;
                                 arvalid <= 1'b0;
-								memfy_ready_fsm <= 1'b0;
+                                memfy_ready_fsm <= 1'b0;
                             end else begin
                                 arvalid <= 1'b1;
-								memfy_ready_fsm <= 1'b1;
+                                memfy_ready_fsm <= 1'b1;
                             end
                             awvalid <= 1'b0;
                             wvalid <= 1'b0;
@@ -474,8 +474,8 @@ module friscv_memfy
                     if (opcode_r==`LOAD) begin
                         // Stop the request once accepted
                         if (arready) arvalid <= 1'b0;
-						state <= IDLE;
-						memfy_ready_fsm <= 1'b1;
+                        state <= IDLE;
+                        memfy_ready_fsm <= 1'b1;
                     // STORE
                     end else begin
 
@@ -513,17 +513,17 @@ module friscv_memfy
     end
 
     // Block any further requests if IDLE is IDLE.STALL, last request issued
-	// has not been yet acknowledged
+    // has not been yet acknowledged
     assign stall_bus = (state==IDLE) & ((arvalid & !arready) | (awvalid & !awready) | (wvalid & !wready));
 
-	// Continue to accept if IDLE.READY and didn't reach yet maximum of
-	// outstanding requests available
+    // Continue to accept if IDLE.READY and didn't reach yet maximum of
+    // outstanding requests available
     assign memfy_ready = memfy_ready_fsm & !rd_or_full & !stall_bus;
 
 
-	///////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////
     // Store outstanding read request info for data alignment of the completion
-	///////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////
 
     assign push_rd_or = memfy_valid & memfy_ready & (opcode==`LOAD);
 
@@ -550,48 +550,48 @@ module friscv_memfy
     );
 
 
-	////////////////////////////////////////////////////////////////////////
-	// Track which integer registers is used by an outstanding request
-	////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////
+    // Track which integer registers is used by an outstanding request
+    ////////////////////////////////////////////////////////////////////////
 
-	always @ (posedge aclk or negedge aresetn) begin
-		if (!aresetn) begin
-			regs_or[0] <= '0;
-		end else if (srst) begin
-			regs_or[0] <= '0;
-		end else begin
-			regs_or[0] <= '0;
-		end 
-	end
+    always @ (posedge aclk or negedge aresetn) begin
+        if (!aresetn) begin
+            regs_or[0] <= '0;
+        end else if (srst) begin
+            regs_or[0] <= '0;
+        end else begin
+            regs_or[0] <= '0;
+        end 
+    end
 
-	for (genvar i=1;i<NB_INT_REG;i++) begin
-		always @ (posedge aclk or negedge aresetn) begin
-			if (!aresetn) begin
-				regs_or[i] <= '0;
-			end else if (srst) begin
-				regs_or[i] <= '0;
-			end else begin
-				if ((memfy_valid && memfy_ready && opcode==`LOAD && !max_rd_or && rd == i[4:0]) &&
-				   !(rvalid & rready && rd_r==i[4:0]))
-			   begin
-					regs_or[i] <= regs_or[i] + 1;
+    for (genvar i=1;i<NB_INT_REG;i++) begin
+        always @ (posedge aclk or negedge aresetn) begin
+            if (!aresetn) begin
+                regs_or[i] <= '0;
+            end else if (srst) begin
+                regs_or[i] <= '0;
+            end else begin
+                if ((memfy_valid && memfy_ready && opcode==`LOAD && !max_rd_or && rd == i[4:0]) &&
+                   !(rvalid & rready && rd_r==i[4:0]))
+               begin
+                    regs_or[i] <= regs_or[i] + 1;
 
-				end else if (!(memfy_valid && memfy_ready && opcode==`LOAD && !max_rd_or && rd == i[4:0]) &&
-							  (rvalid & rready && rd_r==i[4:0]))
-				begin
-					regs_or[i] <= regs_or[i] - 1;
-				end
-			end
-		end
-	end
+                end else if (!(memfy_valid && memfy_ready && opcode==`LOAD && !max_rd_or && rd == i[4:0]) &&
+                              (rvalid & rready && rd_r==i[4:0]))
+                begin
+                    regs_or[i] <= regs_or[i] - 1;
+                end
+            end
+        end
+    end
 
-	for (genvar i=0;i<NB_INT_REG;i++) begin
-		assign memfy_regs_sts[i] = regs_or[i] == '0;
-	end
+    for (genvar i=0;i<NB_INT_REG;i++) begin
+        assign memfy_regs_sts[i] = regs_or[i] == '0;
+    end
 
-	////////////////////////////////////////////////////////////////////////
-	// Track the current read/write outstanding requests waiting completions
-	////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////
+    // Track the current read/write outstanding requests waiting completions
+    ////////////////////////////////////////////////////////////////////////
 
     always @ (posedge aclk or negedge aresetn) begin
 
@@ -645,14 +645,14 @@ module friscv_memfy
     assign waiting_wr_cpl = (wr_or_cnt!={MAX_OR_W{1'b0}}) ? 1'b1 : 1'b0;
     assign waiting_rd_cpl = (rd_or_cnt!={MAX_OR_W{1'b0}}) ? 1'b1 : 1'b0;
 
-	// Flags for external land
+    // Flags for external land
     assign memfy_pending_read = waiting_rd_cpl;
-	assign memfy_pending_write = waiting_wr_cpl;
+    assign memfy_pending_write = waiting_wr_cpl;
 
 
-	////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////
     // Manage the RD write operation
-	////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////
 
     always @ (posedge aclk or negedge aresetn) begin
         if (!aresetn) begin
@@ -678,9 +678,9 @@ module friscv_memfy
     assign memfy_rs2_addr = rs2;
 
 
-	/////////////////////////////////////////////////////////////////////////
-	// Address to read/write and fence information
-	////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////
+    // Address to read/write and fence information
+    ////////////////////////////////////////////////////////////////////////
 
     // The address to access during a LOAD or a STORE
     assign addr = $signed({{(XLEN-12){imm12[11]}}, imm12}) + $signed(memfy_rs1_val);
@@ -693,9 +693,9 @@ module friscv_memfy
     assign memfy_fenceinfo = 4'b0;
 
 
-	////////////////////////////////////////////////////////////////////////////
-	// device/IO vs normal memory detection to ensure IO maps will not be cached
-	////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
+    // device/IO vs normal memory detection to ensure IO maps will not be cached
+    ////////////////////////////////////////////////////////////////////////////
     generate
 
     if (IO_MAP_NB > 0) begin
