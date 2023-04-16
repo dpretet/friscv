@@ -33,6 +33,7 @@
 ../../rtl/friscv_uart.sv
 ../../rtl/friscv_m_ext.sv
 ../../rtl/friscv_div.sv
+../../rtl/friscv_bus_perf.sv
 ../../dep/axi-crossbar/rtl/axicb_checker.sv
 ../../dep/axi-crossbar/rtl/axicb_crossbar_lite_top.sv
 ../../dep/axi-crossbar/rtl/axicb_crossbar_top.sv

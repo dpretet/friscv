@@ -18,6 +18,15 @@ int printf_bench(int max_iterations);
 int xoshi_bench(int max_iterations);
 int pool_arena_bench(int max_iterations);
 
+struct perf {
+	int active_start;
+	int active_end;
+	int sleep_start;
+	int sleep_end;
+	int stall_start;
+	int stall_end;
+};
+
 struct meter {
     int cycle_start;
     int cycle_end;
@@ -25,6 +34,9 @@ struct meter {
     int instret_end;
     int cycles;
     int instret;
+	struct perf instreq_perf;
+	struct perf instcpl_perf;
+	struct perf proc_perf;
 };
 
 struct meter bench;
@@ -112,6 +124,18 @@ int benchmark(int argc, char *argv[]) {
     asm volatile("csrr %0, 0xC00" : "=r"(bench.cycle_start));
     asm volatile("csrr %0, 0xC02" : "=r"(bench.instret_start));
 
+    asm volatile("csrr %0, 0xFC0" : "=r"(bench.instreq_perf.active_start));
+    asm volatile("csrr %0, 0xFC1" : "=r"(bench.instreq_perf.sleep_start));
+    asm volatile("csrr %0, 0xFC2" : "=r"(bench.instreq_perf.stall_start));
+
+    asm volatile("csrr %0, 0xFC3" : "=r"(bench.instcpl_perf.active_start));
+    asm volatile("csrr %0, 0xFC4" : "=r"(bench.instcpl_perf.sleep_start));
+    asm volatile("csrr %0, 0xFC5" : "=r"(bench.instcpl_perf.stall_start));
+
+    asm volatile("csrr %0, 0xFC6" : "=r"(bench.proc_perf.active_start));
+    asm volatile("csrr %0, 0xFC7" : "=r"(bench.proc_perf.sleep_start));
+    asm volatile("csrr %0, 0xFC8" : "=r"(bench.proc_perf.stall_start));
+
     // -----------------------------------------------------------------
     // Execute benchmarks
     // -----------------------------------------------------------------
@@ -140,14 +164,25 @@ int benchmark(int argc, char *argv[]) {
         ret += 1;
         printf("Pool Arena computation failed\n");
     }
+
     asm volatile("csrr %0, 0xC00" : "=r"(bench.cycle_end));
     asm volatile("csrr %0, 0xC02" : "=r"(bench.instret_end));
 
+    asm volatile("csrr %0, 0xFC0" : "=r"(bench.instreq_perf.active_end));
+    asm volatile("csrr %0, 0xFC1" : "=r"(bench.instreq_perf.sleep_end));
+    asm volatile("csrr %0, 0xFC2" : "=r"(bench.instreq_perf.stall_end));
+
+    asm volatile("csrr %0, 0xFC3" : "=r"(bench.instcpl_perf.active_end));
+    asm volatile("csrr %0, 0xFC4" : "=r"(bench.instcpl_perf.sleep_end));
+    asm volatile("csrr %0, 0xFC5" : "=r"(bench.instcpl_perf.stall_end));
+
+    asm volatile("csrr %0, 0xFC6" : "=r"(bench.proc_perf.active_end));
+    asm volatile("csrr %0, 0xFC7" : "=r"(bench.proc_perf.sleep_end));
+    asm volatile("csrr %0, 0xFC8" : "=r"(bench.proc_perf.stall_end));
+
+
     bench.cycles = bench.cycle_end - bench.cycle_start;
     bench.instret = bench.instret_end - bench.instret_start;
-
-    int cycle_div = (bench.cycles) / (bench.instret);
-    int cycle_rem = (bench.cycles) % (bench.instret);
 
     // -----------------------------------------------------------------
     // Print statistics
@@ -155,14 +190,30 @@ int benchmark(int argc, char *argv[]) {
 
     printf("\nReporting:\n");
 
-    printf("- Start time: %d\n", bench.cycle_start);
-    printf("- End time: %d\n", bench.cycle_end);
-    printf("- Total elapsed time: %d cycles\n", bench.cycles);
-    printf("- Instret start: %d\n", bench.instret_start);
-    printf("- Instret end: %d\n", bench.instret_end);
-    printf("- Retired instructions: %d\n", bench.instret);
-    printf("- cycle/instruction: ~%d.%d\n", cycle_div, cycle_rem);
+	printf("\nGeneral statistics:\n");
+    printf("  - Start time: %d\n", bench.cycle_start);
+    printf("  - End time: %d\n", bench.cycle_end);
+    printf("  - Total elapsed time: %d cycles\n", bench.cycles);
+    printf("  - Instret start: %d\n", bench.instret_start);
+    printf("  - Instret end: %d\n", bench.instret_end);
+    printf("  - Retired instructions: %d\n", bench.instret);
 
+	printf("\nInstruction Bus Request:\n");
+	printf("  - active cycles: %d\n", bench.instreq_perf.active_end - bench.instreq_perf.active_start);
+	printf("  - sleep cycles: %d\n", bench.instreq_perf.sleep_end - bench.instreq_perf.sleep_start);
+	printf("  - stall cycles: %d\n", bench.instreq_perf.stall_end - bench.instreq_perf.stall_start);
+
+	printf("\nInst Bus Completion:\n");
+	printf("  - active cycles: %d\n", bench.instcpl_perf.active_end - bench.instcpl_perf.active_start);
+	printf("  - sleep cycles: %d\n", bench.instcpl_perf.sleep_end - bench.instcpl_perf.sleep_start);
+	printf("  - stall cycles: %d\n", bench.instcpl_perf.stall_end - bench.instcpl_perf.stall_start);
+
+	printf("\nProcessing Bus:\n");
+	printf("  - active cycles: %d\n", bench.proc_perf.active_end - bench.proc_perf.active_start);
+	printf("  - sleep cycles: %d\n", bench.proc_perf.sleep_end - bench.proc_perf.sleep_start);
+	printf("  - stall cycles: %d\n", bench.proc_perf.stall_end - bench.proc_perf.stall_start);
+
+	printf("\nAlgorithms:\n");
     printf("- Chacha20 execution: %d cycles\n", chacha20.cycles);
     printf("- Matrix execution: %d cycles\n", matrix.cycles);
     printf("- Printf execution: %d cycles\n", print.cycles);

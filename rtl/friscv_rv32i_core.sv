@@ -149,6 +149,11 @@ module friscv_rv32i_core
     localparam NB_ALU_UNIT = 2 + M_EXTENSION + F_EXTENSION;
     localparam MAX_ALU_UNIT = 4;
 
+    parameter PERF_REG_W  = 32;
+    parameter PERF_NB_BUS = 3;
+
+    logic [PERF_NB_BUS*PERF_REG_W*3 -1:0] perfs;
+
     logic [5                   -1:0] ctrl_rs1_addr;
     logic [XLEN                -1:0] ctrl_rs1_val;
     logic [5                   -1:0] ctrl_rs2_addr;
@@ -227,7 +232,7 @@ module friscv_rv32i_core
     logic                            icache_ready;
     logic                            dcache_ready;
 
-    logic [5                   -1:0] traps;
+    logic [4                   -1:0] ctrl_status;
 
     logic                            ctrl_mepc_wr;
     logic [XLEN                -1:0] ctrl_mepc;
@@ -282,18 +287,8 @@ module friscv_rv32i_core
     // Status bus moving out the core
     //////////////////////////////////////////////////////////////////////////
 
-    // ECALL
-    assign status[0] = traps[0];
-    // EBREAK instruction received
-    assign status[1] = traps[1];
-    // MRET is under execution
-    assign status[2] = traps[2];
-    // Received a unsupported instruction
-    assign status[3] = traps[3];
-    // Received a command to write into a read-only CSR
-    assign status[4] = traps[4];
-    // RESERVED
-    assign status[7:5] = 3'b0;
+    assign status[3:0] = ctrl_status[3:0];
+    assign status[7:4] = 4'b0;
 
 
     //////////////////////////////////////////////////////////////////////////
@@ -390,7 +385,7 @@ module friscv_rv32i_core
         .aresetn            (aresetn),
         .srst               (srst),
         .cache_ready        (icache_ready & dcache_ready),
-        .traps              (traps),
+        .status             (ctrl_status),
         .pc_val             (dbg_regs[`PC*XLEN+:XLEN]),
         .flush_reqs         (flush_reqs),
         .flush_blocks       (flush_blocks),
@@ -522,6 +517,8 @@ module friscv_rv32i_core
 
     friscv_csr
     #(
+		.PERF_REG_W  (PERF_REG_W),
+		.PERF_NB_BUS (PERF_NB_BUS),
         .RV32E       (RV32E),
         .HART_ID     (HART_ID),
         .XLEN        (XLEN),
@@ -553,12 +550,28 @@ module friscv_rv32i_core
         .ctrl_mtval_wr   (ctrl_mtval_wr),
         .ctrl_mtval      (ctrl_mtval),
         .ctrl_rdinstret  (ctrl_rdinstret),
+		.perfs           (perfs),
         .csr_sb          (csr_sb)
+    );
+
+    friscv_bus_perf 
+    #(
+		.REG_W  (PERF_REG_W),
+		.NB_BUS (PERF_NB_BUS)
+    )
+    bus_perf 
+    (
+		.aclk    (aclk),
+		.aresetn (aresetn),
+		.srst    (srst),
+		.valid   ({proc_valid, inst_rvalid_s, inst_arvalid_s}),
+		.ready   ({proc_ready, inst_rready_s, inst_arready_s}),
+		.perfs   (perfs)
     );
 
 
     //////////////////////////////////////////////////////////////////////////
-    // All ISA enxtensions supported:
+    // All ISA extensions supported:
     //  - standard integer arithmetic
     //  - memory LOAD/STORE
     //  - multiply / divide

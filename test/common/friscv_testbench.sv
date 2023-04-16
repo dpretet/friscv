@@ -76,10 +76,6 @@ module friscv_testbench(
     `define TB_CHOICE 0
     `endif
 
-    `ifndef NO_VCD
-    `define NO_VCD = 0
-    `endif
-
     parameter TB_CHOICE = (`TB_CHOICE==0) ? "CORE" : "PLATFORM";
 
     // Instruction length
@@ -143,7 +139,7 @@ module friscv_testbench(
     parameter TIMEOUT = `TIMEOUT;
     // Minimum program counter value a test needs to reach
     parameter MIN_PC = `MIN_PC;
-    
+
     `ifdef RAM_MODE_PERF
     parameter RAM_MODE = 1;
     `else
@@ -609,15 +605,19 @@ module friscv_testbench(
     endgenerate
 
 
-    if (`NO_VCD == 0) begin
-        // Dump VCD, for both Verilator and Icarus
-        initial begin
-            `INFO("Tracing to friscv_testbench.vcd");
-            $dumpfile("friscv_testbench.vcd");
-            $dumpvars(0, friscv_testbench);
-            `INFO("Model running...");
-        end
-    end
+	`ifdef NO_VCD
+	initial begin
+		`INFO("No VCD trace will be created");
+	end
+	`else 
+	// Dump VCD, for both Verilator and Icarus
+	initial begin
+		`INFO("Tracing to friscv_testbench.vcd");
+		$dumpfile("friscv_testbench.vcd");
+		$dumpvars(0, friscv_testbench);
+		`INFO("Model running...");
+	end
+	`endif
 
 
     // Time format for $time / $realtime printing
@@ -659,9 +659,7 @@ module friscv_testbench(
         // status[2] = MRET
         if (status[2]) `INFO("Halt on MRET");
         // status[3] = Decoding error
-        if (status[3]) `INFO("Halt on an unsupported instruction");
-        // status[4] = CSR write in read-only register
-        if (status[4]) `INFO("Halt on a read-only write register event");
+        if (status[3]) `INFO("Halt on trap");
         // Timeout occured
         if (TIMEOUT>0 && timer>=TIMEOUT) begin
             tc_error_flag = 1'b1;

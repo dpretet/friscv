@@ -13,6 +13,7 @@
 #include "printf.h"
 #include "echo.h"
 #include "benchmark.h"
+#include "top.h"
 
 // ASCII codes
 #define EOT 4
@@ -29,6 +30,7 @@ int main() {
     // Supported command
     const char * c_echo = "echo";
     const char * c_sleep = "sleep";
+    const char * c_top = "top";
     const char * c_shutdown = "shutdown";
     const char * c_ebreak = "ebreak";
     const char * c_help = "help";
@@ -93,6 +95,10 @@ int main() {
             } else if (strncmp(argv[0], c_sleep, 5) == 0) {
                 sleep(argc, pargv);
 
+            // Prtint hart statistics
+            } else if (strncmp(argv[0], c_top, 3) == 0) {
+				top();
+
             // Benchmark the processor by computing some algorithms
             } else if (strncmp(argv[0], c_benchmark, 9) == 0) {
                 benchmark(argc, pargv);
@@ -110,6 +116,7 @@ int main() {
                 MSG("   help: print this menu\n");
                 MSG("   echo: print the chars passed\n");
                 MSG("   benchmark: executer a set of tests to monitor performance\n");
+                MSG("   top: print statitics about the hart execution\n");
                 MSG("   sleep: pause during the time specified\n");
                 MSG("   exit: stop the core and shutdown the testbench\n");
                 MSG("   ebreak: same than exit\n");

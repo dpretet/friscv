@@ -60,6 +60,7 @@ TC=
 # RAM is by default in compliance mode
 [[ -z $RAM_MODE ]] && RAM_MODE="compliance"
 
+# Enable logging of some core events to trace the execution
 [[ -z $TRACE_CONTROL ]] && TRACE_CONTROL=1
 [[ -z $TRACE_CACHE ]] && TRACE_CACHE=1
 [[ -z $TRACE_BLOCKS ]] && TRACE_BLOCKS=1
@@ -125,7 +126,6 @@ get_defines() {
     DEFINES="${DEFINES}MIN_PC=$MIN_PC;"
     DEFINES="${DEFINES}TB_CHOICE=$TB_CHOICE;"
     DEFINES="${DEFINES}TCNAME=$test_name;"
-    DEFINES="${DEFINES}NO_VCD=$NO_VCD;"
     DEFINES="${DEFINES}INTERACTIVE=$INTERACTIVE;"
     DEFINES="${DEFINES}ERROR_STATUS_X31=$ERROR_STATUS_X31;"
     DEFINES="${DEFINES}GEN_EIRQ=$GEN_EIRQ;"
@@ -139,8 +139,11 @@ get_defines() {
     [[ $TRACE_PUSHER  -eq 1 ]] && DEFINES="${DEFINES}TRACE_PUSHER=$TRACE_PUSHER;"
     [[ $TRACE_TB_RAM  -eq 1 ]] && DEFINES="${DEFINES}TRACE_TB_RAM=$TRACE_TB_RAM;"
 
+    [[ $NO_VCD -eq 1 ]] && DEFINES="${DEFINES}NO_VCD=1;"
+
     return 0
 }
+
 
 #------------------------------------------------------------------------------
 # Check the RTL files changed. If yes, rerun the complete build, else only run

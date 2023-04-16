@@ -16,11 +16,10 @@
 
 Mesure et amélioration des performances
 - [X] Print et save des registres CSRs pour chaque test, garde la trace des performances dans Git
-- [ ] IP point de mesure des différents bus en bandwidth et latence pour les reqs et completions
-    - [ ] min & max
-    - [ ] moyenne
+- [X] IP point de mesure des différents bus en bandwidth
 - [X] CPI
-- [ ] Enhance read outstanding requests in MemFy et OoO
+- [X] Enhance read outstanding requests in MemFy
+- [ ] Enhance read outstanding requests in OoO
 - [ ] Augmenter le nombre d’OR max de dCache
 - [ ] Reduce cache jump
 - [ ] Branch prediction
@@ -155,6 +154,8 @@ Hardware Test:
 
 # DONE
 
+- [X] CSR executes in a single cycle
+- [X] Enhance Memfy outstanding request support 
 - [X] Add Zihpm
 - [X] Fix TX read of UART which is blocking
 - [X] Develop dCache

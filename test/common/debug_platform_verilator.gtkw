@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.107 (w)1999-2020 BSI
-[*] Tue Apr 11 19:08:14 2023
+[*] Fri Apr 14 19:23:30 2023
 [*]
 [dumpfile] "/Users/damien/workspace/hdl/friscv/test/c_testsuite/friscv_testbench.vcd"
-[dumpfile_mtime] "Tue Apr 11 18:53:11 2023"
-[dumpfile_size] 1837320
+[dumpfile_mtime] "Fri Apr 14 17:33:27 2023"
+[dumpfile_size] 1351889
 [savefile] "/Users/damien/workspace/hdl/friscv/test/common/debug_platform_verilator.gtkw"
-[timestart] 1327
-[size] 2560 1440
+[timestart] 968
+[size] 2560 1324
 [pos] -1 -1
-*-5.464903 1409 13211 1371 1465 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-6.634241 1358 13211 1371 1465 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] friscv_testbench.
 [treeopen] friscv_testbench.friscv_testbench.
 [treeopen] friscv_testbench.friscv_testbench.genblk2.
@@ -37,7 +37,7 @@
 [sst_width] 450
 [signals_width] 485
 [sst_expanded] 1
-[sst_vpaned_height] 725
+[sst_vpaned_height] 406
 @c00200
 -AXI4-lite RAM
 @22
@@ -1030,7 +1030,7 @@ friscv_testbench.friscv_testbench.genblk2.dut.cpu0.control.flush_fifo
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.control.flush_reqs
 @1401200
 -flushs
-@c00200
+@800200
 -axi4-lite
 @22
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.control.araddr[31:0]
@@ -1039,7 +1039,7 @@ friscv_testbench.friscv_testbench.genblk2.dut.cpu0.control.arid[7:0]
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.control.arprot[2:0]
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.control.arready
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.control.arvalid
-@1401200
+@1000200
 -axi4-lite
 @200
 -
@@ -1056,6 +1056,8 @@ friscv_testbench.friscv_testbench.genblk2.dut.cpu0.control.imm12[11:0]
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.control.imm20[19:0]
 @200
 -
+@23
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.control.status[3:0]
 @28
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.control.async_trap_occuring
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.control.sync_trap_occuring
@@ -1077,7 +1079,7 @@ friscv_testbench.friscv_testbench.genblk2.dut.cpu0.control.ctrl_rd_val[31:0]
 @22
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.control.ctrl_rs1_addr[4:0]
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.control.ctrl_rs1_val[31:0]
-@201
+@200
 -
 @22
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.control.ctrl_rs2_addr[4:0]
@@ -1165,8 +1167,6 @@ friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.m_valid
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.m_ready
 @22
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.m_regs_sts[31:0]
-@28
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.m_rs_hzd_free
 @200
 -
 @28
@@ -1209,8 +1209,6 @@ friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy_regs_sts[31:
 (31)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy_regs_sts[31:0]
 @1401200
 -group_end
-@28
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy_rs_hzd_free
 @200
 -
 -

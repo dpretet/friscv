@@ -40,7 +40,7 @@ module friscv_control
         input  wire                       srst,
         input  wire                       cache_ready,
         // Debug interface
-        output logic [5             -1:0] traps,
+        output logic [4             -1:0] status,
         output logic [XLEN          -1:0] pc_val,
         // Flush control to clear outstanding request in buffers
         output logic                      flush_reqs,
@@ -514,7 +514,7 @@ module friscv_control
             pc_reg <= {(XLEN){1'b0}};
             pc_jal_saved <= {(XLEN){1'b0}};
             pc_auipc_saved <= {(XLEN){1'b0}};
-            traps <= 5'b0;
+            status <= 5'b0;
             flush_fifo <= 1'b0;
             arid <= {AXI_ID_W{1'b0}};
             flush_blocks <= 1'b0;
@@ -527,7 +527,7 @@ module friscv_control
             pc_reg <= {(XLEN){1'b0}};
             pc_jal_saved <= {(XLEN){1'b0}};
             pc_auipc_saved <= {(XLEN){1'b0}};
-            traps <= 5'b0;
+            status <= 5'b0;
             flush_fifo <= 1'b0;
             arid <= {AXI_ID_W{1'b0}};
             flush_blocks <= 1'b0;
@@ -618,7 +618,7 @@ module friscv_control
                             print_mcause("Handling a trap -> MCAUSE=0x", mcause_code);
                             print_instruction;
                             `endif
-                            traps[3] <= 1'b1;
+                            status[3] <= 1'b1;
                             flush_fifo <= 1'b1;
                             arvalid <= 1'b0;
                             pc_reg <= mtvec;
@@ -660,7 +660,7 @@ module friscv_control
                                 print_instruction;
                                 log.info("ECALL -> Jump to trap handler");
                                 `endif
-                                traps[0] <= 1'b1;
+                                status[0] <= 1'b1;
                                 flush_fifo <= 1'b1;
                                 arvalid <= 1'b0;
                                 pc_reg <= mtvec;
@@ -674,7 +674,7 @@ module friscv_control
                                 log.info("EBREAK -> Stop the processor");
                                 `endif
                                 flush_fifo <= 1'b1;
-                                traps[1] <= 1'b1;
+                                status[1] <= 1'b1;
                                 cfsm <= EBREAK;
 
                             // Reach a MRET instruction, jump to exception return
@@ -685,7 +685,7 @@ module friscv_control
                                 log.info("MRET -> Machine Return");
                                 `endif
                                 flush_fifo <= 1'b1;
-                                traps[2] <= 1'b1;
+                                status[2] <= 1'b1;
                                 arvalid <= 1'b0;
                                 pc_reg <= sb_mepc;
                                 cfsm <= RELOAD;
@@ -712,7 +712,7 @@ module friscv_control
                                 print_instruction;
                                 log.info("WFI -> Stall and wait for interrupt");
                                 `endif
-                                traps[0] <= 1'b1;
+                                status[0] <= 1'b1;
                                 flush_fifo <= 1'b1;
                                 arvalid <= 1'b0;
                                 pc_reg <= mtvec;
@@ -767,7 +767,7 @@ module friscv_control
                     `ifdef TRACE_CONTROL
                     $fwrite(f, "@ %0t,%x\n", $realtime, araddr);
                     `endif
-                    traps <= 5'b0;
+                    status <= 5'b0;
                     arvalid <= 1'b1;
                     flush_fifo <= 1'b0;
                     flush_reqs <= 1'b0;
@@ -800,7 +800,7 @@ module friscv_control
                         `ifdef USE_SVL
                         print_mcause("WFI -> MCAUSE=0x", mcause_code);
                         `endif
-                        traps[3] <= 1'b1;
+                        status[3] <= 1'b1;
                         flush_fifo <= 1'b1;
                         arvalid <= 1'b0;
                         arid <= next_id(arid, MAX_ID, AXI_ID_MASK);
@@ -815,7 +815,7 @@ module friscv_control
                 // EBREAK completely stops the processor and wait for a reboot
                 ///////////////////////////////////////////////////////////////
                 EBREAK: begin
-                    traps <= 5'b0;
+                    status <= 5'b0;
                     arvalid <= 1'b0;
                     flush_fifo <= 1'b0;
                     mcause_wr <= 1'b0;

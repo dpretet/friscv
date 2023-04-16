@@ -9,6 +9,8 @@
 module friscv_csr
 
     #(
+        parameter PERF_REG_W  = 32,
+        parameter PERF_NB_BUS = 3,
         // Architecture selection:
         // 32 or 64 bits support
         parameter XLEN = 32,
@@ -49,6 +51,8 @@ module friscv_csr
         input  wire                    ctrl_mtval_wr,
         input  wire  [XLEN       -1:0] ctrl_mtval,
         input  wire  [64         -1:0] ctrl_rdinstret,
+        // Performance registers bus
+        input  wire  [PERF_REG_W*3*PERF_NB_BUS -1:0] perfs,
         // CSR shared bus
         output logic [`CSR_SB_W  -1:0] csr_sb
     );
@@ -111,6 +115,16 @@ module friscv_csr
     localparam RDTIMEH      =    12'hC81;
     localparam RDINSTRETH   =    12'hC82;
 
+    // Custom registers
+    localparam INSTREQ_ACTIVE   =    12'hFC0;
+    localparam INSTREQ_SLEEP    =    12'hFC1;
+    localparam INSTREQ_STALL    =    12'hFC2;
+    localparam INSTCPL_ACTIVE   =    12'hFC3;
+    localparam INSTCPL_SLEEP    =    12'hFC4;
+    localparam INSTCPL_STALL    =    12'hFC5;
+    localparam PROC_ACTIVE      =    12'hFC6;
+    localparam PROC_SLEEP       =    12'hFC7;
+    localparam PROC_STALL       =    12'hFC8;
 
     // Machine Information Status
     // logic [XLEN-1:0] mvendorid;  // 0xF11    MRO (not implemented)
@@ -146,6 +160,16 @@ module friscv_csr
     logic [64  -1:0] rdcycle;          // 0xC00    MRO (0xC80 for 32b MSBs)
     logic [64  -1:0] rdtime;           // 0xC01    MRO (0xC81 for 32b MSBs)
     logic [64  -1:0] rdinstret;        // 0xC02    MRO (0xC82 for 32b MSBs)
+
+    logic [32  -1:0] instreq_perf_active;
+    logic [32  -1:0] instreq_perf_sleep;
+    logic [32  -1:0] instreq_perf_stall;
+    logic [32  -1:0] instcpl_perf_active;
+    logic [32  -1:0] instcpl_perf_sleep;
+    logic [32  -1:0] instcpl_perf_stall;
+    logic [32  -1:0] proc_perf_active;
+    logic [32  -1:0] proc_perf_sleep;
+    logic [32  -1:0] proc_perf_stall;
 
     //////////////////////////////////////////////////////////////////////////
     // Supervisor-level CSRs:
@@ -248,7 +272,7 @@ module friscv_csr
     //////////////////////////////////////////////////////////////////////////
     // Activation of write in CSR and preparation of the new value
     //////////////////////////////////////////////////////////////////////////
-    always_comb begin
+    always @ (*) begin
 
         if (valid) begin
 
@@ -303,24 +327,33 @@ module friscv_csr
     // Read circuit
     //////////////////////////////////////////////////////////////////////////
 
-    always_comb begin
-             if (csr==MSTATUS)      oldval = mstatus;
-        else if (csr==MISA)         oldval = misa;
-        else if (csr==MIE)          oldval = mie;
-        else if (csr==MTVEC)        oldval = mtvec;
-        else if (csr==MSCRATCH)     oldval = mscratch;
-        else if (csr==MEPC)         oldval = mepc;
-        else if (csr==MCAUSE)       oldval = mcause;
-        else if (csr==MTVAL)        oldval = mtval;
-        else if (csr==MIP)          oldval = mip;
-        else if (csr==RDCYCLE)      oldval = rdcycle[0+:XLEN];
-        else if (csr==RDTIME)       oldval = rdtime[0+:XLEN];
-        else if (csr==RDINSTRET)    oldval = rdinstret[0+:XLEN];
-        else if (csr==RDCYCLEH)     oldval = rdcycle[32+:32];
-        else if (csr==RDTIMEH)      oldval = rdtime[32+:32];
-        else if (csr==RDINSTRETH)   oldval = rdinstret[32+:32];
-        else if (csr==MHART_ID)     oldval = mhartid;
-        else                        oldval = {XLEN{1'b0}};
+    always @ (*) begin
+             if (csr==MSTATUS)         oldval = mstatus;
+        else if (csr==MISA)            oldval = misa;
+        else if (csr==MIE)             oldval = mie;
+        else if (csr==MTVEC)           oldval = mtvec;
+        else if (csr==MSCRATCH)        oldval = mscratch;
+        else if (csr==MEPC)            oldval = mepc;
+        else if (csr==MCAUSE)          oldval = mcause;
+        else if (csr==MTVAL)           oldval = mtval;
+        else if (csr==MIP)             oldval = mip;
+        else if (csr==RDCYCLE)         oldval = rdcycle[0+:XLEN];
+        else if (csr==RDTIME)          oldval = rdtime[0+:XLEN];
+        else if (csr==RDINSTRET)       oldval = rdinstret[0+:XLEN];
+        else if (csr==RDCYCLEH)        oldval = rdcycle[32+:32];
+        else if (csr==RDTIMEH)         oldval = rdtime[32+:32];
+        else if (csr==RDINSTRETH)      oldval = rdinstret[32+:32];
+        else if (csr==MHART_ID)        oldval = mhartid;
+        else if (csr==INSTREQ_ACTIVE)  oldval = instreq_perf_active;
+        else if (csr==INSTREQ_SLEEP)   oldval = instreq_perf_sleep;
+        else if (csr==INSTREQ_STALL)   oldval = instreq_perf_stall;
+        else if (csr==INSTCPL_ACTIVE)  oldval = instcpl_perf_active;
+        else if (csr==INSTCPL_SLEEP)   oldval = instcpl_perf_sleep;
+        else if (csr==INSTCPL_STALL)   oldval = instcpl_perf_stall;
+        else if (csr==PROC_ACTIVE)     oldval = proc_perf_active;
+        else if (csr==PROC_SLEEP)      oldval = proc_perf_sleep;
+        else if (csr==PROC_STALL)      oldval = proc_perf_stall;
+        else                           oldval = {XLEN{1'b0}};
     end
 
 
@@ -598,7 +631,21 @@ module friscv_csr
 
     assign rdinstret = ctrl_rdinstret;
 
- 
+    //////////////////////////////////////////////////////////////////////////
+    // Custom counters to track internal bus performance
+    //////////////////////////////////////////////////////////////////////////
+
+    assign instreq_perf_active = perfs[0*32+:32];
+    assign instreq_perf_sleep  = perfs[1*32+:32];
+    assign instreq_perf_stall  = perfs[2*32+:32];
+    assign instcpl_perf_active = perfs[3*32+:32];
+    assign instcpl_perf_sleep  = perfs[4*32+:32];
+    assign instcpl_perf_stall  = perfs[5*32+:32];
+    assign proc_perf_active = perfs[6*32+:32];
+    assign proc_perf_sleep  = perfs[7*32+:32];
+    assign proc_perf_stall  = perfs[8*32+:32];
+
+
     //////////////////////////////////////////////////////////////////////////
     // CSR Shared bus, for registers used across the processor
     //////////////////////////////////////////////////////////////////////////

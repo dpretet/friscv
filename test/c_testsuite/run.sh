@@ -15,8 +15,6 @@
 TIMEOUT=200000
 # Minumum value the program counter should reach in bytes
 MIN_PC=65692
-# Drop VCD files
-NO_VCD=0
 # Check X31 used to detect testcase execution error
 ERROR_STATUS_X31=1
 

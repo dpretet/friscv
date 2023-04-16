@@ -168,7 +168,7 @@ module friscv_cache_block_fetcher
     // FIFO buffering the instruction to fetch from the controller
     friscv_scfifo
     #(
-        .PASS_THRU (PASS_THRU_MODE),
+        .PASS_THRU (1/*PASS_THRU_MODE*/),
         .ADDR_WIDTH ($clog2(OSTDREQ_NUM)),
         .DATA_WIDTH (3+AXI_ADDR_W+AXI_ID_W)
     )
