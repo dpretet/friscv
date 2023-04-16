@@ -94,7 +94,7 @@ module friscv_cache_block_fetcher
 
     // Missed-fetch FIFO depth
     localparam MF_FIFO_DEPTH = 8;
-    localparam PASS_THRU_MODE = 0;
+    localparam PASS_THRU_MODE = 1;
 
     // Control fsm, the sequencer driving the cache read and the memory controller
     typedef enum logic[2:0] {
@@ -168,7 +168,7 @@ module friscv_cache_block_fetcher
     // FIFO buffering the instruction to fetch from the controller
     friscv_scfifo
     #(
-        .PASS_THRU (1/*PASS_THRU_MODE*/),
+        .PASS_THRU  (PASS_THRU_MODE),
         .ADDR_WIDTH ($clog2(OSTDREQ_NUM)),
         .DATA_WIDTH (3+AXI_ADDR_W+AXI_ID_W)
     )

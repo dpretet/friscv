@@ -83,3 +83,38 @@ Algorithms:
 - Printf execution: 793484 cycles
 - Xoshiro128++ execution: 372855 cycles
 - Pool Arena execution: 3095579 cycles
+
+# 230416
+
+Block Fetcher flow-thru mode activated
+
+General statistics:
+  - Start time: 9340
+  - End time: 5119249
+  - Total elapsed time: 5109909 cycles
+  - Instret start: 2243
+  - Instret end: 1433322
+  - Retired instructions: 1431079
+
+Instruction Bus Request:
+  - active cycles: 3603536
+  - sleep cycles: 0
+  - stall cycles: 1348150
+
+Inst Bus Completion:
+  - active cycles: 2665547
+  - sleep cycles: 321970
+  - stall cycles: 2121998
+
+Processing Bus:
+  - active cycles: 1219044
+  - sleep cycles: 2372728
+  - stall cycles: 1385283
+
+Algorithms:
+- Chacha20 execution: 899747 cycles
+- Matrix execution: 146781 cycles
+- Printf execution: 750617 cycles
+- Xoshiro128++ execution: 360582 cycles
+- Pool Arena execution: 2951343 cycles
+

@@ -8,6 +8,7 @@ read -sv2012 ../rtl/friscv_control.sv
 read -sv2012 ../rtl/friscv_decoder.sv
 read -sv2012 ../rtl/friscv_memfy.sv
 read -sv2012 ../rtl/friscv_processing.sv
+read -sv2012 ../rtl/friscv_bus_perf.sv
 read -sv2012 ../rtl/friscv_scfifo.sv
 read -sv2012 ../rtl/friscv_ram.sv
 read -sv2012 ../rtl/friscv_rambe.sv
