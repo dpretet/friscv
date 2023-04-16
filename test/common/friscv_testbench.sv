@@ -652,14 +652,11 @@ module friscv_testbench(
         `ASSERT((error_status_reg==0), "X31 != 0");
         `endif
 
-        // status[0] = ECALL
         if (status[0]) `INFO("Halt on ECALL");
-        // status[1] = EBREAK
         if (status[1]) `INFO("Halt on EBREAK");
-        // status[2] = MRET
         if (status[2]) `INFO("Halt on MRET");
-        // status[3] = Decoding error
         if (status[3]) `INFO("Halt on trap");
+        if (status[4]) `INFO("Halt on WFI");
         // Timeout occured
         if (TIMEOUT>0 && timer>=TIMEOUT) begin
             tc_error_flag = 1'b1;

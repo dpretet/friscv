@@ -232,7 +232,7 @@ module friscv_rv32i_core
     logic                            icache_ready;
     logic                            dcache_ready;
 
-    logic [4                   -1:0] ctrl_status;
+    logic [5                   -1:0] ctrl_status;
 
     logic                            ctrl_mepc_wr;
     logic [XLEN                -1:0] ctrl_mepc;
@@ -287,8 +287,8 @@ module friscv_rv32i_core
     // Status bus moving out the core
     //////////////////////////////////////////////////////////////////////////
 
-    assign status[3:0] = ctrl_status[3:0];
-    assign status[7:4] = 4'b0;
+    assign status[4:0] = ctrl_status[4:0];
+    assign status[7:5] = 3'b0;
 
 
     //////////////////////////////////////////////////////////////////////////

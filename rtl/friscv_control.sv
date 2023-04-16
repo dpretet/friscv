@@ -40,7 +40,7 @@ module friscv_control
         input  wire                       srst,
         input  wire                       cache_ready,
         // Debug interface
-        output logic [4             -1:0] status,
+        output logic [5             -1:0] status,
         output logic [XLEN          -1:0] pc_val,
         // Flush control to clear outstanding request in buffers
         output logic                      flush_reqs,
@@ -171,7 +171,7 @@ module friscv_control
     logic                   regs_rsvd;
     // FIFO signals
     logic [ILEN       -1:0] instruction;
-    logic                   flush_fifo;
+    logic                   flush_pipe;
     logic                   push_inst;
     logic                   fifo_full;
     logic                   pull_inst;
@@ -322,7 +322,7 @@ module friscv_control
         .aclk     (aclk),
         .aresetn  (aresetn),
         .srst     (srst),
-        .flush    (flush_fifo),
+        .flush    (flush_pipe),
         .data_in  (rdata),
         .push     (push_inst),
         .full     (fifo_full),
@@ -362,7 +362,6 @@ module friscv_control
     //
     ///////////////////////////////////////////////////////////////////////////
 
-
     friscv_decoder
     #(
         .XLEN   (XLEN)
@@ -398,7 +397,7 @@ module friscv_control
     ///////////////////////////////////////////////////////////////////////////
     //
     // Instruction sourcing Stage: put in shape the instruction bus passed to
-    // the processing module and the CSR
+    // the processing and the CSR modules
     //
     ///////////////////////////////////////////////////////////////////////////
 
@@ -504,6 +503,10 @@ module friscv_control
     ///////////////////////////////////////////////////////////////////////////
 
     assign pc_val = pc_reg;
+        
+    assign priv_mode = `MMODE;
+
+    assign flush_reqs = flush_pipe;
 
     always @ (posedge aclk or negedge aresetn) begin
 
@@ -515,11 +518,9 @@ module friscv_control
             pc_jal_saved <= {(XLEN){1'b0}};
             pc_auipc_saved <= {(XLEN){1'b0}};
             status <= 5'b0;
-            flush_fifo <= 1'b0;
             arid <= {AXI_ID_W{1'b0}};
             flush_blocks <= 1'b0;
-            priv_mode <= `MMODE;
-            flush_reqs <= 1'b0;
+            flush_pipe <= 1'b0;
         end else if (srst == 1'b1) begin
             cfsm <= BOOT;
             arvalid <= 1'b0;
@@ -528,11 +529,9 @@ module friscv_control
             pc_jal_saved <= {(XLEN){1'b0}};
             pc_auipc_saved <= {(XLEN){1'b0}};
             status <= 5'b0;
-            flush_fifo <= 1'b0;
             arid <= {AXI_ID_W{1'b0}};
             flush_blocks <= 1'b0;
-            priv_mode <= `MMODE;
-            flush_reqs <= 1'b0;
+            flush_pipe <= 1'b0;
         end else begin
 
             case (cfsm)
@@ -545,8 +544,6 @@ module friscv_control
                     arid <= AXI_ID_MASK;
                     araddr <= BOOT_ADDR;
                     pc_reg <= BOOT_ADDR;
-
-                    priv_mode <= `MMODE; // Machine-mode by default after a reset
 
                     // 2. Once flushed, boot the processor
                     if (cache_ready) begin
@@ -582,9 +579,6 @@ module friscv_control
 
                         // Get a new ID for the new batch
                         arid <= next_id(arid, MAX_ID, AXI_ID_MASK);
-
-                        // Flush all previous requests made to iCache to save time
-                        flush_reqs <= 1'b1;
                         // ECALL / Trap handling
                         if (sys[`IS_ECALL] || trap_occuring) araddr <= mtvec;
                         // MRET
@@ -619,15 +613,14 @@ module friscv_control
                             print_instruction;
                             `endif
                             status[3] <= 1'b1;
-                            flush_fifo <= 1'b1;
+                            flush_pipe <= 1'b1;
                             arvalid <= 1'b0;
                             pc_reg <= mtvec;
                             cfsm <= RELOAD;
-                        end
 
                         // Needs to jump or branch thus stop the pipeline
                         // and reload new instructions
-                        else if (jal | jalr | branching) begin
+                        end else if (jal | jalr | branching) begin
 
                             if (~cant_jump) begin
                                 `ifdef USE_SVL
@@ -644,7 +637,7 @@ module friscv_control
                             end
 
                             if (jump_branch && ~cant_jump) begin
-                                flush_fifo <= 1'b1;
+                                flush_pipe <= 1'b1;
                                 arvalid <= 1'b0;
                                 cfsm <= RELOAD;
                             end
@@ -661,7 +654,7 @@ module friscv_control
                                 log.info("ECALL -> Jump to trap handler");
                                 `endif
                                 status[0] <= 1'b1;
-                                flush_fifo <= 1'b1;
+                                flush_pipe <= 1'b1;
                                 arvalid <= 1'b0;
                                 pc_reg <= mtvec;
                                 cfsm <= RELOAD;
@@ -673,8 +666,8 @@ module friscv_control
                                 print_instruction;
                                 log.info("EBREAK -> Stop the processor");
                                 `endif
-                                flush_fifo <= 1'b1;
                                 status[1] <= 1'b1;
+                                arvalid <= 1'b0;
                                 cfsm <= EBREAK;
 
                             // Reach a MRET instruction, jump to exception return
@@ -684,8 +677,8 @@ module friscv_control
                                 print_instruction;
                                 log.info("MRET -> Machine Return");
                                 `endif
-                                flush_fifo <= 1'b1;
                                 status[2] <= 1'b1;
+                                flush_pipe <= 1'b1;
                                 arvalid <= 1'b0;
                                 pc_reg <= sb_mepc;
                                 cfsm <= RELOAD;
@@ -698,9 +691,7 @@ module friscv_control
                                 print_instruction;
                                 log.info("FENCE.i -> Start iCache flushing");
                                 `endif
-                                flush_fifo <= 1'b1;
-                                flush_reqs <= 1'b0;
-                                pc_reg <= pc;
+                                flush_pipe <= 1'b1;
                                 arvalid <= 1'b0;
                                 pc_reg <= pc;
                                 cfsm <= FENCE_I;
@@ -712,8 +703,8 @@ module friscv_control
                                 print_instruction;
                                 log.info("WFI -> Stall and wait for interrupt");
                                 `endif
-                                status[0] <= 1'b1;
-                                flush_fifo <= 1'b1;
+                                status[4] <= 1'b1;
+                                flush_pipe <= 1'b1;
                                 arvalid <= 1'b0;
                                 pc_reg <= mtvec;
                                 cfsm <= WFI;
@@ -768,9 +759,8 @@ module friscv_control
                     $fwrite(f, "@ %0t,%x\n", $realtime, araddr);
                     `endif
                     status <= 5'b0;
+                    flush_pipe <= 1'b0;
                     arvalid <= 1'b1;
-                    flush_fifo <= 1'b0;
-                    flush_reqs <= 1'b0;
                     cfsm <= FETCH;
                 end
 
@@ -786,7 +776,7 @@ module friscv_control
                         log.info("FENCE.i execution done");
                         `endif
                         flush_blocks <= 1'b0;
-                        flush_fifo <= 1'b0;
+                        flush_pipe <= 1'b0;
                         cfsm <= RELOAD;
                     end
                 end
@@ -800,9 +790,8 @@ module friscv_control
                         `ifdef USE_SVL
                         print_mcause("WFI -> MCAUSE=0x", mcause_code);
                         `endif
-                        status[3] <= 1'b1;
-                        flush_fifo <= 1'b1;
-                        arvalid <= 1'b0;
+                        status <= 5'b0;
+                        flush_pipe <= 1'b1;
                         arid <= next_id(arid, MAX_ID, AXI_ID_MASK);
                         araddr <= mtvec;
                         pc_reg <= mtvec;
@@ -815,10 +804,6 @@ module friscv_control
                 // EBREAK completely stops the processor and wait for a reboot
                 ///////////////////////////////////////////////////////////////
                 EBREAK: begin
-                    status <= 5'b0;
-                    arvalid <= 1'b0;
-                    flush_fifo <= 1'b0;
-                    mcause_wr <= 1'b0;
                     cfsm <= EBREAK;
                 end
 

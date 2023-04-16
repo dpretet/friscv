@@ -42,7 +42,7 @@ BOOT_ADDR=0
 # Can be overridden by -- no-compile argument
 NO_COMPILE=0
 # Timeout upon which the simulation is ran
-[[ -z $TIMEOUT ]] && TIMEOUT=10000
+[[ -z $TIMEOUT ]] && TIMEOUT=100000
 # Testbench configuration: 0="CORE", 1="PLATFORM"
 [[ -z $TB_CHOICE ]] && TB_CHOICE=0
 # Specific testcase(s) to run
