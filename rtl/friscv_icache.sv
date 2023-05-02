@@ -160,7 +160,6 @@ module friscv_icache
         // flush control flow to empty the front-end FIFO
         .flush_reqs      (flush_reqs),
         .flush_blocks    (flush_blocks),
-        .flush_ack       (flush_ack_fetcher),
         // read address channel from the application
         .mst_arvalid     (ctrl_arvalid),
         .mst_arready     (ctrl_arready),
@@ -242,14 +241,12 @@ module friscv_icache
         .srst         (srst),
         .ready        (cache_ready),
         .flush_blocks (flush_blocks),
-        .flush_ack    (flush_ack_memctrl),
+        .flush_ack    (flush_ack),
         .flushing     (flushing),
         .cache_wren   (cache_wren),
         .cache_waddr  (cache_waddr),
         .cache_wdata  (cache_wdata)
     );
-
-    assign flush_ack = flush_ack_fetcher & flush_ack_memctrl;
 
 
     ///////////////////////////////////////////////////////////////////////////

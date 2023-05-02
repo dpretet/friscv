@@ -256,7 +256,7 @@ module icache_testbench();
     ///////////////////////////////////////////////////////////////////////////////
 
     initial aclk = 0;
-    always #2 aclk = ~aclk;
+    always #2 aclk = !aclk;
 
     `ifdef TRACE_VCD
     // To dump data for visualization:
@@ -316,10 +316,10 @@ module icache_testbench();
             `ERROR("Testbench reached timeout");
 
         if (error)
-            `ERROR("Driver detected an issue");
+            `ERROR("Driver detected problem(s)");
 
         if (req_num==MAX_TRAFFIC)
-            `SUCCESS("Maximum traffic has been issued!");
+            `INFO("Maximum traffic has been issued");
     endtask
 
 

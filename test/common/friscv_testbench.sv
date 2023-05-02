@@ -86,10 +86,10 @@ module friscv_testbench(
     parameter RV32E = 0;
     // Boot address used by the control unit
     parameter BOOT_ADDR = `BOOT_ADDR;
-	// Number of outstanding requests used by the control unit and icache
-	parameter INST_OSTDREQ_NUM  = 8;
-	// Number of outstanding requests used by the LOAD/STORE unit and dcache
-	parameter DATA_OSTDREQ_NUM  = 8;
+    // Number of outstanding requests used by the control unit and icache
+    parameter INST_OSTDREQ_NUM  = 8;
+    // Number of outstanding requests used by the LOAD/STORE unit and dcache
+    parameter DATA_OSTDREQ_NUM  = 8;
     // MHART ID CSR register
     parameter HART_ID = 0;
 
@@ -605,19 +605,19 @@ module friscv_testbench(
     endgenerate
 
 
-	`ifdef NO_VCD
-	initial begin
-		`INFO("No VCD trace will be created");
-	end
-	`else 
-	// Dump VCD, for both Verilator and Icarus
-	initial begin
-		`INFO("Tracing to friscv_testbench.vcd");
-		$dumpfile("friscv_testbench.vcd");
-		$dumpvars(0, friscv_testbench);
-		`INFO("Model running...");
-	end
-	`endif
+    `ifdef NO_VCD
+    initial begin
+        `INFO("No VCD trace will be created");
+    end
+    `else
+    // Dump VCD, for both Verilator and Icarus
+    initial begin
+        `INFO("Tracing to friscv_testbench.vcd");
+        $dumpfile("friscv_testbench.vcd");
+        $dumpvars(0, friscv_testbench);
+        `INFO("Model running...");
+    end
+    `endif
 
 
     // Time format for $time / $realtime printing
@@ -678,38 +678,22 @@ module friscv_testbench(
 
     task print_isa_regs;
     begin
-        $display("pc:       %x", dbg_regs[ 0*XLEN+:XLEN]);
-        $display("x1/ra:    %x", dbg_regs[ 1*XLEN+:XLEN]);
-        $display("x2/sp:    %x", dbg_regs[ 2*XLEN+:XLEN]);
-        $display("x3/gp:    %x", dbg_regs[ 3*XLEN+:XLEN]);
-        $display("x4/tp:    %x", dbg_regs[ 4*XLEN+:XLEN]);
-        $display("x5/t0:    %x", dbg_regs[ 5*XLEN+:XLEN]);
-        $display("x6/t1:    %x", dbg_regs[ 6*XLEN+:XLEN]);
-        $display("x7/t2:    %x", dbg_regs[ 7*XLEN+:XLEN]);
-        $display("x8/s0/fp: %x", dbg_regs[ 8*XLEN+:XLEN]);
-        $display("x9/s1:    %x", dbg_regs[ 9*XLEN+:XLEN]);
-        $display("x10/a0:   %x", dbg_regs[10*XLEN+:XLEN]);
-        $display("x11/a1:   %x", dbg_regs[11*XLEN+:XLEN]);
-        $display("x12/a2:   %x", dbg_regs[12*XLEN+:XLEN]);
-        $display("x13/a3:   %x", dbg_regs[13*XLEN+:XLEN]);
-        $display("x14/a4:   %x", dbg_regs[14*XLEN+:XLEN]);
-        $display("x15/a5:   %x", dbg_regs[15*XLEN+:XLEN]);
-        $display("x16/a6:   %x", dbg_regs[16*XLEN+:XLEN]);
-        $display("x17/a7:   %x", dbg_regs[17*XLEN+:XLEN]);
-        $display("x18/s2:   %x", dbg_regs[18*XLEN+:XLEN]);
-        $display("x19/s3:   %x", dbg_regs[19*XLEN+:XLEN]);
-        $display("x20/s4:   %x", dbg_regs[20*XLEN+:XLEN]);
-        $display("x21/s5:   %x", dbg_regs[21*XLEN+:XLEN]);
-        $display("x22/s6:   %x", dbg_regs[22*XLEN+:XLEN]);
-        $display("x23/s7:   %x", dbg_regs[23*XLEN+:XLEN]);
-        $display("x24/s8:   %x", dbg_regs[24*XLEN+:XLEN]);
-        $display("x25/s9:   %x", dbg_regs[25*XLEN+:XLEN]);
-        $display("x26/s10:  %x", dbg_regs[26*XLEN+:XLEN]);
-        $display("x27/s11:  %x", dbg_regs[27*XLEN+:XLEN]);
-        $display("x28/t3:   %x", dbg_regs[28*XLEN+:XLEN]);
-        $display("x29/t4:   %x", dbg_regs[29*XLEN+:XLEN]);
-        $display("x30/t5:   %x", dbg_regs[30*XLEN+:XLEN]);
-        $display("x31/t6:   %x", dbg_regs[31*XLEN+:XLEN]);
+        $display("pc:       %x\tx16/a6:   %x", dbg_regs[ 0*XLEN+:XLEN], dbg_regs[16*XLEN+:XLEN]);
+        $display("x1/ra:    %x\tx17/a7:   %x", dbg_regs[ 1*XLEN+:XLEN], dbg_regs[17*XLEN+:XLEN]);
+        $display("x2/sp:    %x\tx18/s2:   %x", dbg_regs[ 2*XLEN+:XLEN], dbg_regs[18*XLEN+:XLEN]);
+        $display("x3/gp:    %x\tx19/s3:   %x", dbg_regs[ 3*XLEN+:XLEN], dbg_regs[19*XLEN+:XLEN]);
+        $display("x4/tp:    %x\tx20/s4:   %x", dbg_regs[ 4*XLEN+:XLEN], dbg_regs[20*XLEN+:XLEN]);
+        $display("x5/t0:    %x\tx21/s5:   %x", dbg_regs[ 5*XLEN+:XLEN], dbg_regs[21*XLEN+:XLEN]);
+        $display("x6/t1:    %x\tx22/s6:   %x", dbg_regs[ 6*XLEN+:XLEN], dbg_regs[22*XLEN+:XLEN]);
+        $display("x7/t2:    %x\tx23/s7:   %x", dbg_regs[ 7*XLEN+:XLEN], dbg_regs[23*XLEN+:XLEN]);
+        $display("x8/s0/fp: %x\tx24/s8:   %x", dbg_regs[ 8*XLEN+:XLEN], dbg_regs[24*XLEN+:XLEN]);
+        $display("x9/s1:    %x\tx25/s9:   %x", dbg_regs[ 9*XLEN+:XLEN], dbg_regs[25*XLEN+:XLEN]);
+        $display("x10/a0:   %x\tx26/s10:  %x", dbg_regs[10*XLEN+:XLEN], dbg_regs[26*XLEN+:XLEN]);
+        $display("x11/a1:   %x\tx27/s11:  %x", dbg_regs[11*XLEN+:XLEN], dbg_regs[27*XLEN+:XLEN]);
+        $display("x12/a2:   %x\tx28/t3:   %x", dbg_regs[12*XLEN+:XLEN], dbg_regs[28*XLEN+:XLEN]);
+        $display("x13/a3:   %x\tx29/t4:   %x", dbg_regs[13*XLEN+:XLEN], dbg_regs[29*XLEN+:XLEN]);
+        $display("x14/a4:   %x\tx30/t5:   %x", dbg_regs[14*XLEN+:XLEN], dbg_regs[30*XLEN+:XLEN]);
+        $display("x15/a5:   %x\tx31/t6:   %x", dbg_regs[15*XLEN+:XLEN], dbg_regs[31*XLEN+:XLEN]);
     end
     endtask
 

@@ -295,7 +295,6 @@ module friscv_dcache
         // unused flush control
         .flush_reqs      (1'b0),
         .flush_blocks    (1'b0),
-        .flush_ack       (),
         // status flags for ordering rules
         .pending_wr      (pending_wr),
         .pending_rd      (pending_rd_blk),

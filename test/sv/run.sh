@@ -31,8 +31,6 @@ TIMEOUT=$((MAX_TRAFFIC*10))
 TB="./icache_testbench.sv"
 # Use Icarus Verilog simulator
 [[ -z $SIM ]] && SIM="icarus"
-# Don't dump VCD during simulation
-[[ -z $NO_VCD ]] && NO_VCD=0
 #------------------------------------------------------------------------------
 
 TRACE_CACHE=0
@@ -40,7 +38,7 @@ TRACE_BLOCKS=0
 TRACE_FETCHER=0
 TRACE_PUSHER=0
 TRACE_TB_RAM=0
-TRACE_VCD=0
+TRACE_VCD=1
 
 #------------------------------------------------------------------------------
 # Clean compiled programs
@@ -89,7 +87,6 @@ run_tests() {
     DEFINES="${DEFINES}CACHE_SIM_ENV=1;"
     DEFINES="${DEFINES}CACHE_BLOCK_W=$CACHE_BLOCK_W;"
     DEFINES="${DEFINES}TIMEOUT=$TIMEOUT;"
-    DEFINES="${DEFINES}NO_VCD=$NO_VCD;"
     DEFINES="${DEFINES}MAX_TRAFFIC=$MAX_TRAFFIC;"
     DEFINES="${DEFINES}XLEN=$XLEN;"
     DEFINES="${DEFINES}TBNAME=${TB};"
@@ -101,9 +98,9 @@ run_tests() {
     [[ $TRACE_VCD     -eq 1 ]] && DEFINES="${DEFINES}TRACE_VCD=$TRACE_VCD;"
 
     # Execute the testcase with SVUT
-    svutRun -t $TB \
+    svutRun -t "$TB" \
             -define "$DEFINES" \
-            -sim $SIM \
+            -sim "$SIM" \
             -include ../../dep/svlogger ../../rtl \
             | tee -a simulation.log
 
@@ -196,8 +193,7 @@ get_args() {
                 SIM=$1
             ;;
             --novcd )
-                shift
-                NO_VCD=1
+                TRACE_VCD=0
             ;;
             -h | --help )
                 usage

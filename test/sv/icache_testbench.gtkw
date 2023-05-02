@@ -1,21 +1,21 @@
 [*]
 [*] GTKWave Analyzer v3.3.107 (w)1999-2020 BSI
-[*] Sun Oct  9 13:15:00 2022
+[*] Sun Apr 23 19:52:35 2023
 [*]
 [dumpfile] "/Users/damien/workspace/hdl/friscv/test/sv/icache_testbench.vcd"
-[dumpfile_mtime] "Sun Oct  9 13:12:55 2022"
-[dumpfile_size] 624678
+[dumpfile_mtime] "Sun Apr 23 18:54:08 2023"
+[dumpfile_size] 639537
 [savefile] "/Users/damien/workspace/hdl/friscv/test/sv/icache_testbench.gtkw"
-[timestart] 0
-[size] 2560 1324
+[timestart] 2183900
+[size] 1440 784
 [pos] -1 -1
-*-20.638897 58000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-14.638897 2260300 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] icache.
 [treeopen] icache.cache_blocks.
 [sst_width] 436
-[signals_width] 461
+[signals_width] 627
 [sst_expanded] 1
-[sst_vpaned_height] 1083
+[sst_vpaned_height] 546
 @c00200
 -Testbench
 @28
@@ -111,12 +111,11 @@ driver.rid_error[63:0]
 driver.ror_error[63:0]
 @1401200
 -driver
-@800200
+@c00200
 -iCache
 @28
 icache.aclk
 icache.aresetn
-@29
 icache.cache_ready
 @200
 -
@@ -151,26 +150,16 @@ icache.icache_rlast
 icache.icache_rready
 icache.icache_rresp[1:0]
 icache.icache_rvalid
-@1000200
+@1401200
 -iCache
-@c00200
+@800200
 -iCache Fetcher
 @28
 icache.aclk
+@29
 icache.aresetn
 @200
 -
-@c00200
--flush interface
-@28
-icache.flush_ack
-icache.flush_ack_fetcher
-icache.flush_ack_memctrl
-icache.flush_blocks
-icache.flush_reqs
-icache.flushing
-@1401200
--flush interface
 @28
 fetcher.pending_rd
 fetcher.pending_wr
@@ -181,34 +170,8 @@ fetcher.mst_araddr[31:0]
 fetcher.mst_arid[7:0]
 @28
 fetcher.mst_arprot[2:0]
-fetcher.mst_arready
 fetcher.mst_arvalid
-@200
--
-@28
-fetcher.push_addr_if
-fetcher.fifo_full_if
-@200
--
-@24
-[color] 1
-fetcher.seq[2:0]
-@200
--
-@28
-fetcher.pull_addr_if
-[color] 2
-fetcher.fifo_empty_if
-@22
-fetcher.araddr_if[31:0]
-fetcher.arid_if[7:0]
-@28
-fetcher.arprot_if[2:0]
-@200
--
-@28
-fetcher.push_addr_mf
-fetcher.fifo_full_mf
+fetcher.mst_arready
 @200
 -
 @22
@@ -219,12 +182,6 @@ fetcher.arprot_ffd[2:0]
 @200
 -
 @28
-fetcher.pull_addr_mf
-[color] 2
-fetcher.fifo_empty_mf
-@200
--
-@28
 fetcher.cache_ren
 @22
 fetcher.cache_raddr[31:0]
@@ -232,20 +189,22 @@ fetcher.cache_rdata[31:0]
 @28
 fetcher.cache_hit
 fetcher.cache_miss
-fetcher.cache_miss_r
-fetcher.cache_loading
 @200
 -
 @24
+fetcher.loader[1:0]
+@28
 [color] 1
-fetcher.loader[2:0]
+fetcher.cache_writing
+@200
+-
 @22
 fetcher.memctrl_araddr[31:0]
 fetcher.memctrl_arid[7:0]
 @28
 fetcher.memctrl_arprot[2:0]
-fetcher.memctrl_arready
 fetcher.memctrl_arvalid
+fetcher.memctrl_arready
 @200
 -
 @22
@@ -255,7 +214,7 @@ fetcher.mst_rid[7:0]
 fetcher.mst_rresp[1:0]
 fetcher.mst_rvalid
 fetcher.mst_rready
-@1401200
+@1000200
 -iCache Fetcher
 [pattern_trace] 1
 [pattern_trace] 0

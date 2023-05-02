@@ -175,14 +175,12 @@ module driver
                     if ((arbeat_cnt==(rbatch_len-1) || rbatch_len==0) && RW_MODE && arvalid && arready) begin
                         rden <= 1'b0;
                         seq <= 1'b1;
-                        // wren <= 1'b1;
                     end else begin
                         rden <= !(|wr_orreq);
                     end
                 end else begin
                     // end of write batch, mve to read
                     if ((awbeat_cnt==(wbatch_len-1) || wbatch_len==0) && awvalid && awready) begin
-                        // rden <= 1'b1;
                         wren <= 1'b0;
                         seq <= 1'b0;
                     end else begin
@@ -219,7 +217,7 @@ module driver
 
     always @ (posedge aclk or negedge aresetn) begin
 
-        if (~aresetn) begin
+        if (!aresetn) begin
             arid <= {AXI_ID_W{1'b0}};
             next_rid <= {AXI_ID_W{1'b0}};
             araddr <= {AXI_ADDR_W{1'b0}};
@@ -372,7 +370,7 @@ module driver
 
     assign rvalid_s = (!check_flush_reqs         ) ? rvalid :
                       (block_rch && rid==next_rid) ? rvalid :
-                      (block_rch && rid!=next_rid) ? 2'b0 :
+                      (block_rch && rid!=next_rid) ? 1'b0 :
                                                      rvalid;
 
     always @ (posedge aclk or negedge aresetn) begin

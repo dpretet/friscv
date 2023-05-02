@@ -118,3 +118,36 @@ Algorithms:
 - Xoshiro128++ execution: 360582 cycles
 - Pool Arena execution: 2951343 cycles
 
+
+# 23/05/02 iCache update
+
+General statistics:
+  - Start time: 6463580
+  - End time: 12746291
+  - Total elapsed time: 6282711 cycles
+  - Instret start: 1465911
+  - Instret end: 2896990
+  - Retired instructions: 1431079
+
+Instruction Bus Request:
+  - active cycles: 3724323
+  - sleep cycles: 20221
+  - stall cycles: 2400165
+
+Inst Bus Completion:
+  - active cycles: 3724324
+  - sleep cycles: 2723
+  - stall cycles: 2555586
+
+Processing Bus:
+  - active cycles: 1219044
+  - sleep cycles: 3251294
+  - stall cycles: 1661356
+
+Algorithms:
+- Chacha20 execution: 1048608 cycles
+- Matrix execution: 172941 cycles
+- Printf execution: 930233 cycles
+- Xoshiro128++ execution: 418865 cycles
+- Pool Arena execution: 3711268 cycles
+

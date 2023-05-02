@@ -128,6 +128,7 @@ module friscv_control
     logic [6    -1:0] sys;
     logic             dec_error;
     logic             inst_dec_error;
+    logic             inst_ready;
 
     // Control fsm
     typedef enum logic[3:0] {
@@ -195,7 +196,7 @@ module friscv_control
     logic                   sync_trap_occuring;
     logic                   async_trap_occuring;
 
-    logic [2         -1:0] priv_mode;
+    logic [2          -1:0] priv_mode;
 
     // Logger setup
     `ifdef USE_SVL
@@ -322,7 +323,7 @@ module friscv_control
         .aclk     (aclk),
         .aresetn  (aresetn),
         .srst     (srst),
-        .flush    (flush_pipe),
+        .flush    (flush_pipe | flush_blocks),
         .data_in  (rdata),
         .push     (push_inst),
         .full     (fifo_full),
@@ -335,6 +336,8 @@ module friscv_control
 
     assign pull_inst = (~cant_jump && ~cant_process && ~cant_lui_auipc && ~cant_sys &&
                         (cfsm==FETCH) && ~trap_occuring) ? 1'b1 : 1'b0;
+
+    assign inst_ready = !fifo_empty & !flush_pipe;
 
     ///////////////////////////////////////////////////////////////////////////
     //
@@ -401,9 +404,9 @@ module friscv_control
     //
     ///////////////////////////////////////////////////////////////////////////
 
-    assign proc_valid = ~fifo_empty & processing & (cfsm==FETCH) & csr_ready;
+    assign proc_valid = inst_ready & processing & (cfsm==FETCH) & csr_ready;
 
-    assign csr_en = ~fifo_empty && sys[`IS_CSR] & (cfsm==FETCH) & ~proc_busy;
+    assign csr_en = inst_ready && sys[`IS_CSR] & (cfsm==FETCH) & ~proc_busy;
 
     assign proc_instbus[`OPCODE +: `OPCODE_W] = opcode;
     assign proc_instbus[`FUNCT3 +: `FUNCT3_W] = funct3;
@@ -503,10 +506,10 @@ module friscv_control
     ///////////////////////////////////////////////////////////////////////////
 
     assign pc_val = pc_reg;
-        
+
     assign priv_mode = `MMODE;
 
-    assign flush_reqs = flush_pipe;
+    assign flush_reqs = '0;
 
     always @ (posedge aclk or negedge aresetn) begin
 
@@ -572,7 +575,7 @@ module friscv_control
                     //   manage a trap, stop the addr issuer and load the
                     //   right branch
                     //
-                    if (~fifo_empty && ~cant_jump &&
+                    if (inst_ready && ~cant_jump &&
                         (jump_branch || sys[`IS_ECALL] || sys[`IS_MRET] ||
                          fence[`IS_FENCEI] || trap_occuring))
                     begin
@@ -593,9 +596,11 @@ module friscv_control
                     end
                     ///////////////////////////////////////////////////////////
 
+                    flush_pipe <= 1'b0;
+
                     ///////////////////////////////////////////////////////////
                     // Manages the PC vs the different instructions to execute
-                    if (~fifo_empty) begin
+                    if (inst_ready) begin
 
                         // Need to branch/process but ALU/memfy/CSR didn't finish
                         // to execute last instruction, so store PCs.
@@ -614,32 +619,26 @@ module friscv_control
                             `endif
                             status[3] <= 1'b1;
                             flush_pipe <= 1'b1;
-                            arvalid <= 1'b0;
                             pc_reg <= mtvec;
-                            cfsm <= RELOAD;
 
                         // Needs to jump or branch thus stop the pipeline
                         // and reload new instructions
                         end else if (jal | jalr | branching) begin
 
                             if (~cant_jump) begin
-                                `ifdef USE_SVL
                                 print_instruction;
-                                `endif
                                 pc_reg <= pc;
                             end
 
                             if (jump_branch & ~cant_jump) begin
                                 `ifdef USE_SVL
                                 if (jal | jalr) log.info("Jumping");
-                                else log.info("Branching");
+                                else            log.info("Branching");
                                 `endif
                             end
 
                             if (jump_branch && ~cant_jump) begin
                                 flush_pipe <= 1'b1;
-                                arvalid <= 1'b0;
-                                cfsm <= RELOAD;
                             end
 
                         // Any sys instruction:
@@ -648,20 +647,16 @@ module friscv_control
 
                             // Reach an ECALL instruction, jump to trap handler
                             if (sys[`IS_ECALL] && ~proc_busy && csr_ready) begin
-
                                 `ifdef USE_SVL
                                 print_instruction;
                                 log.info("ECALL -> Jump to trap handler");
                                 `endif
                                 status[0] <= 1'b1;
                                 flush_pipe <= 1'b1;
-                                arvalid <= 1'b0;
                                 pc_reg <= mtvec;
-                                cfsm <= RELOAD;
 
                             // Reach an EBREAK instruction, need to stall the core
                             end else if (sys[`IS_EBREAK]) begin
-
                                 `ifdef USE_SVL
                                 print_instruction;
                                 log.info("EBREAK -> Stop the processor");
@@ -672,96 +667,68 @@ module friscv_control
 
                             // Reach a MRET instruction, jump to exception return
                             end else if (sys[`IS_MRET] && ~proc_busy && csr_ready) begin
-
                                 `ifdef USE_SVL
                                 print_instruction;
                                 log.info("MRET -> Machine Return");
                                 `endif
                                 status[2] <= 1'b1;
                                 flush_pipe <= 1'b1;
-                                arvalid <= 1'b0;
                                 pc_reg <= sb_mepc;
-                                cfsm <= RELOAD;
 
                             // Reach a FENCE.i instruction, need to flush the cache
                             // the instruction pipeline
                             end else if (fence[`IS_FENCEI]) begin
-
                                 `ifdef USE_SVL
                                 print_instruction;
                                 log.info("FENCE.i -> Start iCache flushing");
                                 `endif
-                                flush_pipe <= 1'b1;
                                 arvalid <= 1'b0;
                                 pc_reg <= pc;
                                 cfsm <= FENCE_I;
 
                             // Reach an WFI, wait for an interrupt
+                            // TODO: could miss an interrupt if processing is too long
                             end else if (sys[`IS_WFI] && ~proc_busy && csr_ready) begin
-
                                 `ifdef USE_SVL
                                 print_instruction;
                                 log.info("WFI -> Stall and wait for interrupt");
                                 `endif
                                 status[4] <= 1'b1;
                                 flush_pipe <= 1'b1;
-                                arvalid <= 1'b0;
                                 pc_reg <= mtvec;
+                                arvalid <= 1'b0;
                                 cfsm <= WFI;
 
                             // CSR instructions
                             end else if (sys[`IS_CSR] && ~cant_sys) begin
-
-                                `ifdef USE_SVL
                                 print_instruction;
-                                `endif
+                                flush_pipe <= 1'b0;
                                 pc_reg <= pc;
 
                             // FENCE instruction (not supported)
                             end else if (~proc_busy && csr_ready) begin
-
-                                `ifdef USE_SVL
                                 print_instruction;
-                                `endif
+                                flush_pipe <= 1'b0;
                                 pc_reg <= pc;
                             end
 
                         // LUI and AUIPC execution, done in this module
                         end else if (lui_auipc && ~cant_lui_auipc) begin
-
-                            `ifdef USE_SVL
                             print_instruction;
-                            `endif
+                            flush_pipe <= 1'b0;
                             pc_reg <= pc;
 
                         // All other instructions
                         end else if (processing) begin
 
                             if (~cant_process) begin
-                                `ifdef USE_SVL
                                 print_instruction;
-                                `endif
+                                flush_pipe <= 1'b0;
                                 pc_reg <= pc;
                             end
                         end
                     end
                     ///////////////////////////////////////////////////////////
-                end
-
-
-                ///////////////////////////////////////////////////////////////
-                // Stop operations to reload new oustanding requests. Used to
-                // reboot the cache and continue to fetch the addresses from
-                // a new origin
-                ///////////////////////////////////////////////////////////////
-                RELOAD: begin
-                    `ifdef TRACE_CONTROL
-                    $fwrite(f, "@ %0t,%x\n", $realtime, araddr);
-                    `endif
-                    status <= 5'b0;
-                    flush_pipe <= 1'b0;
-                    arvalid <= 1'b1;
-                    cfsm <= FETCH;
                 end
 
 
@@ -777,7 +744,8 @@ module friscv_control
                         `endif
                         flush_blocks <= 1'b0;
                         flush_pipe <= 1'b0;
-                        cfsm <= RELOAD;
+                        arvalid <= 1'b1;
+                        cfsm <= FETCH;
                     end
                 end
 
@@ -795,7 +763,8 @@ module friscv_control
                         arid <= next_id(arid, MAX_ID, AXI_ID_MASK);
                         araddr <= mtvec;
                         pc_reg <= mtvec;
-                        cfsm <= RELOAD;
+                        arvalid <= 1'b1;
+                        cfsm <= FETCH;
                     end
                 end
 
@@ -812,7 +781,18 @@ module friscv_control
         end
     end
 
-    // Manage CSRs updates 
+
+    // Trace control when jumping/branching for debug purpose
+    always @ (posedge aclk) begin
+        if (flush_pipe || (cfsm==WFI && (csr_sb[`MSIP] || csr_sb[`MTIP] || csr_sb[`MEIP]))) begin
+            `ifdef TRACE_CONTROL
+            $fwrite(f, "@ %0t,%x\n", $realtime, sb_mepc);
+            `endif
+        end
+    end
+
+
+    // Manage CSRs updates
     always @ (posedge aclk or negedge aresetn) begin
 
         if (aresetn == 1'b0) begin
@@ -842,9 +822,10 @@ module friscv_control
                 mcause_wr <= 1'b0;
                 mtval_wr <= 1'b0;
 
-                if (~fifo_empty) begin
+                if (inst_ready) begin
 
                     if (trap_occuring) begin
+
                         mepc_wr <= 1'b1;
                         mepc <= pc_reg;
                         mcause_wr <= 1'b1;
@@ -877,7 +858,6 @@ module friscv_control
 
                             mstatus_wr <= 1'b1;
                             mstatus <= mstatus_for_mret;
-                            cfsm <= RELOAD;
 
                         // Reach an WFI, wait for an interrupt
                         end else if (sys[`IS_WFI] && ~proc_busy && csr_ready) begin
@@ -886,19 +866,20 @@ module friscv_control
                             mepc <= pc_plus4;
                             mtval_wr <= 1'b1;
                             mtval <= mtval_info;
+
                         end
                     end
                 end
 
-            end else if (cfsm==WFI) begin
-                if (csr_sb[`MSIP] || csr_sb[`MTIP] || csr_sb[`MEIP]) begin
-                    mcause_wr <= 1'b1;
-                    mcause <= mcause_code;
-                    mtval_wr <= 1'b1;
-                    mtval <= mtval_info;
-                    mstatus_wr <= 1'b1;
-                    mstatus <= mstatus_for_trap;
-                end
+            end else if (cfsm==WFI && (csr_sb[`MSIP] || csr_sb[`MTIP] || csr_sb[`MEIP])) begin
+
+                mcause_wr <= 1'b1;
+                mcause <= mcause_code;
+                mtval_wr <= 1'b1;
+                mtval <= mtval_info;
+                mstatus_wr <= 1'b1;
+                mstatus <= mstatus_for_trap;
+
             end else begin
                 mepc_wr <= 1'b0;
                 mstatus_wr <= 1'b0;
@@ -949,9 +930,9 @@ module friscv_control
             ctrl_rd_addr <= 5'b0;
             ctrl_rd_val <= {XLEN{1'b0}};
         end else begin
-            ctrl_rd_wr <=  (cfsm!=FETCH)                                               ? 1'b0 :
-                           (pull_inst && !fifo_empty && (auipc || jal || jalr || lui)) ? 1'b1 :
-                                                                                         1'b0 ;
+            ctrl_rd_wr <=  (cfsm!=FETCH)                                              ? 1'b0 :
+                           (pull_inst && inst_ready && (auipc || jal || jalr || lui)) ? 1'b1 :
+                                                                                        1'b0 ;
             ctrl_rd_addr <= rd;
 
             ctrl_rd_val <= ((jal || jalr) && ~pull_inst) ? pc_jal_saved :
@@ -975,7 +956,7 @@ module friscv_control
         end else if (srst) begin
             instret <= {64{1'b0}};
         end else begin
-            if (!fifo_empty && pull_inst)
+            if (inst_ready && pull_inst)
                 instret <= instret + 1;
         end
     end
@@ -1138,7 +1119,7 @@ module friscv_control
 
     assign trap_occuring = async_trap_occuring | sync_trap_occuring;
 
-    assign inst_dec_error = dec_error & (cfsm==FETCH) & !fifo_empty;
+    assign inst_dec_error = dec_error & (cfsm==FETCH) & inst_ready;
 
 endmodule
 
