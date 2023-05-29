@@ -68,16 +68,12 @@ module friscv_cache_block_fetcher
         output logic [AXI_ID_W      -1:0] mst_rid,
         output logic [2             -1:0] mst_rresp,
         output logic [ILEN          -1:0] mst_rdata,
-        // Memory controller read interface
-        output logic                      memctrl_arvalid,
-        input  wire                       memctrl_arready,
-        output logic [AXI_ADDR_W    -1:0] memctrl_araddr,
-        output logic [3             -1:0] memctrl_arprot,
-        output logic [AXI_ID_W      -1:0] memctrl_arid,
         // Cache line read interface
         input  wire                       cache_writing,
         output logic                      cache_ren,
         output logic [AXI_ADDR_W    -1:0] cache_raddr,
+        output logic [AXI_ID_W      -1:0] cache_rid,
+        output logic [3             -1:0] cache_rprot,
         input  wire  [ILEN          -1:0] cache_rdata,
         input  wire                       cache_hit,
         input  wire                       cache_miss
@@ -104,8 +100,6 @@ module friscv_cache_block_fetcher
     logic [AXI_ADDR_W   -1:0] araddr_ffd;
     logic [AXI_ID_W     -1:0] arid_ffd;
     logic [3            -1:0] arprot_ffd;
-    logic [AXI_ID_W     -1:0] cache_rid;
-    logic [3            -1:0] cache_prot;
     logic [ILEN         -1:0] rdata_r;
     logic [AXI_ID_W     -1:0] rid_r;
 
@@ -116,11 +110,22 @@ module friscv_cache_block_fetcher
     // Back-pressure management
     logic                     rvalid_r;
     // read data channel FIFO
-    logic                     fifo_full;
-    logic                     fifo_afull;
-    logic                     fifo_empty;
-    logic                     push_fifo;
-    logic                     pull_fifo;
+    logic                     arvalid;
+    logic                     arready;
+    logic                     rac_full;
+    logic                     rac_empty;
+    logic                     push_rac;
+    logic                     pull_rac;
+    logic [AXI_ADDR_W   -1:0] araddr;
+    logic [AXI_ID_W     -1:0] arid;
+    logic [3            -1:0] arprot;
+
+    // read data channel FIFO
+    logic                     rdc_full;
+    logic                     rdc_afull;
+    logic                     rdc_empty;
+    logic                     push_rdc;
+    logic                     pull_rdc;
 
 
     // Tracer setup
@@ -133,38 +138,63 @@ module friscv_cache_block_fetcher
     end
     `endif
 
-    assign flush = flush_blocks | flush_reqs;
-
     ///////////////////////////////////////////////////////////////////////////
     // Buffering stage
     ///////////////////////////////////////////////////////////////////////////
     
+    assign push_rac = mst_arvalid;
+    assign mst_arready = !rac_full;
+
+    assign flush = flush_blocks | flush_reqs;
+
+    friscv_scfifo
+    #(
+        .PASS_THRU  (1),
+        .ADDR_WIDTH ($clog2(OSTDREQ_NUM)),
+        .DATA_WIDTH (3+AXI_ADDR_W+AXI_ID_W)
+    )
+    rac_fifo
+    (
+        .aclk     (aclk),
+        .aresetn  (aresetn),
+        .srst     (srst),
+        .flush    (flush),
+        .data_in  ({mst_arprot, mst_arid, mst_araddr}),
+        .push     (push_rac),
+        .full     (rac_full),
+        .afull    (),
+        .data_out ({arprot, arid, araddr}),
+        .pull     (pull_rac),
+        .empty    (rac_empty),
+        .aempty   ()
+    );
+
     // FFD stage to propagate potential addr/id to fetch
     // later in cache miss
     always @ (posedge aclk or negedge aresetn) begin
         if (!aresetn) begin
             araddr_ffd <= {AXI_ADDR_W{1'b0}};
             arid_ffd <= {AXI_ID_W{1'b0}};
-            arprot_ffd <= 3'b0;
         end else if (srst) begin
             araddr_ffd <= {AXI_ADDR_W{1'b0}};
             arid_ffd <= {AXI_ID_W{1'b0}};
-            arprot_ffd <= 3'b0;
         end else begin
             araddr_ffd <= cache_raddr;
             arid_ffd <= cache_rid;
-            arprot_ffd <= cache_prot;
         end
     end
 
     // Multiplexer stage to drive missed-fetch or to-fetch requests
-    assign cache_ren = mst_arvalid & mst_arready | (loader != IDLE);
-    assign cache_raddr = ((fetching || cache_miss) && !flush) ? araddr_ffd : mst_araddr;
-    assign cache_rid =   ((fetching || cache_miss) && !flush) ? arid_ffd : mst_arid;
-    assign cache_prot =  ((fetching || cache_miss) && !flush) ? arprot_ffd : mst_arprot;
+    assign cache_ren = arvalid & arready | (loader != IDLE);
+    assign cache_raddr = ((fetching || cache_miss) && !flush) ? araddr_ffd : araddr;
+    assign cache_rid =   ((fetching || cache_miss) && !flush) ? arid_ffd : arid;
+    assign cache_rprot = ((fetching || cache_miss) && !flush) ? arprot_ffd : arprot;
 
     // Read address request handshake if able to receive
-    assign mst_arready = !cache_miss & !fetching & !(fifo_full | fifo_afull) & !pending_wr;
+    assign pull_rac = !cache_miss & !fetching & !(rdc_full | rdc_afull) & !pending_wr;
+
+    assign arvalid = !rac_empty;
+    assign arready = pull_rac;
 
 
     ///////////////////////////////////////////////////////////////////////////
@@ -198,22 +228,22 @@ module friscv_cache_block_fetcher
         .srst     (srst),
         .flush    (flush),
         .data_in  ({arid_ffd, cache_rdata}),
-        .push     (push_fifo),
-        .full     (fifo_full),
-        .afull    (fifo_afull),
+        .push     (push_rdc),
+        .full     (rdc_full),
+        .afull    (rdc_afull),
         .data_out ({mst_rid, mst_rdata}),
-        .pull     (pull_fifo),
-        .empty    (fifo_empty),
+        .pull     (pull_rdc),
+        .empty    (rdc_empty),
         .aempty   ()
     );
 
-    assign push_fifo = cache_hit & !flush;
-    assign pull_fifo = mst_rready;
-    assign mst_rvalid = !fifo_empty;
+    assign push_rdc = cache_hit & !flush;
+    assign pull_rdc = mst_rready;
+    assign mst_rvalid = !rdc_empty;
     assign mst_rresp = 2'b0;
 
     ///////////////////////////////////////////////////////////////////////////
-    // Memory controller management and prefetch stage
+    // Sequencer to switch between cache load and cache fetch
     ///////////////////////////////////////////////////////////////////////////
 
     assign fetching = loader == LOAD;
@@ -222,16 +252,8 @@ module friscv_cache_block_fetcher
     always @ (posedge aclk or negedge aresetn) begin
 
         if (!aresetn) begin
-            memctrl_arvalid <= 1'b0;
-            memctrl_araddr <= {AXI_ADDR_W{1'b0}};
-            memctrl_arid <= {AXI_ID_W{1'b0}};
-            memctrl_arprot <= 3'b0;
             loader <= IDLE;
-        end else if (srst) begin
-            memctrl_arvalid <= 1'b0;
-            memctrl_araddr <= {AXI_ADDR_W{1'b0}};
-            memctrl_arid <= {AXI_ID_W{1'b0}};
-            memctrl_arprot <= 3'b0;
+        end else if (srst || flush) begin
             loader <= IDLE;
         end else begin
 
@@ -239,37 +261,16 @@ module friscv_cache_block_fetcher
 
                 // Wait for the address requests from the instruction fetcher
                 default: begin
-                    if (cache_miss) begin
-                        memctrl_arvalid <= 1'b1;
-                        // Always fetch a complete cache blocks
-                        // TODO: Adapt based on cache block vs axi data width
-                        memctrl_araddr <= {araddr_ffd[AXI_ADDR_W-1:ADDR_LSB_W],{ADDR_LSB_W{1'b0}}};
-                        memctrl_arid <= arid_ffd;
-                        memctrl_arprot <= arprot_ffd;
+                    if (cache_miss && !flush) begin
                         loader <= LOAD;
-                    end else begin
-                        memctrl_arvalid <= 1'b0;
                     end
                 end
 
-                // Load a new cache line containing the miss-fetch
+                // Wait for load a new cache line containing the miss-fetch
                 LOAD: begin
-
-                    // Handshaked with memory controller, now
-                    // wait for the write stage to restart
-                    if (memctrl_arvalid && memctrl_arready) begin
-                        `ifdef TRACE_CACHE
-                        $fwrite(f, "@ %0t: Fetch memory - Addr=0x%x\n", $realtime, memctrl_araddr);
-                        `endif
-                        memctrl_arvalid <= 1'b0;
-                    end
-
                     // Go to read the cache lines once the memory controller
                     // wrote a new cache line, being the read completion
                     if (cache_writing) begin
-                        `ifdef TRACE_CACHE
-                        $fwrite(f, "@ %0t: Read completion received\n", $realtime);
-                        `endif
                         loader <= FETCH;
                     end
                 end 
@@ -288,7 +289,7 @@ module friscv_cache_block_fetcher
     ///////////////////////////////////////////////////////////////////////////
     // Flag indicating a memory read request is occuring, waiting for a 
     // completion thus blocking any further execution. Ensures read / write
-    // requests sequencing
+    // requests sequencing is respected
     ///////////////////////////////////////////////////////////////////////////
     
     // TODO: Check if here address/data channel from master interface shouldn't 
@@ -300,7 +301,7 @@ module friscv_cache_block_fetcher
         end else if (srst) begin
             pending_rd <= 1'b0;
         end else begin
-            if (memctrl_arready && memctrl_arvalid) pending_rd <= 1'b1;
+            if (loader==IDLE && !flush && cache_miss) pending_rd <= 1'b1;
             else if (cache_writing) pending_rd <= 1'b0;
         end
     end

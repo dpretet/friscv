@@ -11,9 +11,9 @@
 //
 // Address width: define the depth of the FIFO, only a power of 2
 //
-// Pass-thru mode: if enabled, when pull and empty are asserted, waiting
-// for a data stream, the incoming write stream is moved directly
-// to the output stream without buffering it into the RAM. This mode reduces
+// Pass-thru mode: if enabled, when flushing or pull and empty are asserted, 
+// waiting for a data stream, the incoming write stream is moved directly
+// to the output without buffering it into the RAM. This mode reduces
 // the latency to transmit data if both producer and consumer are ready.
 //
 // CAUTION: this pass-thru mode implements a full combinatorial circuit, be
@@ -25,7 +25,7 @@
 module friscv_scfifo
 
     #(
-        // When pull & empty, move data directly to the output
+        // When pull & empty | flush, move data directly to the output
         parameter PASS_THRU = 0,
         // Address bus width, depth=2**ADDR_WIDTH
         parameter ADDR_WIDTH = 8,
@@ -113,7 +113,7 @@ module friscv_scfifo
     // Internal RAM
     ///////////////////////////////////////////////////////////////////////////
 
-    assign wr_en = push & ~full & ~pass_thru;
+    assign wr_en = push & !full & !pass_thru & !flush;
 
     friscv_ram
     #(
@@ -138,9 +138,9 @@ module friscv_scfifo
     generate
     if (PASS_THRU) begin :  PASS_THRU_MODE
 
-        assign pass_thru = pull & empty_flag;
+        assign pass_thru = pull & empty_flag | flush;
         assign data_out = (pass_thru) ? data_in : data_fifo;
-        assign empty = (pass_thru) ? ~push : empty_flag;
+        assign empty = (pass_thru) ? !push : empty_flag;
 
     end else begin : STORE_MODE
 

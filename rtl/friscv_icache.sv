@@ -109,6 +109,8 @@ module friscv_icache
     logic                          cache_ren;
     logic [AXI_ADDR_W        -1:0] cache_raddr;
     logic [ILEN              -1:0] cache_rdata;
+    logic [3                 -1:0] cache_rprot;
+    logic [AXI_ID_W          -1:0] cache_rid;
     logic                          cache_hit;
     logic                          cache_miss;
     // Memory controller interface
@@ -172,6 +174,31 @@ module friscv_icache
         .mst_rid         (ctrl_rid),
         .mst_rresp       (ctrl_rresp),
         .mst_rdata       (ctrl_rdata),
+        // status flag of the memory controller
+        .cache_writing   (memctrl_rvalid & !memctrl_rcache),
+        .cache_ren       (cache_ren),
+        .cache_raddr     (cache_raddr),
+        .cache_rid       (cache_rid),
+        .cache_rprot     (cache_rprot),
+        .cache_rdata     (cache_rdata),
+        .cache_hit       (cache_hit),
+        .cache_miss      (cache_miss)
+    );
+
+    friscv_cache_prefetcher
+    #(
+        .NAME             ("iCache-prefetcher"),
+        .ILEN             (ILEN),
+        .XLEN             (XLEN),
+        .AXI_ADDR_W       (AXI_ADDR_W),
+        .AXI_ID_W         (AXI_ID_W),
+        .AXI_DATA_W       (AXI_DATA_W)
+    )
+    prefetcher
+    (
+        .aclk            (aclk),
+        .aresetn         (aresetn),
+        .srst            (srst),
         // read request to the memory controller
         .memctrl_arvalid (memctrl_arvalid),
         .memctrl_arready (memctrl_arready),
@@ -180,13 +207,15 @@ module friscv_icache
         .memctrl_arid    (memctrl_arid),
         // status flag of the memory controller
         .cache_writing   (memctrl_rvalid & !memctrl_rcache),
-        // cache block read interface port 1
         .cache_ren       (cache_ren),
         .cache_raddr     (cache_raddr),
+        .cache_rid       (cache_rid),
+        .cache_rprot     (cache_rprot),
         .cache_rdata     (cache_rdata),
         .cache_hit       (cache_hit),
         .cache_miss      (cache_miss)
     );
+
 
     ///////////////////////////////////////////////////////////////////////////
     // Cache Blocks Storage

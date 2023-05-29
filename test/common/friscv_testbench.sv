@@ -87,7 +87,7 @@ module friscv_testbench(
     // Boot address used by the control unit
     parameter BOOT_ADDR = `BOOT_ADDR;
     // Number of outstanding requests used by the control unit and icache
-    parameter INST_OSTDREQ_NUM  = 8;
+    parameter INST_OSTDREQ_NUM  = 4;
     // Number of outstanding requests used by the LOAD/STORE unit and dcache
     parameter DATA_OSTDREQ_NUM  = 8;
     // MHART ID CSR register

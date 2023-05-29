@@ -25,10 +25,12 @@ module friscv_control
         parameter AXI_ADDR_W = ILEN,
         // AXI ID width, setup by default to 8 and unused
         parameter AXI_ID_W = 8,
-        // AXI4 data width, independant of control unit width
-        parameter AXI_DATA_W = XLEN,
+        // Maximum range used when generating an AXI ID
+        parameter MAX_ID_RANGE = 8,
         // ID used to identify the dta abus in the infrastructure
         parameter AXI_ID_MASK = 'h10,
+        // AXI4 data width, independant of control unit width
+        parameter AXI_DATA_W = XLEN,
         // Number of outstanding requests supported
         parameter OSTDREQ_NUM = 4,
         // Primary address to boot to load the firmware
@@ -100,7 +102,7 @@ module friscv_control
     //
     ///////////////////////////////////////////////////////////////////////////
 
-    localparam MAX_ID = AXI_ID_MASK + OSTDREQ_NUM - 1;
+    localparam MAX_ID = AXI_ID_MASK + MAX_ID_RANGE - 1;
 
     // Decoded instructions
     logic [`OPCODE_W   -1:0] opcode;
@@ -300,44 +302,59 @@ module friscv_control
     assign sb_mstatus = csr_sb[`MSTATUS+:XLEN];
     assign sb_mepc = csr_sb[`MEPC+:XLEN];
 
+    assign push_inst = rvalid & (arid == rid);
 
+    generate
     ///////////////////////////////////////////////////////////////////////////
-    //
     // Load/Buffer Stage, a SC-FIFO storing the incoming instructions.
     // This FIFO is controlled by the FSM issuing read request and can be
     // flushed in case branching or jumping is required.
-    //
     ///////////////////////////////////////////////////////////////////////////
+    if (OSTDREQ_NUM > 0) begin
 
-    assign push_inst = rvalid & (arid == rid);
-    assign rready = ~fifo_full;
+        assign rready = !fifo_full;
 
-    friscv_scfifo
-    #(
-        .PASS_THRU  (0),
-        .ADDR_WIDTH ($clog2(OSTDREQ_NUM)),
-        .DATA_WIDTH (AXI_DATA_W)
-    )
-    inst_fifo
-    (
-        .aclk     (aclk),
-        .aresetn  (aresetn),
-        .srst     (srst),
-        .flush    (flush_pipe | flush_blocks),
-        .data_in  (rdata),
-        .push     (push_inst),
-        .full     (fifo_full),
-        .afull    (),
-        .data_out (instruction),
-        .pull     (pull_inst),
-        .empty    (fifo_empty),
-        .aempty   ()
-    );
+        friscv_scfifo
+        #(
+            .PASS_THRU  (0),
+            .ADDR_WIDTH ($clog2(OSTDREQ_NUM)),
+            .DATA_WIDTH (AXI_DATA_W)
+        )
+        inst_fifo
+        (
+            .aclk     (aclk),
+            .aresetn  (aresetn),
+            .srst     (srst),
+            .flush    (flush_pipe | flush_blocks),
+            .data_in  (rdata),
+            .push     (push_inst),
+            .full     (fifo_full),
+            .afull    (),
+            .data_out (instruction),
+            .pull     (pull_inst),
+            .empty    (fifo_empty),
+            .aempty   ()
+        );
 
-    assign pull_inst = (~cant_jump && ~cant_process && ~cant_lui_auipc && ~cant_sys &&
-                        (cfsm==FETCH) && ~trap_occuring) ? 1'b1 : 1'b0;
+        assign inst_ready = !fifo_empty & !flush_pipe;
 
-    assign inst_ready = !fifo_empty & !flush_pipe;
+    ///////////////////////////////////////////////////////////////////////////
+    // No input FIFO, the read data channel feeds directly the controller
+    ///////////////////////////////////////////////////////////////////////////
+    end else begin
+
+        assign instruction = rdata;
+        assign inst_ready = push_inst;
+        assign rready = pull_inst;
+
+        assign fifo_full = 1'b0;
+        assign fifo_empty = 1'b0;
+
+    end
+    endgenerate
+
+    assign pull_inst = (!cant_jump && !cant_process && !cant_lui_auipc && !cant_sys &&
+                        (cfsm==FETCH) && !trap_occuring) ? 1'b1 : 1'b0;
 
     ///////////////////////////////////////////////////////////////////////////
     //
@@ -406,7 +423,7 @@ module friscv_control
 
     assign proc_valid = inst_ready & processing & (cfsm==FETCH) & csr_ready;
 
-    assign csr_en = inst_ready && sys[`IS_CSR] & (cfsm==FETCH) & ~proc_busy;
+    assign csr_en = inst_ready && sys[`IS_CSR] & (cfsm==FETCH) & !proc_busy;
 
     assign proc_instbus[`OPCODE +: `OPCODE_W] = opcode;
     assign proc_instbus[`FUNCT3 +: `FUNCT3_W] = funct3;
@@ -509,7 +526,7 @@ module friscv_control
 
     assign priv_mode = `MMODE;
 
-    assign flush_reqs = '0;
+    assign flush_reqs = flush_pipe;
 
     always @ (posedge aclk or negedge aresetn) begin
 
@@ -575,7 +592,7 @@ module friscv_control
                     //   manage a trap, stop the addr issuer and load the
                     //   right branch
                     //
-                    if (inst_ready && ~cant_jump &&
+                    if (inst_ready && !cant_jump &&
                         (jump_branch || sys[`IS_ECALL] || sys[`IS_MRET] ||
                          fence[`IS_FENCEI] || trap_occuring))
                     begin
@@ -625,19 +642,19 @@ module friscv_control
                         // and reload new instructions
                         end else if (jal | jalr | branching) begin
 
-                            if (~cant_jump) begin
+                            if (!cant_jump) begin
                                 print_instruction;
                                 pc_reg <= pc;
                             end
 
-                            if (jump_branch & ~cant_jump) begin
+                            if (jump_branch && !cant_jump) begin
                                 `ifdef USE_SVL
                                 if (jal | jalr) log.info("Jumping");
                                 else            log.info("Branching");
                                 `endif
                             end
 
-                            if (jump_branch && ~cant_jump) begin
+                            if (jump_branch && !cant_jump) begin
                                 flush_pipe <= 1'b1;
                             end
 
@@ -646,7 +663,7 @@ module friscv_control
                         end else if (|sys || |fence) begin
 
                             // Reach an ECALL instruction, jump to trap handler
-                            if (sys[`IS_ECALL] && ~proc_busy && csr_ready) begin
+                            if (sys[`IS_ECALL] && !proc_busy && csr_ready) begin
                                 `ifdef USE_SVL
                                 print_instruction;
                                 log.info("ECALL -> Jump to trap handler");
@@ -666,7 +683,7 @@ module friscv_control
                                 cfsm <= EBREAK;
 
                             // Reach a MRET instruction, jump to exception return
-                            end else if (sys[`IS_MRET] && ~proc_busy && csr_ready) begin
+                            end else if (sys[`IS_MRET] && !proc_busy && csr_ready) begin
                                 `ifdef USE_SVL
                                 print_instruction;
                                 log.info("MRET -> Machine Return");
@@ -688,7 +705,7 @@ module friscv_control
 
                             // Reach an WFI, wait for an interrupt
                             // TODO: could miss an interrupt if processing is too long
-                            end else if (sys[`IS_WFI] && ~proc_busy && csr_ready) begin
+                            end else if (sys[`IS_WFI] && !proc_busy && csr_ready) begin
                                 `ifdef USE_SVL
                                 print_instruction;
                                 log.info("WFI -> Stall and wait for interrupt");
@@ -700,20 +717,20 @@ module friscv_control
                                 cfsm <= WFI;
 
                             // CSR instructions
-                            end else if (sys[`IS_CSR] && ~cant_sys) begin
+                            end else if (sys[`IS_CSR] && !cant_sys) begin
                                 print_instruction;
                                 flush_pipe <= 1'b0;
                                 pc_reg <= pc;
 
                             // FENCE instruction (not supported)
-                            end else if (~proc_busy && csr_ready) begin
+                            end else if (!proc_busy && csr_ready) begin
                                 print_instruction;
                                 flush_pipe <= 1'b0;
                                 pc_reg <= pc;
                             end
 
                         // LUI and AUIPC execution, done in this module
-                        end else if (lui_auipc && ~cant_lui_auipc) begin
+                        end else if (lui_auipc && !cant_lui_auipc) begin
                             print_instruction;
                             flush_pipe <= 1'b0;
                             pc_reg <= pc;
@@ -792,7 +809,7 @@ module friscv_control
     end
 
 
-    // Manage CSRs updates
+    // Manage CSRs updates based on current instruction
     always @ (posedge aclk or negedge aresetn) begin
 
         if (aresetn == 1'b0) begin
@@ -901,13 +918,13 @@ module friscv_control
     // LUI and AUIPC are executed internally, not in processing
     assign lui_auipc = lui | auipc;
 
-    assign cant_jump = (jal | jalr | branching) && (proc_busy | ~csr_ready);
+    assign cant_jump = (jal | jalr | branching) && (proc_busy | !csr_ready);
 
-    assign cant_process = processing & (~proc_ready | ~csr_ready);
+    assign cant_process = processing & (!proc_ready | !csr_ready);
 
-    assign cant_lui_auipc = lui_auipc & (proc_busy | ~csr_ready);
+    assign cant_lui_auipc = lui_auipc & (proc_busy | !csr_ready);
 
-    assign cant_sys = (|sys | |fence) & (proc_busy | ~csr_ready);
+    assign cant_sys = (|sys | |fence) & (proc_busy | !csr_ready);
 
 
     ///////////////////////////////////////////////////////////////////////////
@@ -935,11 +952,11 @@ module friscv_control
                                                                                         1'b0 ;
             ctrl_rd_addr <= rd;
 
-            ctrl_rd_val <= ((jal || jalr) && ~pull_inst) ? pc_jal_saved :
-                           ((jal || jalr) && pull_inst)  ? pc_plus4 :
+            ctrl_rd_val <= ((jal || jalr) && !pull_inst) ? pc_jal_saved :
+                           ((jal || jalr) &&  pull_inst) ? pc_plus4 :
                            (lui)                         ? {imm20, 12'b0} :
-                           (auipc && ~pull_inst)         ? pc_auipc_saved :
-                           (auipc && pull_inst)          ? pc_auipc :
+                           (auipc && !pull_inst)         ? pc_auipc_saved :
+                           (auipc &&  pull_inst)         ? pc_auipc :
                                                            pc;
         end
     end
@@ -951,7 +968,7 @@ module friscv_control
     ///////////////////////////////////////////////////////////////////////////
 
     always @ (posedge aclk or negedge aresetn) begin
-        if (~aresetn) begin
+        if (!aresetn) begin
             instret <= {64{1'b0}};
         end else if (srst) begin
             instret <= {64{1'b0}};
@@ -1030,7 +1047,7 @@ module friscv_control
     ///////////////////////////////////////////////////////////////////////////
     //
     // Asynchronous exceptions code:
-    // ---------------------------
+    // ----------------------------
     //
     // Exception Code  |   Description
     // ----------------|------------------------------------------

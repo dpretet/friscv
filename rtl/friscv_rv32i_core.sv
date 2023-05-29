@@ -376,7 +376,8 @@ module friscv_rv32i_core
         .AXI_ID_W       (AXI_ID_W),
         .AXI_ID_MASK    (AXI_IMEM_MASK),
         .AXI_DATA_W     (XLEN),
-        .OSTDREQ_NUM    (INST_OSTDREQ_NUM),
+        .OSTDREQ_NUM    (0),
+        // .OSTDREQ_NUM    (INST_OSTDREQ_NUM),
         .BOOT_ADDR      (BOOT_ADDR)
     )
     control
@@ -505,6 +506,7 @@ module friscv_rv32i_core
     // Always assert ack if requesting a cache flush to avoid deadlock
     assign flush_ack = 1'b1;
 
+    // Cache readiness, used to inform the internal init is over
     assign icache_ready = 1'b1;
 
     end

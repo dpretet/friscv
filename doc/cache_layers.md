@@ -52,3 +52,22 @@ complexity and reduces the latency of the cache layer.
 A direct-mapped cache is considered as a one-way associative cache. Doubling
 the associativity from direct-mapped to two-way, two-way to four-way, etc...,
 has the same effect than doubling the cache size.
+
+**Write Allocation**
+
+For STORE instruction, a cache-miss can occur on a write request and so lead to read a cache block
+then update it with the new value.
+
+**Read Allocation**
+
+For LOAD instruction, a cache-miss leads to read the system memory and allocate the block
+in the cache.
+
+**Write-Back**
+
+A write request updates only the cache. The system memory is not up-to-date and will
+be written later by the eviction buffer. Before that, the cache block is marked as dirty.
+
+**Write-Through**
+
+A write request updates both the cache and the system memory.

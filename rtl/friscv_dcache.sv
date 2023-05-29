@@ -148,6 +148,8 @@ module friscv_dcache
     logic                          fetcher_cache_ren;
     logic [AXI_ADDR_W        -1:0] fetcher_cache_raddr;
     logic [ILEN              -1:0] fetcher_cache_rdata;
+    logic [AXI_ID_W          -1:0] fetcher_cache_rid;
+    logic [3                 -1:0] fetcher_cache_rprot;
     logic                          fetcher_cache_hit;
     logic                          fetcher_cache_miss;
     logic                          pusher_cache_wen;
@@ -310,6 +312,29 @@ module friscv_dcache
         .mst_rid         (blk_fetcher_rid),
         .mst_rresp       (blk_fetcher_rresp),
         .mst_rdata       (blk_fetcher_rdata),
+        // status flag of the memory controller
+        .cache_writing   (memctrl_rvalid & !memctrl_rcache),
+        .cache_ren       (fetcher_cache_ren),
+        .cache_raddr     (fetcher_cache_raddr),
+        .cache_rdata     (fetcher_cache_rdata),
+        .cache_hit       (fetcher_cache_hit),
+        .cache_miss      (fetcher_cache_miss)
+    );
+
+    friscv_cache_prefetcher
+    #(
+        .NAME             ("dCache-prefetcher"),
+        .ILEN             (ILEN),
+        .XLEN             (XLEN),
+        .AXI_ADDR_W       (AXI_ADDR_W),
+        .AXI_ID_W         (AXI_ID_W),
+        .AXI_DATA_W       (AXI_DATA_W)
+    )
+    prefetcher
+    (
+        .aclk            (aclk),
+        .aresetn         (aresetn),
+        .srst            (srst),
         // read request to the memory controller
         .memctrl_arvalid (blk_fetcher_arvalid),
         .memctrl_arready (blk_fetcher_arready),
@@ -318,13 +343,15 @@ module friscv_dcache
         .memctrl_arid    (blk_fetcher_arid),
         // status flag of the memory controller
         .cache_writing   (memctrl_rvalid & !memctrl_rcache),
-        // cache block read interface port 1
         .cache_ren       (fetcher_cache_ren),
         .cache_raddr     (fetcher_cache_raddr),
+        .cache_rid       (fetcher_cache_rid),
+        .cache_rprot     (fetcher_cache_rprot),
         .cache_rdata     (fetcher_cache_rdata),
         .cache_hit       (fetcher_cache_hit),
         .cache_miss      (fetcher_cache_miss)
     );
+
 
     generate
     if (IO_MAP_NB > 0) begin: IO_FECTHER_INSTANCE

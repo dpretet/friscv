@@ -118,6 +118,16 @@ instructions in-order.
 
 ## Cache Units
 
+The cache units are local memories, managed by controllers which store locally data and instruction
+to ensure fast access. It serves read/write requests from the core to load and store data
+very close to the control unit instead of relying on system memory which can be far
+and so slow to access.
+
+Data and instruction are stored in local memory, the cache blocks, stored along tags to determine
+during a read/write request f is available (cache hit) and not (cache miss). 
+
+Explanations about the basics of cache layers can be found in this [document](./cache_layers.md).
+
 ### Instruction Cache
 
 <p align="center"> <img src="./assets/iCache-top.png"> </p>
@@ -139,7 +149,6 @@ Features:
 - AXI4-lite slave interface to fetch an instruction
 - AXI4 master interface to read the system memory
 
-Explanations about the basics of cache layers can be found in this [document](./cache_layers.md).
 
 #### Block-Fetcher
 
@@ -148,12 +157,11 @@ The cache unit is built around the central FSM, the fetcher stage:
 <p align="center"> <img src="./assets/iCache-fetcher.png"> </p>
 
 The fetch stage receives the read request from the control unit and parses the caches blocks to find
-the requested instructions. The fetcher uses two FIFOs, one to store the incoming requests, the
-other to store the cache-miss requests. As long the instructions are available in the cache, the
-fetcher uses the first FIFO; once a cache-miss is reached, the missing address is stored in the
-second FIFO. Then, the memory controller reads the central memory with the missing address and fills
-the cache blocks to serve again the cache-miss FIFO. The fetcher stage navigates back and forth
-between the two FIFOs, between the cache blocks and the memory controller.
+the requested instructions. As long the instructions are available in the cache, the fetcher uses
+the input read address channel once a cache-miss is reached, the missing address is stored in the a
+buffer. Then, the memory controller reads the central memory with the missing address and fills the
+cache blocks to serve again the miss-fetch request. The fetcher stage navigates back and forth
+between the two sources, between the cache blocks and the memory controller.
 
 
 #### Cache Blocks
