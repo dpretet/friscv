@@ -10,12 +10,6 @@
 // Fetcher stage: manages the read request in the cache or issue
 // a read request in central memory
 //
-// Composed by two FIFOs, the first buffers the incoming requests from
-// the fetch stage of the controller, the second buffers the missed
-// entries in the cache.
-//
-// A sequencer drives the cache read and the memory controller
-//
 ///////////////////////////////////////////////////////////////////////////
 
 
@@ -100,15 +94,11 @@ module friscv_cache_block_fetcher
     logic [AXI_ADDR_W   -1:0] araddr_ffd;
     logic [AXI_ID_W     -1:0] arid_ffd;
     logic [3            -1:0] arprot_ffd;
-    logic [ILEN         -1:0] rdata_r;
-    logic [AXI_ID_W     -1:0] rid_r;
 
     // To flush the core whatever the flush control asserted
     logic                     flush;
     // FSM fetching toi memory controller is fetching
     logic                     fetching;
-    // Back-pressure management
-    logic                     rvalid_r;
     // read data channel FIFO
     logic                     arvalid;
     logic                     arready;
@@ -119,6 +109,8 @@ module friscv_cache_block_fetcher
     logic [AXI_ADDR_W   -1:0] araddr;
     logic [AXI_ID_W     -1:0] arid;
     logic [3            -1:0] arprot;
+
+    logic                     sel_mf;
 
     // read data channel FIFO
     logic                     rdc_full;
@@ -184,17 +176,21 @@ module friscv_cache_block_fetcher
         end
     end
 
-    // Multiplexer stage to drive missed-fetch or to-fetch requests
+    // Multiplexer stage to drive missed-fetch or to-fetch requests to the blocks
+    assign sel_mf = (fetching || cache_miss) && !flush && !cache_hit;
+
+    // Cache read interface
     assign cache_ren = arvalid & arready | (loader != IDLE);
-    assign cache_raddr = ((fetching || cache_miss) && !flush) ? araddr_ffd : araddr;
-    assign cache_rid =   ((fetching || cache_miss) && !flush) ? arid_ffd : arid;
-    assign cache_rprot = ((fetching || cache_miss) && !flush) ? arprot_ffd : arprot;
+    assign cache_raddr = sel_mf ? araddr_ffd : araddr;
+    assign cache_rid =   sel_mf ? arid_ffd   : arid;
+    assign cache_rprot = sel_mf ? arprot_ffd : arprot;
 
     // Read address request handshake if able to receive
-    assign pull_rac = !cache_miss & !fetching & !(rdc_full | rdc_afull) & !pending_wr;
-
-    assign arvalid = !rac_empty;
+    assign pull_rac = (!(cache_miss & !flush) & !(fetching & !cache_hit) |
+                      ((!cache_hit & !cache_miss) & flush)) &
+                      !((rdc_full | rdc_afull) & !flush) & !pending_wr;
     assign arready = pull_rac;
+    assign arvalid = !rac_empty;
 
 
     ///////////////////////////////////////////////////////////////////////////
@@ -272,6 +268,8 @@ module friscv_cache_block_fetcher
                     // wrote a new cache line, being the read completion
                     if (cache_writing) begin
                         loader <= FETCH;
+                    end else if (cache_hit) begin
+                        loader <= IDLE;
                     end
                 end 
 

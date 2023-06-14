@@ -7,14 +7,8 @@
 
 ///////////////////////////////////////////////////////////////////////////
 //
-// Fetcher stage: manages the read request in the cache or issue
-// a read request in central memory
-//
-// Composed by two FIFOs, the first buffers the incoming requests from
-// the fetch stage of the controller, the second buffers the missed
-// entries in the cache.
-//
-// A sequencer drives the cache read and the memory controller
+// Prefetcher stage: manages the read request on cache miss and speculative
+// load
 //
 ///////////////////////////////////////////////////////////////////////////
 

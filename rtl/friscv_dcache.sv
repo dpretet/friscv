@@ -316,6 +316,8 @@ module friscv_dcache
         .cache_writing   (memctrl_rvalid & !memctrl_rcache),
         .cache_ren       (fetcher_cache_ren),
         .cache_raddr     (fetcher_cache_raddr),
+        .cache_rprot     (fetcher_cache_rprot),
+        .cache_rid       (fetcher_cache_rid),
         .cache_rdata     (fetcher_cache_rdata),
         .cache_hit       (fetcher_cache_hit),
         .cache_miss      (fetcher_cache_miss)

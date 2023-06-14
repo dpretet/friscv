@@ -55,6 +55,9 @@ module friscv_scfifo
     logic [ADDR_WIDTH  :0] rdptr;
     logic [ADDR_WIDTH  :0] ptr_diff;
     logic                  empty_flag;
+    logic                  full_flag;
+    logic                  aempty_flag;
+    logic                  afull_flag;
     logic                  pass_thru;
     logic [DATA_WIDTH-1:0] data_fifo;
 
@@ -103,11 +106,10 @@ module friscv_scfifo
 
     assign ptr_diff = wrptr - rdptr;
     assign empty_flag = (wrptr == rdptr) ? 1'b1 : 1'b0;
-    assign full = (ptr_diff == {1'b1,{ADDR_WIDTH{1'b0}}}) ? 1'b1 : 1'b0;
+    assign full_flag = (ptr_diff == {1'b1,{ADDR_WIDTH{1'b0}}}) ? 1'b1 : 1'b0;
 
-    // TODO: Verify the almost flags
-    assign aempty = (ptr_diff == {{ADDR_WIDTH{1'b0}}, 1'b1}) ? 1'b1 : 1'b0;
-    assign afull = (ptr_diff == {1'b0,{ADDR_WIDTH{1'b1}}}) ? 1'b1 : 1'b0;
+    assign aempty_flag = (ptr_diff == {{ADDR_WIDTH{1'b0}}, 1'b1}) ? 1'b1 : 1'b0;
+    assign afull_flag = (ptr_diff == {1'b0,{ADDR_WIDTH{1'b1}}}) ? 1'b1 : 1'b0;
 
     ///////////////////////////////////////////////////////////////////////////
     // Internal RAM
@@ -141,12 +143,18 @@ module friscv_scfifo
         assign pass_thru = pull & empty_flag | flush;
         assign data_out = (pass_thru) ? data_in : data_fifo;
         assign empty = (pass_thru) ? !push : empty_flag;
+        assign aempty = (pass_thru) ? 1'b0 : aempty_flag;
+        assign full = (pass_thru) ? 1'b0 : full_flag;
+        assign afull = (pass_thru) ? 1'b0 : afull_flag;
 
     end else begin : STORE_MODE
 
         assign pass_thru = 1'b0;
         assign data_out = data_fifo;
         assign empty = empty_flag;
+        assign aempty = aempty_flag;
+        assign full = full_flag;
+        assign afull = afull_flag;
 
     end
     endgenerate
