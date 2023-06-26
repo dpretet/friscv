@@ -35,7 +35,6 @@ N.B. :
 
 
 Cache Stage Enhancement:
-- [ ] Walk-thru FIFO to reduce latency on jump
 - [ ] AXI4 + Wrap mode for read
 - [ ] Support prefetch: if no jump/branch detected in fetched instructions
       grab the next line, else give a try to fetch the branch address. AXI hint?
@@ -105,7 +104,6 @@ Processing:
 
 https://www.youtube.com/channel/UCPSsA8oxlSBjidJsSPdpjsQ/videos
 
-- [ ] Scheduler to run multiple operations in parallel
 - [ ] Memfy: Manage RRESP/BRESP
 - [ ] Support F extension
 - [ ] Division
@@ -155,8 +153,13 @@ Hardware Test:
 
 # DONE
 
-- [X] CSR executes in a single cycle
-- [X] Enhance Memfy outstanding request support
+- [X] v1.4.0
+    - [X] Rework Control for faster jump.
+    - [X] Rework iCache block fetcher to simplify it
+    - [X] Block fetcher: pass-thru front-end FIFO to reduce latency on jump
+    - [X] Scheduler to run multiple operations in parallel. ALU can run along LD/ST if no hazard
+    - [X] CSR executes in a single cycle
+    - [X] Enhance Memfy outstanding request support
 - [X] Add Zihpm
 - [X] Fix TX read of UART which is blocking
 - [X] Develop dCache
