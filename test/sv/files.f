@@ -10,6 +10,7 @@
 ../../rtl/friscv_dcache.sv
 ../../rtl/friscv_cache_io_fetcher.sv
 ../../rtl/friscv_cache_block_fetcher.sv
+../../rtl/friscv_cache_prefetcher.sv
 ../../rtl/friscv_cache_blocks.sv
 ../../rtl/friscv_cache_memctrl.sv
 ../../rtl/friscv_cache_flusher.sv

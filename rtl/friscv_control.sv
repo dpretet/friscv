@@ -587,14 +587,13 @@ module friscv_control
                     ///////////////////////////////////////////////////////////
                     // Manages read outstanding requests to fetch
                     // new instruction from memory:
+                    ///////////////////////////////////////////////////////////
+
                     //
-                    //   - if fifo is filled with instruction, need a jump or
-                    //   manage a trap, stop the addr issuer and load the
-                    //   right branch
+                    //   - ECALL / RET / JAL / JALR / Branches
                     //
-                    if (inst_ready && !cant_jump &&
-                        (jump_branch || sys[`IS_ECALL] || sys[`IS_MRET] ||
-                         fence[`IS_FENCEI] || trap_occuring))
+                    if (inst_ready && !proc_busy &&
+                        (jump_branch || sys[`IS_ECALL] || sys[`IS_MRET] || trap_occuring))
                     begin
 
                         // Get a new ID for the new batch
@@ -603,8 +602,17 @@ module friscv_control
                         if (sys[`IS_ECALL] || trap_occuring) araddr <= mtvec;
                         // MRET
                         else if (sys[`IS_MRET]) araddr <= sb_mepc;
-                        // All other jumps
+                        // Any jump / branch
                         else araddr <= pc;
+
+                    //
+                    //   - FENCE.i execution
+                    //
+                    end else if (inst_ready && fence[`IS_FENCEI]) begin
+                        // Get a new ID for the new batch
+                        arid <= next_id(arid, MAX_ID, AXI_ID_MASK);
+                        araddr <= pc;
+
                     //
                     //   - else continue to simply increment by ILEN
                     //
@@ -924,7 +932,7 @@ module friscv_control
 
     assign cant_lui_auipc = lui_auipc & (proc_busy | !csr_ready);
 
-    assign cant_sys = (|sys | |fence) & (proc_busy | !csr_ready);
+    assign cant_sys = |sys & (proc_busy | !csr_ready);
 
 
     ///////////////////////////////////////////////////////////////////////////

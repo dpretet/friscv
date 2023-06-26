@@ -1,22 +1,22 @@
 [*]
 [*] GTKWave Analyzer v3.3.107 (w)1999-2020 BSI
-[*] Wed May 10 18:14:54 2023
+[*] Thu Jun 15 19:01:09 2023
 [*]
 [dumpfile] "/Users/damien/workspace/hdl/friscv/test/sv/icache_testbench.vcd"
-[dumpfile_mtime] "Wed May 10 18:14:54 2023"
-[dumpfile_size] 126595072
+[dumpfile_mtime] "Thu Jun 15 15:00:11 2023"
+[dumpfile_size] 181419488
 [savefile] "/Users/damien/workspace/hdl/friscv/test/sv/icache_testbench.gtkw"
-[timestart] 3697133500
+[timestart] 126642630
 [size] 2560 1440
-[pos] -1 -1
-*-14.638897 3697230000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[pos] -1 -26
+*-14.094477 126702710 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] fetcher.
 [treeopen] icache.
 [treeopen] icache.cache_blocks.
 [sst_width] 436
 [signals_width] 627
 [sst_expanded] 1
-[sst_vpaned_height] 582
+[sst_vpaned_height] 529
 @c00200
 -Testbench
 @28
@@ -164,11 +164,15 @@ icache.aresetn
 fetcher.flush
 fetcher.flush_blocks
 fetcher.flush_reqs
+fetcher.flush
 @200
 -
 @28
 fetcher.pending_rd
-fetcher.pending_wr
+fetcher.cache_writing
+fetcher.loader[1:0]
+fetcher.fetching
+fetcher.sel_mf
 @200
 -
 @22
@@ -187,7 +191,7 @@ fetcher.arid_ffd[7:0]
 fetcher.arprot_ffd[2:0]
 @200
 -
-@29
+@28
 fetcher.cache_ren
 @22
 fetcher.cache_raddr[31:0]
@@ -197,20 +201,21 @@ fetcher.cache_hit
 fetcher.cache_miss
 @200
 -
-@24
-fetcher.loader[1:0]
 @28
-[color] 1
-fetcher.cache_writing
+fetcher.rac_full
+fetcher.push_rac
+@29
+fetcher.rac_empty
+@28
+fetcher.pull_rac
 @200
 -
-@22
-fetcher.memctrl_araddr[31:0]
-fetcher.memctrl_arid[7:0]
 @28
-fetcher.memctrl_arprot[2:0]
-fetcher.memctrl_arvalid
-fetcher.memctrl_arready
+fetcher.rdc_full
+fetcher.rdc_afull
+fetcher.push_rdc
+fetcher.rdc_empty
+fetcher.pull_rdc
 @200
 -
 @22

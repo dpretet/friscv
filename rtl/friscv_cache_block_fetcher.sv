@@ -180,7 +180,7 @@ module friscv_cache_block_fetcher
     assign sel_mf = (fetching || cache_miss) && !flush && !cache_hit;
 
     // Cache read interface
-    assign cache_ren = arvalid & arready | (loader != IDLE);
+    assign cache_ren = arvalid & arready | (loader != IDLE & !(flush & !arvalid));
     assign cache_raddr = sel_mf ? araddr_ffd : araddr;
     assign cache_rid =   sel_mf ? arid_ffd   : arid;
     assign cache_rprot = sel_mf ? arprot_ffd : arprot;

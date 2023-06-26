@@ -6,6 +6,9 @@ Tb clock a 2 ns
 
 Nb iterations = 10
 
+CPI = 3.78
+
+
 Reporting:
 - Start time: 9338
 - End time: 5419593
@@ -52,7 +55,9 @@ Reporting:
 - Xoshiro128++ execution: 372862 cycles
 - Pool Arena execution: 3095563 cycles
 
-230415
+# 230415
+
+CPI = 3.77
 
 General statistics:
   - Start time: 9345
@@ -84,9 +89,9 @@ Algorithms:
 - Xoshiro128++ execution: 372855 cycles
 - Pool Arena execution: 3095579 cycles
 
-# 230416
+# 230416 - Block Fetcher flow-thru mode activated
 
-Block Fetcher flow-thru mode activated
+CPI = 3.45
 
 General statistics:
   - Start time: 9340
@@ -119,7 +124,9 @@ Algorithms:
 - Pool Arena execution: 2951343 cycles
 
 
-# 23/05/02 iCache update
+# 23/05/02 - iCache update, step 1
+
+CPI = 4.51
 
 General statistics:
   - Start time: 6463580
@@ -150,4 +157,39 @@ Algorithms:
 - Printf execution: 930233 cycles
 - Xoshiro128++ execution: 418865 cycles
 - Pool Arena execution: 3711268 cycles
+
+# 26/06/2023 - Final icache + control update
+
+CPI = 3.67
+
+General statistics:
+  - Start time: 9375
+  - End time: 5269169
+  - Total elapsed time: 5259794 cycles
+  - Instret start: 2243
+  - Instret end: 1433322
+  - Retired instructions: 1431079
+
+
+Instruction Bus Request:
+  - active cycles: 2498260
+  - sleep cycles: 0
+  - stall cycles: 2761536
+
+Inst Bus Completion:
+  - active cycles: 1589275
+  - sleep cycles: 160809
+  - stall cycles: 3509119
+
+Processing Bus:
+  - active cycles: 1219044
+  - sleep cycles: 2226461
+  - stall cycles: 1653291
+
+Algorithms:
+- Chacha20 execution: 989507 cycles
+- Matrix execution: 155513 cycles
+- Printf execution: 766667 cycles
+- Xoshiro128++ execution: 370791 cycles
+- Pool Arena execution: 2976411 cycles
 

@@ -46,8 +46,8 @@ Cache Stage Enhancement:
 
 Misc.
 - [ ] Rework IO APB interconnect
-	- Fix IO subsystem misrouted
-	- Fix IO subsystem bridge
+    - Fix IO subsystem misrouted
+    - Fix IO subsystem bridge
 - [ ] Random peripheral
 - [ ] Support cache disable in testbench
 - [ ] Put in place profiling
@@ -132,6 +132,7 @@ Verification/Validation:
     - [ ] log error in a file
     - [ ] Support GDB:  https://tomverbeure.github.io/2021/07/18/VexRiscv-OpenOCD-and-Traps.html
 - [ ] Update RISCV testsuite sources
+- [ ] SV Testbench: be able to assert or not a flush req along a new request on the same cycle
 
 Hardware Test:
 - [ ] Support LiteX: https://github.com/litex-hub/litex-boards, https://pcotret.gitlab.io/blog/processor_in_litex/
@@ -155,7 +156,7 @@ Hardware Test:
 # DONE
 
 - [X] CSR executes in a single cycle
-- [X] Enhance Memfy outstanding request support 
+- [X] Enhance Memfy outstanding request support
 - [X] Add Zihpm
 - [X] Fix TX read of UART which is blocking
 - [X] Develop dCache

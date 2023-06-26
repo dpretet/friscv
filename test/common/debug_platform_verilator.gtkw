@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.107 (w)1999-2020 BSI
-[*] Tue Jun 13 18:25:06 2023
+[*] Wed Jun 14 20:00:25 2023
 [*]
 [dumpfile] "/Users/damien/workspace/hdl/friscv/test/wba_testsuite/friscv_testbench.vcd"
-[dumpfile_mtime] "Tue Jun  6 18:47:13 2023"
-[dumpfile_size] 291870496
+[dumpfile_mtime] "Wed Jun 14 19:55:36 2023"
+[dumpfile_size] 1753966
 [savefile] "/Users/damien/workspace/hdl/friscv/test/common/debug_platform_verilator.gtkw"
-[timestart] 1764
+[timestart] 291
 [size] 2560 1440
 [pos] -1 -1
-*-3.429799 1788 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-7.574110 1843 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] friscv_testbench.
 [treeopen] friscv_testbench.friscv_testbench.
 [treeopen] friscv_testbench.friscv_testbench.genblk2.
@@ -525,7 +525,6 @@ friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_ICACHE.icache.mem_ctrl.me
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_ICACHE.icache.fetcher.aclk
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_ICACHE.icache.fetcher.aresetn
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_ICACHE.icache.fetcher.pending_rd
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_ICACHE.icache.fetcher.pending_wr
 @200
 -
 @28
@@ -557,6 +556,10 @@ friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_ICACHE.icache.fetcher.mst
 @28
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_ICACHE.icache.fetcher.arvalid
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_ICACHE.icache.fetcher.arready
+@22
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_ICACHE.icache.fetcher.araddr[31:0]
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_ICACHE.icache.fetcher.araddr_ffd[31:0]
+@28
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_ICACHE.icache.fetcher.cache_writing
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_ICACHE.icache.fetcher.fetching
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_ICACHE.icache.fetcher.loader[1:0]
@@ -566,19 +569,17 @@ friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_ICACHE.icache.fetcher.loa
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_ICACHE.icache.fetcher.pull_rac
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_ICACHE.icache.fetcher.push_rac
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_ICACHE.icache.fetcher.rac_empty
+@29
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_ICACHE.icache.fetcher.rdc_afull
+@28
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_ICACHE.icache.fetcher.rac_full
-@201
+@200
 -
 @28
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_ICACHE.icache.fetcher.push_rdc
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_ICACHE.icache.fetcher.pull_rdc
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_ICACHE.icache.fetcher.rdc_empty
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_ICACHE.icache.fetcher.rdc_full
-@200
--
-@22
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_ICACHE.icache.fetcher.araddr_ffd[31:0]
 @200
 -
 @28
