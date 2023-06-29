@@ -57,8 +57,8 @@ module friscv_rv32i_platform
         // AXI4 data width
         parameter AXI_DATA_W         = XLEN*4,
         // ID used by instruction and data buses
-        parameter AXI_IMEM_MASK     = 'h10,
-        parameter AXI_DMEM_MASK     = 'h20,
+        parameter AXI_IMEM_MASK     = 'h80,
+        parameter AXI_DMEM_MASK     = 'h10,
 
         ////////////////////////////////////////////////////////////////////////
         // Cache setup

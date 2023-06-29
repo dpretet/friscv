@@ -104,9 +104,7 @@ module friscv_cache_ooo_mgt
     localparam       REQ = 0;
     localparam       CPL = 1;
 
-    // The cache supports up to OSTDREQ_NUM requests, but we need to manage
-    // two channels in parallel, so we upsize the avaialble tokens by two
-    localparam NB_TAG = OSTDREQ_NUM*2;
+    localparam NB_TAG = OSTDREQ_NUM;
     localparam NB_TAG_W = $clog2(NB_TAG);
     localparam MAX_TAG = NB_TAG - 1;
 
@@ -125,8 +123,8 @@ module friscv_cache_ooo_mgt
     logic [NB_TAG_W-1:0] cpl_tag_pt;
 
     // AXI ID received, without the ID mask applied before a request
-    logic [AXI_ID_W      -1:0] blk_fetcher_rid_m;
-    logic [AXI_ID_W      -1:0] io_fetcher_rid_m;
+    logic [AXI_ID_W-1:0] blk_fetcher_rid_m;
+    logic [AXI_ID_W-1:0] io_fetcher_rid_m;
 
     ////////////////////////////////////////////////////////////////////////////////
     // AXI4-lite completions

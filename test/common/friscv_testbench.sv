@@ -87,9 +87,9 @@ module friscv_testbench(
     // Boot address used by the control unit
     parameter BOOT_ADDR = `BOOT_ADDR;
     // Number of outstanding requests used by the control unit and icache
-    parameter INST_OSTDREQ_NUM  = 4;
+    parameter INST_OSTDREQ_NUM  = 8;
     // Number of outstanding requests used by the LOAD/STORE unit and dcache
-    parameter DATA_OSTDREQ_NUM  = 8;
+    parameter DATA_OSTDREQ_NUM  = 32;
     // MHART ID CSR register
     parameter HART_ID = 0;
 
@@ -113,8 +113,8 @@ module friscv_testbench(
     // AXI4 data bus width
     parameter AXI_DMEM_W = `CACHE_BLOCK_W;
     // ID used by instruction and data buses
-    parameter AXI_IMEM_MASK = 'h10;
-    parameter AXI_DMEM_MASK = 'h20;
+    parameter AXI_IMEM_MASK = 'h80;
+    parameter AXI_DMEM_MASK = 'h40;
 
     // Enable Instruction & data caches
     parameter CACHE_EN = `CACHE_EN;

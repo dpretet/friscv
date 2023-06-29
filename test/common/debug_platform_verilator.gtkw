@@ -2,7 +2,7 @@
 [*] GTKWave Analyzer v3.3.107 (w)1999-2020 BSI
 [*] Wed Jun 14 20:00:25 2023
 [*]
-[dumpfile] "/Users/damien/workspace/hdl/friscv/test/wba_testsuite/friscv_testbench.vcd"
+[dumpfile] "/Users/damien/workspace/hdl/friscv/test/c_testsuite/friscv_testbench.vcd"
 [dumpfile_mtime] "Wed Jun 14 19:55:36 2023"
 [dumpfile_size] 1753966
 [savefile] "/Users/damien/workspace/hdl/friscv/test/common/debug_platform_verilator.gtkw"
