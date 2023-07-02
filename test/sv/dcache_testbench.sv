@@ -167,18 +167,20 @@ module dcache_testbench();
 
     friscv_dcache
     #(
-        .ILEN              (ILEN),
-        .XLEN              (XLEN),
-        .OSTDREQ_NUM       (OSTDREQ_NUM),
-        .AXI_ADDR_W        (AXI_ADDR_W),
-        .AXI_ID_W          (AXI_ID_W),
-        .AXI_DATA_W        (AXI_DATA_W),
-        .AXI_ID_MASK       (AXI_ID_MASK),
-        .AXI_REORDER_CPL   (AXI_REORDER_CPL),
-        .IO_MAP_NB         (IO_MAP_NB),
-        .CACHE_PREFETCH_EN (CACHE_PREFETCH_EN),
-        .CACHE_BLOCK_W     (CACHE_BLOCK_W),
-        .CACHE_DEPTH       (CACHE_DEPTH)
+        .ILEN                (ILEN),
+        .XLEN                (XLEN),
+        .OSTDREQ_NUM         (OSTDREQ_NUM),
+        .AXI_ADDR_W          (AXI_ADDR_W),
+        .AXI_ID_W            (AXI_ID_W),
+        .AXI_DATA_W          (AXI_DATA_W),
+        .AXI_ID_MASK         (AXI_ID_MASK),
+        .AXI_ID_FIXED        (0),
+        .NO_RDC_BACKPRESSURE (0),
+        .AXI_REORDER_CPL     (AXI_REORDER_CPL),
+        .IO_MAP_NB           (IO_MAP_NB),
+        .CACHE_PREFETCH_EN   (CACHE_PREFETCH_EN),
+        .CACHE_BLOCK_W       (CACHE_BLOCK_W),
+        .CACHE_DEPTH         (CACHE_DEPTH)
     )
     dut
     (

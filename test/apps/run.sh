@@ -79,7 +79,7 @@ main() {
             if [ "$dir" != "tests/common/" ]; then
                 echo "INFO: Clean $dir"
                 make clean -C "$dir";
-				rm -fr ./build
+                rm -fr ./build
             fi
         done
         exit 0;

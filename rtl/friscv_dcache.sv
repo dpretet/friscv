@@ -50,6 +50,10 @@ module friscv_dcache
         parameter AXI_ID_MASK = 'h20,
         // Force read completion reordering
         parameter AXI_REORDER_CPL = 1,
+        // AXI ID issued on slave interface is fixed
+        parameter AXI_ID_FIXED = 1,
+        // Disable read data channel FIFO is driver doesn't assert backpressure
+        parameter NO_RDC_BACKPRESSURE = 1,
 
         ///////////////////////////////////////////////////////////////////////
         // Cache Setup
@@ -239,6 +243,9 @@ module friscv_dcache
     logic [AXI_ADDR_W        -1:0] cache_waddr;
     logic [CACHE_BLOCK_W     -1:0] cache_wdata;
 
+    // flag from prefetch to indicate the cache-miss block is under Write
+    logic                          block_fill;
+
 
     ///////////////////////////////////////////////////////////////////////////
     // Parameters setup checks
@@ -281,13 +288,14 @@ module friscv_dcache
 
     friscv_cache_block_fetcher
     #(
-        .NAME            ("dCache-block-fetcher"),
-        .ILEN            (ILEN),
-        .XLEN            (XLEN),
-        .OSTDREQ_NUM     (OSTDREQ_NUM),
-        .AXI_ADDR_W      (AXI_ADDR_W),
-        .AXI_ID_W        (AXI_ID_W),
-        .AXI_DATA_W      (AXI_DATA_W)
+        .NAME                ("dCache-block-fetcher"),
+        .ILEN                (ILEN),
+        .XLEN                (XLEN),
+        .OSTDREQ_NUM         (OSTDREQ_NUM),
+        .NO_RDC_BACKPRESSURE (NO_RDC_BACKPRESSURE),
+        .AXI_ADDR_W          (AXI_ADDR_W),
+        .AXI_ID_W            (AXI_ID_W),
+        .AXI_DATA_W          (AXI_DATA_W)
     )
     block_fetcher
     (
@@ -313,7 +321,7 @@ module friscv_dcache
         .mst_rresp       (blk_fetcher_rresp),
         .mst_rdata       (blk_fetcher_rdata),
         // status flag of the memory controller
-        .cache_writing   (memctrl_rvalid & !memctrl_rcache),
+        .block_fill      (memctrl_rvalid & !memctrl_rcache),
         .cache_ren       (fetcher_cache_ren),
         .cache_raddr     (fetcher_cache_raddr),
         .cache_rprot     (fetcher_cache_rprot),
@@ -344,7 +352,9 @@ module friscv_dcache
         .memctrl_arprot  (blk_fetcher_arprot),
         .memctrl_arid    (blk_fetcher_arid),
         // status flag of the memory controller
-        .cache_writing   (memctrl_rvalid & !memctrl_rcache),
+        .mem_cpl_wr      (memctrl_rvalid & !memctrl_rcache),
+        .mem_cpl_rid     (memctrl_rid),
+        .block_fill      (block_fill),
         .cache_ren       (fetcher_cache_ren),
         .cache_raddr     (fetcher_cache_raddr),
         .cache_rid       (fetcher_cache_rid),
@@ -437,14 +447,15 @@ module friscv_dcache
 
     friscv_cache_ooo_mgt
     #(
-        .XLEN            (XLEN),
-        .OSTDREQ_NUM     (OSTDREQ_NUM),
-        .NAME            ("dCache-OoO-Mgt"),
-        .AXI_ADDR_W      (AXI_ADDR_W),
-        .AXI_ID_W        (AXI_ID_W),
-        .AXI_DATA_W      (AXI_DATA_W),
-        .AXI_ID_MASK     (AXI_ID_MASK),
-        .AXI_REORDER_CPL (AXI_REORDER_CPL)
+        .XLEN                (XLEN),
+        .OSTDREQ_NUM         (OSTDREQ_NUM),
+        .NAME                ("dCache-OoO-Mgt"),
+        .AXI_ADDR_W          (AXI_ADDR_W),
+        .AXI_ID_W            (AXI_ID_W),
+        .AXI_DATA_W          (AXI_DATA_W),
+        .AXI_ID_MASK         (AXI_ID_MASK),
+        .AXI_ID_FIXED        (AXI_ID_FIXED),
+        .NO_RDC_BACKPRESSURE (NO_RDC_BACKPRESSURE)
     )
     ooo_mgt
     (
@@ -461,6 +472,7 @@ module friscv_dcache
         .slv_arvalid        (memfy_arvalid),
         .slv_arready        (memfy_arready),
         .slv_araddr         (memfy_araddr),
+        .slv_arcache        (memfy_arcache),
         .slv_arid           (memfy_arid),
         // read data completion from cache block
         .blk_fetcher_rvalid (blk_fetcher_rvalid),
@@ -468,7 +480,7 @@ module friscv_dcache
         .blk_fetcher_rid    (blk_fetcher_rid),
         .blk_fetcher_rresp  (blk_fetcher_rresp),
         .blk_fetcher_rdata  (blk_fetcher_rdata),
-        // read datacompletion from memory controller for IO R/W
+        // read data completion from memory controller for IO R/W
         .io_fetcher_rvalid  (memctrl_rvalid & memctrl_rcache),
         .io_fetcher_rready  (memctrl_rready),
         .io_fetcher_rid     (memctrl_rid),
@@ -493,6 +505,7 @@ module friscv_dcache
         assign memfy_rresp = blk_fetcher_rresp;
         assign memfy_rid = blk_fetcher_rid;
         assign memctrl_rready = 1'b1;
+
     end
     endgenerate
 

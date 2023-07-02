@@ -50,7 +50,9 @@ module friscv_cache_prefetcher
         output logic [3             -1:0] memctrl_arprot,
         output logic [AXI_ID_W      -1:0] memctrl_arid,
         // Cache line read interface
-        input  wire                       cache_writing,
+        input  wire  [AXI_ID_W      -1:0] mem_cpl_rid,
+        input  wire                       mem_cpl_wr,
+        output logic                      block_fill,
         input  wire                       cache_ren,
         input  wire  [AXI_ADDR_W    -1:0] cache_raddr,
         input  wire  [AXI_ID_W      -1:0] cache_rid,
@@ -168,7 +170,7 @@ module friscv_cache_prefetcher
 
                     // Go to read the cache lines once the memory controller
                     // wrote a new cache line, being the read completion
-                    if (cache_writing) begin
+                    if (mem_cpl_wr) begin
                         `ifdef TRACE_CACHE
                         $fwrite(f, "@ %0t: Read completion received\n", $realtime);
                         `endif
@@ -179,13 +181,14 @@ module friscv_cache_prefetcher
                 // Wait state, once write has been deasserted, this state needs to 
                 // drive the next address if requested by the master
                 FETCH: begin
-                    if (!cache_writing)
+                    if (!mem_cpl_wr)
                         loader <= IDLE;
                 end
             endcase
         end
     end
 
+    assign block_fill = (mem_cpl_rid == arid_ffd) & mem_cpl_wr;
 
 endmodule
 

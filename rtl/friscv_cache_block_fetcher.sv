@@ -28,6 +28,8 @@ module friscv_cache_block_fetcher
         parameter XLEN = 32,
         // Number of outstanding requests supported
         parameter OSTDREQ_NUM = 4,
+        // Read data channel doesn't assert back-pressure, can drive completion directly
+        parameter NO_RDC_BACKPRESSURE = 0,
 
         ///////////////////////////////////////////////////////////////////////
         // Interface Setup
@@ -63,12 +65,12 @@ module friscv_cache_block_fetcher
         output logic [2             -1:0] mst_rresp,
         output logic [ILEN          -1:0] mst_rdata,
         // Cache line read interface
-        input  wire                       cache_writing,
         output logic                      cache_ren,
         output logic [AXI_ADDR_W    -1:0] cache_raddr,
         output logic [AXI_ID_W      -1:0] cache_rid,
         output logic [3             -1:0] cache_rprot,
         input  wire  [ILEN          -1:0] cache_rdata,
+        input  wire                       block_fill,
         input  wire                       cache_hit,
         input  wire                       cache_miss
     );
@@ -185,10 +187,10 @@ module friscv_cache_block_fetcher
     assign cache_rid =   sel_mf ? arid_ffd   : arid;
     assign cache_rprot = sel_mf ? arprot_ffd : arprot;
 
-    // Read address request handshake if able to receive
     assign pull_rac = (!(cache_miss & !flush) & !(fetching & !cache_hit) |
                       ((!cache_hit & !cache_miss) & flush)) &
                       !((rdc_full | rdc_afull) & !flush) & !pending_wr;
+
     assign arready = pull_rac;
     assign arvalid = !rac_empty;
 
@@ -210,6 +212,8 @@ module friscv_cache_block_fetcher
         end
         `endif
     end
+
+    generate if (NO_RDC_BACKPRESSURE == 0) begin
 
     friscv_scfifo
     #(
@@ -237,6 +241,23 @@ module friscv_cache_block_fetcher
     assign pull_rdc = mst_rready;
     assign mst_rvalid = !rdc_empty;
     assign mst_rresp = 2'b0;
+
+    // read data channel will always be sinked by the requester, being always ready
+    end else begin
+
+    assign mst_rvalid = cache_hit & !flush;
+    assign mst_rresp = 2'b0;
+    assign mst_rid = arid_ffd; 
+    assign mst_rdata = cache_rdata;
+    
+    assign push_rdc = '0;
+    assign pull_rdc = '0;
+    assign rdc_full = 0;
+    assign rdc_afull = 0;
+    assign rdc_empty = 0;
+
+    end
+    endgenerate
 
     ///////////////////////////////////////////////////////////////////////////
     // Sequencer to switch between cache load and cache fetch
@@ -266,7 +287,7 @@ module friscv_cache_block_fetcher
                 LOAD: begin
                     // Go to read the cache lines once the memory controller
                     // wrote a new cache line, being the read completion
-                    if (cache_writing) begin
+                    if (block_fill) begin
                         loader <= FETCH;
                     end else if (cache_hit) begin
                         loader <= IDLE;
@@ -276,7 +297,7 @@ module friscv_cache_block_fetcher
                 // Wait state, once write has been deasserted, this state needs to 
                 // drive the next address if requested by the master
                 FETCH: begin
-                    if (!cache_writing)
+                    if (!block_fill)
                         loader <= IDLE;
                 end
             endcase
@@ -300,7 +321,7 @@ module friscv_cache_block_fetcher
             pending_rd <= 1'b0;
         end else begin
             if (loader==IDLE && !flush && cache_miss) pending_rd <= 1'b1;
-            else if (cache_writing) pending_rd <= 1'b0;
+            else if (block_fill) pending_rd <= 1'b0;
         end
     end
 endmodule

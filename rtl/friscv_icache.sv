@@ -136,6 +136,7 @@ module friscv_icache
     logic                          cache_wren;
     logic [AXI_ADDR_W        -1:0] cache_waddr;
     logic [CACHE_BLOCK_W     -1:0] cache_wdata;
+    logic                          block_fill;
 
     ///////////////////////////////////////////////////////////////////////////
     // Cache sequencer
@@ -175,7 +176,7 @@ module friscv_icache
         .mst_rresp       (ctrl_rresp),
         .mst_rdata       (ctrl_rdata),
         // status flag of the memory controller
-        .cache_writing   (memctrl_rvalid & !memctrl_rcache),
+        .block_fill      (block_fill),
         .cache_ren       (cache_ren),
         .cache_raddr     (cache_raddr),
         .cache_rid       (cache_rid),
@@ -206,7 +207,9 @@ module friscv_icache
         .memctrl_arprot  (memctrl_arprot),
         .memctrl_arid    (memctrl_arid),
         // status flag of the memory controller
-        .cache_writing   (memctrl_rvalid & !memctrl_rcache),
+        .mem_cpl_wr      (memctrl_rvalid & !memctrl_rcache),
+        .mem_cpl_rid     (memctrl_rid),
+        .block_fill      (block_fill),
         .cache_ren       (cache_ren),
         .cache_raddr     (cache_raddr),
         .cache_rid       (cache_rid),
