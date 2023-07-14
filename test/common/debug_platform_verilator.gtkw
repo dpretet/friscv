@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.107 (w)1999-2020 BSI
-[*] Sun Jul  2 12:18:49 2023
+[*] Fri Jul 14 16:24:00 2023
 [*]
 [dumpfile] "/Users/damien/workspace/hdl/friscv/test/wba_testsuite/friscv_testbench.vcd"
-[dumpfile_mtime] "Sun Jul  2 09:43:13 2023"
-[dumpfile_size] 1784746
+[dumpfile_mtime] "Fri Jul 14 16:17:59 2023"
+[dumpfile_size] 1588845
 [savefile] "/Users/damien/workspace/hdl/friscv/test/common/debug_platform_verilator.gtkw"
-[timestart] 1876
+[timestart] 1773
 [size] 1440 900
-[pos] -1 -26
-*-4.574110 1905 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[pos] -1 -1
+*-4.336134 1813 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] friscv_testbench.
 [treeopen] friscv_testbench.friscv_testbench.
 [treeopen] friscv_testbench.friscv_testbench.genblk2.
@@ -27,16 +27,14 @@
 [treeopen] friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.mem_ctrl.genblk1.
 [treeopen] friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.mem_ctrl.WRITE_CHANNELS.GEN_WSTRB.
 [treeopen] friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.mem_ctrl.WRITE_CHANNELS.wroffset_fifo.
-[treeopen] friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.OOO_MGT.
 [treeopen] friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.
-[treeopen] friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_ICACHE.
-[treeopen] friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_ICACHE.icache.
+[treeopen] friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.WR_OOO_INSTANCE.
 [treeopen] friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_ICACHE.icache.mem_ctrl.IN_ORDER_CPL.
 [treeopen] friscv_testbench.friscv_testbench.genblk2.dut.io_subsystem.
-[sst_width] 270
-[signals_width] 298
+[sst_width] 287
+[signals_width] 300
 [sst_expanded] 1
-[sst_vpaned_height] 440
+[sst_vpaned_height] 178
 @c00200
 -AXI4-lite RAM
 @22
@@ -444,9 +442,8 @@ friscv_testbench.friscv_testbench.genblk2.dut.cpu0.isa_registers.x30_t5[31:0]
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.isa_registers.x31_t6[31:0]
 @1401200
 -ISA Regsiters
-@800200
--iCache
 @c00200
+-iCache
 -top
 @22
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_ICACHE.icache.ctrl_araddr[31:0]
@@ -520,12 +517,11 @@ friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_ICACHE.icache.mem_ctrl.me
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_ICACHE.icache.mem_ctrl.mem_rvalid
 @1401200
 -top
-@800200
+@c00200
 -iCache Fetcher
 @28
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_ICACHE.icache.fetcher.aclk
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_ICACHE.icache.fetcher.aresetn
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_ICACHE.icache.fetcher.pending_rd
 @200
 -
 @28
@@ -586,17 +582,65 @@ friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_ICACHE.icache.fetcher.cac
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_ICACHE.icache.fetcher.cache_raddr[31:0]
 @28
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_ICACHE.icache.fetcher.cache_hit
-@29
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_ICACHE.icache.fetcher.cache_miss
-@28
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_ICACHE.icache.fetcher.block_fill
 @22
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_ICACHE.icache.fetcher.cache_rdata[31:0]
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_ICACHE.icache.fetcher.cache_rid[7:0]
 @200
 -
-@1000200
+@1401200
 -iCache Fetcher
+@c00200
+-iCache Prefetch
+@28
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_ICACHE.icache.prefetcher.aclk
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_ICACHE.icache.prefetcher.aresetn
+@22
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_ICACHE.icache.prefetcher.araddr_ffd[31:0]
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_ICACHE.icache.prefetcher.addr_to_fetch[31:0]
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_ICACHE.icache.prefetcher.arid_ffd[7:0]
+@28
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_ICACHE.icache.prefetcher.arprot_ffd[2:0]
+@200
+-
+@28
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_ICACHE.icache.prefetcher.loader[1:0]
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_ICACHE.icache.prefetcher.fetch_next
+@22
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_ICACHE.icache.prefetcher.next_addr[31:0]
+@28
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_ICACHE.icache.prefetcher.block_fill
+@200
+-
+@28
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_ICACHE.icache.prefetcher.cache_ren
+@22
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_ICACHE.icache.prefetcher.cache_raddr[31:0]
+@28
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_ICACHE.icache.prefetcher.cache_rprot[2:0]
+@22
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_ICACHE.icache.prefetcher.cache_rdata[31:0]
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_ICACHE.icache.prefetcher.cache_rid[7:0]
+@28
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_ICACHE.icache.prefetcher.cache_hit
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_ICACHE.icache.prefetcher.cache_miss
+@22
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_ICACHE.icache.prefetcher.mem_cpl_rid[7:0]
+@28
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_ICACHE.icache.prefetcher.mem_cpl_wr
+@200
+-
+@28
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_ICACHE.icache.prefetcher.memctrl_arvalid
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_ICACHE.icache.prefetcher.memctrl_arready
+@22
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_ICACHE.icache.prefetcher.memctrl_araddr[31:0]
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_ICACHE.icache.prefetcher.memctrl_arid[7:0]
+@28
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_ICACHE.icache.prefetcher.memctrl_arprot[2:0]
+@1401200
+-iCache Prefetch
 @c00200
 -iCache Blocks
 @28
@@ -612,10 +656,10 @@ friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_ICACHE.icache.cache_block
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_ICACHE.icache.cache_blocks.p1_wdata[127:0]
 @1401200
 -iCache Blocks
-@1000200
 -iCache
 @800200
 -dCache
+@c00200
 -dCache Fetcher
 @28
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.block_fetcher.aclk
@@ -656,100 +700,90 @@ friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.block_fetch
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.block_fetcher.mst_rready
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.block_fetcher.mst_rresp[1:0]
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.block_fetcher.mst_rvalid
-@1000200
+@1401200
 -dCache Fetcher
 @c00200
--wires\
+-dCache Prefetch
+@28
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.prefetcher.aclk
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.prefetcher.aresetn
+@200
+-
 @22
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.prefetcher.araddr_ffd[31:0]
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.prefetcher.arid_ffd[7:0]
+@28
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.prefetcher.arprot_ffd[2:0]
+@200
+-
+@28
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.prefetcher.loader[1:0]
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.prefetcher.block_fill
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.prefetcher.fetch_next
+@22
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.prefetcher.next_addr[31:0]
+@200
+-
+@28
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.prefetcher.cache_ren
+@22
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.prefetcher.cache_raddr[31:0]
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.prefetcher.cache_rdata[31:0]
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.prefetcher.cache_rid[7:0]
+@28
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.prefetcher.cache_rprot[2:0]
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.prefetcher.cache_miss
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.prefetcher.cache_hit
+@200
+-
+@22
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.prefetcher.mem_cpl_rid[7:0]
+@28
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.prefetcher.mem_cpl_wr
+@200
+-
+@28
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.prefetcher.memctrl_arvalid
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.prefetcher.memctrl_arready
+@22
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.prefetcher.memctrl_araddr[31:0]
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.prefetcher.memctrl_arid[7:0]
+@28
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.prefetcher.memctrl_arprot[2:0]
+@1401200
+-dCache Prefetch
+@c00201
+-dCache Rd OoO
+@23
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.memfy_araddr[31:0]
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.memfy_arcache[3:0]
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.memfy_arid[7:0]
-@28
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.memfy_arprot[2:0]
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.memfy_arready
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.memfy_arvalid
-@200
--
-@28
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.memfy_arvalid_blk
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.memfy_arready_blk
-@200
--
-@28
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.memfy_arvalid_io
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.memfy_arready_io
-@200
--
-@22
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.memfy_arid_next[7:0]
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.memfy_arid_w[7:0]
-@200
+@29
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.memfy_arprot[2:0]
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.memfy_arready
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.memfy_arready_blk
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.memfy_arready_io
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.memfy_arvalid
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.memfy_arvalid_blk
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.memfy_arvalid_io
+@201
 -
-@22
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.memfy_rdata[31:0]
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.memfy_rid[7:0]
-@28
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.memfy_rready
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.memfy_rresp[1:0]
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.memfy_rvalid
-@200
+@29
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.RD_OOO_INSTANCE.rd_ooo_mgt.aclk
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.RD_OOO_INSTANCE.rd_ooo_mgt.aresetn
+@201
 -
-@28
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pending_rd
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pending_wr
-@200
--
-@22
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.io_fetcher_araddr[31:0]
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.io_fetcher_arid[7:0]
-@28
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.io_fetcher_arprot[2:0]
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.io_fetcher_arready
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.io_fetcher_arvalid
-@200
--
-@22
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.blk_fetcher_araddr[31:0]
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.blk_fetcher_arid[7:0]
-@28
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.blk_fetcher_arprot[2:0]
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.blk_fetcher_arready
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.blk_fetcher_arvalid
-@200
--
-@22
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.blk_fetcher_rdata[31:0]
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.blk_fetcher_rid[7:0]
-@28
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.blk_fetcher_rready
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.blk_fetcher_rresp[1:0]
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.blk_fetcher_rvalid
-@1401200
--wires\
+@23
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.RD_OOO_INSTANCE.rd_ooo_mgt.next_tag[7:0]
+@1401201
+-dCache Rd OoO
 @c00200
 -Pusher
-@200
--
-@22
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.AXI_ADDR_W[31:0]
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.AXI_DATA_W[31:0]
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.AXI_ID_MASK[31:0]
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.AXI_ID_W[31:0]
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.CACHE_BLOCK_W[31:0]
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.OSTDREQ_NUM[31:0]
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.XLEN[31:0]
-@200
--
 @28
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.aclk
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.aresetn
-@200
--
-@28
-[color] 3
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.pending_rd
-[color] 3
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.pending_wr
 @200
 -
 @28
@@ -760,7 +794,6 @@ friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.cach
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.cache_hit
 [color] 2
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.cache_miss
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.wait_data_channel
 @200
 -
 @28
@@ -784,26 +817,24 @@ friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.mst_
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.mst_awid[7:0]
 @28
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.mst_awprot[2:0]
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.mst_awready
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.mst_awvalid
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.mst_awready
 @200
 -
 @22
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.mst_wdata[31:0]
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.mst_wstrb[3:0]
 @28
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.mst_wvalid
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.mst_wready
-@22
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.mst_wdata[31:0]
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.mst_wstrb[3:0]
 @200
 -
 @22
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.mst_bid[7:0]
 @28
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.mst_bready
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.mst_bresp[1:0]
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.mst_bvalid
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.mst_bready
 @200
 -
 @28
@@ -811,6 +842,21 @@ friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.addr
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.addr_fifo_full
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.data_fifo_empty
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.data_fifo_full
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.resp_fifo_empty
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.resp_fifo_full
+@200
+-
+@22
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.id_ram[31:0]
+@28
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.push_resp
+@22
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.cpl_id_m[7:0]
+@28
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.to_cpl
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.pull_resp
+@22
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.req_id_m[7:0]
 @200
 -
 @22
@@ -819,7 +865,6 @@ friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.memc
 @28
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.memctrl_awprot[2:0]
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.memctrl_awvalid
-[color] 6
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.memctrl_awready
 @200
 -
@@ -831,41 +876,61 @@ friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.memc
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.memctrl_wready
 @200
 -
+@28
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.memctrl_bresp[1:0]
 @22
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.memctrl_bid[7:0]
 @28
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.memctrl_bready
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.memctrl_bresp[1:0]
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.memctrl_bvalid
-@200
--
-@800200
--OR Tracker
-@22
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.outstanding_request_tracker.MAX_OR[31:0]
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.outstanding_request_tracker.MAX_OR_W[31:0]
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.outstanding_request_tracker.NAME[103:0]
-@28
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.outstanding_request_tracker.aclk
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.outstanding_request_tracker.aresetn
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.outstanding_request_tracker.arready
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.outstanding_request_tracker.arvalid
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.outstanding_request_tracker.awready
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.outstanding_request_tracker.awvalid
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.outstanding_request_tracker.bready
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.outstanding_request_tracker.bvalid
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.outstanding_request_tracker.max_rd_or
-[color] 2
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.outstanding_request_tracker.max_wr_or
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.outstanding_request_tracker.rready
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.outstanding_request_tracker.rvalid
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.outstanding_request_tracker.srst
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.outstanding_request_tracker.waiting_rd_cpl
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.outstanding_request_tracker.waiting_wr_cpl
-@1000200
--OR Tracker
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.memctrl_bready
 @1401200
 -Pusher
+@c00200
+-Wr OoO Mgt
+@28
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.WR_OOO_INSTANCE.wr_ooo_mgt.aclk
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.WR_OOO_INSTANCE.wr_ooo_mgt.aresetn
+@200
+-
+@22
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.WR_OOO_INSTANCE.wr_ooo_mgt.cpl1_id[7:0]
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.WR_OOO_INSTANCE.wr_ooo_mgt.cpl1_id_m[7:0]
+@28
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.WR_OOO_INSTANCE.wr_ooo_mgt.cpl1_resp[1:0]
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.WR_OOO_INSTANCE.wr_ooo_mgt.cpl1_valid
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.WR_OOO_INSTANCE.wr_ooo_mgt.cpl1_ready
+@200
+-
+@22
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.WR_OOO_INSTANCE.wr_ooo_mgt.req_tag_pt[4:0]
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.WR_OOO_INSTANCE.wr_ooo_mgt.cpl_tag_pt[4:0]
+@200
+-
+@22
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.WR_OOO_INSTANCE.wr_ooo_mgt.tags[63:0]
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.WR_OOO_INSTANCE.wr_ooo_mgt.io_tags[31:0]
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.WR_OOO_INSTANCE.wr_ooo_mgt.next_tag[7:0]
+@28
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.WR_OOO_INSTANCE.wr_ooo_mgt.tag_avlb
+@200
+-
+@22
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.WR_OOO_INSTANCE.wr_ooo_mgt.slv_addr[31:0]
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.WR_OOO_INSTANCE.wr_ooo_mgt.slv_acache[3:0]
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.WR_OOO_INSTANCE.wr_ooo_mgt.slv_aid[7:0]
+@28
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.WR_OOO_INSTANCE.wr_ooo_mgt.slv_avalid
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.WR_OOO_INSTANCE.wr_ooo_mgt.slv_aready
+@200
+-
+@22
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.WR_OOO_INSTANCE.wr_ooo_mgt.mst_id[7:0]
+@28
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.WR_OOO_INSTANCE.wr_ooo_mgt.mst_resp[1:0]
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.WR_OOO_INSTANCE.wr_ooo_mgt.mst_valid
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.WR_OOO_INSTANCE.wr_ooo_mgt.mst_ready
+@1401200
+-Wr OoO Mgt
 @c00200
 -MemCtrl
 @200
@@ -961,64 +1026,6 @@ friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.mem_ctrl.WR
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.mem_ctrl.WRITE_CHANNELS.wroffset_fifo.wr_en
 @1401200
 -MemCtrl
-@c00200
--dCache OoO Mgt
-@22
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.memfy_araddr[31:0]
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.memfy_arcache[3:0]
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.memfy_arid[7:0]
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.memfy_arid_next[7:0]
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.memfy_arid_w[7:0]
-@28
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.memfy_arprot[2:0]
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.memfy_arready
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.memfy_arready_blk
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.memfy_arready_io
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.memfy_arvalid
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.memfy_arvalid_blk
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.memfy_arvalid_io
-@200
--
-@28
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.OOO_MGT.ooo_mgt.aclk
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.OOO_MGT.ooo_mgt.aresetn
-@200
--
-@22
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.OOO_MGT.ooo_mgt.next_tag[7:0]
-@28
-[color] 2
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.OOO_MGT.ooo_mgt.pending_rd
-@200
--
-@22
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.OOO_MGT.ooo_mgt.slv_araddr[31:0]
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.OOO_MGT.ooo_mgt.slv_arid[7:0]
-@28
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.OOO_MGT.ooo_mgt.slv_arready
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.OOO_MGT.ooo_mgt.slv_arvalid
-@200
--
-@22
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.OOO_MGT.ooo_mgt.blk_fetcher_rdata[31:0]
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.OOO_MGT.ooo_mgt.blk_fetcher_rid[7:0]
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.OOO_MGT.ooo_mgt.blk_fetcher_rid_m[7:0]
-@28
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.OOO_MGT.ooo_mgt.blk_fetcher_rready
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.OOO_MGT.ooo_mgt.blk_fetcher_rresp[1:0]
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.OOO_MGT.ooo_mgt.blk_fetcher_rvalid
-@200
--
--
-@22
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.OOO_MGT.ooo_mgt.mst_rdata[31:0]
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.OOO_MGT.ooo_mgt.mst_rid[7:0]
-@28
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.OOO_MGT.ooo_mgt.mst_rready
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.OOO_MGT.ooo_mgt.mst_rresp[1:0]
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.OOO_MGT.ooo_mgt.mst_rvalid
-@1401200
--dCache OoO Mgt
 @1000200
 -dCache
 @c00200
@@ -1259,10 +1266,6 @@ friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.proc_valid_p
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.proc_ready_p
 @1401200
 -pipe
-@200
--
-@1401200
--processing
 @c00200
 -ALU
 @28
@@ -1405,11 +1408,11 @@ friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.wready
 -
 @28
 [color] 3
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.bready
-[color] 3
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.bresp[1:0]
 [color] 3
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.bvalid
+[color] 3
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.bready
 @200
 -
 @22
@@ -1434,6 +1437,90 @@ friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_rs2_ad
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_rs2_val[31:0]
 @1401200
 -Memfy
+@c00200
+-divisor
+@200
+-
+@22
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.m_instbus[85:0]
+@28
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.m_valid
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.m_ready
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.funct3[2:0]
+@22
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.funct7[6:0]
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.opcode[6:0]
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.rd[4:0]
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.rs1[4:0]
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.rs2[4:0]
+@200
+-
+@28
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.funct3_r[2:0]
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.rd_wr_div
+@22
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.rd_r[4:0]
+@200
+-
+@28
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.m_rd_wr
+@22
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.m_rd_addr[4:0]
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.m_rd_strb[3:0]
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.m_rd_val[31:0]
+@200
+-
+@22
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.m_rs1_addr[4:0]
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.m_rs1_val[31:0]
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.m_rs2_addr[4:0]
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.m_rs2_val[31:0]
+@200
+-
+@28
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.div32.aclk
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.div32.aresetn
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.div32.computing
+@200
+-
+@28
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.div32.i_ready
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.div32.i_valid
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.div32.signed_div
+@22
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.div32.divd[31:0]
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.div32.divs[31:0]
+@200
+-
+@28
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.div32.o_ready
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.div32.o_valid
+@22
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.div32.quot[31:0]
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.div32.rem[31:0]
+@28
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.div32.zero_div
+@200
+-
+@22
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.div32.quot_next[31:0]
+@28
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.div32.quot_sign
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.div32.rem_sign
+@22
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.div32.rem_sub[32:0]
+@28
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.div32.srst
+@22
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.div32.step_cnt[4:0]
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.div32.acc[32:0]
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.div32.acc_next[32:0]
+@1401200
+-divisor
+@200
+-
+@1401200
+-processing
 @c00200
 -peripheral
 -IO Subsystem
@@ -1681,122 +1768,5 @@ friscv_testbench.friscv_testbench.genblk2.dut.io_subsystem.clint.mtimecmp[63:0]
 @1401200
 -Clint
 -peripheral
-@c00200
--divisor
-@200
--
-@22
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.m_instbus[85:0]
-@28
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.m_valid
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.m_ready
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.funct3[2:0]
-@22
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.funct7[6:0]
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.opcode[6:0]
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.rd[4:0]
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.rs1[4:0]
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.rs2[4:0]
-@200
--
-@28
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.funct3_r[2:0]
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.rd_wr_div
-@22
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.rd_r[4:0]
-@200
--
-@28
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.m_rd_wr
-@22
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.m_rd_addr[4:0]
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.m_rd_strb[3:0]
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.m_rd_val[31:0]
-@200
--
-@22
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.m_rs1_addr[4:0]
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.m_rs1_val[31:0]
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.m_rs2_addr[4:0]
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.m_rs2_val[31:0]
-@200
--
-@28
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.div32.aclk
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.div32.aresetn
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.div32.computing
-@200
--
-@28
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.div32.i_ready
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.div32.i_valid
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.div32.signed_div
-@22
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.div32.divd[31:0]
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.div32.divs[31:0]
-@200
--
-@28
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.div32.o_ready
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.div32.o_valid
-@22
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.div32.quot[31:0]
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.div32.rem[31:0]
-@28
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.div32.zero_div
-@200
--
-@22
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.div32.quot_next[31:0]
-@28
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.div32.quot_sign
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.div32.rem_sign
-@22
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.div32.rem_sub[32:0]
-@28
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.div32.srst
-@22
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.div32.step_cnt[4:0]
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.div32.acc[32:0]
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.div32.acc_next[32:0]
-@1401200
--divisor
-@28
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.prefetcher.aclk
-@22
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.prefetcher.araddr_ffd[31:0]
-@28
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.prefetcher.aresetn
-@22
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.prefetcher.arid_ffd[7:0]
-@28
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.prefetcher.arprot_ffd[2:0]
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.prefetcher.block_fill
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.prefetcher.cache_hit
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.prefetcher.cache_miss
-@22
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.prefetcher.cache_raddr[31:0]
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.prefetcher.cache_rdata[31:0]
-@28
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.prefetcher.cache_ren
-@22
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.prefetcher.cache_rid[7:0]
-@28
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.prefetcher.cache_rprot[2:0]
-@22
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.prefetcher.f[31:0]
-@28
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.prefetcher.loader[1:0]
-@22
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.prefetcher.mem_cpl_rid[7:0]
-@28
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.prefetcher.mem_cpl_wr
-@22
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.prefetcher.memctrl_araddr[31:0]
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.prefetcher.memctrl_arid[7:0]
-@28
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.prefetcher.memctrl_arprot[2:0]
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.prefetcher.memctrl_arready
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.prefetcher.memctrl_arvalid
 [pattern_trace] 1
 [pattern_trace] 0

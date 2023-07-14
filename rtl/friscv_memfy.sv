@@ -79,10 +79,10 @@ module friscv_memfy
         // register source 1 query interface
         output logic [5               -1:0] memfy_rs1_addr,
         input  wire  [XLEN            -1:0] memfy_rs1_val,
-        // register source 2 for query interface
+        // register source 2 query interface
         output logic [5               -1:0] memfy_rs2_addr,
         input  wire  [XLEN            -1:0] memfy_rs2_val,
-        // register estination for query interface
+        // register destination write interface
         output logic                        memfy_rd_wr,
         output logic [5               -1:0] memfy_rd_addr,
         output logic [XLEN            -1:0] memfy_rd_val,

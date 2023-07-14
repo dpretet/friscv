@@ -340,8 +340,7 @@ module friscv_rv32i_platform
         .IO_MAP (IO_MAP),
         .DCACHE_PREFETCH_EN (DCACHE_PREFETCH_EN),
         .DCACHE_BLOCK_W (DCACHE_BLOCK_W),
-        .DCACHE_DEPTH (DCACHE_DEPTH),
-        .DCACHE_REORDER_CPL (1)
+        .DCACHE_DEPTH (DCACHE_DEPTH)
     )
     cpu0
     (

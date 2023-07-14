@@ -36,8 +36,16 @@ module friscv_cache_prefetcher
         // AXI ID width, setup by default to 8 and unused
         parameter AXI_ID_W = 8,
         // AXI4 data width, independant of control unit width
-        parameter AXI_DATA_W = 8
+        parameter AXI_DATA_W = 8,
 
+       ///////////////////////////////////////////////////////////////////////
+        // Cache Setup
+        ///////////////////////////////////////////////////////////////////////
+
+        // Enable automatic prefetch in memory controller
+        parameter CACHE_PREFETCH_EN = 0,
+        // Block width defining only the data payload, in bits
+        parameter CACHE_BLOCK_W = 128
     )(
         // Clock / Reset
         input  wire                       aclk,
@@ -84,6 +92,10 @@ module friscv_cache_prefetcher
     logic [AXI_ID_W     -1:0] arid_ffd;
     logic [3            -1:0] arprot_ffd;
 
+    logic                     fetch_next;
+    logic [AXI_ADDR_W   -1:0] next_addr;
+    logic [AXI_ADDR_W   -1:0] addr_to_fetch;
+
     // Tracer setup
     `ifdef TRACE_CACHE
     string fname;
@@ -115,7 +127,8 @@ module friscv_cache_prefetcher
             arprot_ffd <= cache_rprot;
         end
     end
-
+    
+    assign addr_to_fetch = {araddr_ffd[AXI_ADDR_W-1:ADDR_LSB_W],{ADDR_LSB_W{1'b0}}};
 
     ///////////////////////////////////////////////////////////////////////////
     // Memory controller management and prefetch stage
@@ -128,14 +141,20 @@ module friscv_cache_prefetcher
         if (!aresetn) begin
             memctrl_arvalid <= 1'b0;
             memctrl_araddr <= {AXI_ADDR_W{1'b0}};
+            next_addr <= {AXI_ADDR_W{1'b0}};
             memctrl_arid <= {AXI_ID_W{1'b0}};
             memctrl_arprot <= 3'b0;
+            fetch_next <= 1'b0;
+            block_fill <= 1'b0;
             loader <= IDLE;
         end else if (srst) begin
             memctrl_arvalid <= 1'b0;
             memctrl_araddr <= {AXI_ADDR_W{1'b0}};
+            next_addr <= {AXI_ADDR_W{1'b0}};
             memctrl_arid <= {AXI_ID_W{1'b0}};
             memctrl_arprot <= 3'b0;
+            fetch_next <= 1'b0;
+            block_fill <= 1'b0;
             loader <= IDLE;
         end else begin
 
@@ -147,9 +166,20 @@ module friscv_cache_prefetcher
                         memctrl_arvalid <= 1'b1;
                         // Always fetch a complete cache blocks
                         // TODO: Adapt based on cache block vs axi data width
-                        memctrl_araddr <= {araddr_ffd[AXI_ADDR_W-1:ADDR_LSB_W],{ADDR_LSB_W{1'b0}}};
+                        memctrl_araddr <= addr_to_fetch;
                         memctrl_arid <= arid_ffd;
                         memctrl_arprot <= arprot_ffd;
+                        if (addr_to_fetch != next_addr) begin
+                            next_addr <= addr_to_fetch + CACHE_BLOCK_W/8;
+                        end else begin
+                            next_addr <= next_addr + CACHE_BLOCK_W/8;
+                        end 
+                        fetch_next <= 1'b1;
+                        loader <= LOAD;
+                    end else if (fetch_next) begin
+                        memctrl_arvalid <= 1'b1;
+                        memctrl_araddr <= next_addr;
+                        fetch_next <= 1'b0;
                         loader <= LOAD;
                     end else begin
                         memctrl_arvalid <= 1'b0;
@@ -168,6 +198,9 @@ module friscv_cache_prefetcher
                         memctrl_arvalid <= 1'b0;
                     end
 
+                    if (fetch_next) fetch_next <= 1'b0;
+                    if (!fetch_next && mem_cpl_wr) block_fill <= 1'b1;
+
                     // Go to read the cache lines once the memory controller
                     // wrote a new cache line, being the read completion
                     if (mem_cpl_wr) begin
@@ -178,17 +211,19 @@ module friscv_cache_prefetcher
                     end
                 end 
 
-                // Wait state, once write has been deasserted, this state needs to 
-                // drive the next address if requested by the master
+                // Wait state, once write has been deasserted
+                // IF prefetch mode enabled, compute the next address
                 FETCH: begin
-                    if (!mem_cpl_wr)
+
+                    block_fill <= 1'b0;
+
+                    if (!mem_cpl_wr) begin
                         loader <= IDLE;
+                    end
                 end
             endcase
         end
     end
-
-    assign block_fill = (mem_cpl_rid == arid_ffd) & mem_cpl_wr;
 
 endmodule
 

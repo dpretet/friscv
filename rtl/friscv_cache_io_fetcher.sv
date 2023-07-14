@@ -47,10 +47,6 @@ module friscv_cache_io_fetcher
         input  wire  [3             -1:0] mst_arprot,
         input  wire  [AXI_ID_W      -1:0] mst_arid,
 
-        // flags to avoid breaking ordering rules
-        input  wire                       pending_wr,
-        output logic                      pending_rd,
-
         // Memory controller read interface
         output logic                      memctrl_arvalid,
         input  wire                       memctrl_arready,
@@ -95,7 +91,7 @@ module friscv_cache_io_fetcher
         .srst     (srst),
         .flush    (1'b0),
         .data_in  ({mst_arprot, mst_arid, mst_araddr}),
-        .push     (mst_arvalid & !pending_wr),
+        .push     (mst_arvalid),
         .full     (fifo_full),
         .afull    (),
         .data_out ({memctrl_arprot, memctrl_arid, memctrl_araddr}),
@@ -104,10 +100,8 @@ module friscv_cache_io_fetcher
         .aempty   ()
     );
 
-    assign mst_arready = !fifo_full & !pending_wr;
+    assign mst_arready = !fifo_full;
     assign memctrl_arvalid = !fifo_empty;
-
-    assign pending_rd = !fifo_empty;
 
 endmodule
 

@@ -111,7 +111,7 @@ int c_mult_d[3][3] = {{12,12,12}, {12,12,12}, {12,12,12}};
  */
 int benchmark(int argc, char *argv[]) {
 
-    int nb_iterations = 10;
+    int nb_iterations = 1;
     int ret=0;
 
     bench.cycle_start = 0;

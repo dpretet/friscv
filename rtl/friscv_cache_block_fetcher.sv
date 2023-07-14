@@ -29,7 +29,7 @@ module friscv_cache_block_fetcher
         // Number of outstanding requests supported
         parameter OSTDREQ_NUM = 4,
         // Read data channel doesn't assert back-pressure, can drive completion directly
-        parameter NO_RDC_BACKPRESSURE = 0,
+        parameter NO_CPL_BACKPRESSURE = 0,
 
         ///////////////////////////////////////////////////////////////////////
         // Interface Setup
@@ -47,8 +47,6 @@ module friscv_cache_block_fetcher
         input  wire                       aclk,
         input  wire                       aresetn,
         input  wire                       srst,
-        input  logic                      pending_wr,
-        output logic                      pending_rd,
         // Flush current outstanding request in buffers
         input  wire                       flush_reqs,
         // Flush control to execute FENCE.i
@@ -189,7 +187,7 @@ module friscv_cache_block_fetcher
 
     assign pull_rac = (!(cache_miss & !flush) & !(fetching & !cache_hit) |
                       ((!cache_hit & !cache_miss) & flush)) &
-                      !((rdc_full | rdc_afull) & !flush) & !pending_wr;
+                      !((rdc_full | rdc_afull) & !flush);
 
     assign arready = pull_rac;
     assign arvalid = !rac_empty;
@@ -213,7 +211,7 @@ module friscv_cache_block_fetcher
         `endif
     end
 
-    generate if (NO_RDC_BACKPRESSURE == 0) begin
+    generate if (NO_CPL_BACKPRESSURE == 0) begin
 
     friscv_scfifo
     #(
@@ -304,26 +302,6 @@ module friscv_cache_block_fetcher
         end
     end
 
-
-    ///////////////////////////////////////////////////////////////////////////
-    // Flag indicating a memory read request is occuring, waiting for a 
-    // completion thus blocking any further execution. Ensures read / write
-    // requests sequencing is respected
-    ///////////////////////////////////////////////////////////////////////////
-    
-    // TODO: Check if here address/data channel from master interface shouldn't 
-    // be better to use to enforce the read/write ordering
-    always @ (posedge aclk or negedge aresetn) begin
-
-        if (!aresetn) begin
-            pending_rd <= 1'b0;
-        end else if (srst) begin
-            pending_rd <= 1'b0;
-        end else begin
-            if (loader==IDLE && !flush && cache_miss) pending_rd <= 1'b1;
-            else if (block_fill) pending_rd <= 1'b0;
-        end
-    end
 endmodule
 
 `resetall

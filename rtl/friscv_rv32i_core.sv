@@ -89,9 +89,7 @@ module friscv_rv32i_core
         // integer multiple of XLEN (power of two)
         parameter DCACHE_BLOCK_W     = XLEN*4,
         // Number of blocks in the cache
-        parameter DCACHE_DEPTH       = 512,
-        // Reorder read completion for Memfy
-        parameter DCACHE_REORDER_CPL = 0
+        parameter DCACHE_DEPTH       = 512
     )(
         // Clock/reset interface
         input  wire                       aclk,
@@ -660,7 +658,6 @@ module friscv_rv32i_core
             .AXI_ID_W          (AXI_ID_W),
             .AXI_DATA_W        (AXI_DMEM_W),
             .AXI_ID_MASK       (AXI_DMEM_MASK),
-            .AXI_REORDER_CPL   (DCACHE_REORDER_CPL),
             .IO_MAP_NB         (IO_MAP_NB),
             .CACHE_PREFETCH_EN (DCACHE_PREFETCH_EN),
             .CACHE_BLOCK_W     (DCACHE_BLOCK_W),

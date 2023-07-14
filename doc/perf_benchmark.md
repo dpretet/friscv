@@ -1,4 +1,4 @@
-# 2023-03-27
+# 2023-03-27 - Initial architecture with caches
 
 hash: 98c12b38889758
 
@@ -193,3 +193,43 @@ Algorithms:
 - Xoshiro128++ execution: 370791 cycles
 - Pool Arena execution: 2976411 cycles
 
+
+# 05/07/2023 - Misc. Updates
+
+CPI = 3.05
+
+dCache:
+- Bypass CPL if no IO request
+- No back-pressure on block Fetcher
+- fixed AXI ID in OoO
+- prefetcher now always load ADDR + CACHE_BLOCK_W
+
+General statistics:
+  - Start time: 8078
+  - End time: 4372164
+  - Total elapsed time: 4364086 cycles
+  - Instret start: 2220
+  - Instret end: 1433299
+  - Retired instructions: 1431079
+
+Instruction Bus Request:
+  - active cycles: 3340831
+  - sleep cycles: 0
+  - stall cycles: 1023257
+
+Inst Bus Completion:
+  - active cycles: 1589274
+  - sleep cycles: 160754
+  - stall cycles: 2613729
+
+Processing Bus:
+  - active cycles: 1219044
+  - sleep cycles: 1918548
+  - stall cycles: 1117491
+
+Algorithms:
+- Chacha20 execution: 774498 cycles
+- Matrix execution: 127361 cycles
+- Printf execution: 638013 cycles
+- Xoshiro128++ execution: 321654 cycles
+- Pool Arena execution: 2501780 cycles

@@ -157,9 +157,6 @@ module friscv_icache
         .aclk            (aclk),
         .aresetn         (aresetn),
         .srst            (srst),
-        // status flags for ordering rules
-        .pending_wr      (1'b0),
-        .pending_rd      (),
         // flush control flow to empty the front-end FIFO
         .flush_reqs      (flush_reqs),
         .flush_blocks    (flush_blocks),

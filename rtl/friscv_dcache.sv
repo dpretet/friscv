@@ -48,12 +48,10 @@ module friscv_dcache
         parameter AXI_DATA_W = 128,
         // ID Mask used to identify the data cache in the AXI4 infrastructure
         parameter AXI_ID_MASK = 'h20,
-        // Force read completion reordering
-        parameter AXI_REORDER_CPL = 1,
         // AXI ID issued on slave interface is fixed
         parameter AXI_ID_FIXED = 1,
-        // Disable read data channel FIFO is driver doesn't assert backpressure
-        parameter NO_RDC_BACKPRESSURE = 1,
+        // Disable read data / write response FIFO back-pressure if driver doesn't use it
+        parameter NO_CPL_BACKPRESSURE = 1,
 
         ///////////////////////////////////////////////////////////////////////
         // Cache Setup
@@ -221,23 +219,23 @@ module friscv_dcache
     logic [XLEN              -1:0] memctrl_rdata;
     logic [AXI_ID_W          -1:0] memctrl_rid;
     logic [2                 -1:0] memctrl_rresp;
-    // Flag to pause fetcher and pusher on concurrent read/write access
-    // to ensure the ordering rules are correctly applied
-    logic                          pending_rd_blk;
-    logic                          pending_rd_io;
-    logic                          pending_rd_cpl;
-    logic                          pending_rd;
-    logic                          pending_wr;
     // flag to indicate a flush request is under execution
     logic                          flushing;
     // mix of ready flags between fetchers and read completer
-    logic                          slv_arready;
+    logic                          memfy_arready_w;
+    logic                          memfy_awready_w;
     logic                          rtag_avlb;
-    // Intermediate signal to drive ARID regarding AXI_REORDER_CPL
+    logic                          wtag_avlb;
+    // substituted tags, provided by the Out-of-Order managers if present
     logic [AXI_ID_W          -1:0] memfy_arid_w;
-    // substituted tag, provided by the Out-of-Order manager if present
+    logic [AXI_ID_W          -1:0] memfy_awid_w;
     logic [AXI_ID_W          -1:0] memfy_arid_next;
-
+    logic [AXI_ID_W          -1:0] memfy_awid_next;
+    // pusher write response channel
+    logic                          pusher_bvalid;
+    logic                          pusher_bready;
+    logic [AXI_ID_W          -1:0] pusher_bid;
+    logic [2                 -1:0] pusher_bresp;
     // cache write interface
     logic                          cache_wren;
     logic [AXI_ADDR_W        -1:0] cache_waddr;
@@ -252,7 +250,7 @@ module friscv_dcache
     ///////////////////////////////////////////////////////////////////////////
 
     initial begin
-        `CHECKER((AXI_REORDER_CPL==0 && IO_MAP_NB), "IO map described but AXI_REORDER_CPL is not activated");
+        `CHECKER((OSTDREQ_NUM%2 != 0), "OSTDREQ_NUM must be a power of two");
     end
 
 
@@ -268,14 +266,9 @@ module friscv_dcache
 
         assign memfy_arvalid_io = (memfy_arcache[1]) ? memfy_arvalid & rtag_avlb : 1'b0;
         assign memfy_arvalid_blk = (!memfy_arcache[1]) ? memfy_arvalid & rtag_avlb : 1'b0;
-        assign slv_arready = (memfy_arcache[1]) ? memfy_arready_io : memfy_arready_blk;
-        assign memfy_arready = slv_arready & rtag_avlb;
-
-        if (AXI_REORDER_CPL==0) begin
-            assign memfy_arid_w = memfy_arid;
-        end else begin
-            assign memfy_arid_w = memfy_arid_next;
-        end
+        assign memfy_arready_w = (memfy_arcache[1]) ? memfy_arready_io : memfy_arready_blk;
+        assign memfy_arready = memfy_arready_w & rtag_avlb;
+        assign memfy_arid_w = memfy_arid_next;
 
     end else begin: BLK_FETCHER_ONLY
 
@@ -283,6 +276,11 @@ module friscv_dcache
         assign memfy_arready = memfy_arready_blk;
         assign memfy_arid_w = memfy_arid;
 
+        assign memfy_rvalid = blk_fetcher_rvalid;
+        assign memfy_rid = blk_fetcher_rid;
+        assign memfy_rresp = blk_fetcher_rresp;
+        assign memfy_rdata = blk_fetcher_rdata;
+        assign blk_fetcher_rready = memfy_rready;
     end
     endgenerate
 
@@ -292,7 +290,7 @@ module friscv_dcache
         .ILEN                (ILEN),
         .XLEN                (XLEN),
         .OSTDREQ_NUM         (OSTDREQ_NUM),
-        .NO_RDC_BACKPRESSURE (NO_RDC_BACKPRESSURE),
+        .NO_CPL_BACKPRESSURE (NO_CPL_BACKPRESSURE),
         .AXI_ADDR_W          (AXI_ADDR_W),
         .AXI_ID_W            (AXI_ID_W),
         .AXI_DATA_W          (AXI_DATA_W)
@@ -305,9 +303,6 @@ module friscv_dcache
         // unused flush control
         .flush_reqs      (1'b0),
         .flush_blocks    (1'b0),
-        // status flags for ordering rules
-        .pending_wr      (pending_wr),
-        .pending_rd      (pending_rd_blk),
         // read address channel from the application
         .mst_arvalid     (memfy_arvalid_blk),
         .mst_arready     (memfy_arready_blk),
@@ -333,12 +328,14 @@ module friscv_dcache
 
     friscv_cache_prefetcher
     #(
-        .NAME             ("dCache-prefetcher"),
-        .ILEN             (ILEN),
-        .XLEN             (XLEN),
-        .AXI_ADDR_W       (AXI_ADDR_W),
-        .AXI_ID_W         (AXI_ID_W),
-        .AXI_DATA_W       (AXI_DATA_W)
+        .NAME              ("dCache-prefetcher"),
+        .ILEN              (ILEN),
+        .XLEN              (XLEN),
+        .AXI_ADDR_W        (AXI_ADDR_W),
+        .AXI_ID_W          (AXI_ID_W),
+        .AXI_DATA_W        (AXI_DATA_W),
+        .CACHE_PREFETCH_EN (CACHE_PREFETCH_EN),
+        .CACHE_BLOCK_W     (CACHE_BLOCK_W)
     )
     prefetcher
     (
@@ -380,9 +377,6 @@ module friscv_dcache
         .aclk            (aclk),
         .aresetn         (aresetn),
         .srst            (srst),
-        // status flags for ordering rules
-        .pending_wr      (pending_wr),
-        .pending_rd      (pending_rd_io),
         // read address channel from the application
         .mst_arvalid     (memfy_arvalid_io),
         .mst_arready     (memfy_arready_io),
@@ -400,7 +394,6 @@ module friscv_dcache
     end else begin: NO_IO_FETCHER
 
         assign memfy_arready_io = 1'b0;
-        assign pending_rd_io = 1'b0;
         assign io_fetcher_araddr = {AXI_ADDR_W{1'b0}};
         assign io_fetcher_arprot = 3'b0;
         assign io_fetcher_arid = {AXI_ID_W{1'b0}};
@@ -442,22 +435,22 @@ module friscv_dcache
     // in-order back to the application
     ///////////////////////////////////////////////////////////////////////////
 
-    generate
-    if (AXI_REORDER_CPL) begin: OOO_MGT
+
+    if (IO_MAP_NB > 0) begin: RD_OOO_INSTANCE
 
     friscv_cache_ooo_mgt
     #(
         .XLEN                (XLEN),
         .OSTDREQ_NUM         (OSTDREQ_NUM),
-        .NAME                ("dCache-OoO-Mgt"),
+        .NAME                ("dCache-OoO-RdMgt"),
         .AXI_ADDR_W          (AXI_ADDR_W),
         .AXI_ID_W            (AXI_ID_W),
         .AXI_DATA_W          (AXI_DATA_W),
         .AXI_ID_MASK         (AXI_ID_MASK),
         .AXI_ID_FIXED        (AXI_ID_FIXED),
-        .NO_RDC_BACKPRESSURE (NO_RDC_BACKPRESSURE)
+        .NO_CPL_BACKPRESSURE (NO_CPL_BACKPRESSURE)
     )
-    ooo_mgt
+    rd_ooo_mgt
     (
         .aclk               (aclk),
         .aresetn            (aresetn),
@@ -466,55 +459,37 @@ module friscv_dcache
         .next_tag           (memfy_arid_next),
         // Next tag is available
         .tag_avlb           (rtag_avlb),
-        // status flags for ordering rules
-        .pending_rd         (pending_rd_cpl),
         // read address channel from the application
-        .slv_arvalid        (memfy_arvalid),
-        .slv_arready        (memfy_arready),
-        .slv_araddr         (memfy_araddr),
-        .slv_arcache        (memfy_arcache),
-        .slv_arid           (memfy_arid),
+        .slv_avalid         (memfy_arvalid),
+        .slv_aready         (memfy_arready),
+        .slv_addr           (memfy_araddr),
+        .slv_acache         (memfy_arcache),
+        .slv_aid            (memfy_arid),
         // read data completion from cache block
-        .blk_fetcher_rvalid (blk_fetcher_rvalid),
-        .blk_fetcher_rready (blk_fetcher_rready),
-        .blk_fetcher_rid    (blk_fetcher_rid),
-        .blk_fetcher_rresp  (blk_fetcher_rresp),
-        .blk_fetcher_rdata  (blk_fetcher_rdata),
+        .cpl1_valid         (blk_fetcher_rvalid),
+        .cpl1_ready         (blk_fetcher_rready),
+        .cpl1_id            (blk_fetcher_rid),
+        .cpl1_resp          (blk_fetcher_rresp),
+        .cpl1_data          (blk_fetcher_rdata),
         // read data completion from memory controller for IO R/W
-        .io_fetcher_rvalid  (memctrl_rvalid & memctrl_rcache),
-        .io_fetcher_rready  (memctrl_rready),
-        .io_fetcher_rid     (memctrl_rid),
-        .io_fetcher_rresp   (memctrl_rresp),
-        .io_fetcher_rdata   (memctrl_rdata),
+        .cpl2_valid         (memctrl_rvalid & memctrl_rcache),
+        .cpl2_ready         (memctrl_rready),
+        .cpl2_id            (memctrl_rid),
+        .cpl2_resp          (memctrl_rresp),
+        .cpl2_data          (memctrl_rdata),
         // read data completion back to the application
-        .mst_rvalid         (memfy_rvalid),
-        .mst_rready         (memfy_rready),
-        .mst_rid            (memfy_rid),
-        .mst_rresp          (memfy_rresp),
-        .mst_rdata          (memfy_rdata)
+        .mst_valid          (memfy_rvalid),
+        .mst_ready          (memfy_rready),
+        .mst_id             (memfy_rid),
+        .mst_resp           (memfy_rresp),
+        .mst_data           (memfy_rdata)
     );
 
-    end else begin: NO_OOO_MGT
-
-        assign pending_rd_cpl = 1'b0;
-        assign rtag_avlb = 1'b0;
-        assign memfy_arid_next = {AXI_ID_W{1'b0}};
-        assign memfy_rvalid = blk_fetcher_rvalid;
-        assign blk_fetcher_rready = memfy_rready;
-        assign memfy_rdata = blk_fetcher_rdata;
-        assign memfy_rresp = blk_fetcher_rresp;
-        assign memfy_rid = blk_fetcher_rid;
-        assign memctrl_rready = 1'b1;
-
     end
-    endgenerate
-
 
     ///////////////////////////////////////////////////////////////////////////
     // Write block management
     ///////////////////////////////////////////////////////////////////////////
-
-    assign pending_rd = pending_rd_io | pending_rd_blk | pending_rd_cpl;
 
     friscv_cache_pusher
     #(
@@ -532,24 +507,21 @@ module friscv_dcache
         .aclk            (aclk),
         .aresetn         (aresetn),
         .srst            (srst),
-        // status flags for ordering rules
-        .pending_wr      (pending_wr),
-        .pending_rd      (pending_rd),
         // write addess channels from application
         .mst_awvalid     (memfy_awvalid),
-        .mst_awready     (memfy_awready),
+        .mst_awready     (memfy_awready_w),
         .mst_awaddr      (memfy_awaddr),
         .mst_awprot      (memfy_awprot),
         .mst_awcache     (memfy_awcache),
-        .mst_awid        (memfy_awid),
+        .mst_awid        (memfy_awid_w),
         .mst_wvalid      (memfy_wvalid),
         .mst_wready      (memfy_wready),
         .mst_wdata       (memfy_wdata),
         .mst_wstrb       (memfy_wstrb),
-        .mst_bvalid      (memfy_bvalid),
-        .mst_bready      (memfy_bready),
-        .mst_bid         (memfy_bid),
-        .mst_bresp       (memfy_bresp),
+        .mst_bvalid      (pusher_bvalid),
+        .mst_bready      (pusher_bready),
+        .mst_bid         (pusher_bid),
+        .mst_bresp       (pusher_bresp),
         // write interface to memory controller
         .memctrl_awvalid (memctrl_awvalid),
         .memctrl_awready (memctrl_awready),
@@ -575,8 +547,79 @@ module friscv_dcache
         .cache_wdata     (pusher_cache_wdata)
     );
 
+    generate
+    if (IO_MAP_NB > 0) begin: AWCH_MUX
+
+        assign memfy_awready = wtag_avlb & memfy_awready_w;
+        assign memfy_awid_w = memfy_awid_next;
+
+    end else begin: PUSHER_ONLY
+
+        assign memfy_awready = memfy_awready_w;
+        assign memfy_awid_w = memfy_arid;
+
+        assign memfy_bvalid = pusher_bvalid;
+        assign memfy_bid = pusher_bid;
+        assign memfy_bresp = pusher_bresp;
+        assign pusher_bready = memfy_bready;
+
+    end
+    endgenerate
+
+    if (IO_MAP_NB > 0) begin: WR_OOO_INSTANCE
+
+    friscv_cache_ooo_mgt
+    #(
+        .XLEN                (XLEN),
+        .OSTDREQ_NUM         (OSTDREQ_NUM),
+        .NAME                ("dCache-OoO-WrMgt"),
+        .AXI_ADDR_W          (AXI_ADDR_W),
+        .AXI_ID_W            (AXI_ID_W),
+        .AXI_DATA_W          (AXI_DATA_W),
+        .AXI_ID_MASK         (AXI_ID_MASK),
+        .AXI_ID_FIXED        (AXI_ID_FIXED),
+        .CPL_PAYLOAD         (0),
+        .NO_CPL_BACKPRESSURE (NO_CPL_BACKPRESSURE)
+    )
+    wr_ooo_mgt
+    (
+        .aclk               (aclk),
+        .aresetn            (aresetn),
+        .srst               (srst),
+        // Tag to use for read address channel in both fetchers
+        .next_tag           (memfy_awid_next),
+        // Next tag is available
+        .tag_avlb           (wtag_avlb),
+        // read address channel from the application
+        .slv_avalid         (memfy_awvalid),
+        .slv_aready         (memfy_awready),
+        .slv_addr           (memfy_awaddr),
+        .slv_acache         (memfy_awcache),
+        .slv_aid            (memfy_awid),
+        // read data completion from cache block
+        .cpl1_valid         (pusher_bvalid),
+        .cpl1_ready         (pusher_bready),
+        .cpl1_id            (pusher_bid),
+        .cpl1_resp          (pusher_bresp),
+        .cpl1_data          ('0),
+        // read data completion from memory controller for IO R/W
+        .cpl2_valid         ('0),
+        .cpl2_ready         (),
+        .cpl2_id            ('0),
+        .cpl2_resp          ('0),
+        .cpl2_data          ('0),
+        // read data completion back to the application
+        .mst_valid          (memfy_bvalid),
+        .mst_ready          (memfy_bready),
+        .mst_id             (memfy_bid),
+        .mst_resp           (memfy_bresp),
+        .mst_data           ()
+    );
+
+    end
+
     ///////////////////////////////////////////////////////////////////////////
-    // Cache blocks Storage
+    // Cache Blocks Storage and Eraser
     ///////////////////////////////////////////////////////////////////////////
 
     friscv_cache_blocks
@@ -639,7 +682,6 @@ module friscv_dcache
     ///////////////////////////////////////////////////////////////////////////
     // AXI4 memory controller to read external memory
     ///////////////////////////////////////////////////////////////////////////
-
 
     friscv_cache_memctrl
     #(
