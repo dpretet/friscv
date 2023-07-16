@@ -99,22 +99,18 @@ module friscv_cache_pusher
 
     logic                       addr_fifo_empty;
     logic                       addr_fifo_full;
+    logic                       addr_fifo_afull;
     logic                       data_fifo_empty;
     logic                       data_fifo_full;
-
-    logic [AXI_ID_W       -1:0] cache_rid;
-    logic [AXI_ID_W       -1:0] cache_rid_r;
-    logic                       wait_data_channel;
-    logic [XLEN           -1:0] mst_wdata_r;
-    logic [XLEN/8         -1:0] mst_wstrb_r;
-    logic [AXI_ADDR_W     -1:0] cache_raddr_r;
-    logic [XLEN           -1:0] cache_wdata_r;
-    logic [XLEN/8         -1:0] cache_wstrb_r;
-    logic [SCALE_W        -1:0] wr_position;
-    logic [AXI_ID_W       -1:0] cpl_bid;
-    logic [2              -1:0] cpl_bresp;
+    logic                       data_fifo_afull;
     logic                       resp_fifo_full;
     logic                       resp_fifo_empty;
+    logic [XLEN/8         -1:0] wstrb;
+
+    logic [AXI_ID_W       -1:0] cache_rid;
+    logic [AXI_ID_W       -1:0] cpl_bid;
+    logic [2              -1:0] cpl_bresp;
+    logic                       push_addr_data;
     logic                       push_resp;
     logic                       pull_resp;
     logic [OSTDREQ_NUM    -1:0] id_ram;
@@ -145,101 +141,50 @@ module friscv_cache_pusher
     always @ (posedge aclk or negedge aresetn) begin
 
         if (!aresetn) begin
-            cache_ren <= 1'b0;
-            cache_raddr <= {AXI_ADDR_W{1'b0}};
+            cache_waddr <= '0;
             cache_rid <= '0;
-            wait_data_channel <= 1'b0;
-            mst_wdata_r <= {XLEN{1'b0}};
-            mst_wstrb_r <= {XLEN/8{1'b0}};
+            cache_wdata <= '0;
+            cache_wstrb <= '0;
+            push_addr_data <= '0;
+            wstrb <= '0;
         end else if (srst) begin
-            cache_ren <= 1'b0;
-            cache_raddr <= {AXI_ADDR_W{1'b0}};
+            cache_waddr <= '0;
             cache_rid <= '0;
-            wait_data_channel <= 1'b0;
-            mst_wdata_r <= {XLEN{1'b0}};
-            mst_wstrb_r <= {XLEN/8{1'b0}};
+            cache_wdata <= '0;
+            cache_wstrb <= '0;
+            push_addr_data <= '0;
+            wstrb <= '0;
         end else begin
-            // Previous cycle grabbed a new cache update but data channel wasn't ready yet
-            if (wait_data_channel) begin
-                if (mst_wvalid && mst_wready)
-                    wait_data_channel <= 1'b0;
-                mst_wdata_r <= mst_wdata;
-                mst_wstrb_r <= mst_wstrb;
-            // Grab a new write request to check if present in the cache to be udpated
-            // Don't do anything if the write request is not cacheable
-            end else begin
-                if (mst_awvalid && mst_awready && !mst_awcache[1]) begin
-                    cache_ren <= 1'b1;
-                    cache_raddr <= mst_awaddr;
-                    cache_rid <= mst_awid;
-                    mst_wdata_r <= mst_wdata;
-                    mst_wstrb_r <= mst_wstrb;
-                    wait_data_channel <= !mst_wvalid;
-                end else begin
-                    cache_ren <= 1'b0;
-                    wait_data_channel <= 1'b0;
-                end
+
+            push_addr_data <= mst_awvalid && mst_awready && mst_wvalid && mst_wready;
+            cache_waddr <= mst_awaddr;
+            cache_rid <= mst_awid;
+            cache_wdata <= {SCALE{mst_wdata}};
+            wstrb <= mst_wstrb;
+
+            for (int i=0;i<SCALE;i=i+1) begin
+                if (mst_awaddr[2+:SCALE_W]==i[SCALE_W-1:0])
+                    cache_wstrb[i*XLEN/8+:XLEN/8] <= mst_wstrb;
+                else
+                    cache_wstrb[i*XLEN/8+:XLEN/8] <= {XLEN/8{1'b0}};
             end
         end
     end
 
+    assign cache_ren = mst_awvalid && mst_awready && mst_wvalid && mst_wready && !mst_awcache[1];
+    assign cache_raddr = mst_awaddr;
+    assign cache_wen = cache_hit;
 
-    // When a cache read triggers a cache hit, the data to write in the memory is also present
-    // in the cache block; Grab the read address, the data/strb and target the particular
-    // instruction into the cache block offset
+    `ifdef TRACE_CACHE
     always @ (posedge aclk or negedge aresetn) begin
-
-        if (!aresetn) begin
-            cache_rid_r <= '0;
-            cache_wen <= 1'b0;
-            cache_waddr <= {AXI_ADDR_W{1'b0}};
-            cache_wdata <= {CACHE_BLOCK_W{1'b0}};
-            cache_wstrb <= {CACHE_BLOCK_W/8{1'b0}};
-            cache_wdata_r <= {XLEN{1'b0}};
-            cache_wstrb <= {CACHE_BLOCK_W/8{1'b0}};
-        end else if (srst) begin
-            cache_rid_r <= '0;
-            cache_wen <= 1'b0;
-            cache_waddr <= {AXI_ADDR_W{1'b0}};
-            cache_wdata <= {CACHE_BLOCK_W{1'b0}};
-            cache_wstrb <= {CACHE_BLOCK_W/8{1'b0}};
-            cache_wdata_r <= {XLEN{1'b0}};
-            cache_wstrb <= {CACHE_BLOCK_W/8{1'b0}};
-        end else begin
-
-            cache_rid_r <= cache_rid;
-            cache_raddr_r <= cache_raddr;
-            cache_wdata_r <= mst_wdata_r;
-            cache_wstrb_r <= mst_wstrb_r;
-
-            // As long a cache hit is received and the data is ready, update the 
-            // data in the cache block
-            if (cache_hit && !wait_data_channel) begin
-                `ifdef TRACE_CACHE
-                $fwrite(f, "@ %0t: Update block\n", $realtime);
-                $fwrite(f, "  - addr 0x%x\n", cache_raddr_r);
-                $fwrite(f, "  - offset 0x%x\n", wr_position);
-                $fwrite(f, "  - data 0x%x\n", cache_wdata_r);
-                $fwrite(f, "  - strb 0x%x\n", cache_wstrb_r);
-                `endif
-                cache_wen <= 1'b1;
-                cache_waddr <= cache_raddr_r;
-                cache_wdata <= {SCALE{cache_wdata_r}};
-                for (int i=0;i<SCALE;i=i+1) begin
-                    if (wr_position==i[SCALE_W-1:0])
-                        cache_wstrb[i*XLEN/8+:XLEN/8] <= cache_wstrb_r;
-                    else
-                        cache_wstrb[i*XLEN/8+:XLEN/8] <= {XLEN/8{1'b0}};
-                end
-            // Else wait for a new write request or the data to be ready
-            end else begin
-                cache_wen <= 1'b0;
-                cache_wstrb <= {CACHE_BLOCK_W/8{1'b0}};
-            end
+        if (aresetn && cache_hit) begin
+            $fwrite(f, "@ %0t: Update block\n", $realtime);
+            $fwrite(f, "  - addr 0x%x\n", cache_waddr);
+            $fwrite(f, "  - data 0x%x\n", cache_wdata);
+            $fwrite(f, "  - strb 0x%x\n", cache_wstrb);
         end
     end
-
-    assign wr_position = cache_raddr_r[2+:SCALE_W];
+    `endif
 
 
     ///////////////////////////////////////////////////////////////////////////
@@ -262,17 +207,17 @@ module friscv_cache_pusher
         .aresetn  (aresetn),
         .srst     (srst),
         .flush    (1'b0),
-        .data_in  ({mst_awid, mst_awaddr}),
-        .push     (mst_awvalid),
+        .data_in  ({cache_rid, cache_waddr}),
+        .push     (push_addr_data),
         .full     (addr_fifo_full),
-        .afull    (),
+        .afull    (addr_fifo_afull),
         .data_out ({memctrl_awid, memctrl_awaddr}),
         .pull     (memctrl_awready),
         .empty    (addr_fifo_empty),
         .aempty   ()
     );
 
-    assign mst_awready = !addr_fifo_full;
+    assign mst_awready = !addr_fifo_full && !addr_fifo_afull;
     assign memctrl_awvalid = !addr_fifo_empty;
 
     friscv_scfifo
@@ -287,20 +232,29 @@ module friscv_cache_pusher
         .aresetn  (aresetn),
         .srst     (srst),
         .flush    (1'b0),
-        .data_in  ({mst_wstrb, mst_wdata}),
-        .push     (mst_wvalid),
+        .data_in  ({wstrb, cache_wdata[0+:XLEN]}),
+        .push     (push_addr_data),
         .full     (data_fifo_full),
-        .afull    (),
+        .afull    (data_fifo_afull),
         .data_out ({memctrl_wstrb, memctrl_wdata}),
         .pull     (memctrl_wready),
         .empty    (data_fifo_empty),
         .aempty   ()
     );
 
-    assign mst_wready = !data_fifo_full;
+    assign mst_wready = !data_fifo_full & !data_fifo_afull;
     assign memctrl_wvalid = !data_fifo_empty;
     assign memctrl_awprot = 3'b0;
     
+
+    /////////////////////////////////////////////////////////////////////////////////
+    //
+    // Write response channel management, complete from the cache block if 
+    // the request hitted a block, or from the write response channel if the xfer
+    // experienced a cache miss
+    //
+    /////////////////////////////////////////////////////////////////////////////////
+
     assign push_resp = memctrl_bvalid & to_cpl;
 
     friscv_scfifo
@@ -326,24 +280,16 @@ module friscv_cache_pusher
     );
 
     assign memctrl_bready = !resp_fifo_full;
-    
-
-    /////////////////////////////////////////////////////////////////////////////////
-    //
-    // Write response channel management, complete from the cache block if 
-    // the request hitted a block, or from the write response channel if the xfer
-    // experienced a cache miss
-    //
-    /////////////////////////////////////////////////////////////////////////////////
 
     // Used to address the RAM storing the flag indicating a completion needs to 
     // be driven back the application to complete a request
-    assign req_id_m = cache_rid_r ^ AXI_ID_MASK;
+    assign req_id_m = (cache_miss) ? cache_rid ^ AXI_ID_MASK : mst_awid ^ AXI_ID_MASK;
     // Used to check if the completion needs to be stored and then driven back
     assign cpl_id_m = memctrl_bid ^ AXI_ID_MASK;
     assign to_cpl = id_ram[cpl_id_m[OSTDREQ_W-1:0]];
 
     // Track the outstanding request to drive back completion to the application
+    // FIXME: can't track a cache miss and an IO req in the same cycle
     for (genvar i=0; i<OSTDREQ_NUM; i=i+1) begin : ID_TRACKER
 
         always @ (posedge aclk or negedge aresetn) begin
@@ -352,7 +298,9 @@ module friscv_cache_pusher
             end else if (srst) begin
                 id_ram[i] <= '0;
             end else begin
-                if (cache_miss && req_id_m[OSTDREQ_W-1:0]==i[OSTDREQ_W-1:0]) begin
+                if ((cache_miss || mst_awvalid && mst_awready && mst_wvalid && mst_wready && mst_awcache[1]) && 
+                    req_id_m[OSTDREQ_W-1:0]==i[OSTDREQ_W-1:0]) 
+                begin
                     id_ram[i] <= 1'b1;
                 end else if (memctrl_bvalid && memctrl_bready && cpl_id_m[OSTDREQ_W-1:0]==i[OSTDREQ_W-1:0]) begin
                     id_ram[i] <= 1'b0;
@@ -367,7 +315,7 @@ module friscv_cache_pusher
         if (cache_hit) begin
             mst_bvalid = 1'b1;
             mst_bresp = 2'b0;
-            mst_bid = cache_rid_r;
+            mst_bid = cache_rid;
             pull_resp = 1'b0;
         end else begin
             mst_bvalid = !resp_fifo_empty;

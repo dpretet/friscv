@@ -169,7 +169,7 @@ module friscv_cache_ooo_mgt
                 if (slv_avalid && slv_aready && i[0+:NB_TAG_W]==req_tag_pt)
                     tags[2*i+REQ] <= 1'b1;
 
-                // Send back the final completion with this tag, so free it
+                // Send back the final completion with this tag & free it
                 else if (mst_valid && mst_ready && i[0+:NB_TAG_W]==cpl_tag_pt)
                     tags[2*i+:2] <= FREE;
 
@@ -284,7 +284,7 @@ module friscv_cache_ooo_mgt
     //////////////////////////////////////////////////////////////////////////
     generate
     if (NO_CPL_BACKPRESSURE) begin
-        assign mst_valid = (|io_tags) ? tags[2*cpl_tag_pt+CPL] : cpl1_valid;
+        assign mst_valid = (|io_tags) ? tags[2*cpl_tag_pt+CPL] : cpl1_valid /*&& (cpl_tag_pt==cpl1_id_m)*/;
     end else begin
         assign mst_valid = tags[2*cpl_tag_pt+CPL];
     end

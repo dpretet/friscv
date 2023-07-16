@@ -26,11 +26,15 @@ module dcache_testbench();
     parameter AXI_ID_W = 8;
     parameter AXI_DATA_W = 128;
     parameter AXI_ID_MASK = 'h20;
-    parameter AXI_REORDER_CPL = 1;
     parameter IO_MAP_NB = 1;
     parameter CACHE_PREFETCH_EN = 0;
     parameter CACHE_BLOCK_W = 128;
     parameter CACHE_DEPTH = 512;
+    `ifdef NOBCKP
+        parameter NO_CPL_BACKPRESSURE = 1;
+    `else
+        parameter NO_CPL_BACKPRESSURE = 0;
+    `endif
 
     logic                      aclk;
     logic                      aresetn;
@@ -112,15 +116,16 @@ module dcache_testbench();
 
     driver
     #(
-        .OSTDREQ_NUM      (OSTDREQ_NUM),
-        .RW_MODE          (1),
-        .KEY              (KEY),
-        .TIMEOUT          (TIMEOUT),
-        .INIT             ("./ram_32b.txt"),
-        .ILEN             (ILEN),
-        .AXI_ADDR_W       (AXI_ADDR_W),
-        .AXI_ID_W         (AXI_ID_W),
-        .AXI_DATA_W       (ILEN)
+        .OSTDREQ_NUM         (OSTDREQ_NUM),
+        .RW_MODE             (1),
+        .KEY                 (KEY),
+        .TIMEOUT             (TIMEOUT),
+        .INIT                ("./ram_32b.txt"),
+        .ILEN                (ILEN),
+        .NO_CPL_BACKPRESSURE (NO_CPL_BACKPRESSURE),
+        .AXI_ADDR_W          (AXI_ADDR_W),
+        .AXI_ID_W            (AXI_ID_W),
+        .AXI_DATA_W          (ILEN)
     )
     driver
     (
@@ -175,8 +180,7 @@ module dcache_testbench();
         .AXI_DATA_W          (AXI_DATA_W),
         .AXI_ID_MASK         (AXI_ID_MASK),
         .AXI_ID_FIXED        (0),
-        .NO_RDC_BACKPRESSURE (0),
-        .AXI_REORDER_CPL     (AXI_REORDER_CPL),
+        .NO_CPL_BACKPRESSURE (NO_CPL_BACKPRESSURE),
         .IO_MAP_NB           (IO_MAP_NB),
         .CACHE_PREFETCH_EN   (CACHE_PREFETCH_EN),
         .CACHE_BLOCK_W       (CACHE_BLOCK_W),
@@ -340,6 +344,7 @@ module dcache_testbench();
         en = 1'b0;
         timer = 0;
         rd_req_num = 0;
+        wr_req_num = 0;
         srst = 1'b0;
         gen_mem_req = 1'b0;
         gen_io_req = 1'b0;
@@ -371,7 +376,7 @@ module dcache_testbench();
     endtask
 
     task run_testcase;
-        while (timer<TIMEOUT && (rd_req_num<MAX_TRAFFIC || wr_req_num<MAX_TRAFFIC) && error===1'b0) begin
+        while (timer<TIMEOUT && (rd_req_num<MAX_TRAFFIC && wr_req_num<MAX_TRAFFIC) && error===1'b0) begin
             timer = timer + 1;
             if (memfy_arvalid && memfy_arready) begin
                 rd_req_num = rd_req_num + 1;

@@ -39,6 +39,7 @@ TRACE_FETCHER=0
 TRACE_PUSHER=0
 TRACE_TB_RAM=0
 TRACE_VCD=1
+NOBCKP=0
 
 #------------------------------------------------------------------------------
 # Clean compiled programs
@@ -67,6 +68,7 @@ run_tests() {
     echo "  - SIMULATOR:        $SIM"
     echo "  - MAX_TRAFFIC:      $MAX_TRAFFIC"
     echo "  - XLEN:             $XLEN"
+    echo "  - NO-BACKPRESSURE:  $NOBCKP"
     echo "  - TRACE_BLOCKS:     $TRACE_BLOCKS"
     echo "  - TRACE_FETCHER:    $TRACE_FETCHER"
     echo "  - TRACE_PUSHER:     $TRACE_PUSHER"
@@ -90,6 +92,7 @@ run_tests() {
     DEFINES="${DEFINES}MAX_TRAFFIC=$MAX_TRAFFIC;"
     DEFINES="${DEFINES}XLEN=$XLEN;"
     DEFINES="${DEFINES}TBNAME=${TB};"
+    [[ $NOBCKP        -eq 1 ]] && DEFINES="${DEFINES}NOBCKP=1;"
     [[ $TRACE_CACHE   -eq 1 ]] && DEFINES="${DEFINES}TRACE_CACHE=$TRACE_CACHE;"
     [[ $TRACE_BLOCKS  -eq 1 ]] && DEFINES="${DEFINES}TRACE_BLOCKS=$TRACE_BLOCKS;"
     [[ $TRACE_FETCHER -eq 1 ]] && DEFINES="${DEFINES}TRACE_FETCHER=$TRACE_FETCHER;"
@@ -192,6 +195,10 @@ get_args() {
                 shift
                 SIM=$1
             ;;
+            --no-backpressure )
+                shift
+                NOBCKP=1
+            ;;
             --novcd )
                 TRACE_VCD=0
             ;;
@@ -223,6 +230,7 @@ usage: bash ./run.sh ...
 -c    | --clean             Clean-up and exit
 -m    | --max-traffic       Maximun number of requests injected by the driver
         --tb                Testbench file path
+        --no-backpressure   Don't assert BREADY/RREADY backpressure like the RISCV core
 -x    | --xlen              XLEN, 32 or 64 bits (32 is default)
         --simulator         Choose between icarus or verilator. icarus is default
         --novcd             Don't dump VCD during simulation

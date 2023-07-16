@@ -51,7 +51,7 @@ module friscv_dcache
         // AXI ID issued on slave interface is fixed
         parameter AXI_ID_FIXED = 1,
         // Disable read data / write response FIFO back-pressure if driver doesn't use it
-        parameter NO_CPL_BACKPRESSURE = 1,
+        parameter NO_CPL_BACKPRESSURE = 0,
 
         ///////////////////////////////////////////////////////////////////////
         // Cache Setup
@@ -467,7 +467,7 @@ module friscv_dcache
         .slv_aid            (memfy_arid),
         // read data completion from cache block
         .cpl1_valid         (blk_fetcher_rvalid),
-        .cpl1_ready         (blk_fetcher_rready),
+            .cpl1_ready         (blk_fetcher_rready),
         .cpl1_id            (blk_fetcher_rid),
         .cpl1_resp          (blk_fetcher_rresp),
         .cpl1_data          (blk_fetcher_rdata),

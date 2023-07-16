@@ -55,6 +55,8 @@ module friscv_memfy
         parameter AXI_REORDER_CPL = 0,
         // Maximum outstanding request supported
         parameter MAX_OR = 8,
+        // Add pipeline on Rd write stage
+        parameter SYNC_RD_WR = 0,
         // IO regions for direct read/write access
         parameter IO_MAP_NB = 1,
         // IO address ranges, organized by memory region as END-ADDR_START-ADDR:
@@ -549,6 +551,12 @@ module friscv_memfy
         .aempty   ()
     );
 
+    always @ (posedge aclk) begin
+        `ifdef FRISCV_SIM
+        if (aresetn && rvalid && rready && rd_or_empty)
+            $error("ERROR: (@ %0t) - %s: Receive a read completion but doesn't expect it", $realtime, "Memfy");
+        `endif
+    end
 
     ////////////////////////////////////////////////////////////////////////
     // Track which integer registers is used by an outstanding request
@@ -561,7 +569,7 @@ module friscv_memfy
             regs_or[0] <= '0;
         end else begin
             regs_or[0] <= '0;
-        end 
+        end
     end
 
     for (genvar i=1;i<NB_INT_REG;i++) begin
@@ -642,10 +650,10 @@ module friscv_memfy
     assign max_wr_or = (wr_or_cnt==MAX_OR[MAX_OR_W-1:0]) ? 1'b1 : 1'b0;
     assign max_rd_or = (rd_or_cnt==MAX_OR[MAX_OR_W-1:0]) ? 1'b1 : 1'b0;
 
-    assign waiting_wr_cpl = (wr_or_cnt!={MAX_OR_W{1'b0}}) ? 1'b1 : 1'b0;
-    assign waiting_rd_cpl = (rd_or_cnt!={MAX_OR_W{1'b0}}) ? 1'b1 : 1'b0;
+    assign waiting_wr_cpl = (wr_or_cnt!={MAX_OR_W{1'b0}} && !(wr_or_cnt=={{(MAX_OR_W-1){1'b0}}, 1'b1} & rvalid)) ? 1'b1 : 1'b0;
+    assign waiting_rd_cpl = (rd_or_cnt!={MAX_OR_W{1'b0}} && !(rd_or_cnt=={{(MAX_OR_W-1){1'b0}}, 1'b1} & rvalid)) ? 1'b1 : 1'b0;
 
-    // Flags for external land
+    // Flags for externals
     assign memfy_pending_read = waiting_rd_cpl;
     assign memfy_pending_write = waiting_wr_cpl;
 
@@ -653,6 +661,8 @@ module friscv_memfy
     ////////////////////////////////////////////////////////////////////////
     // Manage the RD write operation
     ////////////////////////////////////////////////////////////////////////
+
+    generate if (SYNC_RD_WR) begin
 
     always @ (posedge aclk or negedge aresetn) begin
         if (!aresetn) begin
@@ -673,6 +683,16 @@ module friscv_memfy
             memfy_rd_val <= get_rd_val(funct3_r, rdata, offset);
         end
     end
+
+    end else begin
+
+        assign memfy_rd_wr = rvalid & rready;
+        assign memfy_rd_addr = rd_r;
+        assign memfy_rd_strb = get_rd_strb(funct3_r, offset);
+        assign memfy_rd_val = get_rd_val(funct3_r, rdata, offset);
+
+    end
+    endgenerate
 
     assign memfy_rs1_addr = rs1;
     assign memfy_rs2_addr = rs2;
@@ -713,8 +733,48 @@ module friscv_memfy
     end
     endgenerate
 
-    assign acache = {2'b00, is_io_req, 1'b1};
 
+    /*
+
+    ACACHE[0]: 0 = non-bufferable 1 = bufferable
+    ACACHE[1]: 0 = non-modifiable 1 = modifiable
+    ACACHE[2]: 1 = read allocate
+    ACACHE[3]: 1 = write allocate
+
+    if ACACHE[1] = 0, ACACHE[3:2] must be 2'b00
+
+    ------------------------------------------------------------------------------------------------
+         ACACHE      |              AWCACHE                  |              ARCACHE
+    [3] [2] [1] [0]  |                                       |                     
+    ------------------------------------------------------------------------------------------------
+     0   0   0   0   | Device Non-cacheable Non-bufferable   | Device Non-cacheable Non-bufferable
+     0   0   0   1   | Device Non-cacheable Bufferable       | Device Non-cacheable Bufferable
+    ------------------------------------------------------------------------------------------------
+     0   0   1   0   | Normal Non-cacheable Non-bufferable   | Normal Non-cacheable Non-bufferable
+     0   0   1   1   | Normal Non-cacheable Bufferable       | Normal Non-cacheable Bufferable
+    ------------------------------------------------------------------------------------------------
+     0   1   1   0   | Write-Through No-Allocate             | Write-Through Read-Allocate
+                     | Write-Through Read-Allocate           |
+    ------------------------------------------------------------------------------------------------
+     0   1   1   1   | Write-Back No-Allocate                | Write-Back Read-Allocate
+                     | Write-Back Read-Allocate              | 
+    ------------------------------------------------------------------------------------------------
+     1   0   1   0   | Write-Through Write-Allocate          | Write-Through No-Allocate
+                     |                                       | Write-Through Write-Allocate
+    ------------------------------------------------------------------------------------------------
+     1   0   1   1   | Write-Back Write-Allocate             | Write-Back No-Allocate
+                     | Write-Back Read and Write-Allocate    | Write-Back Write-Allocate
+    ------------------------------------------------------------------------------------------------
+     1   1   1   0   | Write-Through Write-Allocate          | Write-Through Read-Allocate
+                     | Write-Through Read and Write-Allocate | Write-Through Read and Write-Allocate
+    ------------------------------------------------------------------------------------------------
+     1   1   1   1   | Write-Back Write-Allocate             | Write-Back Read-Allocate
+                     | Write-Back Read and Write-Allocate    | Write-Back Read and Write-Allocate
+    ------------------------------------------------------------------------------------------------
+
+    */
+
+    assign acache = {2'b00, is_io_req, 1'b1};
 
     //////////////////////////////////////////////////////////////////////////
     // Constant AXI4-lite signals
@@ -723,7 +783,6 @@ module friscv_memfy
     // Always use the same IDs to ensure in-order execution / completion
     assign awid = AXI_ID_MASK;
     assign arid = AXI_ID_MASK;
-
 
     // Access permissions
     // [0] Unprivileged or privileged

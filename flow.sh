@@ -237,10 +237,10 @@ main() {
             echo ""
             printinfo "Start SV Simulation flow"
             cd "${FRISCV_DIR}/test/sv"
-			./run.sh -c
+            ./run.sh -c
             ./run.sh -m 10000 --timeout 100000 --tb "icache_testbench.sv"
-			./run.sh -c
-            ./run.sh -m 10000 --timeout 100000 --tb "dcache_testbench.sv"
+            ./run.sh -c
+            ./run.sh -m 10000 --timeout 100000 --tb "dcache_testbench.sv" --no-backpressure
         fi
         exit 0
     fi

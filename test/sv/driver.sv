@@ -20,6 +20,8 @@ module driver
         // Timeout value used outstanding request monitoring
         parameter TIMEOUT = 100,
         parameter INIT  = "init.v",
+        // Always assert BREADY / RREADY like the processor
+        parameter NO_CPL_BACKPRESSURE = 0,
         // Instruction length
         parameter ILEN = 32,
         // Address bus width defined for both control and AXI4 address signals
@@ -197,7 +199,7 @@ module driver
 
 
     // Error report to the testbench
-    assign error = en & (|ror_error | rid_error | rdata_error | 
+    assign error = en & (|ror_error | rid_error | rdata_error |
                           artimeout | awtimeout | wtimeout |
                          |bor_error | bid_error);
 
@@ -320,7 +322,7 @@ module driver
         .lfsr    (ar_lfsr)
     );
 
-    assign arvalid = arvalid_lfsr[0] & !rd_orreq[rreq_or_cnt] & en & rden & 
+    assign arvalid = arvalid_lfsr[0] & !rd_orreq[rreq_or_cnt] & en & rden &
                      !(flush_reqs | flush_blocks | flush_ack | |wr_orreq);
 
     ///////////////////////////////////////////////////////////////////////////
@@ -361,9 +363,9 @@ module driver
         end else if (srst) begin
             block_rch <= 1'b0;
         end else begin
-            if (flush_reqs) 
+            if (flush_reqs)
                 block_rch <= 1'b1;
-            else if (rid==next_rid) 
+            else if (rid==next_rid)
                 block_rch <= 1'b0;
         end
     end
@@ -392,8 +394,12 @@ module driver
         end
     end
 
-    assign rready = rready_lfsr[0];
-
+    generate
+    if (NO_CPL_BACKPRESSURE)
+        assign rready = 1'b1;
+    else
+        assign rready = rready_lfsr[0];
+    endgenerate
     // LFSR to generate valid of R channel
     lfsr32
     #(
@@ -727,7 +733,7 @@ module driver
                     else
                         wcpl_or_cnt <= wcpl_or_cnt + 1;
                 end
-                    
+
                 for (int i=0;i<MAX_OR;i++) begin
 
                     if (awvalid && awready && i==wreq_or_cnt) begin
@@ -792,8 +798,10 @@ module driver
             end
         end
 
-        assign bready = bready_lfsr[0];
-
+        if (NO_CPL_BACKPRESSURE)
+            assign bready = 1'b1;
+        else
+            assign bready = bready_lfsr[0];
         // LFSR to generate valid of R channel
         lfsr32
         #(
@@ -821,13 +829,13 @@ module driver
     logic                    wchempty;
     logic                    pull_wfifos;
 
-    friscv_scfifo 
+    friscv_scfifo
     #(
         .PASS_THRU  (0),
         .ADDR_WIDTH (8),
         .DATA_WIDTH (AXI_ADDR_W)
     )
-    awfifo_w 
+    awfifo_w
     (
         .aclk     (aclk),
         .aresetn  (aresetn),
@@ -843,13 +851,13 @@ module driver
         .aempty   ()
     );
 
-    friscv_scfifo 
+    friscv_scfifo
     #(
         .PASS_THRU  (0),
         .ADDR_WIDTH (8),
         .DATA_WIDTH (AXI_DATA_W+AXI_DATA_W/8)
     )
-    wfifo_w 
+    wfifo_w
     (
         .aclk     (aclk),
         .aresetn  (aresetn),
