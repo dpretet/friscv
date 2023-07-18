@@ -117,6 +117,8 @@ module friscv_cache_pusher
     logic [AXI_ID_W       -1:0] cpl_id_m;
     logic [AXI_ID_W       -1:0] req_id_m;
     logic                       to_cpl;
+    logic                       awready;
+    logic                       wready;
 
     // Tracer setup
     `ifdef TRACE_CACHE
@@ -156,7 +158,7 @@ module friscv_cache_pusher
             wstrb <= '0;
         end else begin
 
-            push_addr_data <= mst_awvalid && mst_awready && mst_wvalid && mst_wready;
+            push_addr_data <= mst_awvalid && awready && mst_wvalid && wready;
             cache_waddr <= mst_awaddr;
             cache_rid <= mst_awid;
             cache_wdata <= {SCALE{mst_wdata}};
@@ -217,7 +219,7 @@ module friscv_cache_pusher
         .aempty   ()
     );
 
-    assign mst_awready = !addr_fifo_full && !addr_fifo_afull;
+    assign awready = !addr_fifo_full && !addr_fifo_afull;
     assign memctrl_awvalid = !addr_fifo_empty;
 
     friscv_scfifo
@@ -242,10 +244,12 @@ module friscv_cache_pusher
         .aempty   ()
     );
 
-    assign mst_wready = !data_fifo_full & !data_fifo_afull;
+    assign wready = !data_fifo_full & !data_fifo_afull;
     assign memctrl_wvalid = !data_fifo_empty;
     assign memctrl_awprot = 3'b0;
     
+    assign mst_awready = awready & wready;
+    assign mst_wready = awready & wready;
 
     /////////////////////////////////////////////////////////////////////////////////
     //

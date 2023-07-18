@@ -650,7 +650,7 @@ module friscv_memfy
     assign max_wr_or = (wr_or_cnt==MAX_OR[MAX_OR_W-1:0]) ? 1'b1 : 1'b0;
     assign max_rd_or = (rd_or_cnt==MAX_OR[MAX_OR_W-1:0]) ? 1'b1 : 1'b0;
 
-    assign waiting_wr_cpl = (wr_or_cnt!={MAX_OR_W{1'b0}} && !(wr_or_cnt=={{(MAX_OR_W-1){1'b0}}, 1'b1} & rvalid)) ? 1'b1 : 1'b0;
+    assign waiting_wr_cpl = (wr_or_cnt!={MAX_OR_W{1'b0}} && !(wr_or_cnt=={{(MAX_OR_W-1){1'b0}}, 1'b1} & bvalid)) ? 1'b1 : 1'b0;
     assign waiting_rd_cpl = (rd_or_cnt!={MAX_OR_W{1'b0}} && !(rd_or_cnt=={{(MAX_OR_W-1){1'b0}}, 1'b1} & rvalid)) ? 1'b1 : 1'b0;
 
     // Flags for externals
