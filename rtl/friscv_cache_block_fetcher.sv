@@ -88,7 +88,7 @@ module friscv_cache_block_fetcher
         FETCH = 2
     } seq_fsm;
 
-    seq_fsm loader;
+    seq_fsm loader, loader_prev;
 
     // Pipeline stage to move back data to AXI4-lite and to missed-fecth FIFO
     logic [AXI_ADDR_W   -1:0] araddr_ffd;
@@ -180,7 +180,8 @@ module friscv_cache_block_fetcher
     assign sel_mf = (fetching || cache_miss) && !flush && !cache_hit;
 
     // Cache read interface
-    assign cache_ren = arvalid & arready | (loader != IDLE & !(flush & !arvalid));
+    assign cache_ren = arvalid & arready | sel_mf | (flush & arvalid);
+    // assign cache_ren = arvalid & arready | (loader != IDLE && (!(flush & !arvalid) || !(rac_empty & !arvalid)));
     assign cache_raddr = sel_mf ? araddr_ffd : araddr;
     assign cache_rid =   sel_mf ? arid_ffd   : arid;
     assign cache_rprot = sel_mf ? arprot_ffd : arprot;
@@ -268,15 +269,18 @@ module friscv_cache_block_fetcher
 
         if (!aresetn) begin
             loader <= IDLE;
+            loader_prev <= IDLE;
         end else if (srst || flush) begin
             loader <= IDLE;
+            loader_prev <= IDLE;
         end else begin
 
+            loader_prev <= loader;
             case (loader)
 
                 // Wait for the address requests from the instruction fetcher
                 default: begin
-                    if (cache_miss && !flush) begin
+                    if (cache_miss && !flush && loader_prev == IDLE) begin
                         loader <= LOAD;
                     end
                 end

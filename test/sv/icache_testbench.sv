@@ -89,6 +89,7 @@ module icache_testbench();
         .TIMEOUT    (TIMEOUT),
         .INIT       ("./ram_32b.txt"),
         .ILEN       (ILEN),
+        .NO_CPL_BACKPRESSURE (0),
         .AXI_ADDR_W (AXI_ADDR_W),
         .AXI_ID_W   (AXI_ID_W),
         .AXI_DATA_W (ILEN)

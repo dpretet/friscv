@@ -425,6 +425,7 @@ module friscv_dcache
         assign memctrl_arid = blk_fetcher_arid;
         assign memctrl_arprot = blk_fetcher_arprot;
         assign memctrl_arcache = 4'b0000;
+        assign memctrl_rready = 1'b1;
 
     end
     endgenerate
@@ -467,7 +468,7 @@ module friscv_dcache
         .slv_aid            (memfy_arid),
         // read data completion from cache block
         .cpl1_valid         (blk_fetcher_rvalid),
-            .cpl1_ready         (blk_fetcher_rready),
+        .cpl1_ready         (blk_fetcher_rready),
         .cpl1_id            (blk_fetcher_rid),
         .cpl1_resp          (blk_fetcher_rresp),
         .cpl1_data          (blk_fetcher_rdata),
@@ -547,26 +548,8 @@ module friscv_dcache
         .cache_wdata     (pusher_cache_wdata)
     );
 
-    generate
-    if (IO_MAP_NB > 0) begin: AWCH_MUX
-
-        assign memfy_awready = wtag_avlb & memfy_awready_w;
-        assign memfy_awid_w = memfy_awid_next;
-
-    end else begin: PUSHER_ONLY
-
-        assign memfy_awready = memfy_awready_w;
-        assign memfy_awid_w = memfy_arid;
-
-        assign memfy_bvalid = pusher_bvalid;
-        assign memfy_bid = pusher_bid;
-        assign memfy_bresp = pusher_bresp;
-        assign pusher_bready = memfy_bready;
-
-    end
-    endgenerate
-
-    if (IO_MAP_NB > 0) begin: WR_OOO_INSTANCE
+    assign memfy_awready = wtag_avlb & memfy_awready_w;
+    assign memfy_awid_w = memfy_awid_next;
 
     friscv_cache_ooo_mgt
     #(
@@ -615,8 +598,6 @@ module friscv_dcache
         .mst_resp           (memfy_bresp),
         .mst_data           ()
     );
-
-    end
 
     ///////////////////////////////////////////////////////////////////////////
     // Cache Blocks Storage and Eraser

@@ -233,3 +233,45 @@ Algorithms:
 - Printf execution: 638013 cycles
 - Xoshiro128++ execution: 321654 cycles
 - Pool Arena execution: 2501780 cycles
+
+# 19/7/23 beea35fcb
+
+CPI = 2686107/980746 = 2.95 (benchmark avec 1 iteration)
+
+General statistics:
+  - Start time: 7846
+  - End time: 2693953
+  - Total elapsed time: 2686107 cycles
+  - Instret start: 2128
+  - Instret end: 982874
+  - Retired instructions: 980746
+
+Instruction Bus Request:
+  - active cycles: 2423159
+  - sleep cycles: 0
+  - stall cycles: 262950
+
+Inst Bus Completion:
+  - active cycles: 1106004
+  - sleep cycles: 127445
+  - stall cycles: 1452279
+
+Processing Bus:
+  - active cycles: 815637
+  - sleep cycles: 1155628
+  - stall cycles: 659677
+
+Algorithms:
+- Chacha20 execution: 79777 cycles
+- Matrix execution: 13548 cycles
+- Printf execution: 66973 cycles
+- Xoshiro128++ execution: 295050 cycles
+- Pool Arena execution: 2229932 cycles
+
+Modifications:
+- Memfy: Save a cycle during RD Write, now combinatorial
+- Memfy: Pending flag deasserted on completion if or=1. Save a cycle
+- OoO: Deactivate back-pressure bypass if no IO req. To fix
+- Put in place OoO for write path
+- Pusher save a cycle on cache read then write
+- No more pending flags in dCache, managed at Memfy level
