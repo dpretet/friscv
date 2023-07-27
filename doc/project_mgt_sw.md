@@ -43,6 +43,8 @@ C Apps
     - [ ] 2048
 
 Misc.
+- [ ] Comment détecter une erreur venant d’une RAM qui cause une fausse donnée ou une mauvaise
+      instruction (sub -> add) et récupérer l’exécution d’un programme ?
 - [ ] Testcase C (Rand access) pour les ORs de memory
 - [ ] Testsuite Rust https://danielmangum.com/posts/risc-v-bytes-rust-cross-compilation/
 

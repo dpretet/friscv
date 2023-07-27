@@ -88,6 +88,15 @@ module driver
     end
     `endif
 
+    `ifdef TRACE_DRIVER
+    integer f;
+    string fname;
+    initial begin
+        $sformat(fname, "trace_driver.txt");
+        f = $fopen(fname, "w");
+    end
+    `endif
+
     // TODO: Adjust RAM depth and address vector from a parameter
     localparam DEPTH = 262144;
     logic [AXI_DATA_W-1:0] mem [DEPTH:0];
@@ -152,6 +161,7 @@ module driver
     logic                                    wtimeout;
     integer                                  wtimer;
     logic                                    seq;
+    logic                                    load_mem;
 
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -163,14 +173,25 @@ module driver
             rden <= 1'b0;
             wren <= 1'b0;
             seq <= 1'b0;
+            load_mem <= 1'b1;
         end else if (srst) begin
             rden <= 1'b0;
             wren <= 1'b0;
             seq <= 1'b0;
+            load_mem <= 1'b1;
         end else begin
-            if (cache_ready) begin
+            if (!cache_ready) begin
+                load_mem <= 1'b1;
+                rden <= 1'b0;
+                wren <= 1'b0;
+                seq <= 1'b0;
+            end else begin
+                // Init internal ram
+                if (load_mem == 1'b1) begin
+                    // $readmemh(INIT, mem, 0, DEPTH);
+                    load_mem <= 1'b0;
                 // Boot driver
-                if (!seq) begin
+                end else if (!seq) begin
                     // end of read batch, move to write
                     if ((arbeat_cnt==(rbatch_len-1) || rbatch_len==0) && RW_MODE && arvalid && arready) begin
                         rden <= 1'b0;
@@ -187,10 +208,6 @@ module driver
                         wren <= !(|rd_orreq);
                     end
                 end
-            end else begin
-                rden <= 1'b0;
-                wren <= 1'b0;
-                seq <= 1'b0;
             end
         end
     end
@@ -471,6 +488,9 @@ module driver
                     // Divide by 4 the address because the cache is addressed with byte granularity
                     // over AXI but the RAM used here is DWORD oriented
                     rd_orreq_rdata[i*AXI_DATA_W+:AXI_DATA_W] <= mem[araddr/4];
+                    `ifdef TRACE_DRIVER
+                    $fwrite(f, "@ %0t: read @ 0x%x expected data = 0x%x\n", $realtime, araddr, mem[araddr/4]);
+                    `endif
                 end
 
                 // And release the OR when handshaking with RLAST
@@ -880,9 +900,16 @@ module driver
             end
 
             if (!awchempty && !wchempty) begin
+                `ifdef TRACE_DRIVER
+                $fwrite(f, "@ %0t: write @ 0x%x\n", $realtime, awaddr_w);
+                `endif
                 for (integer i=0;i<AXI_DATA_W/8;i++)
-                    if (wstrb_w[i])
+                    if (wstrb_w[i]) begin
+                        `ifdef TRACE_DRIVER
+                        $fwrite(f, "  - byte %0d - 0x%0x\n", i, wdata_w[8*i+:8]);
+                        `endif
                         mem[awaddr_w/4][8*i+:8] <= wdata_w[8*i+:8];
+                    end
             end
         end
     end

@@ -394,7 +394,8 @@ module dcache_testbench();
         gen_io_req = 0;
         en = 1'b1;
         run_testcase;
-        #50;
+        en = 0;
+        #1000;
 
     `UNIT_TEST_END
 
@@ -404,7 +405,8 @@ module dcache_testbench();
         gen_mem_req = 0;
         gen_io_req = 1;
         run_testcase;
-        #50;
+        en = 0;
+        #1000;
 
     `UNIT_TEST_END
 
@@ -414,7 +416,8 @@ module dcache_testbench();
         gen_mem_req = 1;
         gen_io_req = 1;
         run_testcase;
-        #50;
+        en = 0;
+        #1000;
 
     `UNIT_TEST_END
 

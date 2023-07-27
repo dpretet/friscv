@@ -18,16 +18,27 @@
 Mesure et amélioration des performances
 - [X] Print et save des registres CSRs pour chaque test, garde la trace des performances dans Git
 - [X] IP point de mesure des différents bus en bandwidth
-- [X] CPI
+- [X] CPI measure in benchmark
 - [X] Augmenter le nombre d’OR max de dCache
 - [X] Prefetch read request
 - [X] Optimize write pusher to save a cycle
 - [X] Optimize Memfy dead cycle (RD write comb & pending request =0 if == 1 & valid)
 - [X] Enhance read outstanding requests in MemFy
 - [X] No more pending flags in caches, BCH / RCH handshake is used to manage reording in Memfy
-- [ ] Enhance completion in OoO
+- [X] Enhance completion in OoO
+- [X] Save a cycle on RD write in Memfy
+- [X] Pending flag to deassert on completion if or=1  
+- [ ] Detect address collision in memfy for better performance
 - [ ] Preload jal even if processing is busy
 - [ ] Branch prediction
+    - [ ] https://en.wikipedia.org/wiki/Branch_target_predictor
+    - [ ] https://www.tutorialspoint.com/what-are-the-types-of-dynamic-branch-prediction
+    - [ ] https://www.youtube.com/watch?app=desktop&v=hl4eiN8ZMJg
+    - [ ] https://github.com/tommythorn/yarvi/blob/master/rtl/yarvi.v#L184
+    - [ ] https://danluu.com/branch-prediction
+- [ ] Rewind pipeline (L0 local cache)
+
+
 
 # BACKLOG
 
@@ -48,15 +59,19 @@ Cache Stage Enhancement:
 - [ ] Cache OoO manager to use queue vs compteur
 
 Misc.
+- [ ] Testcase C ASM stress de cache 
 - [ ] Rework IO APB interconnect
     - Fix IO subsystem misrouted
     - Fix IO subsystem bridge
 - [ ] Random peripheral
+- [ ] OoO read: miss could be stacked and served later waiting for cache fill and continue reading the next address
 - [ ] Support cache disable in testbench
 - [ ] Put in place profiling
 - [ ] Print des tests qui ne marchent pas dans le bash et svut_h.sv pour verilator
 - [ ] 64 bits support
 - [ ] Atomic operations
+- [ ] Zicond
+- [ ] RVV for machine learning
 - [ ] Support privileged instructions, supervisor mode & user mode
       - voir les CSRs dans la privileged mode, implementer les compteurs par mode
       - https://danielmangum.com/posts/risc-v-bytes-privilege-levels/
@@ -73,10 +88,17 @@ Misc.
 - [ ] Support CLIC controller
 - [ ] UART: Support 9/10 bits & parity
 - [ ] Removed the 2 LSBs in instruction cache while always 2'b11 (6.25% saving)
-- [ ] Branch prediction
-    - https://blog.cloudflare.com/branch-predictor/
-    - https://github.com/BrunoLevy/learn-fpga/blob/master/FemtoRV/TUTORIALS/FROM_BLINKER_TO_RISCV/PIPELINE.md
 - [ ] Out-of-order execution
+- [ ] Create app per benchmark
+- [ ] Revoir tous les paramètres de chaque instance et les documenter
+- [ ] Drop lxt2 waveform
+- [ ] Manage exceptions on r/w response
+- [ ] SV Testbench: Assert flush without ARVALID
+- [ ] New cache associativity (2 / 4 / 8 ways configurable)
+- [ ] Super scaler arch
+- [ ] Move LUI into processing to prepare future extension support
+    - [ ] Read ASM to be sure its used for processing and not control
+    - [ ] Benchmark waveform doesn’t reveal high usage
 
 
 AXI4 Infrastructure

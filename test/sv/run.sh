@@ -33,6 +33,7 @@ TB="./icache_testbench.sv"
 [[ -z $SIM ]] && SIM="icarus"
 #------------------------------------------------------------------------------
 
+TRACE_DRIVER=1
 TRACE_CACHE=1
 TRACE_BLOCKS=1
 TRACE_FETCHER=1
@@ -67,6 +68,7 @@ run_tests() {
     echo "  - SIMULATOR:        $SIM"
     echo "  - MAX_TRAFFIC:      $MAX_TRAFFIC"
     echo "  - XLEN:             $XLEN"
+    echo "  - TRACE_DRIVER:     $TRACE_DRIVER"
     echo "  - TRACE_BLOCKS:     $TRACE_BLOCKS"
     echo "  - TRACE_FETCHER:    $TRACE_FETCHER"
     echo "  - TRACE_PUSHER:     $TRACE_PUSHER"
@@ -90,6 +92,7 @@ run_tests() {
     DEFINES="${DEFINES}MAX_TRAFFIC=$MAX_TRAFFIC;"
     DEFINES="${DEFINES}XLEN=$XLEN;"
     DEFINES="${DEFINES}TBNAME=${TB};"
+    [[ $TRACE_DRIVER  -eq 1 ]] && DEFINES="${DEFINES}TRACE_DRIVER=$TRACE_DRIVER;"
     [[ $TRACE_CACHE   -eq 1 ]] && DEFINES="${DEFINES}TRACE_CACHE=$TRACE_CACHE;"
     [[ $TRACE_BLOCKS  -eq 1 ]] && DEFINES="${DEFINES}TRACE_BLOCKS=$TRACE_BLOCKS;"
     [[ $TRACE_FETCHER -eq 1 ]] && DEFINES="${DEFINES}TRACE_FETCHER=$TRACE_FETCHER;"

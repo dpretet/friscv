@@ -279,3 +279,39 @@ Algorithms:
 - Xoshiro128++ execution: 295050 cycles
 - Pool Arena execution: 2229932 cycles
 
+
+# 27/7/2023
+
+Enhance OoO completion stage, now bypass RAM if possible
+
+CPI 2036191/980746 = 2.07
+
+General statistics:
+  - Start time: 6536
+  - End time: 2042827
+  - Total elapsed time: 2036291 cycles
+  - Instret start: 2128
+  - Instret end: 982874
+  - Retired instructions: 980746
+
+Instruction Bus Request:
+  - active cycles: 1948157
+  - sleep cycles: 0
+  - stall cycles: 88136
+
+Inst Bus Completion:
+  - active cycles: 1105999
+  - sleep cycles: 128082
+  - stall cycles: 801871
+
+Processing Bus:
+  - active cycles: 815637
+  - sleep cycles: 858362
+  - stall cycles: 335619
+
+Algorithms:
+- Chacha20 execution: 55526 cycles
+- Matrix execution: 10696 cycles
+- Printf execution: 51919 cycles
+- Xoshiro128++ execution: 241840 cycles
+- Pool Arena execution: 1675539 cycles
