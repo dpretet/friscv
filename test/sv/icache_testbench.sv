@@ -85,14 +85,14 @@ module icache_testbench();
 
     driver
     #(
-        .KEY        (KEY),
-        .TIMEOUT    (TIMEOUT),
-        .INIT       ("./ram_32b.txt"),
-        .ILEN       (ILEN),
-        .NO_CPL_BACKPRESSURE (0),
-        .AXI_ADDR_W (AXI_ADDR_W),
-        .AXI_ID_W   (AXI_ID_W),
-        .AXI_DATA_W (ILEN)
+        .OSTDREQ_NUM (OSTDREQ_NUM),
+        .KEY         (KEY),
+        .TIMEOUT     (TIMEOUT),
+        .INIT        ("./ram_32b.txt"),
+        .ILEN        (ILEN),
+        .AXI_ADDR_W  (AXI_ADDR_W),
+        .AXI_ID_W    (AXI_ID_W),
+        .AXI_DATA_W  (ILEN)
     )
     driver
     (
