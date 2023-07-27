@@ -174,7 +174,10 @@ module friscv_cache_prefetcher
                         end else begin
                             next_addr <= next_addr + CACHE_BLOCK_W/8;
                         end 
-                        fetch_next <= 1'b1;
+                        if (CACHE_PREFETCH_EN)
+                            fetch_next <= 1'b1;
+                        else
+                            fetch_next <= 1'b0;
                         loader <= LOAD;
                     end else if (fetch_next) begin
                         memctrl_arvalid <= 1'b1;

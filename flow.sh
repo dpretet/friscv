@@ -240,7 +240,7 @@ main() {
             ./run.sh -c
             ./run.sh -m 10000 --timeout 100000 --tb "icache_testbench.sv"
             ./run.sh -c
-            ./run.sh -m 10000 --timeout 100000 --tb "dcache_testbench.sv" --no-backpressure
+            ./run.sh -m 10000 --timeout 100000 --tb "dcache_testbench.sv"
         fi
         exit 0
     fi

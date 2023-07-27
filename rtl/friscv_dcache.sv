@@ -47,11 +47,9 @@ module friscv_dcache
         // AXI4 data width, to setup to cache block width
         parameter AXI_DATA_W = 128,
         // ID Mask used to identify the data cache in the AXI4 infrastructure
-        parameter AXI_ID_MASK = 'h20,
-        // AXI ID issued on slave interface is fixed
+        parameter AXI_ID_MASK = 'h40,
+        // AXI ID issued on slave interface is fixed, save some logic
         parameter AXI_ID_FIXED = 1,
-        // Disable read data / write response FIFO back-pressure if driver doesn't use it
-        parameter NO_CPL_BACKPRESSURE = 0,
 
         ///////////////////////////////////////////////////////////////////////
         // Cache Setup
@@ -59,7 +57,9 @@ module friscv_dcache
 
         // IO regions for direct read/write access
         parameter IO_MAP_NB = 1,
-
+        // Bypass if possible the OoO output RAM stage. Imply the completion path
+        // will be combinatorial but reduce the latency, increase the bandwidth
+        parameter FAST_FWD_CPL = 1,
         // Enable automatic prefetch in memory controller
         parameter CACHE_PREFETCH_EN = 0,
         // Block width defining only the data payload, in bits
@@ -290,7 +290,7 @@ module friscv_dcache
         .ILEN                (ILEN),
         .XLEN                (XLEN),
         .OSTDREQ_NUM         (OSTDREQ_NUM),
-        .NO_CPL_BACKPRESSURE (NO_CPL_BACKPRESSURE),
+        .NO_CPL_BACKPRESSURE (1),
         .AXI_ADDR_W          (AXI_ADDR_W),
         .AXI_ID_W            (AXI_ID_W),
         .AXI_DATA_W          (AXI_DATA_W)
@@ -449,7 +449,7 @@ module friscv_dcache
         .AXI_DATA_W          (AXI_DATA_W),
         .AXI_ID_MASK         (AXI_ID_MASK),
         .AXI_ID_FIXED        (AXI_ID_FIXED),
-        .NO_CPL_BACKPRESSURE (NO_CPL_BACKPRESSURE)
+        .FAST_FWD_CPL        (FAST_FWD_CPL)
     )
     rd_ooo_mgt
     (
@@ -479,11 +479,11 @@ module friscv_dcache
         .cpl2_resp          (memctrl_rresp),
         .cpl2_data          (memctrl_rdata),
         // read data completion back to the application
-        .mst_valid          (memfy_rvalid),
-        .mst_ready          (memfy_rready),
-        .mst_id             (memfy_rid),
-        .mst_resp           (memfy_rresp),
-        .mst_data           (memfy_rdata)
+        .slv_valid          (memfy_rvalid),
+        .slv_ready          (memfy_rready),
+        .slv_id             (memfy_rid),
+        .slv_resp           (memfy_rresp),
+        .slv_data           (memfy_rdata)
     );
 
     end
@@ -562,7 +562,7 @@ module friscv_dcache
         .AXI_ID_MASK         (AXI_ID_MASK),
         .AXI_ID_FIXED        (AXI_ID_FIXED),
         .CPL_PAYLOAD         (0),
-        .NO_CPL_BACKPRESSURE (NO_CPL_BACKPRESSURE)
+        .FAST_FWD_CPL        (FAST_FWD_CPL)
     )
     wr_ooo_mgt
     (
@@ -592,11 +592,11 @@ module friscv_dcache
         .cpl2_resp          ('0),
         .cpl2_data          ('0),
         // read data completion back to the application
-        .mst_valid          (memfy_bvalid),
-        .mst_ready          (memfy_bready),
-        .mst_id             (memfy_bid),
-        .mst_resp           (memfy_bresp),
-        .mst_data           ()
+        .slv_valid          (memfy_bvalid),
+        .slv_ready          (memfy_bready),
+        .slv_id             (memfy_bid),
+        .slv_resp           (memfy_bresp),
+        .slv_data           ()
     );
 
     ///////////////////////////////////////////////////////////////////////////

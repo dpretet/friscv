@@ -234,9 +234,20 @@ Algorithms:
 - Xoshiro128++ execution: 321654 cycles
 - Pool Arena execution: 2501780 cycles
 
-# 19/7/23 beea35fcb
+# 19/7/23 C907019
 
-CPI = 2686107/980746 = 2.95 (benchmark avec 1 iteration)
+First:
+Restore BackPressure because found a bug
+Pas de FFD sur RD dans memfy
+Pending read/write reduce by 1 cycle if or==1 & valid
+
+-> CPI = 2920000/980746 = 2.95
+
+Then:
+Save a 1 cycle on cache write
+Fixes on Block-Fetcher
+
+CPI = 2686107/980746 = 2.738
 
 General statistics:
   - Start time: 7846
@@ -268,10 +279,3 @@ Algorithms:
 - Xoshiro128++ execution: 295050 cycles
 - Pool Arena execution: 2229932 cycles
 
-Modifications:
-- Memfy: Save a cycle during RD Write, now combinatorial
-- Memfy: Pending flag deasserted on completion if or=1. Save a cycle
-- OoO: Deactivate back-pressure bypass if no IO req. To fix
-- Put in place OoO for write path
-- Pusher save a cycle on cache read then write
-- No more pending flags in dCache, managed at Memfy level

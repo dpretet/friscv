@@ -1,39 +1,42 @@
 [*]
 [*] GTKWave Analyzer v3.3.107 (w)1999-2020 BSI
-[*] Fri Jul 14 18:32:20 2023
+[*] Wed Jul 26 18:32:13 2023
 [*]
 [dumpfile] "/Users/damien/workspace/hdl/friscv/test/sv/dcache_testbench.vcd"
-[dumpfile_mtime] "Fri Jul 14 16:52:57 2023"
-[dumpfile_size] 3033659
+[dumpfile_mtime] "Wed Jul 26 18:30:59 2023"
+[dumpfile_size] 748559654
 [savefile] "/Users/damien/workspace/hdl/friscv/test/sv/dcache_testbench.gtkw"
-[timestart] 0
-[size] 1440 900
+[timestart] 15668000
+[size] 2560 1440
 [pos] -1 -1
-*-23.240044 11186000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
-[treeopen] dcache_testbench.
-[treeopen] genblk1.
-[treeopen] pusher.
+*-14.313707 15726000 2638000 2690400 5390000 5802000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] driver.
+[treeopen] dut.
+[treeopen] dut.IO_FECTHER_INSTANCE.
+[treeopen] RD_OOO_INSTANCE.
+[treeopen] RD_OOO_INSTANCE.rd_ooo_mgt.
 [treeopen] resp_fifo.
 [sst_width] 277
-[signals_width] 461
+[signals_width] 470
 [sst_expanded] 1
-[sst_vpaned_height] 71
+[sst_vpaned_height] 610
 @c00200
--Testbench
-@1401200
--Testbench
-@c00200
--driver
+-Driver
 @28
 driver.aclk
 driver.aresetn
+driver.rden
+@420
+dcache_testbench.rd_req_num
+dcache_testbench.wr_req_num
+dcache_testbench.timer
+dcache_testbench.svut_nb_test
+@28
+dcache_testbench.error
 @200
 -
 @28
 driver.en
-driver.flush_ack
-driver.flush_blocks
-driver.flush_reqs
 driver.gen_io_req
 driver.gen_mem_req
 [color] 3
@@ -46,19 +49,11 @@ driver.awtimeout
 driver.wtimeout
 @200
 -
-@c00200
--read channels
-@200
--
-@28
-driver.aclk
-@420
-driver.arbeat_cnt
-driver.rbatch_len
-@200
--
+@800200
+-Read Channels
 @22
 driver.araddr[31:0]
+driver.arcache[3:0]
 driver.arid[7:0]
 @28
 driver.arprot[2:0]
@@ -66,72 +61,27 @@ driver.arvalid
 driver.arready
 @200
 -
-@420
-driver.rreq_or_cnt
-@22
-[color] 7
-driver.rd_orreq[63:0]
-@200
--
 @22
 driver.rdata[31:0]
 driver.rid[7:0]
 @28
-driver.rready
+driver.rresp[1:0]
 driver.rvalid
-@200
--
-@28
-driver.block_rch
-@22
-driver.next_rid[7:0]
-@28
 driver.rvalid_s
+driver.rready
+@1000200
+-Read Channels
 @200
 -
-@22
-[color] 7
-driver.rd_orreq[63:0]
-driver.rd_orreq_rdata[2047:0]
-driver.rd_orreq_id[511:0]
-@200
--
-@22
-driver.ar_lfsr[31:0]
-driver.arvalid_lfsr[31:0]
-driver.r_lfsr[31:0]
-driver.rready_lfsr[31:0]
-@200
--
-@28
-driver.artimeout
-@420
-driver.artimer
-@200
--
-@22
-driver.rid_error[63:0]
-driver.ror_error[63:0]
-@1401200
--read channels
 @c00200
--write channels
-@28
-driver.aclk
-@420
-driver.awbeat_cnt
-driver.wbatch_len
-driver.wreq_or_cnt
-@200
--
+-Write Channels
 @22
 driver.awaddr[31:0]
-driver.awcache[3:0]
 driver.awid[7:0]
 @28
 driver.awprot[2:0]
-driver.awvalid
 driver.awready
+driver.awvalid
 @200
 -
 @22
@@ -144,67 +94,163 @@ driver.wready
 -
 @22
 driver.bid[7:0]
-driver.bid_error[63:0]
-driver.bor_error[63:0]
 @28
+driver.bresp[1:0]
 driver.bvalid
 driver.bready
-driver.bresp[1:0]
+@1401200
+-Write Channels
 @200
 -
-@28
-driver.awtimeout
-@22
-driver.wr_orreq[63:0]
-driver.wr_orreq_id[511:0]
-@1401200
--write channels
--driver
 @c00200
--Wr OoO Mgt
+-OSTD Reqs
 @28
-WR_OOO_INSTANCE.wr_ooo_mgt.aclk
-WR_OOO_INSTANCE.wr_ooo_mgt.aresetn
+driver.artimeout
+@420
+driver.artimer
+driver.arbeat_cnt
+driver.rbatch_len
+driver.rcpl_or_cnt
 @200
 -
-@22
-WR_OOO_INSTANCE.wr_ooo_mgt.slv_acache[3:0]
-WR_OOO_INSTANCE.wr_ooo_mgt.slv_addr[31:0]
-WR_OOO_INSTANCE.wr_ooo_mgt.slv_aid[7:0]
+@420
+driver.rreq_or_cnt
+@c00022
+driver.rd_orreq[7:0]
 @28
-WR_OOO_INSTANCE.wr_ooo_mgt.slv_aready
-WR_OOO_INSTANCE.wr_ooo_mgt.slv_avalid
-@200
--
-@28
-WR_OOO_INSTANCE.wr_ooo_mgt.req_tag_pt[2:0]
-WR_OOO_INSTANCE.wr_ooo_mgt.cpl_tag_pt[2:0]
-@22
-WR_OOO_INSTANCE.wr_ooo_mgt.io_tags[7:0]
-@28
-WR_OOO_INSTANCE.wr_ooo_mgt.tag_avlb
-@22
-WR_OOO_INSTANCE.wr_ooo_mgt.tags[15:0]
-WR_OOO_INSTANCE.wr_ooo_mgt.next_tag[7:0]
-@200
--
-@22
-WR_OOO_INSTANCE.wr_ooo_mgt.cpl1_id[7:0]
-WR_OOO_INSTANCE.wr_ooo_mgt.cpl1_id_m[7:0]
-@28
-WR_OOO_INSTANCE.wr_ooo_mgt.cpl1_ready
-WR_OOO_INSTANCE.wr_ooo_mgt.cpl1_resp[1:0]
-WR_OOO_INSTANCE.wr_ooo_mgt.cpl1_valid
-@200
--
-@22
-WR_OOO_INSTANCE.wr_ooo_mgt.mst_id[7:0]
-@28
-WR_OOO_INSTANCE.wr_ooo_mgt.mst_resp[1:0]
-WR_OOO_INSTANCE.wr_ooo_mgt.mst_ready
-WR_OOO_INSTANCE.wr_ooo_mgt.mst_valid
+(0)driver.rd_orreq[7:0]
+(1)driver.rd_orreq[7:0]
+(2)driver.rd_orreq[7:0]
+(3)driver.rd_orreq[7:0]
+(4)driver.rd_orreq[7:0]
+(5)driver.rd_orreq[7:0]
+(6)driver.rd_orreq[7:0]
+(7)driver.rd_orreq[7:0]
 @1401200
--Wr OoO Mgt
+-group_end
+@22
+driver.rd_orreq_araddr[255:0]
+driver.rd_orreq_id[63:0]
+driver.rd_orreq_rdata[255:0]
+driver.rdata_error[7:0]
+driver.rid_error[7:0]
+driver.ror_error[7:0]
+@1401200
+-OSTD Reqs
+@200
+-
+@22
+driver.wr_orreq[7:0]
+driver.wr_orreq_id[63:0]
+@420
+driver.wbatch_len
+driver.wcpl_or_cnt
+driver.wreq_or_cnt
+@200
+-
+@800200
+-Update Memory
+@28
+driver.genblk1.pull_wfifos
+driver.genblk1.awchempty
+driver.genblk1.awchfull
+driver.genblk1.wchempty
+driver.genblk1.wchfull
+@22
+driver.genblk1.awaddr_w[31:0]
+driver.genblk1.wstrb_w[3:0]
+driver.genblk1.wdata_w[31:0]
+@1000200
+-Update Memory
+@1401200
+-Driver
+@c00200
+-dCach Top
+@28
+dut.aclk
+dut.aresetn
+@200
+-
+@22
+dut.memfy_araddr[31:0]
+dut.memfy_arcache[3:0]
+dut.memfy_arid[7:0]
+dut.memfy_arid_next[7:0]
+dut.memfy_arid_w[7:0]
+@28
+dut.memfy_arvalid_io
+dut.memfy_arready_io
+dut.memfy_arvalid_blk
+dut.memfy_arready_blk
+dut.memfy_arready_w
+dut.memfy_arvalid
+dut.memfy_arready
+@200
+-
+@22
+dut.memfy_rdata[31:0]
+dut.memfy_rid[7:0]
+@28
+dut.memfy_rresp[1:0]
+dut.memfy_rvalid
+dut.memfy_rready
+@200
+-
+@22
+dut.memfy_awaddr[31:0]
+dut.memfy_awcache[3:0]
+dut.memfy_awid[7:0]
+dut.memfy_awid_next[7:0]
+dut.memfy_awid_w[7:0]
+@28
+dut.memfy_awready_w
+dut.memfy_awvalid
+dut.memfy_awready
+@200
+-
+@22
+dut.memfy_wdata[31:0]
+dut.memfy_wstrb[3:0]
+@28
+dut.memfy_wvalid
+dut.memfy_wready
+@200
+-
+@22
+dut.memfy_bid[7:0]
+@28
+dut.memfy_bready
+dut.memfy_bresp[1:0]
+dut.memfy_bvalid
+@200
+-
+@1401200
+-dCach Top
+@800200
+-IO Fetcher
+@28
+dut.IO_FECTHER_INSTANCE.io_fetcher.aclk
+dut.IO_FECTHER_INSTANCE.io_fetcher.aresetn
+@200
+-
+@22
+dut.IO_FECTHER_INSTANCE.io_fetcher.mst_araddr[31:0]
+dut.IO_FECTHER_INSTANCE.io_fetcher.mst_arid[7:0]
+@28
+dut.IO_FECTHER_INSTANCE.io_fetcher.mst_arprot[2:0]
+dut.IO_FECTHER_INSTANCE.io_fetcher.mst_arready
+dut.IO_FECTHER_INSTANCE.io_fetcher.mst_arvalid
+@200
+-
+@22
+dut.IO_FECTHER_INSTANCE.io_fetcher.memctrl_araddr[31:0]
+dut.IO_FECTHER_INSTANCE.io_fetcher.memctrl_arid[7:0]
+@28
+dut.IO_FECTHER_INSTANCE.io_fetcher.memctrl_arprot[2:0]
+dut.IO_FECTHER_INSTANCE.io_fetcher.memctrl_arready
+dut.IO_FECTHER_INSTANCE.io_fetcher.memctrl_arvalid
+@1000200
+-IO Fetcher
 @c00200
 -Pusher
 @28
@@ -224,9 +270,7 @@ pusher.mst_awready
 -
 @22
 pusher.mst_wdata[31:0]
-pusher.mst_wdata_r[31:0]
 pusher.mst_wstrb[3:0]
-pusher.mst_wstrb_r[3:0]
 @28
 pusher.mst_wvalid
 pusher.mst_wready
@@ -250,11 +294,6 @@ pusher.cache_miss
 pusher.cache_hit
 @200
 -
-@22
-pusher.cache_raddr_r[31:0]
-pusher.cache_rid_r[7:0]
-pusher.cache_wstrb_r[3:0]
-pusher.cache_wdata_r[31:0]
 @28
 pusher.cache_wen
 @22
@@ -270,8 +309,6 @@ pusher.data_fifo_empty
 pusher.data_fifo_full
 pusher.resp_fifo_full
 pusher.resp_fifo_empty
-pusher.wait_data_channel
-pusher.wr_position[1:0]
 @200
 -
 @28
@@ -313,5 +350,253 @@ pusher.memctrl_bresp[1:0]
 pusher.memctrl_bvalid
 @1401200
 -Pusher
+@c00200
+-AXI4-lite RAM
+@200
+-
+@28
+dcache_testbench.axi4l_ram.aclk
+dcache_testbench.axi4l_ram.aresetn
+@22
+dcache_testbench.axi4l_ram.p1_araddr[31:0]
+dcache_testbench.axi4l_ram.p1_arid[7:0]
+@28
+dcache_testbench.axi4l_ram.p1_arvalid
+dcache_testbench.axi4l_ram.p1_arready
+@200
+-
+@22
+dcache_testbench.axi4l_ram.p1_rdata[127:0]
+dcache_testbench.axi4l_ram.p1_rid[7:0]
+@28
+dcache_testbench.axi4l_ram.p1_rvalid
+dcache_testbench.axi4l_ram.p1_rready
+@200
+-
+@22
+dcache_testbench.axi4l_ram.p1_awaddr[31:0]
+dcache_testbench.axi4l_ram.p1_awid[7:0]
+@28
+dcache_testbench.axi4l_ram.p1_awvalid
+dcache_testbench.axi4l_ram.p1_awready
+@200
+-
+@22
+dcache_testbench.axi4l_ram.p1_wdata[127:0]
+dcache_testbench.axi4l_ram.p1_wstrb[15:0]
+@28
+dcache_testbench.axi4l_ram.p1_wvalid
+dcache_testbench.axi4l_ram.p1_wready
+@200
+-
+@22
+dcache_testbench.axi4l_ram.p1_bid[7:0]
+@28
+dcache_testbench.axi4l_ram.p1_bready
+dcache_testbench.axi4l_ram.p1_bresp[1:0]
+dcache_testbench.axi4l_ram.p1_bvalid
+@1401200
+-AXI4-lite RAM
+@c00200
+-Block Fetcher
+@22
+block_fetcher.mst_araddr[31:0]
+block_fetcher.mst_arid[7:0]
+@28
+block_fetcher.mst_arprot[2:0]
+block_fetcher.mst_arready
+block_fetcher.mst_arvalid
+@200
+-
+@22
+block_fetcher.mst_rdata[31:0]
+block_fetcher.mst_rid[7:0]
+@28
+block_fetcher.mst_rresp[1:0]
+block_fetcher.mst_rvalid
+block_fetcher.mst_rready
+@200
+-
+@28
+block_fetcher.block_fill
+block_fetcher.cache_ren
+@22
+block_fetcher.cache_raddr[31:0]
+@28
+block_fetcher.cache_hit
+block_fetcher.cache_miss
+@22
+block_fetcher.cache_rdata[31:0]
+block_fetcher.cache_rid[7:0]
+@28
+block_fetcher.cache_rprot[2:0]
+@1401200
+-Block Fetcher
+@800200
+-Rd OoO Mgt
+@28
+RD_OOO_INSTANCE.rd_ooo_mgt.aclk
+RD_OOO_INSTANCE.rd_ooo_mgt.aresetn
+@200
+-
+@22
+RD_OOO_INSTANCE.rd_ooo_mgt.slv_acache[3:0]
+RD_OOO_INSTANCE.rd_ooo_mgt.slv_addr[31:0]
+RD_OOO_INSTANCE.rd_ooo_mgt.slv_aid[7:0]
+@28
+RD_OOO_INSTANCE.rd_ooo_mgt.slv_avalid
+RD_OOO_INSTANCE.rd_ooo_mgt.slv_aready
+@200
+-
+@22
+RD_OOO_INSTANCE.rd_ooo_mgt.cpl1_data[31:0]
+RD_OOO_INSTANCE.rd_ooo_mgt.cpl1_id[7:0]
+RD_OOO_INSTANCE.rd_ooo_mgt.cpl1_id_m[7:0]
+@28
+RD_OOO_INSTANCE.rd_ooo_mgt.cpl1_resp[1:0]
+RD_OOO_INSTANCE.rd_ooo_mgt.cpl1_valid
+RD_OOO_INSTANCE.rd_ooo_mgt.cpl1_ready
+@200
+-
+@22
+RD_OOO_INSTANCE.rd_ooo_mgt.cpl2_data[31:0]
+RD_OOO_INSTANCE.rd_ooo_mgt.cpl2_id[7:0]
+@23
+RD_OOO_INSTANCE.rd_ooo_mgt.cpl2_id_m[7:0]
+@28
+RD_OOO_INSTANCE.rd_ooo_mgt.cpl2_resp[1:0]
+RD_OOO_INSTANCE.rd_ooo_mgt.cpl2_valid
+RD_OOO_INSTANCE.rd_ooo_mgt.cpl2_ready
+@200
+-
+@28
+RD_OOO_INSTANCE.rd_ooo_mgt.tag_avlb
+@22
+RD_OOO_INSTANCE.rd_ooo_mgt.next_tag[7:0]
+RD_OOO_INSTANCE.rd_ooo_mgt.tags[15:0]
+@28
+RD_OOO_INSTANCE.rd_ooo_mgt.req_tag_pt[2:0]
+@22
+RD_OOO_INSTANCE.rd_ooo_mgt.cpl_tag_pt[2:0]
+@200
+-
+@22
+RD_OOO_INSTANCE.rd_ooo_mgt.mst_data[31:0]
+RD_OOO_INSTANCE.rd_ooo_mgt.mst_id[7:0]
+@28
+RD_OOO_INSTANCE.rd_ooo_mgt.mst_resp[1:0]
+RD_OOO_INSTANCE.rd_ooo_mgt.mst_valid
+RD_OOO_INSTANCE.rd_ooo_mgt.mst_ready
+@1000200
+-Rd OoO Mgt
+@c00200
+-Cache Blocks
+@28
+cache_blocks.aclk
+cache_blocks.aresetn
+@200
+-
+@28
+cache_blocks.p1_ren
+cache_blocks.p1_hit
+cache_blocks.p1_miss
+@22
+cache_blocks.p1_raddr[31:0]
+cache_blocks.p1_rdata[31:0]
+cache_blocks.p1_rindex[8:0]
+@28
+cache_blocks.p1_roffset[1:0]
+@22
+cache_blocks.p1_rtag[18:0]
+@200
+-
+@28
+cache_blocks.p1_wen
+@22
+cache_blocks.p1_waddr[31:0]
+cache_blocks.p1_wdata[127:0]
+cache_blocks.p1_windex[8:0]
+cache_blocks.p1_wstrb[15:0]
+cache_blocks.p1_wtag[18:0]
+@200
+-
+@28
+cache_blocks.p2_ren
+cache_blocks.p2_hit
+cache_blocks.p2_miss
+@22
+cache_blocks.p2_raddr[31:0]
+cache_blocks.p2_rdata[31:0]
+cache_blocks.p2_rindex[8:0]
+@28
+cache_blocks.p2_roffset[1:0]
+@22
+cache_blocks.p2_rtag[18:0]
+@200
+-
+@28
+cache_blocks.p2_wen
+@22
+cache_blocks.p2_waddr[31:0]
+cache_blocks.p2_wdata[127:0]
+cache_blocks.p2_windex[8:0]
+cache_blocks.p2_wstrb[15:0]
+cache_blocks.p2_wtag[18:0]
+@1401200
+-Cache Blocks
+@c00200
+-Wr OoO Mgt
+@28
+wr_ooo_mgt.aclk
+wr_ooo_mgt.aresetn
+@200
+-
+@22
+wr_ooo_mgt.slv_acache[3:0]
+wr_ooo_mgt.slv_addr[31:0]
+wr_ooo_mgt.slv_aid[7:0]
+@28
+wr_ooo_mgt.slv_aready
+wr_ooo_mgt.slv_avalid
+@200
+-
+@22
+wr_ooo_mgt.cpl1_data[31:0]
+wr_ooo_mgt.cpl1_id[7:0]
+wr_ooo_mgt.cpl1_id_m[7:0]
+@28
+wr_ooo_mgt.cpl1_ready
+wr_ooo_mgt.cpl1_resp[1:0]
+wr_ooo_mgt.cpl1_valid
+@200
+-
+@22
+wr_ooo_mgt.cpl2_data[31:0]
+wr_ooo_mgt.cpl2_id[7:0]
+wr_ooo_mgt.cpl2_id_m[7:0]
+@28
+wr_ooo_mgt.cpl2_ready
+wr_ooo_mgt.cpl2_resp[1:0]
+wr_ooo_mgt.cpl2_valid
+@200
+-
+@28
+wr_ooo_mgt.tag_avlb
+@22
+wr_ooo_mgt.next_tag[7:0]
+wr_ooo_mgt.tags[15:0]
+wr_ooo_mgt.cpl_tag_pt[2:0]
+wr_ooo_mgt.req_tag_pt[2:0]
+@200
+-
+@22
+wr_ooo_mgt.mst_data[31:0]
+wr_ooo_mgt.mst_id[7:0]
+@28
+wr_ooo_mgt.mst_resp[1:0]
+wr_ooo_mgt.mst_valid
+wr_ooo_mgt.mst_ready
+@1401200
+-Wr OoO Mgt
 [pattern_trace] 1
 [pattern_trace] 0

@@ -20,8 +20,6 @@ module driver
         // Timeout value used outstanding request monitoring
         parameter TIMEOUT = 100,
         parameter INIT  = "init.v",
-        // Always assert BREADY / RREADY like the processor
-        parameter NO_CPL_BACKPRESSURE = 0,
         // Instruction length
         parameter ILEN = 32,
         // Address bus width defined for both control and AXI4 address signals
@@ -95,7 +93,7 @@ module driver
     logic [AXI_DATA_W-1:0] mem [DEPTH:0];
     initial $readmemh(INIT, mem, 0, DEPTH);
 
-    localparam MAX_OR = 64;
+    localparam MAX_OR = OSTDREQ_NUM;
 
     integer                                  arbeat_cnt;
     integer                                  rbatch_len;
@@ -181,7 +179,7 @@ module driver
                         rden <= !(|wr_orreq);
                     end
                 end else begin
-                    // end of write batch, mve to read
+                    // end of write batch, move to read
                     if ((awbeat_cnt==(wbatch_len-1) || wbatch_len==0) && awvalid && awready) begin
                         wren <= 1'b0;
                         seq <= 1'b0;
@@ -215,7 +213,7 @@ module driver
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
     assign arprot = 3'b0;
-    assign arcache = {2'b0,gen_io_req & rbatch_len[2],1'b0};
+    assign arcache = (gen_io_req & !gen_mem_req) ?  4'b0010 : {2'b0,gen_io_req & rbatch_len[2],1'b0};
 
     always @ (posedge aclk or negedge aresetn) begin
 
@@ -394,12 +392,8 @@ module driver
         end
     end
 
-    generate
-    if (NO_CPL_BACKPRESSURE)
-        assign rready = 1'b1;
-    else
-        assign rready = rready_lfsr[0];
-    endgenerate
+    assign rready = rready_lfsr[0];
+
     // LFSR to generate valid of R channel
     lfsr32
     #(
@@ -551,7 +545,7 @@ module driver
     generate if (RW_MODE>0) begin
 
         assign awprot = 3'b0;
-        assign awcache = {2'b0,gen_io_req & wbatch_len[2],1'b0};
+        assign awcache = (gen_io_req && !gen_mem_req) ?  4'b0010 : {2'b0,gen_io_req & wbatch_len[2],1'b0};
 
         always @ (posedge aclk or negedge aresetn) begin
 
@@ -798,10 +792,8 @@ module driver
             end
         end
 
-        if (NO_CPL_BACKPRESSURE)
-            assign bready = 1'b1;
-        else
-            assign bready = bready_lfsr[0];
+        assign bready = bready_lfsr[0];
+
         // LFSR to generate valid of R channel
         lfsr32
         #(
@@ -832,7 +824,7 @@ module driver
     friscv_scfifo
     #(
         .PASS_THRU  (0),
-        .ADDR_WIDTH (8),
+        .ADDR_WIDTH (MAX_OR),
         .DATA_WIDTH (AXI_ADDR_W)
     )
     awfifo_w
@@ -854,7 +846,7 @@ module driver
     friscv_scfifo
     #(
         .PASS_THRU  (0),
-        .ADDR_WIDTH (8),
+        .ADDR_WIDTH (MAX_OR),
         .DATA_WIDTH (AXI_DATA_W+AXI_DATA_W/8)
     )
     wfifo_w

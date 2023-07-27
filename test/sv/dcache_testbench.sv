@@ -30,11 +30,7 @@ module dcache_testbench();
     parameter CACHE_PREFETCH_EN = 0;
     parameter CACHE_BLOCK_W = 128;
     parameter CACHE_DEPTH = 512;
-    `ifdef NOBCKP
-        parameter NO_CPL_BACKPRESSURE = 1;
-    `else
-        parameter NO_CPL_BACKPRESSURE = 0;
-    `endif
+    parameter FAST_FWD_CPL = 1;
 
     logic                      aclk;
     logic                      aresetn;
@@ -122,7 +118,6 @@ module dcache_testbench();
         .TIMEOUT             (TIMEOUT),
         .INIT                ("./ram_32b.txt"),
         .ILEN                (ILEN),
-        .NO_CPL_BACKPRESSURE (NO_CPL_BACKPRESSURE),
         .AXI_ADDR_W          (AXI_ADDR_W),
         .AXI_ID_W            (AXI_ID_W),
         .AXI_DATA_W          (ILEN)
@@ -180,7 +175,7 @@ module dcache_testbench();
         .AXI_DATA_W          (AXI_DATA_W),
         .AXI_ID_MASK         (AXI_ID_MASK),
         .AXI_ID_FIXED        (0),
-        .NO_CPL_BACKPRESSURE (NO_CPL_BACKPRESSURE),
+        .FAST_FWD_CPL        (FAST_FWD_CPL),
         .IO_MAP_NB           (IO_MAP_NB),
         .CACHE_PREFETCH_EN   (CACHE_PREFETCH_EN),
         .CACHE_BLOCK_W       (CACHE_BLOCK_W),
@@ -380,9 +375,11 @@ module dcache_testbench();
             timer = timer + 1;
             if (memfy_arvalid && memfy_arready) begin
                 rd_req_num = rd_req_num + 1;
+                timer = 0;
             end
             if (memfy_awvalid && memfy_awready) begin
                 wr_req_num = wr_req_num + 1;
+                timer = 0;
             end
             @(posedge aclk);
         end
@@ -397,6 +394,7 @@ module dcache_testbench();
         gen_io_req = 0;
         en = 1'b1;
         run_testcase;
+        #50;
 
     `UNIT_TEST_END
 
@@ -406,6 +404,7 @@ module dcache_testbench();
         gen_mem_req = 0;
         gen_io_req = 1;
         run_testcase;
+        #50;
 
     `UNIT_TEST_END
 
@@ -415,6 +414,7 @@ module dcache_testbench();
         gen_mem_req = 1;
         gen_io_req = 1;
         run_testcase;
+        #50;
 
     `UNIT_TEST_END
 

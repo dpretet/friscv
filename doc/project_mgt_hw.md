@@ -3,6 +3,7 @@
 - [-] Enhance globally performance
 - [ ] Create a HW platform
 - [ ] User & supervisor modes
+    - store priv in cache block
 - [ ] 64bits support
 - [ ] Atomic ops
 - [ ] F extension
@@ -18,12 +19,15 @@ Mesure et amélioration des performances
 - [X] Print et save des registres CSRs pour chaque test, garde la trace des performances dans Git
 - [X] IP point de mesure des différents bus en bandwidth
 - [X] CPI
+- [X] Augmenter le nombre d’OR max de dCache
+- [X] Prefetch read request
+- [X] Optimize write pusher to save a cycle
+- [X] Optimize Memfy dead cycle (RD write comb & pending request =0 if == 1 & valid)
 - [X] Enhance read outstanding requests in MemFy
-- [ ] Enhance read outstanding requests in OoO
-- [ ] Augmenter le nombre d’OR max de dCache
-- [ ] Reduce cache jump
+- [X] No more pending flags in caches, BCH / RCH handshake is used to manage reording in Memfy
+- [ ] Enhance completion in OoO
+- [ ] Preload jal even if processing is busy
 - [ ] Branch prediction
-- [ ] Cache ooo queue vs compteur
 
 # BACKLOG
 
@@ -36,7 +40,7 @@ N.B. :
 
 Cache Stage Enhancement:
 - [ ] AXI4 + Wrap mode for read
-- [ ] Support prefetch: if no jump/branch detected in fetched instructions
+- [X] Support prefetch: if no jump/branch detected in fetched instructions
       grab the next line, else give a try to fetch the branch address. AXI hint?
 - [ ] Support datapath adaptation from memory controller
     - Narrow transfer support?
@@ -142,6 +146,7 @@ Hardware Test:
 # Ideas / Applications
 
 - [ ] Next CPU architecture:
+    - super scalar architecture
     - SIMD architecture
     - Vector architecture
     - Application to GPGPU area

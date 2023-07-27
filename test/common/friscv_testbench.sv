@@ -120,7 +120,7 @@ module friscv_testbench(
     parameter CACHE_EN = `CACHE_EN;
 
     // Enable cache block prefetch
-    parameter ICACHE_PREFETCH_EN = 0;
+    parameter ICACHE_PREFETCH_EN = 1;
     // Block width defining only the data payload, in bits, must an
     // integer multiple of XLEN
     parameter ICACHE_BLOCK_W = `CACHE_BLOCK_W;
@@ -128,7 +128,7 @@ module friscv_testbench(
     parameter ICACHE_DEPTH = 512;
 
     // Enable cache block prefetch
-    parameter DCACHE_PREFETCH_EN = 0;
+    parameter DCACHE_PREFETCH_EN = 1;
     // Block width defining only the data payload, in bits, must an
     // integer multiple of XLEN
     parameter DCACHE_BLOCK_W = `CACHE_BLOCK_W;

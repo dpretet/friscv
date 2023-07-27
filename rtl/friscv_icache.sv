@@ -185,12 +185,13 @@ module friscv_icache
 
     friscv_cache_prefetcher
     #(
-        .NAME             ("iCache-prefetcher"),
-        .ILEN             (ILEN),
-        .XLEN             (XLEN),
-        .AXI_ADDR_W       (AXI_ADDR_W),
-        .AXI_ID_W         (AXI_ID_W),
-        .AXI_DATA_W       (AXI_DATA_W)
+        .NAME              ("iCache-prefetcher"),
+        .ILEN              (ILEN),
+        .XLEN              (XLEN),
+        .CACHE_PREFETCH_EN (CACHE_PREFETCH_EN),
+        .AXI_ADDR_W        (AXI_ADDR_W),
+        .AXI_ID_W          (AXI_ID_W),
+        .AXI_DATA_W        (AXI_DATA_W)
     )
     prefetcher
     (

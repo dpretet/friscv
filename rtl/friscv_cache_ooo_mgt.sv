@@ -55,7 +55,7 @@ module friscv_cache_ooo_mgt
         // Completion embeds data (read data channel) or not (write response channel)
         parameter CPL_PAYLOAD = 1,
         // Completion channel doesn't assert back-pressure, can drive completion directly
-        parameter NO_CPL_BACKPRESSURE = 0
+        parameter FAST_FWD_CPL = 0
     )(
         // Global interface
         input  wire                       aclk,
@@ -89,11 +89,11 @@ module friscv_cache_ooo_mgt
         input  wire  [XLEN          -1:0] cpl2_data,
 
         // Read completion channel, going back to application
-        output logic                      mst_valid,
-        input  wire                       mst_ready,
-        output logic [AXI_ID_W      -1:0] mst_id,
-        output logic [2             -1:0] mst_resp,
-        output logic [XLEN          -1:0] mst_data
+        output logic                      slv_valid,
+        input  wire                       slv_ready,
+        output logic [AXI_ID_W      -1:0] slv_id,
+        output logic [2             -1:0] slv_resp,
+        output logic [XLEN          -1:0] slv_data
     );
 
     //////////////////////////////////////////////////////////////////////////
@@ -121,8 +121,6 @@ module friscv_cache_ooo_mgt
     logic [CPL_W   -1:0] cpl_ram[NB_TAG-1:0];
     // Stores the tags available 
     logic [2*NB_TAG-1:0] tags;
-    // The tag used is an IO request
-    logic [NB_TAG  -1:0] io_tags;
     // Pointer to current available for next request
     logic [NB_TAG_W-1:0] req_tag_pt;
     logic [NB_TAG_W-1:0] cpl_tag_pt;
@@ -169,8 +167,16 @@ module friscv_cache_ooo_mgt
                 if (slv_avalid && slv_aready && i[0+:NB_TAG_W]==req_tag_pt)
                     tags[2*i+REQ] <= 1'b1;
 
+                // IF completion channel 1 is aligned with current tag
+                else if (FAST_FWD_CPL && cpl1_valid && slv_ready && i[0+:NB_TAG_W]==cpl_tag_pt && cpl1_id_m[0+:NB_TAG_W]==cpl_tag_pt)
+                    tags[2*i+:2] <= FREE;
+
+                // IF completion channel 2 is aligned with current tag
+                else if (FAST_FWD_CPL && cpl2_valid && slv_ready && i[0+:NB_TAG_W]==cpl_tag_pt && cpl2_id_m[0+:NB_TAG_W]==cpl_tag_pt)
+                    tags[2*i+:2] <= FREE;
+
                 // Send back the final completion with this tag & free it
-                else if (mst_valid && mst_ready && i[0+:NB_TAG_W]==cpl_tag_pt)
+                else if (slv_valid && slv_ready && i[0+:NB_TAG_W]==cpl_tag_pt)
                     tags[2*i+:2] <= FREE;
 
                 // Receive a completion using this tag, so make it ready to finalize completion
@@ -197,21 +203,6 @@ module friscv_cache_ooo_mgt
                 end
             end else begin
                 meta_ram[i] <= {AXI_ID_W{1'b0}};
-            end
-        end
-
-        // Stores info if request is an I/O request
-        always @ (posedge aclk or negedge aresetn) begin
-            if (!aresetn) begin
-                io_tags[i] <= 1'b0;
-            end else if (srst) begin
-                io_tags[i] <= 1'b0;
-            end else begin
-                if (slv_avalid && slv_aready && i[0+:NB_TAG_W]==req_tag_pt) begin
-                    io_tags[i] <= slv_acache[1];
-                end else if (mst_valid && mst_ready && i[0+:NB_TAG_W]==cpl_tag_pt) begin
-                    io_tags[i] <= 1'b0;
-                end
             end
         end
 
@@ -263,7 +254,7 @@ module friscv_cache_ooo_mgt
                 else req_tag_pt <= req_tag_pt + 1'b1;
             end
             
-            if (mst_valid & mst_ready) begin
+            if (slv_valid & slv_ready) begin
                 if (cpl_tag_pt==MAX_TAG[0+:NB_TAG_W]) cpl_tag_pt <= {NB_TAG_W{1'b0}};
                 else cpl_tag_pt <= cpl_tag_pt + 1'b1;
             end
@@ -283,41 +274,63 @@ module friscv_cache_ooo_mgt
     //
     //////////////////////////////////////////////////////////////////////////
     generate
-    if (NO_CPL_BACKPRESSURE) begin
-        assign mst_valid = (|io_tags) ? tags[2*cpl_tag_pt+CPL] : cpl1_valid /*&& (cpl_tag_pt==cpl1_id_m)*/;
+    if (FAST_FWD_CPL) begin
+
+        logic to_cpl;
+        logic [XLEN-1:0] cpl_data;
+        logic [2   -1:0] cpl_resp;
+
+        assign to_cpl = tags[2*cpl_tag_pt+CPL];
+        if (CPL_PAYLOAD) begin
+            assign cpl_data = cpl_ram[cpl_tag_pt][0+:XLEN];
+            assign cpl_resp = cpl_ram[cpl_tag_pt][XLEN+:2];
+        end else begin
+            assign cpl_data = '0;
+            assign cpl_resp = cpl_ram[cpl_tag_pt][0+:2];
+        end
+
+        always @ (*) begin
+            if (to_cpl) begin
+                slv_valid = 1'b1;
+                slv_data = cpl_data;
+                slv_resp = cpl_resp;
+            end else if (cpl_tag_pt == cpl1_id_m[0+:NB_TAG_W] && cpl1_valid) begin
+                slv_valid = cpl1_valid;
+                slv_data = cpl1_data;
+                slv_resp = cpl1_resp;
+            end else if (cpl_tag_pt == cpl2_id_m[0+:NB_TAG_W] && cpl2_valid) begin
+                slv_valid = cpl2_valid;
+                slv_data = cpl2_data;
+                slv_resp = cpl2_resp;
+            end else begin
+                slv_valid = 1'b0;
+                slv_data = '0;
+                slv_resp = '0;
+            end
+        end
+
     end else begin
-        assign mst_valid = tags[2*cpl_tag_pt+CPL];
+
+        assign slv_valid = tags[2*cpl_tag_pt+CPL];
+
+        if (CPL_PAYLOAD) begin
+            assign slv_data = cpl_ram[cpl_tag_pt][0+:XLEN];
+            assign slv_resp = cpl_ram[cpl_tag_pt][XLEN+:2];
+        end else begin
+            assign slv_data = '0;
+            assign slv_resp = cpl_ram[cpl_tag_pt][0+:2];
+        end
     end
     endgenerate
 
     generate
 
     if (AXI_ID_FIXED) begin
-        assign mst_id = AXI_ID_MASK;
+        assign slv_id = AXI_ID_MASK;
     end else begin
-        assign mst_id = meta_ram[cpl_tag_pt][0+:AXI_ID_W];
+        assign slv_id = meta_ram[cpl_tag_pt][0+:AXI_ID_W];
     end
 
-    endgenerate
-
-    generate
-    if (NO_CPL_BACKPRESSURE) begin
-        if (CPL_PAYLOAD) begin
-            assign mst_data = (|io_tags) ? cpl_ram[cpl_tag_pt][0+:XLEN] : cpl1_data;
-            assign mst_resp = (|io_tags) ? cpl_ram[cpl_tag_pt][XLEN+:2] : cpl1_resp;
-        end else begin
-            assign mst_data = '0;
-            assign mst_resp = (|io_tags) ? cpl_ram[cpl_tag_pt][0+:2] : cpl1_resp;
-        end
-    end else begin
-        if (CPL_PAYLOAD) begin
-            assign mst_data = cpl_ram[cpl_tag_pt][0+:XLEN];
-            assign mst_resp = cpl_ram[cpl_tag_pt][XLEN+:2];
-        end else begin
-            assign mst_data = '0;
-            assign mst_resp = cpl_ram[cpl_tag_pt][0+:2];
-        end
-    end
     endgenerate
 
 endmodule
