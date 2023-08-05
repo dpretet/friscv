@@ -66,6 +66,7 @@ TC=
 [[ -z $TRACE_BLOCKS ]] && TRACE_BLOCKS=1
 [[ -z $TRACE_FETCHER ]] && TRACE_FETCHER=1
 [[ -z $TRACE_PUSHER ]] && TRACE_PUSHER=1
+[[ -z $TRACE_MEMFY ]] && TRACE_MEMFY=1
 [[ -z $TRACE_TB_RAM ]] && TRACE_TB_RAM=1
 
 # Variable used to check if RTL sources or testbench changed. Only compile if 1
@@ -116,6 +117,7 @@ get_defines() {
     echo "  - TRACE_BLOCKS:     $TRACE_BLOCKS"
     echo "  - TRACE_FETCHER:    $TRACE_FETCHER"
     echo "  - TRACE_PUSHER:     $TRACE_PUSHER"
+    echo "  - TRACE_MEMFY:      $TRACE_MEMFY"
     echo "  - TRACE_TB_RAM:     $TRACE_TB_RAM"
 
     DEFINES="${DEFINES}XLEN=$XLEN;"
@@ -137,6 +139,7 @@ get_defines() {
     [[ $TRACE_BLOCKS  -eq 1 ]] && DEFINES="${DEFINES}TRACE_BLOCKS=$TRACE_BLOCKS;"
     [[ $TRACE_FETCHER -eq 1 ]] && DEFINES="${DEFINES}TRACE_FETCHER=$TRACE_FETCHER;"
     [[ $TRACE_PUSHER  -eq 1 ]] && DEFINES="${DEFINES}TRACE_PUSHER=$TRACE_PUSHER;"
+    [[ $TRACE_MEMFY   -eq 1 ]] && DEFINES="${DEFINES}TRACE_MEMFY=$TRACE_MEMFY;"
     [[ $TRACE_TB_RAM  -eq 1 ]] && DEFINES="${DEFINES}TRACE_TB_RAM=$TRACE_TB_RAM;"
 
     [[ $NO_VCD -eq 1 ]] && DEFINES="${DEFINES}NO_VCD=1;"

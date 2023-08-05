@@ -115,6 +115,10 @@ module friscv_testbench(
     // ID used by instruction and data buses
     parameter AXI_IMEM_MASK = 'h80;
     parameter AXI_DMEM_MASK = 'h40;
+    // Select the ordering scheme for data interface:
+    //   - 0: ongoing reads block write request, ongoing writes block read request
+    //   - 1: concurrent r/w requests can be issued if don't target same cache blocks
+    parameter AXI_ORDERING = 0;
 
     // Enable Instruction & data caches
     parameter CACHE_EN = `CACHE_EN;
@@ -301,6 +305,7 @@ module friscv_testbench(
             .AXI_DMEM_W                 (AXI_DMEM_W),
             .AXI_IMEM_MASK              (AXI_IMEM_MASK),
             .AXI_DMEM_MASK              (AXI_DMEM_MASK),
+            .AXI_ORDERING               (AXI_ORDERING),
             .CACHE_EN                   (CACHE_EN),
             .ICACHE_BLOCK_W             (ICACHE_BLOCK_W),
             .ICACHE_PREFETCH_EN         (ICACHE_PREFETCH_EN),
@@ -487,6 +492,7 @@ module friscv_testbench(
             .AXI_DATA_W                 (AXI_DATA_W),
             .AXI_IMEM_MASK              (AXI_IMEM_MASK),
             .AXI_DMEM_MASK              (AXI_DMEM_MASK),
+            .AXI_ORDERING               (AXI_ORDERING),
             .CACHE_EN                   (CACHE_EN),
             .ICACHE_PREFETCH_EN         (ICACHE_PREFETCH_EN),
             .ICACHE_BLOCK_W             (ICACHE_BLOCK_W),

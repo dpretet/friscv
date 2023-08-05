@@ -1,6 +1,7 @@
 # read design modules
 read -define XLEN=32
 read -incdir ../rtl
+read -sv2012 ../rtl/friscv_lut.sv
 read -sv2012 ../rtl/friscv_csr.sv
 read -sv2012 ../rtl/friscv_registers.sv
 read -sv2012 ../rtl/friscv_alu.sv
@@ -11,6 +12,8 @@ read -sv2012 ../rtl/friscv_processing.sv
 read -sv2012 ../rtl/friscv_bus_perf.sv
 read -sv2012 ../rtl/friscv_scfifo.sv
 read -sv2012 ../rtl/friscv_ram.sv
+read -sv2012 ../rtl/friscv_dpram.sv
+read -sv2012 ../rtl/friscv_dprambe.sv
 read -sv2012 ../rtl/friscv_rambe.sv
 read -sv2012 ../rtl/friscv_icache.sv
 read -sv2012 ../rtl/friscv_dcache.sv

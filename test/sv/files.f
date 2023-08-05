@@ -6,6 +6,8 @@
 ../../rtl/friscv_scfifo.sv
 ../../rtl/friscv_ram.sv
 ../../rtl/friscv_rambe.sv
+../../rtl/friscv_dpram.sv
+../../rtl/friscv_dprambe.sv
 ../../rtl/friscv_icache.sv
 ../../rtl/friscv_dcache.sv
 ../../rtl/friscv_cache_io_fetcher.sv

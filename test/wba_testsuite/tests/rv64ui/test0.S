@@ -7,14 +7,8 @@
 #include "riscv_test.h"
 #include "test_macros.h"
 
-# Test 1: Sequence of LUI / AUIPC / Arithmetic instructions
+# Test 0: No instruction, just check the core boots correctly
 #
-# Injects a set of alternating LUI / AUIPC / Aritmetic instructions to ensure the
-# control unit correctly handles this kind of situation.
-#
-# All these instructions are handled in one cycle and shouldn't introduce any
-# wait cycles between each others.
-
 # x3/gp is the tes number in the unit test flow, must be greater than 0
 # 0 means the processor din't move out the initialization correctly and is stucked
 

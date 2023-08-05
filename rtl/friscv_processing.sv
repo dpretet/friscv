@@ -35,8 +35,13 @@ module friscv_processing
         parameter INST_QUEUE_DEPTH  = 0,
         // Number of outstanding requests used by the LOAD/STORE unit
         parameter DATA_OSTDREQ_NUM  = 8,
-        // Reorder read completion internally in Memfy, not in dCache
-        parameter AXI_REORDER_CPL = 0,
+        // Select the ordering scheme:
+        //   - 0: ongoing reads block write request, ongoing writes block read request
+        //   - 1: concurrent r/w requests can be issued if don't target same cache blocks
+        parameter AXI_ORDERING = 0,
+        // Block width defining only the data payload, in bits, must an
+        // integer multiple of XLEN (power of two)
+        parameter DCACHE_BLOCK_W = XLEN*4,
         // IO regions for direct read/write access
         parameter IO_MAP_NB = 1,
         // IO address ranges, organized by memory region as END-ADDR_START-ADDR:
@@ -115,20 +120,20 @@ module friscv_processing
     logic                        m_valid;
     logic                        m_ready;
     logic                        m_inst;
- 	logic [NB_INT_REG      -1:0] m_regs_sts;
-	logic                        div_pending;
+    logic [NB_INT_REG      -1:0] m_regs_sts;
+    logic                        div_pending;
 
     logic                        memfy_valid;
     logic                        memfy_ready;
     logic                        memfy_pending_read;
     logic                        memfy_pending_write;
- 	logic [NB_INT_REG      -1:0] memfy_regs_sts;
+    logic [NB_INT_REG      -1:0] memfy_regs_sts;
     logic                        ls_inst;
 
     logic                        proc_valid_p;
     logic                        proc_ready_p;
     logic [`INST_BUS_W     -1:0] proc_instbus_p;
-	logic 						 proc_busy_r;
+    logic                        proc_busy_r;
 
     logic [2               -1:0] memfy_exceptions;
 
@@ -191,7 +196,7 @@ module friscv_processing
         assign proc_ready = proc_ready_p;
 
         assign proc_busy = !proc_ready || memfy_pending_read;
-		assign proc_busy_r = 1'b0;
+        assign proc_busy_r = 1'b0;
 
     end
     endgenerate
@@ -204,21 +209,21 @@ module friscv_processing
     assign rd     = proc_instbus_p[`RD     +: `RD_W    ];
 
 
-	// Hazard free flags: ensure the memfy and m extension are not 
-	// processing instruction which the rd outputs are not sources for
-	// the next instruction. If not, an outstanding instruction can 
-	// be issued and processed in parallel. 
-	// Checks also RD is not the same between instructions to ensure execution
-	// order is kept in-order. For instance:
-	// sw x10, 0(x0)
-	// lw x10, 0
-	// li x10, 1
-	// lw is here useless, a kind of NOP while li will overwrite it but the
-	// read outstqnding request will certainly arrived far after the li
-	// instruction and corrupt the expected value of the user.
-	assign memfy_hzd_free = memfy_regs_sts[rs1] & memfy_regs_sts[rs2] & memfy_regs_sts[rd];
-	assign m_hzd_free = m_regs_sts[rs1] & m_regs_sts[rs2] & m_regs_sts[rd];
-	assign hzd_free = m_hzd_free & memfy_hzd_free;
+    // Hazard free flags: ensure the memfy and m extension are not 
+    // processing instruction which the rd outputs are not sources for
+    // the next instruction. If not, an outstanding instruction can 
+    // be issued and processed in parallel. 
+    // Checks also RD is not the same between instructions to ensure execution
+    // order is kept in-order. For instance:
+    // sw x10, 0(x0)
+    // lw x10, 0
+    // li x10, 1
+    // lw is here useless, a kind of NOP while li will overwrite it but the
+    // read outstqnding request will certainly arrived far after the li
+    // instruction and corrupt the expected value of the user.
+    assign memfy_hzd_free = memfy_regs_sts[rs1] & memfy_regs_sts[rs2] & memfy_regs_sts[rd];
+    assign m_hzd_free = m_regs_sts[rs1] & m_regs_sts[rs2] & m_regs_sts[rd];
+    assign hzd_free = m_hzd_free & memfy_hzd_free;
 
 
     ///////////////////////////////////////////////////////////////////////////
@@ -234,47 +239,58 @@ module friscv_processing
 
     assign m_inst = opcode==`MULDIV & funct7==7'b0000001;
 
-	always_comb begin
+    /*
+        Previous version without hazard detection
+        https://github.com/dpretet/friscv/blob/2aaefe815510b415dfe0ec10175f137d00a4ceec/rtl/friscv_processing.sv
 
-		case ({ls_inst,m_inst,i_inst})
+    assign alu_valid = proc_valid_p & memfy_ready & m_ready & i_inst & !memfy_pending_read;
+    assign memfy_valid = proc_valid_p & alu_ready & m_ready & ls_inst;
+    assign m_valid = proc_valid_p & alu_ready & memfy_ready & m_inst & !memfy_pending_read;
 
-			default: begin
-				alu_valid = 1'b0;
-				m_valid = 1'b0;
-				memfy_valid = 1'b0;
-				proc_ready_p = 1'b1;
-			end
+    assign proc_ready_p = alu_ready & memfy_ready & m_ready;
+    */
+    
+    always_comb begin
 
-			// Instruction to process with ALU
-			3'b001 : begin
-				alu_valid = proc_valid_p & hzd_free;
-				m_valid = 1'b0;
-				memfy_valid = 1'b0;
-				proc_ready_p = alu_ready & hzd_free;
-			end
+        case ({ls_inst,m_inst,i_inst})
 
-			// Instruction to process with Mult/Div extension
-			3'b010 : begin
-				alu_valid = 1'b0;
-				m_valid = proc_valid_p & hzd_free;
-				memfy_valid = 1'b0;
-				proc_ready_p = m_ready & hzd_free;
-			end
+            default: begin
+                alu_valid = 1'b0;
+                m_valid = 1'b0;
+                memfy_valid = 1'b0;
+                proc_ready_p = 1'b1;
+            end
 
-			// Instruction to load/store memory controller
-			// We don't check hazard with previous memfy instruction, the 
-			// module serves them in-order and dCache sends back in-order
-			// too. Only m extension is checked
-			3'b100 : begin
-				alu_valid = 1'b0;
-				m_valid = 1'b0;
-				memfy_valid = proc_valid_p & hzd_free;
-				proc_ready_p = memfy_ready & hzd_free;
-			end
+            // Instruction to process with ALU
+            3'b001 : begin
+                alu_valid = proc_valid_p & hzd_free;
+                m_valid = 1'b0;
+                memfy_valid = 1'b0;
+                proc_ready_p = alu_ready & hzd_free;
+            end
 
-		endcase
+            // Instruction to process with Mult/Div extension
+            3'b010 : begin
+                alu_valid = 1'b0;
+                m_valid = proc_valid_p & hzd_free;
+                memfy_valid = 1'b0;
+                proc_ready_p = m_ready & hzd_free;
+            end
 
-	end
+            // Instruction to load/store memory controller
+            // We don't check hazard with previous memfy instruction, the 
+            // module serves them in-order and dCache sends back in-order
+            // too. Only m extension is checked
+            3'b100 : begin
+                alu_valid = 1'b0;
+                m_valid = 1'b0;
+                memfy_valid = proc_valid_p & hzd_free;
+                proc_ready_p = memfy_ready & hzd_free;
+            end
+
+        endcase
+
+    end
 
     ///////////////////////////////////////////////////////////////////////////
     //
@@ -308,13 +324,14 @@ module friscv_processing
     friscv_memfy
     #(
         .XLEN              (XLEN),
-		.NB_INT_REG        (NB_INT_REG),
+        .NB_INT_REG        (NB_INT_REG),
         .MAX_OR            (DATA_OSTDREQ_NUM),
         .AXI_ADDR_W        (AXI_ADDR_W),
         .AXI_ID_W          (AXI_ID_W),
         .AXI_DATA_W        (AXI_DATA_W),
         .AXI_ID_MASK       (AXI_ID_MASK),
-        .AXI_REORDER_CPL   (AXI_REORDER_CPL),
+        .AXI_ORDERING      (AXI_ORDERING),
+        .DCACHE_BLOCK_W    (DCACHE_BLOCK_W),
         .IO_MAP_NB         (IO_MAP_NB),
         .IO_MAP            (IO_MAP)
     )
@@ -327,7 +344,7 @@ module friscv_processing
         .memfy_ready         (memfy_ready),
         .memfy_pending_read  (memfy_pending_read),
         .memfy_pending_write (memfy_pending_write),
-		.memfy_regs_sts      (memfy_regs_sts),
+        .memfy_regs_sts      (memfy_regs_sts),
         .memfy_fenceinfo     (proc_fenceinfo),
         .memfy_instbus       (proc_instbus_p),
         .memfy_exceptions    (memfy_exceptions),
@@ -376,28 +393,28 @@ module friscv_processing
     )
     m_ext
     (
-        .aclk       	(aclk),
-        .aresetn    	(aresetn),
-        .srst       	(srst),
-        .m_valid    	(m_valid),
-        .m_ready    	(m_ready),
-        .m_instbus  	(proc_instbus_p),
-		.m_regs_sts 	(m_regs_sts),
-		.div_pending	(div_pending),
-        .m_rs1_addr 	(proc_rs1_addr[M_IX*5+:5]),
-        .m_rs1_val  	(proc_rs1_val[M_IX*XLEN+:XLEN]),
-        .m_rs2_addr 	(proc_rs2_addr[M_IX*5+:5]),
-        .m_rs2_val  	(proc_rs2_val[M_IX*XLEN+:XLEN]),
-        .m_rd_wr    	(proc_rd_wr[M_IX]),
-        .m_rd_addr  	(proc_rd_addr[M_IX*5+:5]),
-        .m_rd_val   	(proc_rd_val[M_IX*XLEN+:XLEN]),
-        .m_rd_strb  	(proc_rd_strb[M_IX*XLEN/8+:XLEN/8])
+        .aclk           (aclk),
+        .aresetn        (aresetn),
+        .srst           (srst),
+        .m_valid        (m_valid),
+        .m_ready        (m_ready),
+        .m_instbus      (proc_instbus_p),
+        .m_regs_sts     (m_regs_sts),
+        .div_pending    (div_pending),
+        .m_rs1_addr     (proc_rs1_addr[M_IX*5+:5]),
+        .m_rs1_val      (proc_rs1_val[M_IX*XLEN+:XLEN]),
+        .m_rs2_addr     (proc_rs2_addr[M_IX*5+:5]),
+        .m_rs2_val      (proc_rs2_val[M_IX*XLEN+:XLEN]),
+        .m_rd_wr        (proc_rd_wr[M_IX]),
+        .m_rd_addr      (proc_rd_addr[M_IX*5+:5]),
+        .m_rd_val       (proc_rd_val[M_IX*XLEN+:XLEN]),
+        .m_rd_strb      (proc_rd_strb[M_IX*XLEN/8+:XLEN/8])
     );
 
     end else begin: NO_M_EXTENSION
 
         assign m_ready = 1'b1;
-		assign m_regs_sts = '1;
+        assign m_regs_sts = '1;
 
     end
     endgenerate

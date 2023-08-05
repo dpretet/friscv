@@ -40,23 +40,28 @@ module friscv_memfy
 
     #(
         // Architecture selection
-        parameter XLEN              = 32,
+        parameter XLEN           = 32,
         // Number of integer registers (RV32I = 32, RV32E = 16)
-        parameter NB_INT_REG        = 32,
+        parameter NB_INT_REG     = 32,
         // Address bus width defined for both control and AXI4 address signals
-        parameter AXI_ADDR_W        = XLEN,
+        parameter AXI_ADDR_W     = XLEN,
         // AXI ID width, setup by default to 8 and unused
-        parameter AXI_ID_W          = 8,
+        parameter AXI_ID_W       = 8,
         // AXI4 data width, for instruction and a data bus
-        parameter AXI_DATA_W        = XLEN,
+        parameter AXI_DATA_W     = XLEN,
         // ID used to identify the dta abus in the infrastructure
-        parameter AXI_ID_MASK       = 'h20,
-        // Reorder read completion for Memfy
-        parameter AXI_REORDER_CPL = 0,
+        parameter AXI_ID_MASK    = 'h20,
+        // Select the ordering scheme:
+        //   - 0: ongoing reads block write request, ongoing writes block read request
+        //   - 1: concurrent r/w requests can be issued if don't target same cache blocks
+        parameter AXI_ORDERING = 0,
+        // Block width defining only the data payload, in bits, must an
+        // integer multiple of XLEN (power of two)
+        parameter DCACHE_BLOCK_W = XLEN*4,
         // Maximum outstanding request supported
         parameter MAX_OR = 8,
         // Add pipeline on Rd write stage
-        parameter SYNC_RD_WR = 0,
+        parameter SYNC_RD_WR = 1,
         // IO regions for direct read/write access
         parameter IO_MAP_NB = 1,
         // IO address ranges, organized by memory region as END-ADDR_START-ADDR:
@@ -117,176 +122,19 @@ module friscv_memfy
         input  wire  [AXI_DATA_W      -1:0] rdata
     );
 
-
-    ///////////////////////////////////////////////////////////////////////////
-    //
-    // AXI Alignment Functions
-    //
-    ///////////////////////////////////////////////////////////////////////////
-
-
-    ///////////////////////////////////////////////////////////////////////////
-    // Align the read memory value to write in RD. Right shift the data.
-    // Args:
-    //      - data: the word to align
-    //      - offset: the shift to apply, ADDR's LSBs
-    // Returns:
-    //      - data aligned ready to store
-    ///////////////////////////////////////////////////////////////////////////
-    function automatic logic [XLEN-1:0] get_axi_data(
-
-        input logic  [XLEN  -1:0] data,
-        input logic  [2     -1:0] offset
-    );
-        if (offset==2'b00) get_axi_data = data;
-        if (offset==2'b01) get_axi_data = {data[XLEN- 8-1:0], data[XLEN-1-:8]};
-        if (offset==2'b10) get_axi_data = {data[XLEN-16-1:0], data[XLEN-1-:16]};
-        if (offset==2'b11) get_axi_data = {data[XLEN-24-1:0], data[XLEN-1-:24]};
-
-    endfunction
-
-
-    ///////////////////////////////////////////////////////////////////////////
-    // Align the write strobes to write in memory
-    // Args:
-    //      - strb: the strobes to align
-    //      - offset: the shift to apply, ADDR's LSBs
-    // Returns:
-    //      - strobes aligned ready to store
-    ///////////////////////////////////////////////////////////////////////////
-    function automatic logic [XLEN/8-1:0] aligned_axi_strb(
-
-        input logic  [XLEN/8-1:0] strb,
-        input logic  [2     -1:0] offset
-    );
-        if (offset==2'b00) aligned_axi_strb = strb;
-        if (offset==2'b01) aligned_axi_strb = {strb[XLEN/8-2:0], 1'b0};
-        if (offset==2'b10) aligned_axi_strb = {strb[XLEN/8-3:0], 2'b0};
-        if (offset==2'b11) aligned_axi_strb = {strb[XLEN/8-4:0], 3'b0};
-
-    endfunction
-
-    ///////////////////////////////////////////////////////////////////////////
-    // Create the strobe vector to aply during a STORE instruction
-    // Args:
-    //      - funct3: opcode's funct3 identifier
-    //      - offset: the shift to apply, ADDR's LSBs
-    // Returns:
-    //      - the ready to use strobes
-    ///////////////////////////////////////////////////////////////////////////
-    function automatic logic [XLEN/8-1:0] get_axi_strb(
-
-        input logic  [2:0] funct3,
-        input logic  [1:0] offset
-    );
-        if (funct3==`SB) get_axi_strb = aligned_axi_strb({{(XLEN/8-1){1'b0}},1'b1}, offset);
-        if (funct3==`SH) get_axi_strb = aligned_axi_strb({{(XLEN/8-2){1'b0}},2'b11}, offset);
-        if (funct3==`SW) get_axi_strb = aligned_axi_strb({(XLEN/8){1'b1}}, offset);
-
-    endfunction
-
-
-    ///////////////////////////////////////////////////////////////////////////
-    //
-    // ISA registers Alignment functions
-    //
-    ///////////////////////////////////////////////////////////////////////////
-
-
-    ///////////////////////////////////////////////////////////////////////////
-    // Align the read memory value to write in RD. Right shift the data.
-    // Args:
-    //      - data: the word to align
-    //      - offset: the shift to apply, ADDR's LSBs
-    // Returns:
-    //      - data aligned ready to store
-    ///////////////////////////////////////////////////////////////////////////
-    function automatic logic [XLEN-1:0] get_aligned_rd_data(
-
-        input logic  [XLEN  -1:0] data,
-        input logic  [2     -1:0] offset
-    );
-        if (offset==2'b00) get_aligned_rd_data = data;
-        if (offset==2'b01) get_aligned_rd_data = {data[XLEN-24-1:0], data[XLEN-1:8]};
-        if (offset==2'b10) get_aligned_rd_data = {data[XLEN-16-1:0], data[XLEN-1:16]};
-        if (offset==2'b11) get_aligned_rd_data = {data[XLEN- 8-1:0], data[XLEN-1:24]};
-
-    endfunction
-
-    ///////////////////////////////////////////////////////////////////////////
-    // Create the strobe vector to apply during a RD write
-    // Args:
-    //      - funct3: opcode's funct3 identifier
-    //      - rdata: the word to align
-    //      - offset: the shift to apply, ADDR's LSBs
-    // Returns:
-    //      - the ready to use strobes
-    ///////////////////////////////////////////////////////////////////////////
-    function automatic logic [XLEN-1:0] get_rd_val(
-
-        input logic  [3   -1:0] funct3,
-        input logic  [XLEN-1:0] data,
-        input logic  [2   -1:0] offset
-    );
-        logic [XLEN-1:0] data_aligned;
-
-        data_aligned = get_aligned_rd_data(data, offset);
-
-        if  (funct3==`LB)  get_rd_val = {{24{data_aligned[7]}}, data_aligned[7:0]};
-        if  (funct3==`LBU) get_rd_val = {{24{1'b0}}, data_aligned[7:0]};
-        if  (funct3==`LH)  get_rd_val = {{16{data_aligned[15]}}, data_aligned[15:0]};
-        if  (funct3==`LHU) get_rd_val = {{16{1'b0}}, data_aligned[15:0]};
-        if  (funct3==`LW)  get_rd_val = data_aligned;
-
-    endfunction
-
-    ///////////////////////////////////////////////////////////////////////////
-    // Create the strobe vector to apply during a RD write
-    // Args:
-    //      - funct3: opcode's funct3 identifier
-    //      - phase: first (0) or second (1) phase of the STORE request
-    // Returns:
-    //      - the ready to use strobes
-    ///////////////////////////////////////////////////////////////////////////
-    function automatic logic [XLEN/8-1:0] get_rd_strb(
-
-        input logic  [3   -1:0] funct3,
-        input logic  [2   -1:0] offset
-    );
-        if (funct3==`LB || funct3==`LBU) begin
-            get_rd_strb = {(XLEN/8){1'b1}};
-        end
-        if (funct3==`LH || funct3==`LHU)  begin
-            if (offset==2'h3) begin
-                get_rd_strb = {{(XLEN/8-1){1'b0}},1'b1};
-            end else begin
-                get_rd_strb = {(XLEN/8){1'b1}};
-            end
-        end
-        if (funct3==`LW) begin
-            if (offset==2'h0) begin
-                get_rd_strb = {(XLEN/8){1'b1}};
-            end else if (offset==2'h1) begin
-                get_rd_strb = {{(XLEN/8-3){1'b0}},3'b111};
-            end else if (offset==2'h2) begin
-                get_rd_strb = {{(XLEN/8-2){1'b0}},2'b11};
-            end else if (offset==2'h3) begin
-                get_rd_strb = {{(XLEN/8-1){1'b0}},1'b1};
-            end
-        end
-
-    endfunction
-
-
     ///////////////////////////////////////////////////////////////////////////
     //
     // Parameters and variables declaration
     //
     ///////////////////////////////////////////////////////////////////////////
 
+    // All AXI and RD write functions
+    `include "friscv_memfy_h.sv"
+
     localparam MAX_OR_W = $clog2(MAX_OR) + 1;
 
     logic signed [XLEN        -1:0] addr;
+    logic        [XLEN        -1:0] addr_to_check;
     logic        [`OPCODE_W   -1:0] opcode;
     logic        [`FUNCT3_W   -1:0] funct3;
     logic        [`RS1_W      -1:0] rs1;
@@ -312,13 +160,12 @@ module friscv_memfy
     logic                           is_io_req;
     logic        [4           -1:0] acache;
 
-    logic        [MAX_OR_W    -1:0] wr_or_cnt;
-    logic                           max_wr_or;
-    logic        [MAX_OR_W    -1:0] rd_or_cnt;
-    logic                           max_rd_or;
-    logic                           waiting_rd_cpl;
-    logic                           waiting_wr_cpl;
     logic        [MAX_OR_W    -1:0] regs_or[NB_INT_REG-1:0];
+
+    logic                           used_in_rdch;
+    logic                           used_in_wch;
+    logic                           max_wr_or;
+    logic                           max_rd_or;
 
     typedef enum logic[1:0] {
         IDLE = 0,
@@ -327,6 +174,16 @@ module friscv_memfy
     } seq_fsm;
 
     seq_fsm state;
+
+    // Tracer setup
+    `ifdef TRACE_MEMFY
+    integer f;
+    string fname;
+    initial begin
+        $sformat(fname, "trace_%s.txt", "memfy");
+        f = $fopen(fname, "w");
+    end
+    `endif
 
     ///////////////////////////////////////////////////////////////////////////
     //
@@ -421,7 +278,7 @@ module friscv_memfy
                         // STORE
                         if (opcode==`STORE) begin
 
-                            if (waiting_rd_cpl || arvalid) begin
+                            if (used_in_rdch || arvalid) begin
                                 state <= WAIT;
                                 awvalid <= 1'b0;
                                 wvalid <= 1'b0;
@@ -445,7 +302,7 @@ module friscv_memfy
 
                         // LOAD
                         end else begin
-                            if (waiting_wr_cpl || awvalid) begin
+                            if (used_in_wch || awvalid) begin
                                 state <= WAIT;
                                 arvalid <= 1'b0;
                                 memfy_ready_fsm <= 1'b0;
@@ -469,7 +326,7 @@ module friscv_memfy
                     end
                 end
 
-                // SERVE: LOAD or STORE instructions
+                // SERVE: LOAD or STORE instructions execution when a AREADY was down
                 SERVE: begin
 
                     //LOAD
@@ -497,13 +354,13 @@ module friscv_memfy
 
                 end
 
-                // WAIT: Wait for all write completion have been received before moving to LOAD
+                // WAIT: Wait for all completions have been received before moving to LOAD
                 WAIT: begin
 
-                    if (opcode_r==`LOAD && !waiting_wr_cpl) begin
+                    if (opcode_r==`LOAD && !used_in_wch) begin
                         state <= SERVE;
                         arvalid <= 1'b1;
-                    end else if (opcode_r==`STORE && !waiting_rd_cpl) begin
+                    end else if (opcode_r==`STORE && !used_in_rdch) begin
                         state <= SERVE;
                         awvalid <= 1'b1;
                         wvalid <= 1'b1;
@@ -523,43 +380,12 @@ module friscv_memfy
     assign memfy_ready = memfy_ready_fsm & !rd_or_full & !stall_bus;
 
 
-    ///////////////////////////////////////////////////////////////////////////
-    // Store outstanding read request info for data alignment of the completion
-    ///////////////////////////////////////////////////////////////////////////
-
-    assign push_rd_or = memfy_valid & memfy_ready & (opcode==`LOAD);
-
-    friscv_scfifo
-    #(
-        .PASS_THRU  (0),
-        .ADDR_WIDTH ($clog2(MAX_OR)),
-        .DATA_WIDTH (10)
-    )
-    rd_or_fifo
-    (
-        .aclk     (aclk),
-        .aresetn  (aresetn),
-        .srst     (srst),
-        .flush    (1'b0),
-        .data_in  ({rd, funct3, addr[1:0]}),
-        .push     (push_rd_or),
-        .full     (rd_or_full),
-        .afull    (),
-        .data_out ({rd_r, funct3_r, offset}),
-        .pull     (rvalid & rready),
-        .empty    (rd_or_empty),
-        .aempty   ()
-    );
-
-    always @ (posedge aclk) begin
-        `ifdef FRISCV_SIM
-        if (aresetn && rvalid && rready && rd_or_empty)
-            $error("ERROR: (@ %0t) - %s: Receive a read completion but doesn't expect it", $realtime, "Memfy");
-        `endif
-    end
-
     ////////////////////////////////////////////////////////////////////////
+    //
     // Track which integer registers is used by an outstanding request
+    // Used in processing to schedule the operations across the ALU / Memfy
+    // and all extensions
+    //
     ////////////////////////////////////////////////////////////////////////
 
     always @ (posedge aclk or negedge aresetn) begin
@@ -581,7 +407,7 @@ module friscv_memfy
             end else begin
                 if ((memfy_valid && memfy_ready && opcode==`LOAD && !max_rd_or && rd == i[4:0]) &&
                    !(rvalid & rready && rd_r==i[4:0]))
-               begin
+                begin
                     regs_or[i] <= regs_or[i] + 1;
 
                 end else if (!(memfy_valid && memfy_ready && opcode==`LOAD && !max_rd_or && rd == i[4:0]) &&
@@ -598,69 +424,95 @@ module friscv_memfy
     end
 
     ////////////////////////////////////////////////////////////////////////
-    // Track the current read/write outstanding requests waiting completions
+    //
+    // Ordering rules checker. Count oustanding requests to be sure we
+    // don't use too much bandwidth.
+    // If AXI_ORDERING = 0, the read channel block further write request
+    // until complete completion, and vice versa.
+    // If AXI_ORDERING = 1, read and write can be issued concurrently as
+    // long they don't targe the same memory address.
+    //
     ////////////////////////////////////////////////////////////////////////
 
-    always @ (posedge aclk or negedge aresetn) begin
+    // Use AXI address if FSM is waiting for a schedule. Use awaddr but is equal to araddr
+    assign addr_to_check = (memfy_ready_fsm) ? addr : awaddr;
 
-        if (!aresetn) begin
-            wr_or_cnt <= {MAX_OR_W{1'b0}};
-            rd_or_cnt <= {MAX_OR_W{1'b0}};
+    friscv_memfy_ordering
+    #(
+        .AXI_ORDERING   (AXI_ORDERING),
+        .MAX_OR         (MAX_OR),
+        .AXI_ADDR_W     (AXI_ADDR_W),
+        .MEM_BLOCK_W    (XLEN)
+    )
+    ordering
+    (
+        .aclk         (aclk),
+        .aresetn      (aresetn),
+        .srst         (srst),
+        .memfy_valid  (memfy_valid),
+        .memfy_ready  (memfy_ready),
+        .memfy_opcode (opcode),
+        .memfy_addr   (addr_to_check),
+        .memfy_rd_wr  (memfy_rd_wr),
+        .bvalid       (bvalid),
+        .bready       (bready),
+        .rvalid       (rvalid),
+        .rready       (rready),
+        .wr_coll      (used_in_wch),
+        .rd_coll      (used_in_rdch),
+        .max_wr_or    (max_wr_or),
+        .max_rd_or    (max_rd_or),
+        .pending_wr   (memfy_pending_write),
+        .pending_rd   (memfy_pending_read)
+    );
 
-        end else if (srst) begin
-            wr_or_cnt <= {MAX_OR_W{1'b0}};
-            rd_or_cnt <= {MAX_OR_W{1'b0}};
 
-        end else begin
+    ////////////////////////////////////////////////////////////////////////
+    // Manage the RD write operation once read channel handshakes
+    ////////////////////////////////////////////////////////////////////////
 
-            // Write xfers tracker
-            if (memfy_valid && memfy_ready && opcode==`STORE && !bvalid && !max_wr_or) begin
-                wr_or_cnt <= wr_or_cnt + 1'b1;
-            end else if (!(memfy_valid && memfy_ready && opcode==`STORE) && bvalid && bready && wr_or_cnt!={MAX_OR_W{1'b0}}) begin
-                wr_or_cnt <= wr_or_cnt - 1'b1;
-            end
+    // Store outstanding read request info for data alignment of the completion
 
-            // Read xfers tracker
-            if (memfy_valid && memfy_ready && opcode==`LOAD && !memfy_rd_wr && !max_rd_or) begin
-                rd_or_cnt <= rd_or_cnt + 1'b1;
-            end else if (!(memfy_valid && memfy_ready && opcode==`LOAD) && memfy_rd_wr && rd_or_cnt!={MAX_OR_W{1'b0}}) begin
-                rd_or_cnt <= rd_or_cnt - 1'b1;
-            end
+    assign push_rd_or = memfy_valid & memfy_ready & (opcode==`LOAD);
 
-            `ifdef TRACE_MEMFY
-            //synthesis translate_off
-            //synopsys translate_off
-            if ((memfy_valid && memfy_ready && opcode==`STORE && !bvalid && max_wr_or) begin
-                $display("ERROR: (@%0t) %s: Reached maximum write OR number but continue to issue requests", $realtime, "MEMFY");
-            end else if (!(memfy_valid && memfy_ready && opcode==`STORE) && bvalid && bready && wr_or_cnt=={MAX_OR_W{1'b0}}) begin
-                $display("ERROR: (@%0t) %s: Freeing a write OR but counter is already 0", $realtime, "MEMFY");
-            end
+    friscv_scfifo
+    #(
+        .PASS_THRU  (0),
+        .ADDR_WIDTH ($clog2(MAX_OR)),
+        .DATA_WIDTH (10)
+    )
+        rd_or_fifo
+        (
+        .aclk     (aclk),
+        .aresetn  (aresetn),
+        .srst     (srst),
+        .flush    (1'b0),
+        .data_in  ({rd, funct3, addr[1:0]}),
+        .push     (push_rd_or),
+        .full     (rd_or_full),
+        .afull    (),
+        .data_out ({rd_r, funct3_r, offset}),
+        .pull     (rvalid & rready),
+        .empty    (rd_or_empty),
+        .aempty   ()
+    );
 
-            if (memfy_valid && memfy_ready && opcode==`LOAD && !memfy_rd_wr && && max_rd_or) begin
-                $display("ERROR: (@%0t) %s: Reached maximum read OR number but continue to issue requests", $realtime, "MEMFY");
-            end else if (!(memfy_valid && memfy_ready && opcode==`LOAD) && memfy_rd_wr && rd_or_cnt=={MAX_OR_W{1'b0}}) begin
-                $display("ERROR: (@%0t) %s: Freeing a read OR but counter is already 0", $realtime, "MEMFY");
-            end
-            //synopsys translate_on
-            //synthesis translate_on
-            `endif
-        end
+    always @ (posedge aclk) begin
+        `ifdef FRISCV_SIM
+        if (aresetn && rvalid && rready && rd_or_empty)
+            $error("ERROR: (@ %0t) - %s: Receive a read completion but doesn't expect it", $realtime, "Memfy");
+        `endif
+
+        `ifdef TRACE_MEMFY
+        if (aresetn && arvalid && arready)
+            $fwrite(f, "(@ %0t) Read address %x\n", $realtime, araddr);
+        if (aresetn && awvalid && awready)
+            $fwrite(f, "(@ %0t) Write address %x\n", $realtime, awaddr);
+        if (aresetn && wvalid && wready)
+            $fwrite(f, "(@ %0t) Write data %x / %0x\n", $realtime, wdata, wstrb);
+        `endif
+
     end
-
-    assign max_wr_or = (wr_or_cnt==MAX_OR[MAX_OR_W-1:0]) ? 1'b1 : 1'b0;
-    assign max_rd_or = (rd_or_cnt==MAX_OR[MAX_OR_W-1:0]) ? 1'b1 : 1'b0;
-
-    assign waiting_wr_cpl = (wr_or_cnt!={MAX_OR_W{1'b0}} && !(wr_or_cnt=={{(MAX_OR_W-1){1'b0}}, 1'b1} & bvalid)) ? 1'b1 : 1'b0;
-    assign waiting_rd_cpl = (rd_or_cnt!={MAX_OR_W{1'b0}} && !(rd_or_cnt=={{(MAX_OR_W-1){1'b0}}, 1'b1} & rvalid)) ? 1'b1 : 1'b0;
-
-    // Flags for externals
-    assign memfy_pending_read = waiting_rd_cpl;
-    assign memfy_pending_write = waiting_wr_cpl;
-
-
-    ////////////////////////////////////////////////////////////////////////
-    // Manage the RD write operation
-    ////////////////////////////////////////////////////////////////////////
 
     generate if (SYNC_RD_WR) begin
 
@@ -676,7 +528,6 @@ module friscv_memfy
             memfy_rd_strb <= {XLEN/8{1'b0}};
             memfy_rd_val <= {XLEN{1'b0}};
         end else begin
-            // Write into RD once the read data channel handshakes
             memfy_rd_wr <= rvalid & rready;
             memfy_rd_addr <= rd_r;
             memfy_rd_strb <= get_rd_strb(funct3_r, offset);
@@ -745,7 +596,7 @@ module friscv_memfy
 
     ------------------------------------------------------------------------------------------------
          ACACHE      |              AWCACHE                  |              ARCACHE
-    [3] [2] [1] [0]  |                                       |                     
+    [3] [2] [1] [0]  |                                       |
     ------------------------------------------------------------------------------------------------
      0   0   0   0   | Device Non-cacheable Non-bufferable   | Device Non-cacheable Non-bufferable
      0   0   0   1   | Device Non-cacheable Bufferable       | Device Non-cacheable Bufferable
@@ -757,7 +608,7 @@ module friscv_memfy
                      | Write-Through Read-Allocate           |
     ------------------------------------------------------------------------------------------------
      0   1   1   1   | Write-Back No-Allocate                | Write-Back Read-Allocate
-                     | Write-Back Read-Allocate              | 
+                     | Write-Back Read-Allocate              |
     ------------------------------------------------------------------------------------------------
      1   0   1   0   | Write-Through Write-Allocate          | Write-Through No-Allocate
                      |                                       | Write-Through Write-Allocate
@@ -800,21 +651,23 @@ module friscv_memfy
     // Exception flags, driven back to control unit
     //////////////////////////////////////////////////////////////////////////
 
-    // LOAD is not XLEN-boundary aligned
     assign load_misaligned = (opcode==`LOAD && (funct3==`LH || funct3==`LHU) &&
-                                (addr[1:0]==2'h3 || addr[1:0]==2'h1))           ? 1'b1 :
-                             (opcode==`LOAD && funct3==`LW  && addr[1:0]!=2'b0) ? 1'b1 :
+                                (addr[1:0]==2'h3 || addr[1:0]==2'h1))           ? memfy_valid & memfy_ready :
+                             (opcode==`LOAD && funct3==`LW && addr[1:0]!=2'b0)  ? memfy_valid & memfy_ready :
                                                                                   1'b0 ;
 
-    // STORE is not XLEN-boundary aligned
     assign store_misaligned = (opcode==`STORE && funct3==`SH &&
-                                (addr[1:0]==2'h3 || addr[1:0]==2'h1))            ? 1'b1 :
-                              (opcode==`STORE && funct3==`SW && addr[1:0]!=2'b0) ? 1'b1 :
+                                (addr[1:0]==2'h3 || addr[1:0]==2'h1))            ? memfy_valid & memfy_ready :
+                              (opcode==`STORE && funct3==`SW && addr[1:0]!=2'b0) ? memfy_valid & memfy_ready :
                                                                                    1'b0 ;
-
-    assign memfy_exceptions[`LD_MA] = load_misaligned & memfy_valid & memfy_ready;
-
-    assign memfy_exceptions[`ST_MA] = store_misaligned & memfy_valid & memfy_ready;
+    always @ (posedge aclk or negedge aresetn) begin
+        if (!aresetn) begin
+            memfy_exceptions[`LD_MA] <= '0;
+        end else begin
+            memfy_exceptions[`LD_MA] <= load_misaligned;
+            memfy_exceptions[`ST_MA] <= store_misaligned;
+        end
+    end
 
 endmodule
 

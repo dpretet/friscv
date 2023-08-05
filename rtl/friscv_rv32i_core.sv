@@ -59,6 +59,10 @@ module friscv_rv32i_core
         // ID used by instruction and data buses
         parameter AXI_IMEM_MASK     = 'h10,
         parameter AXI_DMEM_MASK     = 'h20,
+        // Select the ordering scheme for data interface:
+        //   - 0: ongoing reads block write request, ongoing writes block read request
+        //   - 1: concurrent r/w requests can be issued if don't target same cache blocks
+        parameter AXI_ORDERING = 0,
 
         ////////////////////////////////////////////////////////////////////////
         // Caches setup
@@ -590,7 +594,8 @@ module friscv_rv32i_core
         .AXI_ID_W          (AXI_ID_W),
         .AXI_DATA_W        (XLEN),
         .AXI_ID_MASK       (AXI_DMEM_MASK),
-        .AXI_REORDER_CPL   (0),
+        .AXI_ORDERING      (AXI_ORDERING),
+        .DCACHE_BLOCK_W    (DCACHE_BLOCK_W),
         .NB_UNIT           (NB_ALU_UNIT),
         .MAX_UNIT          (MAX_ALU_UNIT),
         .DATA_OSTDREQ_NUM  (DATA_OSTDREQ_NUM),

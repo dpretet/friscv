@@ -59,6 +59,10 @@ module friscv_rv32i_platform
         // ID used by instruction and data buses
         parameter AXI_IMEM_MASK     = 'h80,
         parameter AXI_DMEM_MASK     = 'h10,
+        // Select the ordering scheme for data interface:
+        //   - 0: ongoing reads block write request, ongoing writes block read request
+        //   - 1: concurrent r/w requests can be issued if don't target same cache blocks
+        parameter AXI_ORDERING = 0,
 
         ////////////////////////////////////////////////////////////////////////
         // Cache setup
@@ -315,32 +319,33 @@ module friscv_rv32i_platform
 
     friscv_rv32i_core
     #(
-        .ILEN (ILEN),
-        .XLEN (XLEN),
-        .M_EXTENSION (M_EXTENSION),
-        .F_EXTENSION (F_EXTENSION),
-        .PROCESSING_QUEUE_DEPTH (PROCESSING_QUEUE_DEPTH),
+        .ILEN                    (ILEN),
+        .XLEN                    (XLEN),
+        .M_EXTENSION             (M_EXTENSION),
+        .F_EXTENSION             (F_EXTENSION),
+        .PROCESSING_QUEUE_DEPTH  (PROCESSING_QUEUE_DEPTH),
         .PROCESSING_BUS_PIPELINE (PROCESSING_BUS_PIPELINE),
-        .BOOT_ADDR (BOOT_ADDR),
-        .INST_OSTDREQ_NUM (INST_OSTDREQ_NUM),
-        .DATA_OSTDREQ_NUM (DATA_OSTDREQ_NUM),
-        .HART_ID (HART_ID),
-        .RV32E (RV32E),
-        .AXI_ADDR_W (AXI_ADDR_W),
-        .AXI_ID_W (AXI_ID_W),
-        .AXI_IMEM_W (AXI_IMEM_W),
-        .AXI_DMEM_W (AXI_DMEM_W),
-        .AXI_IMEM_MASK (AXI_IMEM_MASK),
-        .AXI_DMEM_MASK (AXI_DMEM_MASK),
-        .CACHE_EN (CACHE_EN),
-        .ICACHE_PREFETCH_EN (ICACHE_PREFETCH_EN),
-        .ICACHE_BLOCK_W (ICACHE_BLOCK_W),
-        .ICACHE_DEPTH (ICACHE_DEPTH),
-        .IO_MAP_NB (IO_MAP_NB),
-        .IO_MAP (IO_MAP),
-        .DCACHE_PREFETCH_EN (DCACHE_PREFETCH_EN),
-        .DCACHE_BLOCK_W (DCACHE_BLOCK_W),
-        .DCACHE_DEPTH (DCACHE_DEPTH)
+        .BOOT_ADDR               (BOOT_ADDR),
+        .INST_OSTDREQ_NUM        (INST_OSTDREQ_NUM),
+        .DATA_OSTDREQ_NUM        (DATA_OSTDREQ_NUM),
+        .HART_ID                 (HART_ID),
+        .RV32E                   (RV32E),
+        .AXI_ADDR_W              (AXI_ADDR_W),
+        .AXI_ID_W                (AXI_ID_W),
+        .AXI_IMEM_W              (AXI_IMEM_W),
+        .AXI_DMEM_W              (AXI_DMEM_W),
+        .AXI_IMEM_MASK           (AXI_IMEM_MASK),
+        .AXI_DMEM_MASK           (AXI_DMEM_MASK),
+        .AXI_ORDERING            (AXI_ORDERING),
+        .CACHE_EN                (CACHE_EN),
+        .ICACHE_PREFETCH_EN      (ICACHE_PREFETCH_EN),
+        .ICACHE_BLOCK_W          (ICACHE_BLOCK_W),
+        .ICACHE_DEPTH            (ICACHE_DEPTH),
+        .IO_MAP_NB               (IO_MAP_NB),
+        .IO_MAP                  (IO_MAP),
+        .DCACHE_PREFETCH_EN      (DCACHE_PREFETCH_EN),
+        .DCACHE_BLOCK_W          (DCACHE_BLOCK_W),
+        .DCACHE_DEPTH            (DCACHE_DEPTH)
     )
     cpu0
     (

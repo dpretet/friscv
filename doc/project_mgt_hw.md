@@ -17,8 +17,9 @@
 
 Mesure et amélioration des performances
 - [X] Print et save des registres CSRs pour chaque test, garde la trace des performances dans Git
-- [X] IP point de mesure des différents bus en bandwidth
-- [X] CPI measure in benchmark
+- [X] Put in place perf. profiling
+    - [X] IP point de mesure des différents bus en bandwidth
+    - [X] CPI measure in benchmark
 - [X] Augmenter le nombre d’OR max de dCache
 - [X] Prefetch read request
 - [X] Optimize write pusher to save a cycle
@@ -28,7 +29,7 @@ Mesure et amélioration des performances
 - [X] Enhance completion in OoO
 - [X] Save a cycle on RD write in Memfy
 - [X] Pending flag to deassert on completion if or=1  
-- [ ] Detect address collision in memfy for better performance
+- [-] Detect address collision in memfy for better performance
 - [ ] Preload jal even if processing is busy
 - [ ] Branch prediction
     - [ ] https://en.wikipedia.org/wiki/Branch_target_predictor
@@ -66,36 +67,33 @@ Misc.
 - [ ] Random peripheral
 - [ ] OoO read: miss could be stacked and served later waiting for cache fill and continue reading the next address
 - [ ] Support cache disable in testbench
-- [ ] Put in place profiling
 - [ ] Print des tests qui ne marchent pas dans le bash et svut_h.sv pour verilator
 - [ ] 64 bits support
 - [ ] Atomic operations
 - [ ] Zicond
 - [ ] RVV for machine learning
 - [ ] Support privileged instructions, supervisor mode & user mode
-      - voir les CSRs dans la privileged mode, implementer les compteurs par mode
-      - https://danielmangum.com/posts/risc-v-bytes-privilege-levels/
-      - https://mobile.twitter.com/hasheddan/status/1514581031092899843?s=12&t=MMNTY_iRC48CjykLQBdTkQ
-      - https://man7.org/linux/man-pages/man2/syscall.2.html
-      - https://www.youtube.com/watch?app=desktop&v=1-8oYzL_Thk
-      - https://jborza.com/emulation/2021/04/22/ecalls-and-syscalls.html
+    - Smcntrpmf extension
+    - voir les CSRs dans la privileged mode, implementer les compteurs par mode
+    - https://danielmangum.com/posts/risc-v-bytes-privilege-levels/
+    - https://mobile.twitter.com/hasheddan/status/1514581031092899843?s=12&t=MMNTY_iRC48CjykLQBdTkQ
+    - https://man7.org/linux/man-pages/man2/syscall.2.html
+    - https://www.youtube.com/watch?app=desktop&v=1-8oYzL_Thk
+    - https://jborza.com/emulation/2021/04/22/ecalls-and-syscalls.html
 - [ ] Support MMU extension
 - [ ] Debug Support / JTAG interface / GDB Usage / OpenOCD
-        - https://tomverbeure.github.io/2021/07/18/VexRiscv-OpenOCD-and-Traps.html
-        - https://tomverbeure.github.io/2022/02/20/GDBWave-Post-Simulation-RISCV-SW-Debugging.html
-        - https://github.com/BLangOS/VexRiscV_with_HW-GDB_Server
+    - https://tomverbeure.github.io/2021/07/18/VexRiscv-OpenOCD-and-Traps.html
+    - https://tomverbeure.github.io/2022/02/20/GDBWave-Post-Simulation-RISCV-SW-Debugging.html
+    - https://github.com/BLangOS/VexRiscV_with_HW-GDB_Server
 - [ ] Support PLIC (only for multi-core)
 - [ ] Support CLIC controller
 - [ ] UART: Support 9/10 bits & parity
 - [ ] Removed the 2 LSBs in instruction cache while always 2'b11 (6.25% saving)
-- [ ] Out-of-order execution
 - [ ] Create app per benchmark
 - [ ] Revoir tous les paramètres de chaque instance et les documenter
-- [ ] Drop lxt2 waveform
 - [ ] Manage exceptions on r/w response
 - [ ] SV Testbench: Assert flush without ARVALID
 - [ ] New cache associativity (2 / 4 / 8 ways configurable)
-- [ ] Super scaler arch
 - [ ] Move LUI into processing to prepare future extension support
     - [ ] Read ASM to be sure its used for processing and not control
     - [ ] Benchmark waveform doesn’t reveal high usage
@@ -141,6 +139,7 @@ https://www.youtube.com/channel/UCPSsA8oxlSBjidJsSPdpjsQ/videos
 
 Verification/Validation:
 
+- [ ] Drop lxt2 waveform
 - [ ] Update synthesis flow
     - [ ] Standard cells library for Yosys
     - [ ] https://github.com/dpretet/ascend-freepdk45/tree/master/lib
@@ -168,6 +167,7 @@ Hardware Test:
 # Ideas / Applications
 
 - [ ] Next CPU architecture:
+    - Out-of-order execution
     - super scalar architecture
     - SIMD architecture
     - Vector architecture

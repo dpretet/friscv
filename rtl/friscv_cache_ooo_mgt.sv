@@ -11,15 +11,15 @@
 //
 // Tracks the read request and manage the read completion reordering. Two inputs
 // from IO fetcher and block fetcher issue some read requests, then block fetcher
-// and memory controller complete them, but possibly out-of-order. This module 
+// and memory controller complete them, but possibly out-of-order. This module
 // manages the in-order completion.
 //
-// A first stage records the read request (address and ID) and compute the next 
+// A first stage records the read request (address and ID) and compute the next
 // available tag. The next tag output will be used by fetchers to substitute the
 // original tag and manage easier the completion reordering.
 //
 // The second stage receives the read data channels and record the completion
-// information. 
+// information.
 //
 // The third layer serves the read data channel moving back to the application
 // and frees the next tag usable.
@@ -119,7 +119,7 @@ module friscv_cache_ooo_mgt
     logic [META_W  -1:0] meta_ram[NB_TAG-1:0];
     // Stores the completion info which will be driven back to the application
     logic [CPL_W   -1:0] cpl_ram[NB_TAG-1:0];
-    // Stores the tags available 
+    // Stores the tags available
     logic [2*NB_TAG-1:0] tags;
     // Pointer to current available for next request
     logic [NB_TAG_W-1:0] req_tag_pt;
@@ -152,7 +152,7 @@ module friscv_cache_ooo_mgt
     ////////////////////////////////////////////////////////////////////////////////
 
     assign tag_avlb = (tags[2*req_tag_pt+:2] == FREE);
-    assign next_tag = req_tag_pt | AXI_ID_MASK;
+    assign next_tag = {{(AXI_ID_W-NB_TAG_W){1'b0}},req_tag_pt} | AXI_ID_MASK[AXI_ID_W-1:0];
 
     for (genvar i=0; i<NB_TAG; i=i+1) begin
 
@@ -187,7 +187,7 @@ module friscv_cache_ooo_mgt
                 `ifdef FRISCV_SIM
                 if (tags[2*i+:2] == ILGL)
                     $error("ERROR: (@ %0t) - %s: Illegal status for tag 0x%0x", $realtime, NAME, i);
-                `endif 
+                `endif
             end
         end
 
@@ -222,12 +222,12 @@ module friscv_cache_ooo_mgt
                 if (cpl2_valid && cpl2_ready && cpl2_id_m==i)
                     if (CPL_PAYLOAD)
                         cpl_ram[i] <= {cpl2_resp, cpl2_data};
-                    else 
+                    else
                         cpl_ram[i] <= cpl2_resp;
                 else if (cpl1_valid && cpl1_ready && cpl1_id_m==i)
                     if (CPL_PAYLOAD)
                         cpl_ram[i] <= {cpl1_resp, cpl1_data};
-                    else 
+                    else
                         cpl_ram[i] <= cpl1_resp;
             end
         end
@@ -235,8 +235,6 @@ module friscv_cache_ooo_mgt
 
     ////////////////////////////////////////////////////////////////////////////////
     // Pointer management for request and completion
-    // TODO: Replace with a FIFO to better use tags and be opportunistic
-    // to avoid blocking the request
     ////////////////////////////////////////////////////////////////////////////////
 
     always @ (posedge aclk or negedge aresetn) begin
@@ -253,7 +251,7 @@ module friscv_cache_ooo_mgt
                 if (req_tag_pt==MAX_TAG[0+:NB_TAG_W]) req_tag_pt <= {NB_TAG_W{1'b0}};
                 else req_tag_pt <= req_tag_pt + 1'b1;
             end
-            
+
             if (slv_valid & slv_ready) begin
                 if (cpl_tag_pt==MAX_TAG[0+:NB_TAG_W]) cpl_tag_pt <= {NB_TAG_W{1'b0}};
                 else cpl_tag_pt <= cpl_tag_pt + 1'b1;
@@ -266,10 +264,10 @@ module friscv_cache_ooo_mgt
     // Completion management
     //
     // If the cache is serving some I/O requests, the block will manage the
-    // ordering because an I/O request can be completed before or after a 
-    // consecutive tag. But if the cache is not serving an I/O request, the 
-    // fetcher or pushed stages always serve in order so the read data channel 
-    // is feeded directly from the input read data channel, no completion needs 
+    // ordering because an I/O request can be completed before or after a
+    // consecutive tag. But if the cache is not serving an I/O request, the
+    // fetcher or pushed stages always serve in order so the read data channel
+    // is feeded directly from the input read data channel, no completion needs
     // to be buffered in RAM
     //
     //////////////////////////////////////////////////////////////////////////

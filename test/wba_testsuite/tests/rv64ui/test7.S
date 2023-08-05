@@ -4,9 +4,7 @@
 #include "riscv_test.h"
 #include "test_macros.h"
 
-# Test 6: RW Outstanding requests
-# Check the outstanding requests are properly managed by the
-# memfy module by launching batch of requets
+# Test 7: Check Zicntr / Zihpm extensions
 
 # x3/gp is the tes number in the unit test flow, must be greater than 0
 # 0 means the processor din't move out the initialization correctly and is stucked
