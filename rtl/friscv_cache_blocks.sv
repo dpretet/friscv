@@ -75,9 +75,6 @@ module friscv_cache_blocks
     // Number of isntruction per block, used to parse the words to write
     localparam NB_INST_PER_BLK = CACHE_BLOCK_W / WLEN;
 
-    // Cache block width, tag + data + set bit
-    localparam FULL_BLOCK_W = CACHE_BLOCK_W + TAG_W + 1;
-
 
     //////////////////////////////////////////////////////////////////////////
     // Logic declaration
@@ -293,7 +290,7 @@ module friscv_cache_blocks
             if (p2_ren) begin
                 p2_hit <= (p2_rblock_set && p2_rtag==p2_rblock_tag);
                 p2_miss <= (~p2_rblock_set || p2_rtag!=p2_rblock_tag);
-                p2_rdata <= p1_rblock_data[p2_roffset*WLEN+:WLEN];
+                p2_rdata <= p2_rblock_data[p2_roffset*WLEN+:WLEN];
                 `ifdef TRACE_BLOCKS
                 `trace_read(2)
                 `endif

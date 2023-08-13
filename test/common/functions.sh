@@ -67,6 +67,7 @@ TC=
 [[ -z $TRACE_FETCHER ]] && TRACE_FETCHER=1
 [[ -z $TRACE_PUSHER ]] && TRACE_PUSHER=1
 [[ -z $TRACE_MEMFY ]] && TRACE_MEMFY=1
+[[ -z $TRACE_REGISTERS ]] && TRACE_REGISTERS=1
 [[ -z $TRACE_TB_RAM ]] && TRACE_TB_RAM=1
 
 # Variable used to check if RTL sources or testbench changed. Only compile if 1
@@ -118,6 +119,7 @@ get_defines() {
     echo "  - TRACE_FETCHER:    $TRACE_FETCHER"
     echo "  - TRACE_PUSHER:     $TRACE_PUSHER"
     echo "  - TRACE_MEMFY:      $TRACE_MEMFY"
+    echo "  - TRACE_REGISTERS:  $TRACE_REGISTERS"
     echo "  - TRACE_TB_RAM:     $TRACE_TB_RAM"
 
     DEFINES="${DEFINES}XLEN=$XLEN;"
@@ -134,13 +136,14 @@ get_defines() {
 
     [[ $RAM_MODE == "performance" ]] && DEFINES="${DEFINES}RAM_MODE_PERF=1;"
 
-    [[ $TRACE_CONTROL -eq 1 ]] && DEFINES="${DEFINES}TRACE_CONTROL=$TRACE_CONTROL;"
-    [[ $TRACE_CACHE   -eq 1 ]] && DEFINES="${DEFINES}TRACE_CACHE=$TRACE_CACHE;"
-    [[ $TRACE_BLOCKS  -eq 1 ]] && DEFINES="${DEFINES}TRACE_BLOCKS=$TRACE_BLOCKS;"
-    [[ $TRACE_FETCHER -eq 1 ]] && DEFINES="${DEFINES}TRACE_FETCHER=$TRACE_FETCHER;"
-    [[ $TRACE_PUSHER  -eq 1 ]] && DEFINES="${DEFINES}TRACE_PUSHER=$TRACE_PUSHER;"
-    [[ $TRACE_MEMFY   -eq 1 ]] && DEFINES="${DEFINES}TRACE_MEMFY=$TRACE_MEMFY;"
-    [[ $TRACE_TB_RAM  -eq 1 ]] && DEFINES="${DEFINES}TRACE_TB_RAM=$TRACE_TB_RAM;"
+    [[ $TRACE_CONTROL   -eq 1 ]] && DEFINES="${DEFINES}TRACE_CONTROL=$TRACE_CONTROL;"
+    [[ $TRACE_CACHE     -eq 1 ]] && DEFINES="${DEFINES}TRACE_CACHE=$TRACE_CACHE;"
+    [[ $TRACE_BLOCKS    -eq 1 ]] && DEFINES="${DEFINES}TRACE_BLOCKS=$TRACE_BLOCKS;"
+    [[ $TRACE_FETCHER   -eq 1 ]] && DEFINES="${DEFINES}TRACE_FETCHER=$TRACE_FETCHER;"
+    [[ $TRACE_PUSHER    -eq 1 ]] && DEFINES="${DEFINES}TRACE_PUSHER=$TRACE_PUSHER;"
+    [[ $TRACE_MEMFY     -eq 1 ]] && DEFINES="${DEFINES}TRACE_MEMFY=$TRACE_MEMFY;"
+    [[ $TRACE_REGISTERS -eq 1 ]] && DEFINES="${DEFINES}TRACE_REGISTERS=$TRACE_REGISTERS;"
+    [[ $TRACE_TB_RAM    -eq 1 ]] && DEFINES="${DEFINES}TRACE_TB_RAM=$TRACE_TB_RAM;"
 
     [[ $NO_VCD -eq 1 ]] && DEFINES="${DEFINES}NO_VCD=1;"
 
@@ -158,7 +161,7 @@ get_defines() {
 code_changed() {
 
     echo "INFO: Check design changes"
-    md5sum ../../rtl/* ./friscv_testbench.sv > rtl.md5.new
+    md5sum ../../rtl/* ./friscv_testbench.sv ./run.sh > rtl.md5.new
 
     if [ ! -e rtl.md5 ]; then
         echo "No precompiled RTL found"

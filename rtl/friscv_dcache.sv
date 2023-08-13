@@ -237,9 +237,9 @@ module friscv_dcache
     logic [AXI_ID_W          -1:0] pusher_bid;
     logic [2                 -1:0] pusher_bresp;
     // cache write interface
-    logic                          cache_wren;
-    logic [AXI_ADDR_W        -1:0] cache_waddr;
-    logic [CACHE_BLOCK_W     -1:0] cache_wdata;
+    logic                          flush_wren;
+    logic [AXI_ADDR_W        -1:0] flush_waddr;
+    logic [CACHE_BLOCK_W     -1:0] flush_wdata;
 
     // flag from prefetch to indicate the cache-miss block is under Write
     logic                          block_fill;
@@ -617,10 +617,10 @@ module friscv_dcache
         .aresetn    (aresetn),
         .srst       (srst),
         .flush      (flushing),
-        .p1_wen     (memctrl_rvalid & !memctrl_rcache | cache_wren),
+        .p1_wen     (memctrl_rvalid & !memctrl_rcache | flush_wren),
         .p1_wstrb   ({CACHE_BLOCK_W/8{1'b1}}),
-        .p1_waddr   ((cache_wren) ? cache_waddr : memctrl_raddr),
-        .p1_wdata   ((cache_wren) ? cache_wdata : memctrl_rdata_blk),
+        .p1_waddr   ((flush_wren) ? flush_waddr : memctrl_raddr),
+        .p1_wdata   ((flush_wren) ? flush_wdata : memctrl_rdata_blk),
         .p1_ren     (fetcher_cache_ren),
         .p1_raddr   (fetcher_cache_raddr),
         .p1_rdata   (fetcher_cache_rdata),
@@ -654,9 +654,9 @@ module friscv_dcache
         .flush_blocks (1'b0),
         .flush_ack    (),
         .flushing     (flushing),
-        .cache_wren   (cache_wren),
-        .cache_waddr  (cache_waddr),
-        .cache_wdata  (cache_wdata)
+        .cache_wren   (flush_wren),
+        .cache_waddr  (flush_waddr),
+        .cache_wdata  (flush_wdata)
     );
 
 

@@ -76,12 +76,63 @@ module friscv_registers
         input  wire  [XLEN                -1:0] csr_rd_val
     );
 
+    //------------------------------------------------
+    // Function to print register name and information
+    // @i: register number to get info
+    // @returns a string describing the register
+    //------------------------------------------------
+    function string get_name(integer i);
+        get_name = "!?";
+        if (i== 0) get_name = "  zero  (hardwired zero)";
+        if (i== 1) get_name = "  ra    (return address)";
+        if (i== 2) get_name = "  sp    (stack pointer)";
+        if (i== 3) get_name = "  gp    (global pointer)";
+        if (i== 4) get_name = "  tp    (thread pointer)";
+        if (i== 5) get_name = "  t0    (temporary register 0)";
+        if (i== 6) get_name = "  t1    (temporary register 0)";
+        if (i== 7) get_name = "  t2    (temporary register 0)";
+        if (i== 8) get_name = "  s0_fp (saved register 0 / frame pointer)";
+        if (i== 9) get_name = "  s1    (saved register 1)";
+        if (i==10) get_name = "  a0    (function argument 0 / return value 0)";
+        if (i==11) get_name = "  a1    (function argument 1 / return value 1)";
+        if (i==12) get_name = "  a2    (function argument 2)";
+        if (i==13) get_name = "  a3    (function argument 3)";
+        if (i==14) get_name = "  a4    (function argument 4)";
+        if (i==15) get_name = "  a5    (function argument 5)";
+        if (i==16) get_name = "  a6    (function argument 6)";
+        if (i==17) get_name = "  a7    (function argument 7)";
+        if (i==18) get_name = "  s2    (saved register 2)";
+        if (i==19) get_name = "  s3    (saved register 3)";
+        if (i==20) get_name = "  s4    (saved register 4)";
+        if (i==21) get_name = "  s5    (saved register 5)";
+        if (i==22) get_name = "  s6    (saved register 6)";
+        if (i==23) get_name = "  s7    (saved register 7)";
+        if (i==24) get_name = "  s8    (saved register 8)";
+        if (i==25) get_name = "  s9    (saved register 9)";
+        if (i==26) get_name = "  s10   (saved register 10)";
+        if (i==27) get_name = "  s11   (saved register 11)";
+        if (i==28) get_name = "  t3    (temporary register 3)";
+        if (i==29) get_name = "  t4    (temporary register 4)";
+        if (i==30) get_name = "  t5    (temporary register 5)";
+        if (i==31) get_name = "  t6    (temporary register 6)";
+    endfunction
+
+
     // E extension limiting the register number to 16
     localparam REGNUM = (RV32E) ? 16 : 32;
 
     // ISA registers 0-31
     logic [XLEN-1:0] regs [REGNUM-1:0];
 
+    // Tracer setup
+    `ifdef TRACE_REGISTERS
+    integer f;
+    string fname;
+    initial begin
+        $sformat(fname, "trace_%s.txt", "registers");
+        f = $fopen(fname, "w");
+    end
+    `endif
 
     generate
 
@@ -120,7 +171,7 @@ module friscv_registers
                 end else if (csr_rd_wr && csr_rd_addr==i) begin
                     regs[i] = csr_rd_val;
 
-                // Access from data memory controller
+                // Access from processing units
                 end else if (|proc_rd_wr) begin
                     for (u=0;u<NB_ALU_UNIT;u=u+1) begin
                         if (proc_rd_wr[u] && proc_rd_addr[u*5+:5]==i) begin
@@ -135,8 +186,36 @@ module friscv_registers
             end
         end
 
+        `ifdef TRACE_REGISTERS
+        always @ (posedge aclk) begin
+            if (aresetn) begin
+
+                if (ctrl_rd_wr && ctrl_rd_addr==i)
+                    $fwrite(f, "(@ %0t) Ctrl Write :  reg[%2d] = 0x%x (0xf) %s\n", $realtime, i, ctrl_rd_val, get_name(i));
+
+                if (csr_rd_wr && csr_rd_addr==i)
+                    $fwrite(f, "(@ %0t) CSR Write :   reg[%2d] = 0x%x (0xf) %s\n", $realtime, i, csr_rd_val, get_name(i));
+
+                for (u=0;u<NB_ALU_UNIT;u=u+1) begin
+                    if (proc_rd_wr[u] && proc_rd_addr[u*5+:5]==i) begin
+
+                        if (u==0)
+                            $fwrite(f, "(@ %0t) ALU Write :   reg[%2d] = 0x%x (0x%x) %s\n", $realtime, i, proc_rd_val[u*XLEN+:XLEN], proc_rd_strb[u*XLEN/8+:XLEN/8], get_name(i));
+                        else if (u==1)
+                            $fwrite(f, "(@ %0t) Memfy Write : reg[%2d] = 0x%x (0x%x) %s\n", $realtime, i, proc_rd_val[u*XLEN+:XLEN], proc_rd_strb[u*XLEN/8+:XLEN/8], get_name(i));
+                        else if (u==2)
+                            $fwrite(f, "(@ %0t) M_Ext Write : reg[%2d] = 0x%x (0x%x) %s\n", $realtime, i, proc_rd_val[u*XLEN+:XLEN], proc_rd_strb[u*XLEN/8+:XLEN/8], get_name(i));
+                        else
+                            $fwrite(f, "(@ %0t) Ext%d Write :  reg[%2d] = 0x%x (0x%x) %s\n", $realtime, u, i, proc_rd_val[u*XLEN+:XLEN], proc_rd_strb[u*XLEN/8+:XLEN/8], get_name(i));
+
+                    end
+                end
+            end
+        end
+        `endif
     end
     endgenerate
+
 
     generate
 
@@ -184,37 +263,38 @@ module friscv_registers
     end
     endgenerate
 
-    assign x1_ra     = regs[1];
-    assign x2_sp     = regs[2];
-    assign x3_gp     = regs[3];
-    assign x4_tp     = regs[4];
-    assign x5_t0     = regs[5];
-    assign x6_t1     = regs[6];
-    assign x7_t2     = regs[7];
-    assign x8_s0_fp  = regs[8];
-    assign x9_s1     = regs[9];
-    assign x10_a0    = regs[10];
-    assign x11_a1    = regs[11];
-    assign x12_a2    = regs[12];
-    assign x13_a3    = regs[13];
-    assign x14_a4    = regs[14];
-    assign x15_a5    = regs[15];
-    assign x16_a6    = regs[16];
-    assign x17_a7    = regs[17];
-    assign x18_s2    = regs[18];
-    assign x19_s3    = regs[19];
-    assign x20_s4    = regs[20];
-    assign x21_s5    = regs[21];
-    assign x22_s6    = regs[22];
-    assign x23_s7    = regs[23];
-    assign x24_s8    = regs[24];
-    assign x25_s9    = regs[25];
-    assign x26_s10   = regs[26];
-    assign x27_s11   = regs[27];
-    assign x28_t3    = regs[28];
-    assign x29_t4    = regs[29];
-    assign x30_t5    = regs[30];
-    assign x31_t6    = regs[31];
+    // Debug purpose only
+    assign x1_ra    = regs[1];
+    assign x2_sp    = regs[2];
+    assign x3_gp    = regs[3];
+    assign x4_tp    = regs[4];
+    assign x5_t0    = regs[5];
+    assign x6_t1    = regs[6];
+    assign x7_t2    = regs[7];
+    assign x8_s0_fp = regs[8];
+    assign x9_s1    = regs[9];
+    assign x10_a0   = regs[10];
+    assign x11_a1   = regs[11];
+    assign x12_a2   = regs[12];
+    assign x13_a3   = regs[13];
+    assign x14_a4   = regs[14];
+    assign x15_a5   = regs[15];
+    assign x16_a6   = regs[16];
+    assign x17_a7   = regs[17];
+    assign x18_s2   = regs[18];
+    assign x19_s3   = regs[19];
+    assign x20_s4   = regs[20];
+    assign x21_s5   = regs[21];
+    assign x22_s6   = regs[22];
+    assign x23_s7   = regs[23];
+    assign x24_s8   = regs[24];
+    assign x25_s9   = regs[25];
+    assign x26_s10  = regs[26];
+    assign x27_s11  = regs[27];
+    assign x28_t3   = regs[28];
+    assign x29_t4   = regs[29];
+    assign x30_t5   = regs[30];
+    assign x31_t6   = regs[31];
 
 endmodule
 

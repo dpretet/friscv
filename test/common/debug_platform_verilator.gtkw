@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.107 (w)1999-2020 BSI
-[*] Sun Aug 13 06:54:00 2023
+[*] Sun Aug 13 15:16:40 2023
 [*]
 [dumpfile] "/Users/damien/workspace/hdl/friscv/test/apps/friscv_testbench.vcd"
-[dumpfile_mtime] "Sun Aug 13 06:38:55 2023"
-[dumpfile_size] 159156942
+[dumpfile_mtime] "Sun Aug 13 15:11:42 2023"
+[dumpfile_size] 163583892
 [savefile] "/Users/damien/workspace/hdl/friscv/test/common/debug_platform_verilator.gtkw"
-[timestart] 4790
+[timestart] 1
 [size] 1440 900
 [pos] -1 -1
-*-14.189416 55819 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-13.473332 55821 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] friscv_testbench.
 [treeopen] friscv_testbench.friscv_testbench.
 [treeopen] friscv_testbench.friscv_testbench.genblk2.
@@ -22,7 +22,6 @@
 [treeopen] friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPORT.m_ext.
 [treeopen] friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.
 [treeopen] friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.ordering.
-[treeopen] friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.ordering.genblk1.
 [treeopen] friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.
 [treeopen] friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.
 [treeopen] friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.block_fetcher.
@@ -37,7 +36,7 @@
 [treeopen] friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_ICACHE.icache.mem_ctrl.IN_ORDER_CPL.
 [treeopen] friscv_testbench.friscv_testbench.genblk2.dut.io_subsystem.
 [sst_width] 312
-[signals_width] 330
+[signals_width] 303
 [sst_expanded] 1
 [sst_vpaned_height] 387
 @c00200
@@ -376,7 +375,7 @@ friscv_testbench.friscv_testbench.genblk2.dut.cpu0.csrs.timer_irq
 -
 @1401200
 -CSRs
-@800200
+@c00200
 -ISA Regsiters
 @200
 -
@@ -451,7 +450,7 @@ friscv_testbench.friscv_testbench.genblk2.dut.cpu0.isa_registers.x28_t3[31:0]
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.isa_registers.x29_t4[31:0]
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.isa_registers.x30_t5[31:0]
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.isa_registers.x31_t6[31:0]
-@1000200
+@1401200
 -ISA Regsiters
 @c00200
 -iCache
@@ -1127,7 +1126,7 @@ friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.mem_ctrl.WR
 @1401200
 -MemCtrl
 -dCache
-@800200
+@c00200
 -Control
 @28
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.control.aclk
@@ -1190,7 +1189,7 @@ friscv_testbench.friscv_testbench.genblk2.dut.cpu0.control.rvalid
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.control.rready
 @1401200
 -axi4-lite
-@201
+@200
 -
 @28
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.control.aclk
@@ -1267,9 +1266,8 @@ friscv_testbench.friscv_testbench.genblk2.dut.cpu0.control.inst_addr_misaligned
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.control.inst_dec_error
 @1401200
 -Traps
-@1000200
 -Control
-@c00200
+@800200
 -Memfy
 @28
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.aclk
@@ -1365,6 +1363,7 @@ friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_pendin
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_pending_write
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.max_rd_or
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.max_wr_or
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.rd_or_full
 @200
 -
 @800200
@@ -1382,9 +1381,6 @@ friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.ordering.bva
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.ordering.bready
 @200
 -
-@28
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.ordering.max_rd_or
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.ordering.max_wr_or
 @22
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.ordering.memfy_addr[31:0]
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.ordering.memfy_opcode[6:0]
@@ -1399,17 +1395,24 @@ friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.ordering.pen
 @200
 -
 @28
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.ordering.max_rd_or
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.ordering.max_wr_or
+@200
+-
+@28
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.ordering.push_rd
+@29
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.ordering.pull_rd
+@28
 [color] 3
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.ordering.rd_coll
 @200
 -
 @28
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.ordering.rd_req_aempty
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.ordering.rd_req_empty
 [color] 3
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.ordering.rd_req_afull
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.ordering.rd_req_empty
 [color] 3
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.ordering.rd_req_full
 @200
@@ -1432,91 +1435,20 @@ friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.ordering.wr_
 -Ordering
 @c00200
 -WrCollision
-@22
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.ordering.genblk1.wr_req.ADDR_WIDTH[31:0]
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.ordering.genblk1.wr_req.NB_TOKEN[31:0]
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.ordering.genblk1.wr_req.TOKEN_W[31:0]
-@28
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.ordering.genblk1.wr_req.aclk
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.ordering.genblk1.wr_req.aresetn
 @200
 -
-@22
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.ordering.genblk1.wr_req.ptr_diff[5:0]
-@24
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.ordering.genblk1.wr_req.rdptr[5:0]
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.ordering.genblk1.wr_req.wrptr[5:0]
-@200
 -
-@28
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.ordering.genblk1.wr_req.aempty
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.ordering.genblk1.wr_req.empty
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.ordering.genblk1.wr_req.afull
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.ordering.genblk1.wr_req.full
-@200
 -
-@22
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.ordering.genblk1.wr_req.seek[29:0]
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.ordering.genblk1.wr_req.used[31:0]
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.ordering.genblk1.wr_req.hits[31:0]
-@28
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.ordering.genblk1.wr_req.hit
-@200
 -
-@28
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.ordering.genblk1.wr_req.push
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.ordering.genblk1.wr_req.wr_en
-@22
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.ordering.genblk1.wr_req.token[29:0]
-@28
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.ordering.genblk1.wr_req.pull
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.ordering.genblk1.wr_req.rd_en
-@22
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.ordering.genblk1.wr_req.ram[959:0]
 @1401200
 -WrCollision
 @c00200
 -RdCollision
-@22
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.ordering.genblk1.rd_req.ADDR_WIDTH[31:0]
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.ordering.genblk1.rd_req.NB_TOKEN[31:0]
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.ordering.genblk1.rd_req.TOKEN_W[31:0]
-@28
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.ordering.genblk1.rd_req.aclk
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.ordering.genblk1.rd_req.aresetn
 @200
 -
-@28
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.ordering.genblk1.rd_req.aempty
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.ordering.genblk1.rd_req.empty
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.ordering.genblk1.rd_req.afull
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.ordering.genblk1.rd_req.full
-@200
 -
-@22
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.ordering.genblk1.rd_req.ptr_diff[5:0]
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.ordering.genblk1.rd_req.rdptr[5:0]
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.ordering.genblk1.rd_req.wrptr[5:0]
-@200
 -
-@28
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.ordering.genblk1.rd_req.push
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.ordering.genblk1.rd_req.wr_en
-@22
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.ordering.genblk1.rd_req.token[29:0]
-@28
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.ordering.genblk1.rd_req.pull
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.ordering.genblk1.rd_req.rd_en
-@22
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.ordering.genblk1.rd_req.ram[959:0]
-@200
 -
-@22
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.ordering.genblk1.rd_req.used[31:0]
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.ordering.genblk1.rd_req.seek[29:0]
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.ordering.genblk1.rd_req.hits[31:0]
-@28
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.ordering.genblk1.rd_req.hit
 @1401200
 -RdCollision
 @c00200
@@ -1613,6 +1545,7 @@ friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_rs2_ad
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_rs2_val[31:0]
 @1401200
 -ISA_Regs_IFs
+@1000200
 -Memfy
 @c00200
 -processing

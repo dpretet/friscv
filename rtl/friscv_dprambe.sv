@@ -43,11 +43,11 @@ module friscv_dprambe
         end
     end
 
-    generate if (FFD_EN==1) begin
+    generate if (FFD_EN==1) begin : SYNC_P1_RD
         always @ (posedge aclk) begin
             p1_data_out <= ram[p1_addr];
         end
-    end else begin
+    end else begin : ASYNC_P1_RD
         assign p1_data_out = ram[p1_addr];
     end
     endgenerate
@@ -60,11 +60,11 @@ module friscv_dprambe
         end
     end
 
-    generate if (FFD_EN==1) begin
+    generate if (FFD_EN==1) begin : SYNC_P2_RD
         always @ (posedge aclk) begin
             p2_data_out <= ram[p2_addr];
         end
-    end else begin
+    end else begin : ASYNC_P2_RD
         assign p2_data_out = ram[p2_addr];
     end
     endgenerate

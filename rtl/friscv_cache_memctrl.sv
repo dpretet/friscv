@@ -292,7 +292,7 @@ module friscv_cache_memctrl
     ///////////////////////////////////////////////////////////////////////////
     // Read completion channel, used also as a cache block write interface
     //
-    // Add extra signals for cache write purpose:
+    // Add extra signals for OoO Mgt / cache write purpose:
     //
     //  - raddr: the original ARADDR of the request to drive cache write interface
     //  - rcache: ARCACHE[1], used to drive IO request to cache completion
@@ -300,8 +300,7 @@ module friscv_cache_memctrl
     //  - rdata_blk: the whole address line fetched, the controller always
     //    read a whole block
     //  - rdata: RDATA extracted from the interface to match the exact address 
-    //    while we always fetch a whole cache block. Make the controller usable 
-    //    for both instruction and data cache
+    //    while we always fetch a whole cache block.
     ///////////////////////////////////////////////////////////////////////////
 
     assign mst_rvalid = mem_rvalid;

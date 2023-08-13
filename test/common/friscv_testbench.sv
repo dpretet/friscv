@@ -118,7 +118,7 @@ module friscv_testbench(
     // Select the ordering scheme for data interface:
     //   - 0: ongoing reads block write request, ongoing writes block read request
     //   - 1: concurrent r/w requests can be issued if don't target same cache blocks
-    parameter AXI_ORDERING = 0;
+    parameter AXI_ORDERING = 1;
 
     // Enable Instruction & data caches
     parameter CACHE_EN = `CACHE_EN;

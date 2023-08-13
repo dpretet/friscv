@@ -53,7 +53,7 @@ module friscv_memfy
         parameter AXI_ID_MASK    = 'h20,
         // Select the ordering scheme:
         //   - 0: ongoing reads block write request, ongoing writes block read request
-        //   - 1: concurrent r/w requests can be issued if don't target same cache blocks
+        //   - 1: concurrent r/w requests can be issued if don't target the same address
         parameter AXI_ORDERING = 0,
         // Block width defining only the data payload, in bits, must an
         // integer multiple of XLEN (power of two)
@@ -61,7 +61,7 @@ module friscv_memfy
         // Maximum outstanding request supported
         parameter MAX_OR = 8,
         // Add pipeline on Rd write stage
-        parameter SYNC_RD_WR = 1,
+        parameter SYNC_RD_WR = 0,
         // IO regions for direct read/write access
         parameter IO_MAP_NB = 1,
         // IO address ranges, organized by memory region as END-ADDR_START-ADDR:
@@ -505,11 +505,11 @@ module friscv_memfy
 
         `ifdef TRACE_MEMFY
         if (aresetn && arvalid && arready)
-            $fwrite(f, "(@ %0t) Read address %x\n", $realtime, araddr);
+            $fwrite(f, "(@ %0t) Read address :  0x%x\n", $realtime, araddr);
         if (aresetn && awvalid && awready)
-            $fwrite(f, "(@ %0t) Write address %x\n", $realtime, awaddr);
+            $fwrite(f, "(@ %0t) Write address : 0x%x\n", $realtime, awaddr);
         if (aresetn && wvalid && wready)
-            $fwrite(f, "(@ %0t) Write data %x / %0x\n", $realtime, wdata, wstrb);
+            $fwrite(f, "(@ %0t) Write data    : 0x%x (0x%0x)\n", $realtime, wdata, wstrb);
         `endif
 
     end
@@ -664,6 +664,15 @@ module friscv_memfy
         if (!aresetn) begin
             memfy_exceptions[`LD_MA] <= '0;
         end else begin
+            `ifdef TRACE_MEMFY
+
+            if (load_misaligned)
+                $fwrite(f, "(@ %0t) Exception encountered: Load misaligned\n", $realtime);
+
+            if (store_misaligned)
+                $fwrite(f, "(@ %0t) Exception encountered: store misaligned\n", $realtime);
+
+            `endif
             memfy_exceptions[`LD_MA] <= load_misaligned;
             memfy_exceptions[`ST_MA] <= store_misaligned;
         end
