@@ -499,7 +499,6 @@ module friscv_dcache
         .OSTDREQ_NUM     (OSTDREQ_NUM),
         .AXI_ADDR_W      (AXI_ADDR_W),
         .AXI_ID_W        (AXI_ID_W),
-        .AXI_DATA_W      (AXI_DATA_W),
         .AXI_ID_MASK     (AXI_ID_MASK),
         .CACHE_BLOCK_W   (CACHE_BLOCK_W)
     )

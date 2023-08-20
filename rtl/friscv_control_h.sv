@@ -17,7 +17,7 @@
 
     `ifndef CONTROL_VERBOSITY
         `define CONTROL_VERBOSITY `SVL_VERBOSE_DEBUG
-        `define CONTROL_ROUTE `SVL_ROUTE_ALL
+        `define CONTROL_ROUTE `SVL_ROUTE_FILE
     `endif
 
 `endif

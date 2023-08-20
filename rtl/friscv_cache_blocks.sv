@@ -72,9 +72,6 @@ module friscv_cache_blocks
     localparam TAG_IX = INDEX_IX + INDEX_W;
     localparam TAG_W = ADDR_W - INDEX_W - OFFSET_W - OFFSET_IX;
 
-    // Number of isntruction per block, used to parse the words to write
-    localparam NB_INST_PER_BLK = CACHE_BLOCK_W / WLEN;
-
 
     //////////////////////////////////////////////////////////////////////////
     // Logic declaration
@@ -86,9 +83,6 @@ module friscv_cache_blocks
 
     logic [INDEX_W        -1:0] p2_windex;
     logic [TAG_W          -1:0] p2_wtag;
-
-    logic [INDEX_W        -1:0] p1_index;
-    logic [INDEX_W        -1:0] p2_index;
 
     // extracted from the read interface
     logic [INDEX_W        -1:0] p1_rindex;
@@ -108,9 +102,10 @@ module friscv_cache_blocks
     logic [CACHE_BLOCK_W  -1:0] p2_rblock_data;
     logic                       p2_rblock_set;
 
+    // To switch between read and write request on a port
+    logic [INDEX_W        -1:0] p1_index;
+    logic [INDEX_W        -1:0] p2_index;
 
-    genvar i;
-    genvar k;
 
     // Tracer setup
     `ifdef TRACE_CACHE
@@ -158,6 +153,7 @@ module friscv_cache_blocks
     end
     `endif
 
+
     //////////////////////////////////////////////////////////////////////////
     // Address parsing and cache line construction
     //////////////////////////////////////////////////////////////////////////
@@ -201,7 +197,6 @@ module friscv_cache_blocks
         .p2_data_out (p2_rblock_data)
     );
 
-
     friscv_dpram
     #(
         `ifdef CACHE_SIM_ENV
@@ -225,6 +220,21 @@ module friscv_cache_blocks
     );
 
     //////////////////////////////////////////////////////////////////////////
+    // always @ (posedge aclk) begin
+    //     if (aresetn) begin
+    //         if (p1_wen && p2_ren && p1_waddr == p2_raddr) begin
+    //             $display("p1 write while p2 read");
+    //             $finish();
+    //         end
+    //         if (p2_wen && p1_ren && p2_waddr == p1_raddr) begin
+    //             $display("p2 write while p1 read");
+    //             $finish();
+    //         end
+    //     end
+    // end
+    //////////////////////////////////////////////////////////////////////////
+
+    //////////////////////////////////////////////////////////////////////////
     // Follow the block fetch, the data selection and the hit/miss generation.
     // raddr is decomposed in three parts:
     //
@@ -238,7 +248,7 @@ module friscv_cache_blocks
     //
     // The MSB of a cache block is the set bit, set to 1 once the block
     // has been written and so valid. This bit is set back to 0 during flush.
-    // 
+    //
     // Generate hit/miss flags based on read_tag == block_tag:
     //   - hit indicates the cache line store the expected instruction
     //   - miss indicates the cache is not initialized or doesn't contain
@@ -247,7 +257,7 @@ module friscv_cache_blocks
 
     // offset is used to select the correct instruction across the cache line
     assign p1_roffset = p1_raddr[OFFSET_IX+:OFFSET_W];
-    assign p2_roffset = p1_raddr[OFFSET_IX+:OFFSET_W];
+    assign p2_roffset = p2_raddr[OFFSET_IX+:OFFSET_W];
 
     // address's MSB to identify the memory address source
     assign p1_rtag = p1_raddr[TAG_IX+:TAG_W];
