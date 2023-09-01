@@ -286,6 +286,9 @@ check_status() {
     # Double check the execution status by parsing the log
     ec=$(grep -c "ERROR:" simulation.log)
 
+    echo "grep: $ec"
+    echo "status: $test_ret"
+
     if [[ $ec != 0 || $test_ret != 0 ]]; then
         echo -e "${RED}ERROR: Testsuite failed!${NC}"
         exit 1

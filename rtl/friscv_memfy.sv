@@ -377,7 +377,7 @@ module friscv_memfy
 
     // Continue to accept if IDLE.READY and didn't reach yet maximum of
     // outstanding requests available
-    assign memfy_ready = memfy_ready_fsm & !rd_or_full & !stall_bus;
+    assign memfy_ready = memfy_ready_fsm & !max_rd_or & !max_wr_or & !stall_bus;
 
 
     ////////////////////////////////////////////////////////////////////////
@@ -673,6 +673,9 @@ module friscv_memfy
                 $fwrite(f, "(@ %0t) Exception encountered: store misaligned\n", $realtime);
 
             `endif
+
+            if (load_misaligned || store_misaligned)
+                $error("Memfy exceptions");
             memfy_exceptions[`LD_MA] <= load_misaligned;
             memfy_exceptions[`ST_MA] <= store_misaligned;
         end

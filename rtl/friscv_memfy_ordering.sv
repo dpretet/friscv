@@ -125,7 +125,7 @@ module friscv_memfy_ordering
 
     generate 
 
-    if (AXI_ORDERING == 0) begin
+    if (AXI_ORDERING == 0) begin : STRICT_ORDERING
 
         assign pending_wr = (wr_or_cnt!={MAX_OR_W{1'b0}} && !(wr_or_cnt=={{(MAX_OR_W-1){1'b0}}, 1'b1} & bvalid)) ? 1'b1 : 1'b0;
         assign pending_rd = (rd_or_cnt!={MAX_OR_W{1'b0}} && !(rd_or_cnt=={{(MAX_OR_W-1){1'b0}}, 1'b1} & rvalid)) ? 1'b1 : 1'b0;
@@ -151,7 +151,7 @@ module friscv_memfy_ordering
     // Advanced mode, using LUT for read / write request tracking, providing
     // better performance
     //////////////////////////////////////////////////////////////////////// 
-    end else begin
+    end else begin: WEAK_ORDERING
 
         assign push_wr = memfy_valid && memfy_ready && memfy_opcode==`STORE;
         assign pull_wr = bvalid & bready;

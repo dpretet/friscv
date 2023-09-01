@@ -7,6 +7,7 @@
 #include "xoshiro128plusplus.h"
 #include "pool_arena.h"
 #include "tty.h"
+#include "soc_mapping.h"
 
 // -----------------------------------------------------------------------------------------------
 // Benchmarks global variables
@@ -19,12 +20,12 @@ int xoshi_bench(int max_iterations);
 int pool_arena_bench(int max_iterations);
 
 struct perf {
-	int active_start;
-	int active_end;
-	int sleep_start;
-	int sleep_end;
-	int stall_start;
-	int stall_end;
+    int active_start;
+    int active_end;
+    int sleep_start;
+    int sleep_end;
+    int stall_start;
+    int stall_end;
 };
 
 struct meter {
@@ -34,9 +35,9 @@ struct meter {
     int instret_end;
     int cycles;
     int instret;
-	struct perf instreq_perf;
-	struct perf instcpl_perf;
-	struct perf proc_perf;
+    struct perf instreq_perf;
+    struct perf instcpl_perf;
+    struct perf proc_perf;
 };
 
 struct meter bench;
@@ -140,26 +141,31 @@ int benchmark(int argc, char *argv[]) {
     // Execute benchmarks
     // -----------------------------------------------------------------
 
+    // printf("Test 1\n");
     if (chacha20_bench(nb_iterations)) {
         ret += 1;
         printf("Chacha20 computation failed\n");
     }
 
+    printf("Test 2\n");
     if (matrix_bench(nb_iterations)) {
         ret += 1;
         printf("Matrix computation failed\n");
     }
 
+    printf("Test 3\n");
     if (printf_bench(nb_iterations)) {
         ret += 1;
         printf("Printf computation failed\n");
     }
 
+    printf("Test 4\n");
     if (xoshi_bench(nb_iterations)) {
         ret += 1;
         printf("Xoshiro128++ computation failed\n");
     }
 
+    printf("Test 5\n");
     if (pool_arena_bench(nb_iterations)) {
         ret += 1;
         printf("Pool Arena computation failed\n");
@@ -190,7 +196,7 @@ int benchmark(int argc, char *argv[]) {
 
     printf("\nReporting:\n");
 
-	printf("\nGeneral statistics:\n");
+    printf("\nGeneral statistics:\n");
     printf("  - Start time: %d\n", bench.cycle_start);
     printf("  - End time: %d\n", bench.cycle_end);
     printf("  - Total elapsed time: %d cycles\n", bench.cycles);
@@ -198,22 +204,22 @@ int benchmark(int argc, char *argv[]) {
     printf("  - Instret end: %d\n", bench.instret_end);
     printf("  - Retired instructions: %d\n", bench.instret);
 
-	printf("\nInstruction Bus Request:\n");
-	printf("  - active cycles: %d\n", bench.instreq_perf.active_end - bench.instreq_perf.active_start);
-	printf("  - sleep cycles: %d\n", bench.instreq_perf.sleep_end - bench.instreq_perf.sleep_start);
-	printf("  - stall cycles: %d\n", bench.instreq_perf.stall_end - bench.instreq_perf.stall_start);
+    printf("\nInstruction Bus Request:\n");
+    printf("  - active cycles: %d\n", bench.instreq_perf.active_end - bench.instreq_perf.active_start);
+    printf("  - sleep cycles: %d\n", bench.instreq_perf.sleep_end - bench.instreq_perf.sleep_start);
+    printf("  - stall cycles: %d\n", bench.instreq_perf.stall_end - bench.instreq_perf.stall_start);
 
-	printf("\nInst Bus Completion:\n");
-	printf("  - active cycles: %d\n", bench.instcpl_perf.active_end - bench.instcpl_perf.active_start);
-	printf("  - sleep cycles: %d\n", bench.instcpl_perf.sleep_end - bench.instcpl_perf.sleep_start);
-	printf("  - stall cycles: %d\n", bench.instcpl_perf.stall_end - bench.instcpl_perf.stall_start);
+    printf("\nInst Bus Completion:\n");
+    printf("  - active cycles: %d\n", bench.instcpl_perf.active_end - bench.instcpl_perf.active_start);
+    printf("  - sleep cycles: %d\n", bench.instcpl_perf.sleep_end - bench.instcpl_perf.sleep_start);
+    printf("  - stall cycles: %d\n", bench.instcpl_perf.stall_end - bench.instcpl_perf.stall_start);
 
-	printf("\nProcessing Bus:\n");
-	printf("  - active cycles: %d\n", bench.proc_perf.active_end - bench.proc_perf.active_start);
-	printf("  - sleep cycles: %d\n", bench.proc_perf.sleep_end - bench.proc_perf.sleep_start);
-	printf("  - stall cycles: %d\n", bench.proc_perf.stall_end - bench.proc_perf.stall_start);
+    printf("\nProcessing Bus:\n");
+    printf("  - active cycles: %d\n", bench.proc_perf.active_end - bench.proc_perf.active_start);
+    printf("  - sleep cycles: %d\n", bench.proc_perf.sleep_end - bench.proc_perf.sleep_start);
+    printf("  - stall cycles: %d\n", bench.proc_perf.stall_end - bench.proc_perf.stall_start);
 
-	printf("\nAlgorithms:\n");
+    printf("\nAlgorithms:\n");
     printf("- Chacha20 execution: %d cycles\n", chacha20.cycles);
     printf("- Matrix execution: %d cycles\n", matrix.cycles);
     printf("- Printf execution: %d cycles\n", print.cycles);
@@ -464,11 +470,11 @@ int xoshi_bench(int max_iterations) {
 
 int pool_arena_bench(int max_iterations) {
 
-	char pool[ARENA_SIZE];
-	int p=0;
-	void * pts[MAX_CHUNK];
-	unsigned int chunk_size = 1;
-	char * array;
+    char pool[ARENA_SIZE];
+    int p=0;
+    void * pts[MAX_CHUNK];
+    unsigned int chunk_size = 1;
+    char * array;
 
     arena.cycle_start = 0;
     arena.cycle_end = 0;
@@ -476,68 +482,68 @@ int pool_arena_bench(int max_iterations) {
 
     asm volatile("csrr %0, 0xC00" : "=r"(arena.cycle_start));
 
-	// Erase first the pool memory zone
-	for (int i=0;i<ARENA_SIZE;i++)
-		pool[i] = '\0';
-	// Create a pool arena in memory
-	pool_init(&pool, ARENA_SIZE);
-	/* printf("Pool arena: %p\n", &pool); */
+    // Erase first the pool memory zone
+    for (int i=0;i<ARENA_SIZE;i++)
+        pool[i] = '\0';
+    // Create a pool arena in memory
+    pool_init(&pool, ARENA_SIZE);
+    /* printf("Pool arena: %p\n", &pool); */
 
-	while (chunk_size < ARENA_SIZE) {
-		// Erase pointers
-		for (int i=0;i<16;i++) {
-			pts[i] = NULL;
-		}
-		// Allocate as much blocks as possible and stop at first fail
-		/* printf("Allocate chunks\n"); */
-		p = 0;
-		while (p<MAX_CHUNK) {
-			pts[p] = pool_malloc(chunk_size);
-			if (pts[p] == NULL)
-				break;
-			printf("%p\n", pts[p]);
-			p++;
-		}
+    while (chunk_size < ARENA_SIZE) {
+        // Erase pointers
+        for (int i=0;i<16;i++) {
+            pts[i] = NULL;
+        }
+        // Allocate as much blocks as possible and stop at first fail
+        /* printf("Allocate chunks\n"); */
+        p = 0;
+        while (p<MAX_CHUNK) {
+            pts[p] = pool_malloc(chunk_size);
+            if (pts[p] == NULL)
+                break;
+            printf("%p\n", pts[p]);
+            p++;
+        }
 
 
-		// Init the chunks with data
-		for (int i=0;i<16;i++) {
-			if (pts[i] != NULL) {
-				array = pts[i];
-				for (int j=0;j<chunk_size;j++)
-					array[j] = i;
-			}
-		}
-		// Check back data
-		for (int i=0;i<16;i++) {
-			if (pts[i] != NULL) {
-				array = pts[i];
-				for (int j=0;j<chunk_size;j++)
-					if (array[j] != i) {
-						printf("ERROR: pool arena failed during data check\n");
-						return 1;
-					}
-			}
-		}
-		// Free the pointers
-		/* printf("Free chunks\n"); */
-		p = 0;
-		while (p<MAX_CHUNK) {
-			if (pts[p] != NULL)
-				pool_free(pts[p]);
-			else
-				break;
-			p++;
-		}
+        // Init the chunks with data
+        for (int i=0;i<16;i++) {
+            if (pts[i] != NULL) {
+                array = pts[i];
+                for (int j=0;j<chunk_size;j++)
+                    array[j] = i;
+            }
+        }
+        // Check back data
+        for (int i=0;i<16;i++) {
+            if (pts[i] != NULL) {
+                array = pts[i];
+                for (int j=0;j<chunk_size;j++)
+                    if (array[j] != i) {
+                        printf("ERROR: pool arena failed during data check\n");
+                        return 1;
+                    }
+            }
+        }
+        // Free the pointers
+        /* printf("Free chunks\n"); */
+        p = 0;
+        while (p<MAX_CHUNK) {
+            if (pts[p] != NULL)
+                pool_free(pts[p]);
+            else
+                break;
+            p++;
+        }
 
-		pool_check();
-		chunk_size += 1;
-	}
+        pool_check();
+        chunk_size += 1;
+    }
 
     asm volatile("csrr %0, 0xC00" : "=r"(arena.cycle_end));
 
     arena.cycles = arena.cycle_end - arena.cycle_start;
 
 
-	return 0;
+    return 0;
 }

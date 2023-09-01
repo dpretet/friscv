@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.107 (w)1999-2020 BSI
-[*] Sun Aug 20 07:20:25 2023
+[*] Sun Aug 20 13:38:30 2023
 [*]
 [dumpfile] "/Users/damien/workspace/hdl/friscv/test/apps/friscv_testbench.vcd"
-[dumpfile_mtime] "Sun Aug 20 07:19:43 2023"
-[dumpfile_size] 16020984
+[dumpfile_mtime] "Sun Aug 20 13:19:09 2023"
+[dumpfile_size] 122716603
 [savefile] "/Users/damien/workspace/hdl/friscv/test/common/debug_platform_verilator.gtkw"
-[timestart] 1
-[size] 1440 900
+[timestart] 56256
+[size] 2560 1440
 [pos] -1 -1
-*-9.199879 1539 55747 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-2.535063 56279 55747 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] friscv_testbench.
 [treeopen] friscv_testbench.friscv_testbench.
 [treeopen] friscv_testbench.friscv_testbench.genblk2.
@@ -36,10 +36,10 @@
 [treeopen] friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.wr_ooo_mgt.
 [treeopen] friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_ICACHE.icache.mem_ctrl.IN_ORDER_CPL.
 [treeopen] friscv_testbench.friscv_testbench.genblk2.dut.io_subsystem.
-[sst_width] 193
+[sst_width] 270
 [signals_width] 339
 [sst_expanded] 1
-[sst_vpaned_height] 632
+[sst_vpaned_height] 746
 @c00200
 -AXI4-lite RAM
 @22
@@ -804,6 +804,9 @@ friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.mst_
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.mst_awid[7:0]
 @28
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.mst_awprot[2:0]
+@22
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.mst_awcache[3:0]
+@28
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.mst_awvalid
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.mst_awready
 @200
@@ -830,8 +833,11 @@ friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.cach
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.cache_raddr[31:0]
 @28
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.cache_hit
+@29
 [color] 2
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.cache_miss
+@28
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.is_io_req
 @200
 -
 @28
@@ -839,9 +845,7 @@ friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.pull
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.cache_wen
 @22
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.cache_waddr[31:0]
-@23
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.cache_wdata[127:0]
-@22
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.cache_wstrb[15:0]
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.cache_rid_r[7:0]
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.pusher.cache_waddr_r[31:0]
@@ -1816,8 +1820,9 @@ friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.M_EXTENSION_SUPPOR
 @1401200
 -divisor
 -processing
-@c00200
+@800200
 -peripheral
+@c00200
 -IO Subsystem
 @22
 friscv_testbench.friscv_testbench.genblk2.dut.io_subsystem.ADDRW[31:0]
@@ -2025,6 +2030,15 @@ friscv_testbench.friscv_testbench.genblk2.dut.io_subsystem.uart.uart_rx_sync
 friscv_testbench.friscv_testbench.genblk2.dut.io_subsystem.uart.uart_tx
 @1401200
 -UART
+@800200
+-GPIOs
+@22
+friscv_testbench.friscv_testbench.genblk2.dut.io_subsystem.gpios.register0[31:0]
+friscv_testbench.friscv_testbench.genblk2.dut.io_subsystem.gpios.gpio_out[31:0]
+friscv_testbench.friscv_testbench.genblk2.dut.io_subsystem.gpios.register1[31:0]
+friscv_testbench.friscv_testbench.genblk2.dut.io_subsystem.gpios.gpio_in[31:0]
+@1000200
+-GPIOs
 @c00200
 -Clint
 @22
@@ -2062,6 +2076,7 @@ friscv_testbench.friscv_testbench.genblk2.dut.io_subsystem.clint.mtime_en
 friscv_testbench.friscv_testbench.genblk2.dut.io_subsystem.clint.mtimecmp[63:0]
 @1401200
 -Clint
+@1000200
 -peripheral
 @c00200
 -CacheBlocks
