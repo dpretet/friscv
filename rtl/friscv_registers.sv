@@ -76,6 +76,7 @@ module friscv_registers
         input  wire  [XLEN                -1:0] csr_rd_val
     );
 
+    `ifdef TRACE_REGISTERS
     //------------------------------------------------
     // Function to print register name and information
     // @i: register number to get info
@@ -116,6 +117,7 @@ module friscv_registers
         if (i==30) get_name = "  t5    (temporary register 5)";
         if (i==31) get_name = "  t6    (temporary register 6)";
     endfunction
+    `endif
 
 
     // E extension limiting the register number to 16
