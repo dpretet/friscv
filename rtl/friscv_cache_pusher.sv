@@ -26,8 +26,6 @@ module friscv_cache_pusher
         parameter AXI_ADDR_W = 8,
         // AXI ID width, setup by default to 8 and unused
         parameter AXI_ID_W = 8,
-        // AXI4 data width, independant of control unit width
-        parameter AXI_DATA_W = 8,
         // ID Mask to apply to identify the instruction cache in the AXI4
         // infrastructure
         parameter AXI_ID_MASK = 'h20,
@@ -105,9 +103,11 @@ module friscv_cache_pusher
     logic                       data_fifo_afull;
     logic                       resp_fifo_full;
     logic                       resp_fifo_empty;
-    logic [XLEN/8         -1:0] wstrb;
+    logic                       wrbf_fifo_full;
+    logic                       wrbf_fifo_afull;
+    logic                       wrbf_fifo_empty;
 
-    logic [AXI_ID_W       -1:0] cache_rid;
+    // Write-through path signals
     logic [AXI_ID_W       -1:0] cpl_bid;
     logic [2              -1:0] cpl_bresp;
     logic                       push_addr_data;
@@ -117,8 +117,19 @@ module friscv_cache_pusher
     logic [AXI_ID_W       -1:0] cpl_id_m;
     logic [AXI_ID_W       -1:0] req_id_m;
     logic                       to_cpl;
-    logic                       awready;
-    logic                       wready;
+    logic                       wt_awready;
+    logic                       wt_wready;
+
+    // Write path signals
+    logic [XLEN/8         -1:0] wstrb;
+    logic [XLEN           -1:0] wdata;
+    logic [AXI_ID_W       -1:0] cache_rid_r;
+    logic [AXI_ADDR_W     -1:0] cache_waddr_r;
+    logic [XLEN           -1:0] cache_wdata_r;
+    logic [XLEN/8         -1:0] cache_wstrb_r;
+    logic [AXI_ID_W       -1:0] cache_rid;
+    logic                       pull_wrbf;
+    logic                       is_io_req;
 
     // Tracer setup
     `ifdef TRACE_CACHE
@@ -137,53 +148,87 @@ module friscv_cache_pusher
     // the cache blocks
     //
     ///////////////////////////////////////////////////////////////////////////
+    
+    assign mst_awready = wt_awready & wt_wready & !wrbf_fifo_afull & !wrbf_fifo_full;
+    assign mst_wready = wt_awready & wt_wready & !wrbf_fifo_afull & !wrbf_fifo_full;
+
+    assign cache_ren = mst_awvalid && mst_awready && mst_wvalid && mst_wready && !mst_awcache[1];
+    assign cache_raddr = mst_awaddr;
 
     // Monitor the write requests and drive the cache block updater. Acts as a pipeline
     // of the incoming write request to check if the data needs to be updated in a cache block
     always @ (posedge aclk or negedge aresetn) begin
 
         if (!aresetn) begin
-            cache_waddr <= '0;
-            cache_rid <= '0;
-            cache_wdata <= '0;
-            cache_wstrb <= '0;
+            cache_waddr_r <= '0;
+            cache_rid_r <= '0;
+            cache_wdata_r <= '0;
+            cache_wstrb_r <= '0;
             push_addr_data <= '0;
-            wstrb <= '0;
+            is_io_req <= '0;
         end else if (srst) begin
-            cache_waddr <= '0;
-            cache_rid <= '0;
-            cache_wdata <= '0;
-            cache_wstrb <= '0;
+            cache_waddr_r <= '0;
+            cache_rid_r <= '0;
+            cache_wdata_r <= '0;
+            cache_wstrb_r <= '0;
             push_addr_data <= '0;
-            wstrb <= '0;
+            is_io_req <= '0;
         end else begin
-
-            push_addr_data <= mst_awvalid && awready && mst_wvalid && wready;
-            cache_waddr <= mst_awaddr;
-            cache_rid <= mst_awid;
-            cache_wdata <= {SCALE{mst_wdata}};
-            wstrb <= mst_wstrb;
-
-            for (int i=0;i<SCALE;i=i+1) begin
-                if (mst_awaddr[2+:SCALE_W]==i[SCALE_W-1:0])
-                    cache_wstrb[i*XLEN/8+:XLEN/8] <= mst_wstrb;
-                else
-                    cache_wstrb[i*XLEN/8+:XLEN/8] <= {XLEN/8{1'b0}};
-            end
+            push_addr_data <= mst_awvalid && mst_awready && mst_wvalid && mst_wready;
+            cache_waddr_r <= mst_awaddr;
+            cache_rid_r <= mst_awid;
+            cache_wdata_r <= mst_wdata;
+            cache_wstrb_r <= mst_wstrb;
+            is_io_req <= mst_awcache[1] & mst_awvalid && mst_awready && mst_wvalid && mst_wready;
         end
     end
 
-    assign cache_ren = mst_awvalid && mst_awready && mst_wvalid && mst_wready && !mst_awcache[1];
-    assign cache_raddr = mst_awaddr;
-    assign cache_wen = cache_hit;
+    friscv_scfifo
+    #(
+        .PASS_THRU  (0),
+        .ADDR_WIDTH ($clog2(OSTDREQ_NUM)),
+        .DATA_WIDTH (AXI_ADDR_W+AXI_ID_W+XLEN+XLEN/8)
+    )
+    wr_buffer
+    (
+        .aclk     (aclk),
+        .aresetn  (aresetn),
+        .srst     (srst),
+        .flush    (1'b0),
+        .data_in  ({cache_wstrb_r, cache_wdata_r, cache_rid_r, cache_waddr_r}),
+        .push     (cache_hit),
+        .full     (wrbf_fifo_full),
+        .afull    (wrbf_fifo_afull),
+        .data_out ({wstrb, wdata, cache_rid, cache_waddr}),
+        .pull     (pull_wrbf),
+        .empty    (wrbf_fifo_empty),
+        .aempty   ()
+    );
+
+    always @ (*) begin
+
+        for (int i=0;i<SCALE;i=i+1) begin
+            if (cache_waddr[2+:SCALE_W]==i[SCALE_W-1:0]) begin
+                cache_wstrb[i*XLEN/8+:XLEN/8] = wstrb;
+            end else begin
+                cache_wstrb[i*XLEN/8+:XLEN/8] = {XLEN/8{1'b0}};
+            end
+        end
+
+        pull_wrbf = !cache_ren;
+        cache_wen = !wrbf_fifo_empty & !cache_ren;
+        cache_wdata = {SCALE{wdata}};
+
+    end
 
     `ifdef TRACE_CACHE
     always @ (posedge aclk or negedge aresetn) begin
-        if (aresetn && cache_hit) begin
+        if (aresetn && cache_wen) begin
             $fwrite(f, "@ %0t: Update block\n", $realtime);
-            $fwrite(f, "  - addr 0x%x\n", cache_waddr);
-            $fwrite(f, "  - data 0x%x\n", cache_wdata);
-            $fwrite(f, "  - strb 0x%x\n", cache_wstrb);
+            $fwrite(f, "  - addr: 0x%x\n", cache_waddr);
+            $fwrite(f, "  - data: 0x%x\n", cache_wdata);
+            $fwrite(f, "  - strb: 0x%x\n", cache_wstrb);
+            $fwrite(f, "  - id:   0x%x\n", cache_rid);
         end
     end
     `endif
@@ -209,7 +254,7 @@ module friscv_cache_pusher
         .aresetn  (aresetn),
         .srst     (srst),
         .flush    (1'b0),
-        .data_in  ({cache_rid, cache_waddr}),
+        .data_in  ({cache_rid_r, cache_waddr_r}),
         .push     (push_addr_data),
         .full     (addr_fifo_full),
         .afull    (addr_fifo_afull),
@@ -219,7 +264,7 @@ module friscv_cache_pusher
         .aempty   ()
     );
 
-    assign awready = !addr_fifo_full && !addr_fifo_afull;
+    assign wt_awready = !addr_fifo_full && !addr_fifo_afull;
     assign memctrl_awvalid = !addr_fifo_empty;
 
     friscv_scfifo
@@ -234,7 +279,7 @@ module friscv_cache_pusher
         .aresetn  (aresetn),
         .srst     (srst),
         .flush    (1'b0),
-        .data_in  ({wstrb, cache_wdata[0+:XLEN]}),
+        .data_in  ({cache_wstrb_r, cache_wdata_r}),
         .push     (push_addr_data),
         .full     (data_fifo_full),
         .afull    (data_fifo_afull),
@@ -244,12 +289,10 @@ module friscv_cache_pusher
         .aempty   ()
     );
 
-    assign wready = !data_fifo_full & !data_fifo_afull;
+    assign wt_wready = !data_fifo_full & !data_fifo_afull;
     assign memctrl_wvalid = !data_fifo_empty;
+
     assign memctrl_awprot = 3'b0;
-    
-    assign mst_awready = awready & wready;
-    assign mst_wready = awready & wready;
 
     /////////////////////////////////////////////////////////////////////////////////
     //
@@ -287,13 +330,12 @@ module friscv_cache_pusher
 
     // Used to address the RAM storing the flag indicating a completion needs to 
     // be driven back the application to complete a request
-    assign req_id_m = (cache_miss) ? cache_rid ^ AXI_ID_MASK : mst_awid ^ AXI_ID_MASK;
+    assign req_id_m = cache_rid_r ^ AXI_ID_MASK;
     // Used to check if the completion needs to be stored and then driven back
     assign cpl_id_m = memctrl_bid ^ AXI_ID_MASK;
     assign to_cpl = id_ram[cpl_id_m[OSTDREQ_W-1:0]];
 
     // Track the outstanding request to drive back completion to the application
-    // FIXME: can't track a cache miss and an IO req in the same cycle
     for (genvar i=0; i<OSTDREQ_NUM; i=i+1) begin : ID_TRACKER
 
         always @ (posedge aclk or negedge aresetn) begin
@@ -302,8 +344,7 @@ module friscv_cache_pusher
             end else if (srst) begin
                 id_ram[i] <= '0;
             end else begin
-                if ((cache_miss || mst_awvalid && mst_awready && mst_wvalid && mst_wready && mst_awcache[1]) && 
-                    req_id_m[OSTDREQ_W-1:0]==i[OSTDREQ_W-1:0]) 
+                if ((cache_miss || is_io_req) && req_id_m[OSTDREQ_W-1:0]==i[OSTDREQ_W-1:0]) 
                 begin
                     id_ram[i] <= 1'b1;
                 end else if (memctrl_bvalid && memctrl_bready && cpl_id_m[OSTDREQ_W-1:0]==i[OSTDREQ_W-1:0]) begin
@@ -316,7 +357,7 @@ module friscv_cache_pusher
     // TODO: manage back-pressure of completion channel readiness
     // Today OoO or memfy are always ready
     always @ (*) begin
-        if (cache_hit) begin
+        if (cache_wen) begin
             mst_bvalid = 1'b1;
             mst_bresp = 2'b0;
             mst_bid = cache_rid;
