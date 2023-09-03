@@ -33,6 +33,7 @@ SRCS="\
 ../rtl/friscv_scfifo.sv \
 ../rtl/friscv_scfifo_ram.sv \
 ../rtl/friscv_stats.sv \
+../rtl/friscv_lut.sv \
 ../rtl/friscv_uart.sv"
 
 yosys -g -DARTY \
