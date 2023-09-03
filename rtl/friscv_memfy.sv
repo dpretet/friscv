@@ -630,13 +630,13 @@ module friscv_memfy
             `ifdef TRACE_MEMFY
             //synthesis translate_off
             //synopsys translate_off
-            if ((memfy_valid && memfy_ready && opcode==`STORE && !bvalid && max_wr_or) begin
+            if (memfy_valid && memfy_ready && opcode==`STORE && !bvalid && max_wr_or) begin
                 $display("ERROR: (@%0t) %s: Reached maximum write OR number but continue to issue requests", $realtime, "MEMFY");
             end else if (!(memfy_valid && memfy_ready && opcode==`STORE) && bvalid && bready && wr_or_cnt=={MAX_OR_W{1'b0}}) begin
                 $display("ERROR: (@%0t) %s: Freeing a write OR but counter is already 0", $realtime, "MEMFY");
             end
 
-            if (memfy_valid && memfy_ready && opcode==`LOAD && !memfy_rd_wr && && max_rd_or) begin
+            if (memfy_valid && memfy_ready && opcode==`LOAD && !memfy_rd_wr && max_rd_or) begin
                 $display("ERROR: (@%0t) %s: Reached maximum read OR number but continue to issue requests", $realtime, "MEMFY");
             end else if (!(memfy_valid && memfy_ready && opcode==`LOAD) && memfy_rd_wr && rd_or_cnt=={MAX_OR_W{1'b0}}) begin
                 $display("ERROR: (@%0t) %s: Freeing a read OR but counter is already 0", $realtime, "MEMFY");
@@ -745,7 +745,7 @@ module friscv_memfy
 
     ------------------------------------------------------------------------------------------------
          ACACHE      |              AWCACHE                  |              ARCACHE
-    [3] [2] [1] [0]  |                                       |                     
+    [3] [2] [1] [0]  |                                       |
     ------------------------------------------------------------------------------------------------
      0   0   0   0   | Device Non-cacheable Non-bufferable   | Device Non-cacheable Non-bufferable
      0   0   0   1   | Device Non-cacheable Bufferable       | Device Non-cacheable Bufferable
@@ -757,7 +757,7 @@ module friscv_memfy
                      | Write-Through Read-Allocate           |
     ------------------------------------------------------------------------------------------------
      0   1   1   1   | Write-Back No-Allocate                | Write-Back Read-Allocate
-                     | Write-Back Read-Allocate              | 
+                     | Write-Back Read-Allocate              |
     ------------------------------------------------------------------------------------------------
      1   0   1   0   | Write-Through Write-Allocate          | Write-Through No-Allocate
                      |                                       | Write-Through Write-Allocate
