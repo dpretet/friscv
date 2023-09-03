@@ -241,7 +241,7 @@ module friscv_cache_blocks
 
     // offset is used to select the correct instruction across the cache line
     assign p1_roffset = p1_raddr[OFFSET_IX+:OFFSET_W];
-    assign p2_roffset = p1_raddr[OFFSET_IX+:OFFSET_W];
+    assign p2_roffset = p2_raddr[OFFSET_IX+:OFFSET_W];
     // address's MSB to identify the memory address source
     assign p1_rtag = p1_raddr[TAG_IX+:TAG_W];
     assign p2_rtag = p2_raddr[TAG_IX+:TAG_W];
