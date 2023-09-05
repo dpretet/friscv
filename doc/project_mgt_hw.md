@@ -1,6 +1,5 @@
 # Planning: Next Big Topics
 
-- [-] Enhance globally performance
 - [ ] Create a HW platform
 - [ ] User & supervisor modes
     - store priv in cache block
@@ -15,20 +14,7 @@
 
 # DOING
 
-Mesure et amélioration des performances
-- [X] Print et save des registres CSRs pour chaque test, garde la trace des performances dans Git
-- [X] IP point de mesure des différents bus en bandwidth
-- [X] CPI measure in benchmark
-- [X] Augmenter le nombre d’OR max de dCache
-- [X] Prefetch read request
-- [X] Optimize write pusher to save a cycle
-- [X] Optimize Memfy dead cycle (RD write comb & pending request =0 if == 1 & valid)
-- [X] Enhance read outstanding requests in MemFy
-- [X] No more pending flags in caches, BCH / RCH handshake is used to manage reording in Memfy
-- [X] Enhance completion in OoO
-- [X] Save a cycle on RD write in Memfy
-- [X] Pending flag to deassert on completion if or=1  
-- [ ] Detect address collision in memfy for better performance
+
 - [ ] Preload jal even if processing is busy
 - [ ] Branch prediction
     - [ ] https://en.wikipedia.org/wiki/Branch_target_predictor
@@ -59,7 +45,7 @@ Cache Stage Enhancement:
 - [ ] Cache OoO manager to use queue vs compteur
 
 Misc.
-- [ ] Testcase C ASM stress de cache 
+- [ ] Testcase C ASM stress de cache
 - [ ] Rework IO APB interconnect
     - Fix IO subsystem misrouted
     - Fix IO subsystem bridge
@@ -102,6 +88,9 @@ Misc.
 
 
 AXI4 Infrastructure
+- [ ] Detect address collision in memfy for better performance
+    - support concurrent r/w in dCache
+    - merge memfy_opt for memfy core udpate
 - [ ] Support different clock for AXI4 memory interface, cache and internal core
 - [ ] Out of order support in AXI
 - [ ] Support ECC bits in core/crossbar
@@ -180,6 +169,19 @@ Hardware Test:
 
 # DONE
 
+- [X] Mesure et amélioration des performances
+    - [X] Print et save des registres CSRs pour chaque test, garde la trace des performances dans Git
+    - [X] IP point de mesure des différents bus en bandwidth
+    - [X] CPI measure in benchmark
+    - [X] Augmenter le nombre d’OR max de dCache
+    - [X] Prefetch read request
+    - [X] Optimize write pusher to save a cycle
+    - [X] Optimize Memfy dead cycle (RD write comb & pending request =0 if == 1 & valid)
+    - [X] Enhance read outstanding requests in MemFy
+    - [X] No more pending flags in caches, BCH / RCH handshake is used to manage reording in Memfy
+    - [X] Enhance completion in OoO
+    - [X] Save a cycle on RD write in Memfy
+    - [X] Pending flag to deassert on completion if or=1
 - [X] v1.4.0
     - [X] Rework Control for faster jump.
     - [X] Rework iCache block fetcher to simplify it
