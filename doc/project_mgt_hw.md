@@ -1,29 +1,8 @@
-# Planning: Next Big Topics
-
-- [ ] Create a HW platform
-- [ ] User & supervisor modes
-    - store priv in cache block
-- [ ] 64bits support
-- [ ] Atomic ops
-- [ ] F extension
-- [ ] Division enhancement
-- [ ] Add registers to configure the core
-- [ ] Support completly a profile, like RVA20
-- [ ] Manage AXI bus errors in a queue or a register and raise an exception
-
-
 # DOING
 
-
-- [ ] Preload jal even if processing is busy
-- [ ] Branch prediction
-    - [ ] https://en.wikipedia.org/wiki/Branch_target_predictor
-    - [ ] https://www.tutorialspoint.com/what-are-the-types-of-dynamic-branch-prediction
-    - [ ] https://www.youtube.com/watch?app=desktop&v=hl4eiN8ZMJg
-    - [ ] https://github.com/tommythorn/yarvi/blob/master/rtl/yarvi.v#L184
-    - [ ] https://danluu.com/branch-prediction
-- [ ] Rewind pipeline (L0 local cache)
-
+- [ ] Revoir tous les paramètres de chaque instance et les documenter
+- [ ] Review readme files
+- [ ] Revoir la RAM AXI pour les temps de réponses write compliance et speed
 
 
 # BACKLOG
@@ -34,30 +13,41 @@ N.B. :
 - Any new feature and ISA should be carefully study to ensure a proper
   exception and interrupt handling
 
+Memory
+- [ ] Better manage ACACHE attribute
+    - [ ] Correct value driven from memfy
+    - [ ] Use it correctly across the cache
+    - [ ] Read/write allocate based on memory map
+    - [ ] Check impossible combination
+    - [ ] IO map bufferable / non-bufferable
+- [ ] Make memory mapping of the core with:
+    - [ ] Normal vs device
+    - [ ] Inst vs data zone for cacheability
+    - [ ] Sharable for L2 cache
+    - [ ] Support exception code for memory access error
+    - [ ] Manage write response from cache or interco, don’t wait endpoint
+    - [ ] Raise exception also from cache
 
-Cache Stage Enhancement:
+Cache Stages:
 - [ ] AXI4 + Wrap mode for read
-- [X] Support prefetch: if no jump/branch detected in fetched instructions
-      grab the next line, else give a try to fetch the branch address. AXI hint?
 - [ ] Support datapath adaptation from memory controller
     - Narrow transfer support?
     - Gather/merge multiple continuous transactions?
-- [ ] Cache OoO manager to use queue vs compteur
+- [ ] Bien définir la politique write through no allocate
+    - [ ] Write thru n’a pas besoin de n’a pas besoin d’eviction buffer https://stackoverflow.com/questions/23635284/what-is-the-difference-between-eviction-buffer-and-merging-store-buffer-on-arm-c
+    - [ ] Renommer le write stage pour merging store buffer et essayer de merger les acces au besoin
+    - [ ] https://en.wikipedia.org/wiki/Write_buffer
+    - [ ] Write back policy permet de sauver de la BW mais rend la structure plus évoluée
+- [ ] New cache associativity (2 / 4 / 8 ways configurable)
+- [ ] OoO read: miss could be stacked and served later waiting for cache fill and continue reading the next address
 
 Misc.
-- [ ] Testcase C ASM stress de cache
-- [ ] Rework IO APB interconnect
-    - Fix IO subsystem misrouted
-    - Fix IO subsystem bridge
-- [ ] Random peripheral
-- [ ] OoO read: miss could be stacked and served later waiting for cache fill and continue reading the next address
-- [ ] Support cache disable in testbench
-- [ ] Put in place profiling
-- [ ] Print des tests qui ne marchent pas dans le bash et svut_h.sv pour verilator
+- [ ] Create a HW platform
+- [ ] Add registers to configure the core in platform
+- [ ] Support completly a profile
 - [ ] 64 bits support
 - [ ] Atomic operations
 - [ ] Zicond
-- [ ] RVV for machine learning
 - [ ] Support privileged instructions, supervisor mode & user mode
       - voir les CSRs dans la privileged mode, implementer les compteurs par mode
       - https://danielmangum.com/posts/risc-v-bytes-privilege-levels/
@@ -70,21 +60,14 @@ Misc.
         - https://tomverbeure.github.io/2021/07/18/VexRiscv-OpenOCD-and-Traps.html
         - https://tomverbeure.github.io/2022/02/20/GDBWave-Post-Simulation-RISCV-SW-Debugging.html
         - https://github.com/BLangOS/VexRiscV_with_HW-GDB_Server
+- [ ] Super scaler arch
+    - https://en.m.wikipedia.org/wiki/Instruction-level_parallelism
+    - https://en.m.wikipedia.org/wiki/Data_dependency
+    - https://www.youtube.com/channel/UCPSsA8oxlSBjidJsSPdpjsQ/videos
 - [ ] Support PLIC (only for multi-core)
 - [ ] Support CLIC controller
+- [ ] Random peripheral
 - [ ] UART: Support 9/10 bits & parity
-- [ ] Removed the 2 LSBs in instruction cache while always 2'b11 (6.25% saving)
-- [ ] Out-of-order execution
-- [ ] Create app per benchmark
-- [ ] Revoir tous les paramètres de chaque instance et les documenter
-- [ ] Drop lxt2 waveform
-- [ ] Manage exceptions on r/w response
-- [ ] SV Testbench: Assert flush without ARVALID
-- [ ] New cache associativity (2 / 4 / 8 ways configurable)
-- [ ] Super scaler arch
-- [ ] Move LUI into processing to prepare future extension support
-    - [ ] Read ASM to be sure its used for processing and not control
-    - [ ] Benchmark waveform doesn’t reveal high usage
 
 
 AXI4 Infrastructure
@@ -92,44 +75,57 @@ AXI4 Infrastructure
     - support concurrent r/w in dCache
     - merge memfy_opt for memfy core udpate
 - [ ] Support different clock for AXI4 memory interface, cache and internal core
-- [ ] Out of order support in AXI
 - [ ] Support ECC bits in core/crossbar
 - [ ] Rework GPIOs sub-system
     - [ ] Reduce latency in switching logic
     - [ ] Ajouter PERROR sur l’APB, to log on error reporting bus
+    - [ ] Rework IO APB interconnect
+        - Fix IO subsystem misrouted
+        - Fix IO subsystem bridge
 - [ ] Implement a L2 cache stage
-- [ ] Ooo write completion, response needs to come from the destination if IO write
+- [ ] Out of order support in AXI (memfy if not using cache)
 
-dCache - OoO off
-- [C] Voir le memory model et fence
-- [C] Serait applicable si le processeur est OoO
-- [C] Handled by app
-- [C] IDs must be issued from 0
-- [C] IDs must be all different
-- [C] Out-of-order in memfy
 
 Control:
 - [ ] Detect IO requests to forward info for FENCE execution
-- [ ] [Multiple instruction issue](https://www.youtube.com/watch?v=wGpkiNb_V9c)
-- [ ] Enable flow-thru mode in instruction FIFO
-- [ ] Reduce cache jump
+- [ ] Preload jal even if processing is busy
+- [ ] Move LUI into processing to prepare future extension support
+    - [ ] Read ASM to be sure its used for processing and not control
+    - [ ] Benchmark waveform doesn’t reveal high usage
+- [ ] Branch prediction
+    - [ ] https://en.wikipedia.org/wiki/Branch_target_predictor
+    - [ ] https://www.tutorialspoint.com/what-are-the-types-of-dynamic-branch-prediction
+    - [ ] https://www.youtube.com/watch?app=desktop&v=hl4eiN8ZMJg
+    - [ ] https://github.com/tommythorn/yarvi/blob/master/rtl/yarvi.v#L184
+    - [ ] https://danluu.com/branch-prediction
+- [ ] Rewind pipeline (L0 local cache)
 
 
 Processing:
 
-https://www.youtube.com/channel/UCPSsA8oxlSBjidJsSPdpjsQ/videos
 
-- [ ] Memfy: Manage RRESP/BRESP
+- [ ] Parameter in processing to deactivate hazard detection, save logic and measure gain
+- [ ] Memfy:
+    - If not ready, and request present, the FSM can’t drive further data
+    - Manage RRESP/BRESP in an exception bus
 - [ ] Support F extension
 - [ ] Division
     - [ ] Save bandwidth by removing dead cycles
     - [ ] Manage pow2 division by shifting
     - [ ] Start division from first non-zero digit
-- [ ] Out-of-order execution
+- [ ] OoO execution with Tomasulo algorithm
+    - [ ] https://en.m.wikipedia.org/wiki/Hazard_(computer_architecture)#Data_hazards
+    - [ ] https://en.m.wikipedia.org/wiki/Tomasulo%27s_algorithm
+- [ ] RVV for machine learning
 
 
 Verification/Validation:
 
+- [ ] Drop lxt2 waveform
+- [ ] SV Testbench: Assert flush without ARVALID
+- [ ] Create app per benchmark
+- [ ] Testcase C ASM stress de cache
+- [ ] Print des tests qui ne marchent pas dans le bash et svut_h.sv pour verilator
 - [ ] Update synthesis flow
     - [ ] Standard cells library for Yosys
     - [ ] https://github.com/dpretet/ascend-freepdk45/tree/master/lib
@@ -139,6 +135,7 @@ Verification/Validation:
 - [ ] Core config
     - [ ] Supporter des set de config du core en test bench.
     - [ ] Faire un test de synthèse selon les configs du core
+    - [ ] Support cache disable in testbench
 - [ ] Error Logger Interface
     - [ ] Shared bus des CSRs, privilege mode, event, …
     - [ ] stream the event like a write memory error
@@ -182,6 +179,10 @@ Hardware Test:
     - [X] Enhance completion in OoO
     - [X] Save a cycle on RD write in Memfy
     - [X] Pending flag to deassert on completion if or=1
+    - [X] OoO write completion, response needs to come from the destination if IO write
+    - [X] Support prefetch: if no jump/branch detected in fetched instructions
+          grab the next line, else give a try to fetch the branch address. AXI hint?
+    - [X] Reduce cache jump
 - [X] v1.4.0
     - [X] Rework Control for faster jump.
     - [X] Rework iCache block fetcher to simplify it
