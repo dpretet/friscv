@@ -43,8 +43,6 @@ module friscv_rv32i_platform
         parameter M_EXTENSION       = 0,
         // Insert a pipeline on instruction bus coming from the controller
         parameter PROCESSING_BUS_PIPELINE = 0,
-        // FIFO depth of processing unit, buffering the instruction to execute
-        parameter PROCESSING_QUEUE_DEPTH = 0,
 
         ////////////////////////////////////////////////////////////////////////
         // AXI4 / AXI4-lite interface setup
@@ -319,7 +317,6 @@ module friscv_rv32i_platform
         .XLEN (XLEN),
         .M_EXTENSION (M_EXTENSION),
         .F_EXTENSION (F_EXTENSION),
-        .PROCESSING_QUEUE_DEPTH (PROCESSING_QUEUE_DEPTH),
         .PROCESSING_BUS_PIPELINE (PROCESSING_BUS_PIPELINE),
         .BOOT_ADDR (BOOT_ADDR),
         .INST_OSTDREQ_NUM (INST_OSTDREQ_NUM),

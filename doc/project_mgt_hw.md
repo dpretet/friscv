@@ -2,16 +2,14 @@
 
 - [ ] Revoir tous les paramètres de chaque instance et les documenter
 - [ ] Review readme files
+- [ ] Rework logging by using SVLogger everywhere
 - [ ] Revoir la RAM AXI pour les temps de réponses write compliance et speed
 
 
 # BACKLOG
 
-N.B. :
-- Counters and timers should be reworked for multi hart architecture, and probably adapted
-  for platform specific configurations
-- Any new feature and ISA should be carefully study to ensure a proper
-  exception and interrupt handling
+N.B. : Any new feature and ISA should be carefully study to ensure a proper
+       exception and interrupt handling
 
 Memory
 - [ ] Better manage ACACHE attribute
@@ -22,17 +20,18 @@ Memory
     - [ ] IO map bufferable / non-bufferable
 - [ ] Make memory mapping of the core with:
     - [ ] Normal vs device
-    - [ ] Inst vs data zone for cacheability
+    - [ ] Inst vs data zone for cacheability / executability
     - [ ] Sharable for L2 cache
     - [ ] Support exception code for memory access error
     - [ ] Manage write response from cache or interco, don’t wait endpoint
     - [ ] Raise exception also from cache
 
-Cache Stages:
+Cache Stages
+
 - [ ] AXI4 + Wrap mode for read
 - [ ] Support datapath adaptation from memory controller
-    - Narrow transfer support?
-    - Gather/merge multiple continuous transactions?
+    - [ ] Narrow transfer support?
+    - [ ] Gather/merge multiple continuous transactions?
 - [ ] Bien définir la politique write through no allocate
     - [ ] Write thru n’a pas besoin de n’a pas besoin d’eviction buffer https://stackoverflow.com/questions/23635284/what-is-the-difference-between-eviction-buffer-and-merging-store-buffer-on-arm-c
     - [ ] Renommer le write stage pour merging store buffer et essayer de merger les acces au besoin
@@ -40,14 +39,17 @@ Cache Stages:
     - [ ] Write back policy permet de sauver de la BW mais rend la structure plus évoluée
 - [ ] New cache associativity (2 / 4 / 8 ways configurable)
 - [ ] OoO read: miss could be stacked and served later waiting for cache fill and continue reading the next address
+- [ ] Fully concurrent read / write access (Issue #1)
 
 Misc.
-- [ ] Create a HW platform
+
+- [ ] Create a HW test platform
+    - [ ] Cloud
+    - [ ] Analogue pocket
 - [ ] Add registers to configure the core in platform
 - [ ] Support completly a profile
 - [ ] 64 bits support
-- [ ] Atomic operations
-- [ ] Zicond
+- [ ] Atomic operations for single core
 - [ ] Support privileged instructions, supervisor mode & user mode
       - voir les CSRs dans la privileged mode, implementer les compteurs par mode
       - https://danielmangum.com/posts/risc-v-bytes-privilege-levels/
@@ -60,17 +62,21 @@ Misc.
         - https://tomverbeure.github.io/2021/07/18/VexRiscv-OpenOCD-and-Traps.html
         - https://tomverbeure.github.io/2022/02/20/GDBWave-Post-Simulation-RISCV-SW-Debugging.html
         - https://github.com/BLangOS/VexRiscV_with_HW-GDB_Server
-- [ ] Super scaler arch
-    - https://en.m.wikipedia.org/wiki/Instruction-level_parallelism
-    - https://en.m.wikipedia.org/wiki/Data_dependency
-    - https://www.youtube.com/channel/UCPSsA8oxlSBjidJsSPdpjsQ/videos
-- [ ] Support PLIC (only for multi-core)
+- [ ] Zicond extension
 - [ ] Support CLIC controller
 - [ ] Random peripheral
 - [ ] UART: Support 9/10 bits & parity
+- [ ] AXI platform
+- [ ] Multi-core platform:
+    - [ ] Counters and timers should be reworked
+    - [ ] Nb core configurable
+    - [ ] Support PLIC
+    - [ ] Extended atomic operation support
+    - [ ] Implement a L2 cache stage
 
 
 AXI4 Infrastructure
+
 - [ ] Detect address collision in memfy for better performance
     - support concurrent r/w in dCache
     - merge memfy_opt for memfy core udpate
@@ -82,13 +88,13 @@ AXI4 Infrastructure
     - [ ] Rework IO APB interconnect
         - Fix IO subsystem misrouted
         - Fix IO subsystem bridge
-- [ ] Implement a L2 cache stage
 - [ ] Out of order support in AXI (memfy if not using cache)
 
 
-Control:
-- [ ] Detect IO requests to forward info for FENCE execution
+Control
+
 - [ ] Preload jal even if processing is busy
+- [ ] Detect IO requests to forward info for FENCE execution
 - [ ] Move LUI into processing to prepare future extension support
     - [ ] Read ASM to be sure its used for processing and not control
     - [ ] Benchmark waveform doesn’t reveal high usage
@@ -101,13 +107,12 @@ Control:
 - [ ] Rewind pipeline (L0 local cache)
 
 
-Processing:
+Processing
 
-
-- [ ] Parameter in processing to deactivate hazard detection, save logic and measure gain
+- [ ] Processing: parameter to deactivate hazard detection, save logic and measure gain
 - [ ] Memfy:
     - If not ready, and request present, the FSM can’t drive further data
-    - Manage RRESP/BRESP in an exception bus
+    - Manage RRESP/BRESP in the exception bus
 - [ ] Support F extension
 - [ ] Division
     - [ ] Save bandwidth by removing dead cycles
@@ -122,10 +127,9 @@ Processing:
 Verification/Validation:
 
 - [ ] Drop lxt2 waveform
-- [ ] SV Testbench: Assert flush without ARVALID
 - [ ] Create app per benchmark
-- [ ] Testcase C ASM stress de cache
-- [ ] Print des tests qui ne marchent pas dans le bash et svut_h.sv pour verilator
+- [ ] Testcase C ASM cache stress
+- [ ] Print des tests qui ne marchent pas dans le bash
 - [ ] Update synthesis flow
     - [ ] Standard cells library for Yosys
     - [ ] https://github.com/dpretet/ascend-freepdk45/tree/master/lib
@@ -138,13 +142,14 @@ Verification/Validation:
     - [ ] Support cache disable in testbench
 - [ ] Error Logger Interface
     - [ ] Shared bus des CSRs, privilege mode, event, …
-    - [ ] stream the event like a write memory error
+    - [ ] Stream the event like a write memory error
     - [ ] log error in a file
     - [ ] Support GDB:  https://tomverbeure.github.io/2021/07/18/VexRiscv-OpenOCD-and-Traps.html
 - [ ] Update RISCV testsuite sources
 - [ ] SV Testbench: be able to assert or not a flush req along a new request on the same cycle
 
 Hardware Test:
+
 - [ ] Support LiteX: https://github.com/litex-hub/litex-boards, https://pcotret.gitlab.io/blog/processor_in_litex/
 - [ ] Azure: https://www.xilinx.com/products/boards-and-kits/alveo/cloud-solutions/microsoft-azure.html
 - [ ] AWS: https://www.xilinx.com/products/design-tools/acceleration-zone/aws.html
@@ -154,7 +159,10 @@ Hardware Test:
 # Ideas / Applications
 
 - [ ] Next CPU architecture:
-    - super scalar architecture
+    - Super scalar architecture
+        - https://en.m.wikipedia.org/wiki/Instruction-level_parallelism
+        - https://en.m.wikipedia.org/wiki/Data_dependency
+        - https://www.youtube.com/channel/UCPSsA8oxlSBjidJsSPdpjsQ/videos
     - SIMD architecture
     - Vector architecture
     - Application to GPGPU area
@@ -166,7 +174,7 @@ Hardware Test:
 
 # DONE
 
-- [X] Mesure et amélioration des performances
+- [X] v1.5.0: Mesure et amélioration des performances
     - [X] Print et save des registres CSRs pour chaque test, garde la trace des performances dans Git
     - [X] IP point de mesure des différents bus en bandwidth
     - [X] CPI measure in benchmark

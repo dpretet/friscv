@@ -31,8 +31,6 @@ module friscv_processing
         parameter MAX_UNIT          = 4,
         // Insert a pipeline on instruction bus coming from the controller
         parameter INST_BUS_PIPELINE = 0,
-        // Internal FIFO depth, buffering the instruction to execute (UNUSED)
-        parameter INST_QUEUE_DEPTH  = 0,
         // Number of outstanding requests used by the LOAD/STORE unit
         parameter DATA_OSTDREQ_NUM  = 8,
         // Reorder read completion internally in Memfy, not in dCache

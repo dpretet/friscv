@@ -42,8 +42,6 @@ module friscv_rv32i_core
         parameter M_EXTENSION       = 0,
         // Insert a pipeline on instruction bus coming from the controller
         parameter PROCESSING_BUS_PIPELINE = 0,
-        // FIFO depth of processing unit, buffering the instruction to execute
-        parameter PROCESSING_QUEUE_DEPTH = 0,
 
         ////////////////////////////////////////////////////////////////////////
         // AXI4 / AXI4-lite interface setup
@@ -71,7 +69,7 @@ module friscv_rv32i_core
         parameter ICACHE_PREFETCH_EN = 0,
         // Block width defining only the data payload, in bits, must an
         // integer multiple of XLEN (power of two)
-        parameter ICACHE_BLOCK_W     = XLEN*4,
+        parameter ICACHE_BLOCK_W     = ILEN*4,
         // Number of blocks in the cache
         parameter ICACHE_DEPTH       = 512,
             
@@ -595,7 +593,6 @@ module friscv_rv32i_core
         .MAX_UNIT          (MAX_ALU_UNIT),
         .DATA_OSTDREQ_NUM  (DATA_OSTDREQ_NUM),
         .INST_BUS_PIPELINE (PROCESSING_BUS_PIPELINE),
-        .INST_QUEUE_DEPTH  (PROCESSING_QUEUE_DEPTH),
         .IO_MAP_NB         (IO_MAP_NB),
         .IO_MAP            (IO_MAP)
     )
