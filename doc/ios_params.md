@@ -58,7 +58,7 @@
 - AXI_ADDR_W
     - wideness of any AXI address bus
     - any value (bits)
-    - default: XLEN, 32 bits
+    - default: `XLEN`, 32 bits
 
 - AXI_ID_W
     - widness of any AXI ID bus
@@ -68,21 +68,21 @@
 - AXI_IMEM_W
     - wideness of any AXI data bus for instruction
     - 32 (bits)
-    - default: XLEN, 32 bits
+    - default: `XLEN`, 32 bits
 
 - AXI_DMEM_W
     - wideness of any AXI data bus for data
     - 32 or 64 (bits)
-    - default: XLEN, 32 bits
+    - default: `XLEN`, 32 bits
 
 - AXI_IMEM_MASK
     - mask applied to instruction AXI ID bus to identify it
-    - any value matching AXI_ID_W
+    - any value matching `AXI_ID_W` wideness
     - default: 0x10
 
 - AXI_DMEM_MASK
     - mask applied to data AXI ID bus to identify it
-    - any value matching AXI_ID_W
+    - any value matching `AXI_ID_W` wideness
     - default: 0x20
 
 - CACHE_EN
@@ -97,8 +97,8 @@
 
 - ICACHE_BLOCK_W
     - number of instruction per cache block
-    - any multiple of ILEN (bits)
-    - default: 4*ILEN
+    - any multiple of `ILEN` (bits)
+    - default: 4*`ILEN`
 
 - ICACHE_DEPTH
     - number of cache block
@@ -112,8 +112,8 @@
 
 - DCACHE_BLOCK_W
     - number of data per cache block
-    - any multiple of XLEN (bits)
-    - default: 4*XLEN
+    - any multiple of `XLEN` (bits)
+    - default: 4*`XLEN`
 
 - DCACHE_DEPTH
     - number of cache block
@@ -127,8 +127,8 @@
 
 - IO_MAP
     - Start / End address of the IO (device) memory map
-    - any value mapped in the memory, organized like END-ADDR_START-ADDR, matching
-      AXI_ADDR_W*2*IO_MAP_NB (bits)
+    - any value mapped in the memory, organized like `END-ADDR`_`START-ADDR`, matching
+      `AXI_ADDR_W` * 2 * `IO_MAP_NB` (bits)
     - default: 64'h001000FF_00100000
 
 ## Platform
