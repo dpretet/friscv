@@ -11,7 +11,6 @@
 # Variables and setup
 #------------------------------------------------------------------------------
 
-test_ret=0
 do_clean=0
 
 RED='\033[0;31m'
@@ -71,6 +70,11 @@ TC=
 # Variable used to check if RTL sources or testbench changed. Only compile if 1
 to_compile=0
 
+# Gather the testsuite status
+ts_res=""
+ts_ret=0
+
+
 #------------------------------------------------------------------------------
 # Clean compiled programs
 #------------------------------------------------------------------------------
@@ -85,6 +89,7 @@ clean() {
     rm -f ./rtl.md5*
     exit 0
 }
+#------------------------------------------------------------------------------
 
 
 #------------------------------------------------------------------------------
@@ -143,7 +148,23 @@ get_defines() {
 
     return 0
 }
+#------------------------------------------------------------------------------
 
+
+#------------------------------------------------------------------------------
+# Prepare a string to print once all the testsuite has been executed.
+#------------------------------------------------------------------------------
+gather_result() {
+
+    ec=$(grep -c "ERROR:" tc.log)
+    
+    if [ "$2" -eq 1 ] || [ "$ec" != 0 ]; then
+        ts_res="${ts_res}$1: ❌\n"
+    else
+        ts_res="${ts_res}$1: ✅\n"
+    fi
+}
+#------------------------------------------------------------------------------
 
 #------------------------------------------------------------------------------
 # Check the RTL files changed. If yes, rerun the complete build, else only run
@@ -170,6 +191,8 @@ code_changed() {
         fi
     fi
 }
+#------------------------------------------------------------------------------
+
 
 #------------------------------------------------------------------------------
 # Tests execution
@@ -213,21 +236,26 @@ run_tests() {
         else
             DEFINES="FRISV_SIM=1;"
         fi
+
         get_defines
 
         # Execute the testcase with SVUT
         svutRun -t ./friscv_testbench.sv \
                 -define "$DEFINES" \
-                -sim $SIM \
+                -sim "$SIM" \
                 $run_only \
                 -include ../../dep/svlogger ../../rtl ../../dep/axi-crossbar/rtl \
-                | tee -a simulation.log
+                | tee tc.log
 
-        # A flag to indicate next test run within a testsuite can be run-only
-        did_compile=1
+        _tc_ret=$?
 
         # Grab the return code used later to determine the compliance status
-        test_ret=$((test_ret+$?))
+        ts_ret=$((ts_ret+_tc_ret))
+        # Prepare results to print
+        gather_result "$(basename "$test" .v)" "$_tc_ret"
+        # Pack all intermediate results into a single file
+        cat tc.log >> simulation.log
+        rm -f tc.log
 
         # Copy the VCD generated for further debug
         if [ -f "./friscv_testbench.vcd" ]; then
@@ -241,9 +269,12 @@ run_tests() {
                                --symbols "tests/${test_name}.symbols"
         fi
 
-    done
+        # A flag to indicate next test run within a testsuite can be run-only
+        did_compile=1
 
+    done
 }
+#------------------------------------------------------------------------------
 
 
 #------------------------------------------------------------------------------
@@ -259,6 +290,9 @@ run_testsuite() {
     rm -f ./*.log
     rm -f ./*.txt
     rm -f ./*.csv
+    rm -f simulation.log
+
+    ts_res=""
 
     # Execute the testsuite
     run_tests "$@"
@@ -274,14 +308,18 @@ run_testsuite() {
 #------------------------------------------------------------------------------
 check_status() {
 
-    echo "Check status"
+    echo "Check status:"
 
     # Exit if execution failed.
-    # Double check the execution status by parsing the log
+    # Double check the execution status within the log
     ec=$(grep -c "ERROR:" simulation.log)
 
-    if [[ $ec != 0 || $test_ret != 0 ]]; then
+    echo -e "$ts_res"
+
+    if [[ $ec != 0 || $ts_ret != 0 ]]; then
         echo -e "${RED}ERROR: Testsuite failed!${NC}"
+        echo "  - error count: $ec"
+        echo "  - testsuite status: $ts_ret"
         exit 1
     fi
 }

@@ -124,12 +124,11 @@ Processing
 - [ ] RVV for machine learning
 
 
-Verification/Validation:
+Verification/Validation
 
 - [ ] Drop lxt2 waveform
 - [ ] Create app per benchmark
 - [ ] Testcase C ASM cache stress
-- [ ] Print des tests qui ne marchent pas dans le bash
 - [ ] Update synthesis flow
     - [ ] Standard cells library for Yosys
     - [ ] https://github.com/dpretet/ascend-freepdk45/tree/master/lib
@@ -148,7 +147,7 @@ Verification/Validation:
 - [ ] Update RISCV testsuite sources
 - [ ] SV Testbench: be able to assert or not a flush req along a new request on the same cycle
 
-Hardware Test:
+Hardware Tests
 
 - [ ] Support LiteX: https://github.com/litex-hub/litex-boards, https://pcotret.gitlab.io/blog/processor_in_litex/
 - [ ] Azure: https://www.xilinx.com/products/boards-and-kits/alveo/cloud-solutions/microsoft-azure.html
@@ -174,6 +173,7 @@ Hardware Test:
 
 # DONE
 
+- [X] Print des tests qui ne marchent pas, un par un, dans le bash
 - [X] v1.5.0: Mesure et amélioration des performances
     - [X] Print et save des registres CSRs pour chaque test, garde la trace des performances dans Git
     - [X] IP point de mesure des différents bus en bandwidth
