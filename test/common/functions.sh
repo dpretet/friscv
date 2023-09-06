@@ -157,11 +157,11 @@ get_defines() {
 gather_result() {
 
     ec=$(grep -c "ERROR:" tc.log)
-    
+
     if [ "$2" -eq 1 ] || [ "$ec" != 0 ]; then
-        ts_res="${ts_res}$1: ❌\n"
+        ts_res="${ts_res} - $1:\t❌\n"
     else
-        ts_res="${ts_res}$1: ✅\n"
+        ts_res="${ts_res} - $1:\t✅\n"
     fi
 }
 #------------------------------------------------------------------------------

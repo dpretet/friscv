@@ -89,7 +89,6 @@ all: $(tests_dump)
 clean:
 	rm -rf $(junk)
 	rm -fr *.elf
-	rm -fr *.v
 	rm -fr *.dump
 	rm -fr *.gtkw
 	rm -fr *.vcd

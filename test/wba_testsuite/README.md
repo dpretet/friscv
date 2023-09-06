@@ -4,29 +4,26 @@ WBA testsuite is an example of integration of the processor core in a complete e
 
 The testbench provides two configurations:
 
-- core: the hart is connected upon an AXI4-lite dual port RAM model, the instruction
-  bus on one port, the data bus on the other
-- platform: the core is connected upon an AXI4 crossbar with some peripherals
+- `core`: the hart is connected upon an AXI4-lite dual port RAM model, the instruction
+  bus on one port, the data bus on the other. Hart-only configuration.
+- `platform`: the core is connected upon an AXI4 crossbar with some peripherals
   (GPIOs, UART, CLINT) and share the same master interface to the AXI4-lite RAM molde
 
-For both setup, the test vectors are created from ASM programs, built and then
-converted into files to initialize the RAMs.
-
 The intent of this flow is to create programs to stress the IP's core
-with a white-box strategy.
+with a white-box strategy, very driven by the architecture.
 
 To execute the flow:
 
 ```bash
-./run.sh --tb "CORE" // to run the core only simulation
-./run.sh --tb "PLATFORM" // to run the platform, the core + the peripherals
+./run.sh --tb "core"     // to run the core-only simulation
+./run.sh --tb "platform" // to run the platform, the core + the peripherals
 ```
 
-This will make all programs in tests\* folders, copy the RAM content generated,
+This will make all programs in tests/* folders, copy the RAM content generated,
 convert it to Verilog format then execute SVUT to run the testbench on each
 testcase.
 
-All the testcases rely on [SVUT](https://github.com/dpretet/svut) and use
+All the testcases rely on [SVUT](https://github.com/dpretet/svut) and
 [Icarus Verilog](http://iverilog.icarus.com) or [Verilator](https://github.com/verilator).
 
 For more information about the bash front-end flow:
@@ -82,10 +79,18 @@ to failure in control unit.
 Stresses out outstanding requests management in Memfy module when issuing
 multiple read or write requests.
 
-# Test 7: RDCYCLE/RDTIME and RDINSTRET
+## Test 7: RDCYCLE/RDTIME and RDINSTRET
 
 Checks instret, cycle and time are incremented accordingly the spec
 
-# Test 8: WFI
+## Test 8: WFI
 
 Setup interrupt and checks the core manages EIRQ correctly.
+
+## Test 9: M extension
+
+Check multiply /division extension
+
+## Test 10: load / store collision
+
+Stresses out read / write with memfy and check collisions don't occur

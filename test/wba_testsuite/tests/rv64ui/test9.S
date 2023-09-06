@@ -4,7 +4,7 @@
 #include "riscv_test.h"
 #include "test_macros.h"
 
-# Test 8: Stress out WFI
+# Test 9: M Extension tests
 
 # x3/gp is the tes number in the unit test flow, must be greater than 0
 # 0 means the processor din't move out the initialization correctly and is stucked
