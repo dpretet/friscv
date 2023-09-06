@@ -588,7 +588,6 @@ module friscv_rv32i_core
         .AXI_ID_W          (AXI_ID_W),
         .AXI_DATA_W        (XLEN),
         .AXI_ID_MASK       (AXI_DMEM_MASK),
-        .AXI_REORDER_CPL   (0),
         .NB_UNIT           (NB_ALU_UNIT),
         .MAX_UNIT          (MAX_ALU_UNIT),
         .DATA_OSTDREQ_NUM  (DATA_OSTDREQ_NUM),

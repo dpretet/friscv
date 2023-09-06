@@ -51,8 +51,6 @@ module friscv_memfy
         parameter AXI_DATA_W        = XLEN,
         // ID used to identify the dta abus in the infrastructure
         parameter AXI_ID_MASK       = 'h20,
-        // Reorder read completion for Memfy
-        parameter AXI_REORDER_CPL = 0,
         // Maximum outstanding request supported
         parameter MAX_OR = 8,
         // Add pipeline on Rd write stage

@@ -1,7 +1,5 @@
 # DOING
 
-- [ ] Revoir tous les paramètres de chaque instance et les documenter
-- [ ] Review readme files
 - [ ] Rework logging by using SVLogger everywhere
 - [ ] Revoir la RAM AXI pour les temps de réponses write compliance et speed
 
@@ -173,7 +171,11 @@ Hardware Tests
 
 # DONE
 
-- [X] Print des tests qui ne marchent pas, un par un, dans le bash
+- [X] v1.5.1: maintenance
+    - [X] Print des tests qui ne marchent pas, un par un, dans le bash
+    - [X] Join errors after a test status
+    - [X] Review readme files
+    - [X] Revoir tous les paramètres de chaque instance et les documenter
 - [X] v1.5.0: Mesure et amélioration des performances
     - [X] Print et save des registres CSRs pour chaque test, garde la trace des performances dans Git
     - [X] IP point de mesure des différents bus en bandwidth

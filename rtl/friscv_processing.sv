@@ -33,8 +33,8 @@ module friscv_processing
         parameter INST_BUS_PIPELINE = 0,
         // Number of outstanding requests used by the LOAD/STORE unit
         parameter DATA_OSTDREQ_NUM  = 8,
-        // Reorder read completion internally in Memfy, not in dCache
-        parameter AXI_REORDER_CPL = 0,
+        // Add pipeline on Rd write stage
+        parameter SYNC_RD_WR = 0,
         // IO regions for direct read/write access
         parameter IO_MAP_NB = 1,
         // IO address ranges, organized by memory region as END-ADDR_START-ADDR:
@@ -312,7 +312,7 @@ module friscv_processing
         .AXI_ID_W          (AXI_ID_W),
         .AXI_DATA_W        (AXI_DATA_W),
         .AXI_ID_MASK       (AXI_ID_MASK),
-        .AXI_REORDER_CPL   (AXI_REORDER_CPL),
+        .SYNC_RD_WR        (SYNC_RD_WR),
         .IO_MAP_NB         (IO_MAP_NB),
         .IO_MAP            (IO_MAP)
     )

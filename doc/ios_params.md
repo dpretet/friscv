@@ -145,25 +145,25 @@ All parameters listed in [core](#core) section apply here
 
 - aresetn
     - the main asynchronous active low reset
-    - input
+    - input, 1 bit
     - don't use it if already using srst
 
 - srst
     - the main synchronous active high reset
-    - input
+    - input, 1 bit
     - don't use it if already using aresetn
 
 - ext_irq
     - external interrupt, from any hardware source
-    - input
+    - input, 1 bit
 
 - sw_irq
     - software interrupt, from any other hart or PLIC controller
-    - input
+    - input, 1 bit
 
 - timer_irq
     - timer interrupt, from CLINT controller
-    - input
+    - input, 1 bit
 
 - status
     - debug bus
@@ -171,7 +171,7 @@ All parameters listed in [core](#core) section apply here
 
 - dbg_regs
     - all the ISA registers
-    - output
+    - output, 32 * XLEN bits
 
 - imem_*
     - AXI4-lite instruction bus (read channels only)
@@ -180,3 +180,29 @@ All parameters listed in [core](#core) section apply here
 - dmem_*
     - AXI4-lite data bus
     - input/output
+
+
+# Hidden Parameters
+
+List some parameters not present on top level but which could be tuned into the hart or the platform
+
+## dCache
+
+FAST_FWD_CPL:
+- Bypass if possible the OoO output RAM stage. Imply the completion path
+  will be combinatorial but reduce the latency, increase the bandwidth. Avoid
+- Default: 1
+
+NO_CPL_BACKPRESSURE (block_fetcher instance):
+- Don't manage read data channel back-pressure to have better bandwidth
+- Default: 1
+
+AXI_ID_FIXED:
+- AXI ID issued on slave interface is fixed, save some logic by not using it and use only `AXI_ID_MASK`
+- Default: 1
+
+## Memfy
+
+SYNC_RD_WR
+- Insert a pipeline on Rd write path to close timing easier.
+- Default: 0
