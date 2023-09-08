@@ -1,7 +1,5 @@
 # DOING
 
-- [ ] Rework logging by using SVLogger everywhere
-- [ ] Revoir la RAM AXI pour les temps de réponses write compliance et speed
 
 
 # BACKLOG
@@ -143,6 +141,7 @@ Verification/Validation
     - [ ] Support GDB:  https://tomverbeure.github.io/2021/07/18/VexRiscv-OpenOCD-and-Traps.html
 - [ ] Update RISCV testsuite sources
 - [ ] SV Testbench: be able to assert or not a flush req along a new request on the same cycle
+- [ ] Revoir la RAM AXI pour les temps de réponses write compliance et speed
 
 Hardware Tests
 

@@ -9,6 +9,7 @@
 // different widths.
 //
 // TODO: Manage independant write address and data channel in compliance mode
+// TODO: Write response should use LSFR and support compliance vs speed mode
 ///////////////////////////////////////////////////////////////////////////////
 
 module axi4l_ram
