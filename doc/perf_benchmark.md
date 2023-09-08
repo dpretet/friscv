@@ -315,3 +315,37 @@ Algorithms:
 - Printf execution: 51919 cycles
 - Xoshiro128++ execution: 241840 cycles
 - Pool Arena execution: 1675539 cycles
+
+# 230908: 1.5.1
+
+JAL doesn't wait for anymore processing to be ready
+
+General statistics:
+  - Start time: 6493
+  - End time: 1999898
+  - Total elapsed time: 1993405 cycles
+  - Instret start: 2174
+  - Instret end: 982920
+  - Retired instructions: 980746
+
+Instruction Bus Request:
+  - active cycles: 1908226
+  - sleep cycles: 0
+  - stall cycles: 85181
+
+Inst Bus Completion:
+  - active cycles: 1102166
+  - sleep cycles: 128389
+  - stall cycles: 762521
+
+Processing Bus:
+  - active cycles: 815637
+  - sleep cycles: 815252
+  - stall cycles: 335831
+
+Algorithms:
+- Chacha20 execution: 55154 cycles
+- Matrix execution: 10596 cycles
+- Printf execution: 49904 cycles
+- Xoshiro128++ execution: 236723 cycles
+- Pool Arena execution: 1640273 cycles

@@ -91,7 +91,6 @@ AXI4 Infrastructure
 
 Control
 
-- [ ] Preload jal even if processing is busy
 - [ ] Detect IO requests to forward info for FENCE execution
 - [ ] Move LUI into processing to prepare future extension support
     - [ ] Read ASM to be sure its used for processing and not control
@@ -172,6 +171,7 @@ Hardware Tests
 # DONE
 
 - [X] v1.5.1: maintenance
+    - [X] Preload jal even if processing is busy
     - [X] Print des tests qui ne marchent pas, un par un, dans le bash
     - [X] Join errors after a test status
     - [X] Review readme files

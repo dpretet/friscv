@@ -134,13 +134,13 @@ module friscv_control
 
     // Control fsm
     typedef enum logic[3:0] {
-        BOOT = 0,
-        FETCH = 1,
-        RELOAD = 2,
-        FENCE = 3,
+        BOOT    = 0,
+        FETCH   = 1,
+        RELOAD  = 2,
+        FENCE   = 3,
         FENCE_I = 4,
-        WFI = 5,
-        EBREAK = 6
+        WFI     = 5,
+        EBREAK  = 6
     } pc_fsm;
 
     pc_fsm cfsm;
@@ -256,7 +256,7 @@ module friscv_control
         else if (cause=='h80000007)  get_mcause_desc = "Machine Timer Interrupt";
         else if (cause=='h8000000B)  get_mcause_desc = "Machine External Interrupt";
         // All other unknown interrupts
-        else get_mcause_desc = "Unkown Trap Cause";
+        else get_mcause_desc = "Unknown Trap Cause";
     endfunction
     `endif
 
@@ -298,9 +298,9 @@ module friscv_control
     // CSR Shared bus extraction
     ///////////////////////////////////////////////////////////////////////////
 
-    assign sb_mtvec = csr_sb[`MTVEC+:XLEN];
-    assign sb_mstatus = csr_sb[`MSTATUS+:XLEN];
-    assign sb_mepc = csr_sb[`MEPC+:XLEN];
+    assign sb_mtvec   = csr_sb[`MTVEC   +: XLEN];
+    assign sb_mstatus = csr_sb[`MSTATUS +: XLEN];
+    assign sb_mepc    = csr_sb[`MEPC    +: XLEN];
 
     assign push_inst = rvalid & (arid == rid);
 
@@ -310,7 +310,7 @@ module friscv_control
     // This FIFO is controlled by the FSM issuing read request and can be
     // flushed in case branching or jumping is required.
     ///////////////////////////////////////////////////////////////////////////
-    if (OSTDREQ_NUM > 0) begin
+    if (OSTDREQ_NUM > 0) begin: INST_FIFO
 
         assign rready = !fifo_full;
 
@@ -341,7 +341,7 @@ module friscv_control
     ///////////////////////////////////////////////////////////////////////////
     // No input FIFO, the read data channel feeds directly the controller
     ///////////////////////////////////////////////////////////////////////////
-    end else begin
+    end else begin : INST_PATH
 
         assign instruction = rdata;
         assign inst_ready = push_inst;
@@ -590,7 +590,7 @@ module friscv_control
                     ///////////////////////////////////////////////////////////
 
                     //
-                    //   - ECALL / RET / JAL / JALR / Branches
+                    //   - ECALL / MRET / JALR / Any branching
                     //
                     if (inst_ready && !proc_busy &&
                         (jump_branch || sys[`IS_ECALL] || sys[`IS_MRET] || trap_occuring))
@@ -598,12 +598,22 @@ module friscv_control
 
                         // Get a new ID for the new batch
                         arid <= next_id(arid, MAX_ID, AXI_ID_MASK);
+
                         // ECALL / Trap handling
                         if (sys[`IS_ECALL] || trap_occuring) araddr <= mtvec;
                         // MRET
                         else if (sys[`IS_MRET]) araddr <= sb_mepc;
-                        // Any jump / branch
+                        // jalr / branch
                         else araddr <= pc;
+
+                    //
+                    // JAL
+                    //
+                    end else if (inst_ready && jal) begin
+
+                        // Get a new ID for the new batch
+                        arid <= next_id(arid, MAX_ID, AXI_ID_MASK);
+                        araddr <= pc;
 
                     //
                     //   - FENCE.i execution
@@ -648,7 +658,7 @@ module friscv_control
 
                         // Needs to jump or branch thus stop the pipeline
                         // and reload new instructions
-                        end else if (jal | jalr | branching) begin
+                        end else if (jalr | branching) begin
 
                             if (!cant_jump) begin
                                 print_instruction;
@@ -657,14 +667,24 @@ module friscv_control
 
                             if (jump_branch && !cant_jump) begin
                                 `ifdef USE_SVL
-                                if (jal | jalr) log.info("Jumping");
-                                else            log.info("Branching");
+                                if (jalr) log.info("JALR");
+                                else      log.info("Branching");
                                 `endif
                             end
 
                             if (jump_branch && !cant_jump) begin
                                 flush_pipe <= 1'b1;
                             end
+
+                        end else if (jal) begin
+
+                            `ifdef USE_SVL
+                                log.info("JAL");
+                            `endif
+
+                            print_instruction;
+                            pc_reg <= pc;
+                            flush_pipe <= 1'b1;
 
                         // Any sys instruction:
                         // - ECALL (0) / EBREAK (1) / CSR (2) / MRET (3) / SRET (4) / WFI (5)
@@ -746,7 +766,7 @@ module friscv_control
                         // All other instructions
                         end else if (processing) begin
 
-                            if (~cant_process) begin
+                            if (!cant_process) begin
                                 print_instruction;
                                 flush_pipe <= 1'b0;
                                 pc_reg <= pc;
@@ -863,7 +883,7 @@ module friscv_control
                     end else if (|sys || |fence) begin
 
                         // Reach an ECALL instruction, jump to trap handler
-                        if (sys[`IS_ECALL] && ~proc_busy && csr_ready) begin
+                        if (sys[`IS_ECALL] && !proc_busy && csr_ready) begin
 
                             mepc_wr <= 1'b1;
                             mepc <= pc_reg;
@@ -879,13 +899,13 @@ module friscv_control
                             mcause <= mcause_code;
 
                         // Reach a MRET instruction, jump to exception return
-                        end else if (sys[`IS_MRET] && ~proc_busy && csr_ready) begin
+                        end else if (sys[`IS_MRET] && !proc_busy && csr_ready) begin
 
                             mstatus_wr <= 1'b1;
                             mstatus <= mstatus_for_mret;
 
                         // Reach an WFI, wait for an interrupt
-                        end else if (sys[`IS_WFI] && ~proc_busy && csr_ready) begin
+                        end else if (sys[`IS_WFI] && !proc_busy && csr_ready) begin
 
                             mepc_wr <= 1'b1;
                             mepc <= pc_plus4;
@@ -921,12 +941,12 @@ module friscv_control
     assign arprot = 3'b100;
 
     // Needs to jump or branch, the request to cache/RAM needs to be restarted
-    assign jump_branch = (branching & goto_branch) | jal | jalr;
+    assign jump_branch = (branching & goto_branch) | jalr;
 
     // LUI and AUIPC are executed internally, not in processing
     assign lui_auipc = lui | auipc;
 
-    assign cant_jump = (jal | jalr | branching) && (proc_busy | !csr_ready);
+    assign cant_jump = (jalr | branching) && (proc_busy | !csr_ready);
 
     assign cant_process = processing & (!proc_ready | !csr_ready);
 
@@ -1136,11 +1156,11 @@ module friscv_control
                                  csr_sb[`MTIP] |
                                  csr_sb[`MEIP] ;
 
-    assign sync_trap_occuring = csr_ro_wr |
+    assign sync_trap_occuring = csr_ro_wr            |
                                 inst_addr_misaligned |
-                                load_misaligned |
-                                store_misaligned |
-                                inst_dec_error;
+                                load_misaligned      |
+                                store_misaligned     |
+                                inst_dec_error       ;
 
     assign trap_occuring = async_trap_occuring | sync_trap_occuring;
 
