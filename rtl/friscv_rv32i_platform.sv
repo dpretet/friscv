@@ -41,6 +41,12 @@ module friscv_rv32i_platform
         parameter F_EXTENSION       = 0,
         // Multiply/Divide extension support
         parameter M_EXTENSION       = 0,
+        // Support hypervisor mode
+        parameter HYPERVISOR_MODE   = 0,
+        // Support supervisor mode
+        parameter SUPERVISOR_MODE   = 0,
+        // Support user mode
+        parameter USER_MODE         = 0,
         // Insert a pipeline on instruction bus coming from the controller
         parameter PROCESSING_BUS_PIPELINE = 0,
 
@@ -313,31 +319,34 @@ module friscv_rv32i_platform
 
     friscv_rv32i_core
     #(
-        .ILEN (ILEN),
-        .XLEN (XLEN),
-        .M_EXTENSION (M_EXTENSION),
-        .F_EXTENSION (F_EXTENSION),
-        .PROCESSING_BUS_PIPELINE (PROCESSING_BUS_PIPELINE),
-        .BOOT_ADDR (BOOT_ADDR),
-        .INST_OSTDREQ_NUM (INST_OSTDREQ_NUM),
-        .DATA_OSTDREQ_NUM (DATA_OSTDREQ_NUM),
-        .HART_ID (HART_ID),
-        .RV32E (RV32E),
-        .AXI_ADDR_W (AXI_ADDR_W),
-        .AXI_ID_W (AXI_ID_W),
-        .AXI_IMEM_W (AXI_IMEM_W),
-        .AXI_DMEM_W (AXI_DMEM_W),
-        .AXI_IMEM_MASK (AXI_IMEM_MASK),
-        .AXI_DMEM_MASK (AXI_DMEM_MASK),
-        .CACHE_EN (CACHE_EN),
-        .ICACHE_PREFETCH_EN (ICACHE_PREFETCH_EN),
-        .ICACHE_BLOCK_W (ICACHE_BLOCK_W),
-        .ICACHE_DEPTH (ICACHE_DEPTH),
-        .IO_MAP_NB (IO_MAP_NB),
-        .IO_MAP (IO_MAP),
-        .DCACHE_PREFETCH_EN (DCACHE_PREFETCH_EN),
-        .DCACHE_BLOCK_W (DCACHE_BLOCK_W),
-        .DCACHE_DEPTH (DCACHE_DEPTH)
+        .ILEN                       (ILEN),
+        .XLEN                       (XLEN),
+        .M_EXTENSION                (M_EXTENSION),
+        .F_EXTENSION                (F_EXTENSION),
+        .HYPERVISOR_MODE            (HYPERVISOR_MODE),
+        .SUPERVISOR_MODE            (SUPERVISOR_MODE),
+        .USER_MODE                  (USER_MODE),
+        .PROCESSING_BUS_PIPELINE    (PROCESSING_BUS_PIPELINE),
+        .BOOT_ADDR                  (BOOT_ADDR),
+        .INST_OSTDREQ_NUM           (INST_OSTDREQ_NUM),
+        .DATA_OSTDREQ_NUM           (DATA_OSTDREQ_NUM),
+        .HART_ID                    (HART_ID),
+        .RV32E                      (RV32E),
+        .AXI_ADDR_W                 (AXI_ADDR_W),
+        .AXI_ID_W                   (AXI_ID_W),
+        .AXI_IMEM_W                 (AXI_IMEM_W),
+        .AXI_DMEM_W                 (AXI_DMEM_W),
+        .AXI_IMEM_MASK              (AXI_IMEM_MASK),
+        .AXI_DMEM_MASK              (AXI_DMEM_MASK),
+        .CACHE_EN                   (CACHE_EN),
+        .ICACHE_PREFETCH_EN         (ICACHE_PREFETCH_EN),
+        .ICACHE_BLOCK_W             (ICACHE_BLOCK_W),
+        .ICACHE_DEPTH               (ICACHE_DEPTH),
+        .IO_MAP_NB                  (IO_MAP_NB),
+        .IO_MAP                     (IO_MAP),
+        .DCACHE_PREFETCH_EN         (DCACHE_PREFETCH_EN),
+        .DCACHE_BLOCK_W             (DCACHE_BLOCK_W),
+        .DCACHE_DEPTH               (DCACHE_DEPTH)
     )
     cpu0
     (

@@ -97,6 +97,12 @@ module friscv_testbench(
     parameter F_EXTENSION = 0;
     // Multiply/Divide extension support
     parameter M_EXTENSION = 1;
+    // Support hypervisor mode
+    parameter HYPERVISOR_MODE = 0;
+    // Support supervisor mode
+    parameter SUPERVISOR_MODE = 0;
+    // Support user mode
+    parameter USER_MODE = 0;
     // Insert a pipeline on instruction bus coming from the controller
     parameter PROCESSING_BUS_PIPELINE = 1;
 
@@ -291,6 +297,9 @@ module friscv_testbench(
             .RV32E                      (RV32E),
             .M_EXTENSION                (M_EXTENSION),
             .F_EXTENSION                (F_EXTENSION),
+            .HYPERVISOR_MODE            (HYPERVISOR_MODE),
+            .SUPERVISOR_MODE            (SUPERVISOR_MODE),
+            .USER_MODE                  (USER_MODE),
             .PROCESSING_BUS_PIPELINE    (PROCESSING_BUS_PIPELINE),
             .AXI_ADDR_W                 (AXI_ADDR_W),
             .AXI_ID_W                   (AXI_ID_W),
@@ -477,6 +486,9 @@ module friscv_testbench(
             .RV32E                      (RV32E),
             .M_EXTENSION                (M_EXTENSION),
             .F_EXTENSION                (F_EXTENSION),
+            .HYPERVISOR_MODE            (HYPERVISOR_MODE),
+            .SUPERVISOR_MODE            (SUPERVISOR_MODE),
+            .USER_MODE                  (USER_MODE),
             .PROCESSING_BUS_PIPELINE    (PROCESSING_BUS_PIPELINE),
             .AXI_ADDR_W                 (AXI_ADDR_W),
             .AXI_ID_W                   (AXI_ID_W),

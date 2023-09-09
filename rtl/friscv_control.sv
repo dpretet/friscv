@@ -1062,12 +1062,14 @@ module friscv_control
     // PC is not aligned with XLEN boundary
     assign inst_addr_misaligned = (pc[1:0]!=2'b0) ? jump_branch : 1'b0;
 
-    // TODO: Support correctly TW with prividge mode
-    // When TW=1, if WFI is executed in any less-privileged mode, and it
-    // does not complete within an implementation-specific, bounded time
-    // limit, the WFI instruction causes an illegal instruction exception
+    // TODO: Support correctly TW with privilege mode
+    // When TW=0, the WFI instruction may execute in lower privilege modes when not prevented for some
+    // other reason. When TW=1, then if WFI is executed in any less-privileged mode, and it does not
+    // complete within an implementation-specific, bounded time limit, the WFI instruction causes an
+    // illegal instruction exception. An implementation may have WFI always raise an illegal instruction
+    // exception in less-privileged modes when TW=1, even if there are pending globally-disabled interrupts
+    // when the instruction is executed. TW is read-only 0 when there are no modes less privileged than M.
     assign wfi_not_allowed = 1'b0;
-    // assign wfi_not_allowed = (sys[`IS_WFI] && sb_mstatus[21]) ? 1'b1 : 1'b0;
 
     assign load_misaligned = proc_exceptions[`LD_MA];
     assign store_misaligned = proc_exceptions[`ST_MA];

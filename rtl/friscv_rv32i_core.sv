@@ -40,6 +40,12 @@ module friscv_rv32i_core
         parameter F_EXTENSION       = 0,
         // Multiply/Divide extension support
         parameter M_EXTENSION       = 0,
+        // Support hypervisor mode
+        parameter HYPERVISOR_MODE   = 0,
+        // Support supervisor mode
+        parameter SUPERVISOR_MODE   = 0,
+        // Support user mode
+        parameter USER_MODE         = 0,
         // Insert a pipeline on instruction bus coming from the controller
         parameter PROCESSING_BUS_PIPELINE = 0,
 
@@ -72,7 +78,7 @@ module friscv_rv32i_core
         parameter ICACHE_BLOCK_W     = ILEN*4,
         // Number of blocks in the cache
         parameter ICACHE_DEPTH       = 512,
-            
+
         // IO regions for direct read/write access
         parameter IO_MAP_NB = 0,
         // IO address ranges, organized by memory region as END-ADDR_START-ADDR:
@@ -516,13 +522,16 @@ module friscv_rv32i_core
 
     friscv_csr
     #(
-		.PERF_REG_W  (PERF_REG_W),
-		.PERF_NB_BUS (PERF_NB_BUS),
-        .RV32E       (RV32E),
-        .HART_ID     (HART_ID),
-        .XLEN        (XLEN),
-        .F_EXTENSION (F_EXTENSION),
-        .M_EXTENSION (M_EXTENSION)
+        .PERF_REG_W      (PERF_REG_W),
+        .PERF_NB_BUS     (PERF_NB_BUS),
+        .RV32E           (RV32E),
+        .HART_ID         (HART_ID),
+        .XLEN            (XLEN),
+        .F_EXTENSION     (F_EXTENSION),
+        .M_EXTENSION     (M_EXTENSION),
+        .HYPERVISOR_MODE (HYPERVISOR_MODE),
+        .SUPERVISOR_MODE (SUPERVISOR_MODE),
+        .USER_MODE       (USER_MODE)
     )
     csrs
     (
@@ -532,6 +541,7 @@ module friscv_rv32i_core
         .ext_irq         (ext_irq),
         .sw_irq          (sw_irq),
         .timer_irq       (timer_irq),
+        .priv            ('0),
         .valid           (csr_en),
         .ready           (csr_ready),
         .instbus         (csr_instbus),
@@ -549,23 +559,23 @@ module friscv_rv32i_core
         .ctrl_mtval_wr   (ctrl_mtval_wr),
         .ctrl_mtval      (ctrl_mtval),
         .ctrl_rdinstret  (ctrl_rdinstret),
-		.perfs           (perfs),
+        .perfs           (perfs),
         .csr_sb          (csr_sb)
     );
 
-    friscv_bus_perf 
+    friscv_bus_perf
     #(
-		.REG_W  (PERF_REG_W),
-		.NB_BUS (PERF_NB_BUS)
+        .REG_W  (PERF_REG_W),
+        .NB_BUS (PERF_NB_BUS)
     )
-    bus_perf 
+    bus_perf
     (
-		.aclk    (aclk),
-		.aresetn (aresetn),
-		.srst    (srst),
-		.valid   ({proc_valid, inst_rvalid_s, inst_arvalid_s}),
-		.ready   ({proc_ready, inst_rready_s, inst_arready_s}),
-		.perfs   (perfs)
+        .aclk    (aclk),
+        .aresetn (aresetn),
+        .srst    (srst),
+        .valid   ({proc_valid, inst_rvalid_s, inst_arvalid_s}),
+        .ready   ({proc_ready, inst_rready_s, inst_arready_s}),
+        .perfs   (perfs)
     );
 
 

@@ -18,6 +18,12 @@ module friscv_csr
         parameter F_EXTENSION = 0,
         // Multiply/Divide extension support
         parameter M_EXTENSION = 0,
+        // Support hypervisor mode
+        parameter HYPERVISOR_MODE = 0,
+        // Support supervisor mode
+        parameter SUPERVISOR_MODE = 0,
+        // Support user mode
+        parameter USER_MODE = 0,
         // Reduced RV32 arch
         parameter RV32E = 0,
         // MHART_ID CSR value
@@ -31,6 +37,8 @@ module friscv_csr
         input  wire                    ext_irq,
         input  wire                    sw_irq,
         input  wire                    timer_irq,
+        // privilege bus, encoding current mode
+        input  wire  [4          -1:0] priv,
         // Instruction bus
         input  wire                    valid,
         output logic                   ready,
@@ -91,40 +99,157 @@ module friscv_csr
     logic                    timer_irq_sync;
     logic                    sw_irq_sync;
 
+
+    function automatic logic [XLEN-1:0] get_mstatus (
+        input logic [XLEN-1:0] data
+    );
+        // SD
+        get_mstatus[31] = '0;
+        // WPRI
+        get_mstatus[30:23] = '0;
+        // TSR
+        if (SUPERVISOR_MODE)
+            get_mstatus[22] = data[22];
+        else
+            get_mstatus[22] = '0;
+        // TW
+        if (SUPERVISOR_MODE || USER_MODE)
+            get_mstatus[21] = data[21];
+        else
+            get_mstatus[21] = '0;
+        // TVM
+        if (SUPERVISOR_MODE)
+            get_mstatus[20] = data[20];
+        else
+            get_mstatus[20] = '0;
+        // MXR
+        if (SUPERVISOR_MODE)
+            get_mstatus[19] = data[19];
+        else
+            get_mstatus[19] = '0;
+        // SUM
+        if (SUPERVISOR_MODE)
+            get_mstatus[18] = data[18];
+        else
+            get_mstatus[18] = '0;
+        // MPRV
+        if (SUPERVISOR_MODE)
+            get_mstatus[17] = data[17];
+        else
+            get_mstatus[17] = '0;
+        // XS
+        get_mstatus[16:15] = '0;
+        // FS
+        if (F_EXTENSION)
+            get_mstatus[14:13] = data[14:13];
+        else
+            get_mstatus[14:13] = '0;
+        // MPP
+        get_mstatus[12:11] = data[12:11];
+        // VS
+        get_mstatus[10:9] = '0;
+        // SPP
+        if (SUPERVISOR_MODE)
+            get_mstatus[8] = data[8];
+        else
+            get_mstatus[8] = '0;
+        // MPIE
+        get_mstatus[7] = data[7];
+        // UBE
+        get_mstatus[6] = '0;
+        // SPIE
+        if (SUPERVISOR_MODE)
+            get_mstatus[5] = data[5];
+        else
+            get_mstatus[5] = '0;
+        // WPRI
+        get_mstatus[4] = '0;
+        // MIE
+        get_mstatus[3] = data[3];
+        // WPRI
+        get_mstatus[2] = '0;
+        // SIE
+        if (SUPERVISOR_MODE)
+            get_mstatus[1] = data[1];
+        else
+            get_mstatus[1] = '0;
+        // WPRI
+        get_mstatus[0] = '0;
+
+    endfunction
+
     //////////////////////////////////////////////////////////////////////////
-    // Machine-level CSRs:
+    // CSR Addresses
     //////////////////////////////////////////////////////////////////////////
 
-    localparam MHART_ID     =    12'hF14;
-    localparam MSTATUS      =    12'h300;
-    localparam MISA         =    12'h301;
-    localparam MEDELEG      =    12'h302;
-    localparam MIDELEG      =    12'h303;
-    localparam MIE          =    12'h304;
-    localparam MTVEC        =    12'h305;
-    localparam MCOUNTEREN   =    12'h306;
-    localparam MSCRATCH     =    12'h340;
-    localparam MEPC         =    12'h341;
-    localparam MCAUSE       =    12'h342;
-    localparam MTVAL        =    12'h343;
-    localparam MIP          =    12'h344;
-    localparam RDCYCLE      =    12'hC00;
-    localparam RDTIME       =    12'hC01;
-    localparam RDINSTRET    =    12'hC02;
-    localparam RDCYCLEH     =    12'hC80;
-    localparam RDTIMEH      =    12'hC81;
-    localparam RDINSTRETH   =    12'hC82;
+    /*
+     * Machine-level CSR addresses
+     */
 
-    // Custom registers
-    localparam INSTREQ_ACTIVE   =    12'hFC0;
-    localparam INSTREQ_SLEEP    =    12'hFC1;
-    localparam INSTREQ_STALL    =    12'hFC2;
-    localparam INSTCPL_ACTIVE   =    12'hFC3;
-    localparam INSTCPL_SLEEP    =    12'hFC4;
-    localparam INSTCPL_STALL    =    12'hFC5;
-    localparam PROC_ACTIVE      =    12'hFC6;
-    localparam PROC_SLEEP       =    12'hFC7;
-    localparam PROC_STALL       =    12'hFC8;
+    // Machine Information Registers
+    localparam MHART_ID     = 12'hF14;
+    // Machine Trap Setup
+    localparam MSTATUS      = 12'h300;
+    localparam MISA         = 12'h301;
+    localparam MEDELEG      = 12'h302;
+    localparam MIDELEG      = 12'h303;
+    localparam MIE          = 12'h304;
+    localparam MTVEC        = 12'h305;
+    localparam MCOUNTEREN   = 12'h306;
+    // Machine Trap Handling
+    localparam MSCRATCH     = 12'h340;
+    localparam MEPC         = 12'h341;
+    localparam MCAUSE       = 12'h342;
+    localparam MTVAL        = 12'h343;
+    localparam MIP          = 12'h344;
+
+    /*
+     * Supervisor-level CSR addresses
+     */
+
+    // Supervisor Trap Setup
+    localparam SSTATUS      = 12'h100;
+    localparam SIE          = 12'h104;
+    localparam STVEC        = 12'h105;
+    localparam SCOUNTEREN   = 12'h100;
+    // Supervisor Configuration
+    localparam SENVCFG      = 12'h10A;
+    // Supervisor Trap Handling
+    localparam SSCRATCH     = 12'h140;
+    localparam SEPC         = 12'h141;
+    localparam SCAUSE       = 12'h142;
+    localparam STVAL        = 12'h143;
+    localparam SIP          = 12'h144;
+    // Supervisor Protection and Translation
+    localparam SATP         = 12'h180;
+    // Debug/Trace Registers
+    localparam SCONTEXT     = 12'h5A8;
+
+    /*
+     * Unprivileged CSR addresses
+     */
+
+    localparam RDCYCLE      = 12'hC00;
+    localparam RDTIME       = 12'hC01;
+    localparam RDINSTRET    = 12'hC02;
+    localparam RDCYCLEH     = 12'hC80;
+    localparam RDTIMEH      = 12'hC81;
+    localparam RDINSTRETH   = 12'hC82;
+
+    /*
+     * Custom unprivileged CSR addresses
+     */
+
+    localparam INSTREQ_ACTIVE   = 12'hFC0;
+    localparam INSTREQ_SLEEP    = 12'hFC1;
+    localparam INSTREQ_STALL    = 12'hFC2;
+    localparam INSTCPL_ACTIVE   = 12'hFC3;
+    localparam INSTCPL_SLEEP    = 12'hFC4;
+    localparam INSTCPL_STALL    = 12'hFC5;
+    localparam PROC_ACTIVE      = 12'hFC6;
+    localparam PROC_SLEEP       = 12'hFC7;
+    localparam PROC_STALL       = 12'hFC8;
+
 
     // Machine Information Status
     // logic [XLEN-1:0] mvendorid;  // 0xF11    MRO (not implemented)
@@ -161,6 +286,7 @@ module friscv_csr
     logic [64  -1:0] rdtime;           // 0xC01    MRO (0xC81 for 32b MSBs)
     logic [64  -1:0] rdinstret;        // 0xC02    MRO (0xC82 for 32b MSBs)
 
+    // Custom register spying on AXI4-lite bus
     logic [32  -1:0] instreq_perf_active;
     logic [32  -1:0] instreq_perf_sleep;
     logic [32  -1:0] instreq_perf_stall;
@@ -200,7 +326,7 @@ module friscv_csr
 
     assign rs1_addr = rs1;
 
-    // Always handshakes the request but htis flag could stop
+    // Always handshakes the request but this flag could stop
     // the transfer if needed in case of extra pipeline
     assign ready = 1'b1;
 
@@ -249,11 +375,11 @@ module friscv_csr
 
 
     //////////////////////////////////////////////////////////////////////////
-    // CSR execution machine
+    // ISA register Write Stage
     //////////////////////////////////////////////////////////////////////////
 
     always @ (posedge aclk or negedge aresetn) begin
-        if (aresetn==1'b0) begin
+        if (!aresetn) begin
             rd_wr_en <= 1'b0;
             rd_wr_addr <= 5'b0;
             rd_wr_val <= {XLEN{1'b0}};
@@ -376,32 +502,32 @@ module friscv_csr
     ///////////////////////////////////////////////////////////////////////////
 
     // Supported extensions
-    assign misa[0]  = 1'b0;                         // A Atomic extension
-    assign misa[1]  = 1'b0;                         // B Tentatively reserved for Bit-Manipulation extension
-    assign misa[2]  = 1'b0;                         // C Compressed extension
-    assign misa[3]  = 1'b0;                         // D Double-precision floating-point extension
-    assign misa[4]  = (RV32E) ? 1'b1 : 1'b0;        // E RV32E base ISA
-    assign misa[5]  = (F_EXTENSION) ? 1'b1 : 1'b0;  // F Single-precision floating-point extension
-    assign misa[6]  = 1'b0;                         // G Additional standard extensions present
-    assign misa[7]  = 1'b0;                         // H Hypervisor extension
-    assign misa[8]  = (~RV32E) ? 1'b1 : 1'b0;       // I RV32I/64I/128I base ISA
-    assign misa[9]  = 1'b0;                         // J Tentatively reserved for Dynamically Translated Languages extension
-    assign misa[10] = 1'b0;                         // K Reserved
-    assign misa[11] = 1'b0;                         // L Tentatively reserved for Decimal Floating-Point extension
-    assign misa[12] = (M_EXTENSION) ? 1'b1 : 1'b0;  // M Integer Multiply/Divide extension
-    assign misa[13] = 1'b0;                         // N User-level interrupts supported
-    assign misa[14] = 1'b0;                         // O Reserved
-    assign misa[15] = 1'b0;                         // P Tentatively reserved for Packed-SIMD extension
-    assign misa[16] = 1'b0;                         // Q Quad-precision floating-point extension
-    assign misa[17] = 1'b0;                         // R Reserved
-    assign misa[18] = 1'b0;                         // S Supervisor mode implemented
-    assign misa[19] = 1'b0;                         // T Tentatively reserved for Transactional Memory extension
-    assign misa[20] = 1'b0;                         // U User mode implemented
-    assign misa[21] = 1'b0;                         // V Tentatively reserved for Vector extension
-    assign misa[22] = 1'b0;                         // W Reserved
-    assign misa[23] = 1'b0;                         // X Non-standard extensions present
-    assign misa[24] = 1'b0;                         // Y Reserved
-    assign misa[25] = 1'b0;                         // Z Reserved
+    assign misa[0]  = 1'b0;                            // A Atomic extension
+    assign misa[1]  = 1'b0;                            // B Tentatively reserved for Bit-Manipulation extension
+    assign misa[2]  = 1'b0;                            // C Compressed extension
+    assign misa[3]  = 1'b0;                            // D Double-precision floating-point extension
+    assign misa[4]  = (RV32E) ? 1'b1 : 1'b0;           // E RV32E base ISA
+    assign misa[5]  = (F_EXTENSION) ? 1'b1 : 1'b0;     // F Single-precision floating-point extension
+    assign misa[6]  = 1'b0;                            // G Additional standard extensions present
+    assign misa[7]  = (HYPERVISOR_MODE) ? 1'b1 : 1'b0; // H Hypervisor extension
+    assign misa[8]  = (!RV32E) ? 1'b1 : 1'b0;          // I RV32I/64I/128I base ISA
+    assign misa[9]  = 1'b0;                            // J Tentatively reserved for Dynamically Translated Languages extension
+    assign misa[10] = 1'b0;                            // K Reserved
+    assign misa[11] = 1'b0;                            // L Tentatively reserved for Decimal Floating-Point extension
+    assign misa[12] = (M_EXTENSION) ? 1'b1 : 1'b0;     // M Integer Multiply/Divide extension
+    assign misa[13] = 1'b0;                            // N User-level interrupts supported
+    assign misa[14] = 1'b0;                            // O Reserved
+    assign misa[15] = 1'b0;                            // P Tentatively reserved for Packed-SIMD extension
+    assign misa[16] = 1'b0;                            // Q Quad-precision floating-point extension
+    assign misa[17] = 1'b0;                            // R Reserved
+    assign misa[18] = (SUPERVISOR_MODE) ? 1'b1 : 1'b0; // S Supervisor mode implemented
+    assign misa[19] = 1'b0;                            // T Tentatively reserved for Transactional Memory extension
+    assign misa[20] = (USER_MODE) ? 1'b1 : 1'b0;       // U User mode implemented
+    assign misa[21] = 1'b0;                            // V Tentatively reserved for Vector extension
+    assign misa[22] = 1'b0;                            // W Reserved
+    assign misa[23] = 1'b0;                            // X Non-standard extensions present
+    assign misa[24] = 1'b0;                            // Y Reserved
+    assign misa[25] = 1'b0;                            // Z Reserved
 
     // MXLEN field encoding
     generate
@@ -414,49 +540,59 @@ module friscv_csr
     end
     endgenerate
 
-    ///////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////////////
     // MSTATUS - 0x300
     //
-    // 31:      SD related to XS FS, 0 for the moment
-    // 30:23:   (WPRI)
-    // 22:      TSR Supervisor mode, 0 N/A
-    // 21:      TW Timeout Wait, 0 N/A
-    // 20:      TVM Virtualization, 0 N/A
-    // 19:      MXR Virtual Mem, 0 N/A
-    // 18:      SUM Virtual Mem, 0 N/A
-    // 17:      MPRV Virtual Mem, 0 N/A
-    // 16:15:   XS FP, 0 N/A
-    // 14:13:   FS FP, 0 N/A
-    // 12:11:   MPP: Machine-mode, previous priviledge mode, 0 N/A
-    // 10:9:    (WPRI)
-    // 8:       SPP Supervisor mode, 0 N/A
-    // 7:       MPIE: Machine-mode, Interrupt enable (prior to the trap)
-    // 6:       (WPRI)
-    // 5:       SPIE Supervisor mode, 0 N/A
-    // 4:       UPIE User mode, 0 N/A
-    // 3:       MIE: Machine-mode, Interrupt enable
-    // 2:       (WPRI)
-    // 1:       SIE Supervisor mode, 0 N/A
-    // 0:       UIE User mode, 0 N/A
+    // [31]      SD, Dirty State based XS / FS / VS
+    // [30:23]   (WPRI)
+    // [22]      TSR, Trap SRET
+    //              = 1, attempts to execute SRET while executing in S-mode will raise
+    //                an illegal instruction exception
+    //              = 0, this operation is permitted in S-mode.
+    // [21]      TW, Timeout Wait
+    //              = 0, WFI instruction may execute in lower privilege modes
+    //              = 1, if WFI is executed in any less-privileged mode, 
+    //                   instruction causes an illegal instruction exception
+    // [20]      TVM, Trap Virtual Memory
+    //              = 1, attempts to read or write the satp or exec SFENCE.VMA or 
+    //                   SINVAL.VMA will raise an exception
+    //              = 0, these operations are permitted in S-mode
+    // [19]      MXR, Make eXecutable Readable
+    //              = 0, only loads from pages marked readable
+    //              = 1, loads from pages marked either readable or executable
+    // [18]      SUM: Supervisor User Memory access
+    //              = 0, S-mode memory accesses to pages that are accessible by U-mode
+    //              = 1, these accesses are permitted
+    // [17]      MPRV, Modify PRiVilege for load/store operation (for user mode)
+    //              = 0, follow current privilege
+    //              = 1, load/store are translated and protected
+    // [16:15]   XS, encode user extension state
+    // [14:13]   FS, encode Floating-point extension State
+    // [12:11]   MPP: Machine-mode, previous privilege mode
+    // [10:9]    VS, encode Vector extension State
+    // [8]       SPP Supervisor mode
+    // [7]       MPIE: Machine-mode interrupt enable (prior to the trap)
+    // [6]       UBE: User Byte Endianess. Always little-endian so 0
+    // [5]       SPIE Supervisor mode Interrupt Enable (Prior to the trap)
+    // [4]       (WPRI)
+    // [3]       MIE: Machine-mode Interrupt Enable
+    // [2]       (WPRI)
+    // [1]       SIE Supervisor mode Interrupt Enable
+    // [0]       (WPRI)
     //
-    ///////////////////////////////////////////////////////////////////////////
+    // mstatush is not inmplemented so always 0, making the core always
+    // in little-endian mode only
+    //
+    //////////////////////////////////////////////////////////////////////////////////
     always @ (posedge aclk or negedge aresetn) begin
-        if (~aresetn) begin
+        if (!aresetn) begin
             mstatus <= {XLEN{1'b0}};
         end else if (srst) begin
             mstatus <= {XLEN{1'b0}};
-        end else begin
-            if (ctrl_mstatus_wr) begin
-                mstatus <= {ctrl_mstatus[31], 8'b0, ctrl_mstatus[22:11], 2'b0,
-                            ctrl_mstatus[8:7], 1'b0, ctrl_mstatus[5:3], 1'b0,
-                            ctrl_mstatus[1:0]};
-            end else if (csr_wren) begin
-                if (csr==MSTATUS) begin
-                    mstatus <= {newval[31], 8'b0, newval[22:11], 2'b0,
-                                newval[8:7], 1'b0, newval[5:3], 1'b0,
-                                newval[1:0]};
-                end
-            end
+        end else if (ctrl_mstatus_wr) begin
+            mstatus <= get_mstatus(ctrl_mstatus);
+        end else if (csr_wren && csr==MSTATUS) begin
+            mstatus <= get_mstatus(newval);
         end
     end
 
@@ -464,7 +600,7 @@ module friscv_csr
     // MIE - 0x304
     ///////////////////////////////////////////////////////////////////////////
     always @ (posedge aclk or negedge aresetn) begin
-        if (~aresetn) begin
+        if (!aresetn) begin
             mie <= {XLEN{1'b0}};
         end else if (srst) begin
             mie <= {XLEN{1'b0}};
@@ -481,7 +617,7 @@ module friscv_csr
     // MTVEC - 0x305
     ///////////////////////////////////////////////////////////////////////////
     always @ (posedge aclk or negedge aresetn) begin
-        if (~aresetn) begin
+        if (!aresetn) begin
             mtvec <= {XLEN{1'b0}};
         end else if (srst) begin
             mtvec <= {XLEN{1'b0}};
@@ -498,7 +634,7 @@ module friscv_csr
     // MSCRATCH - 0x340
     ///////////////////////////////////////////////////////////////////////////
     always @ (posedge aclk or negedge aresetn) begin
-        if (~aresetn) begin
+        if (!aresetn) begin
             mscratch <= {XLEN{1'b0}};
         end else if (srst) begin
             mscratch <= {XLEN{1'b0}};
@@ -515,7 +651,7 @@ module friscv_csr
     // MEPC, only support IALIGN=32 - 0x341
     ///////////////////////////////////////////////////////////////////////////
     always @ (posedge aclk or negedge aresetn) begin
-        if (~aresetn) begin
+        if (!aresetn) begin
             mepc <= {XLEN{1'b0}};
         end else if (srst) begin
             mepc <= {XLEN{1'b0}};
@@ -534,7 +670,7 @@ module friscv_csr
     // MCAUSE - 0x342
     ///////////////////////////////////////////////////////////////////////////
     always @ (posedge aclk or negedge aresetn) begin
-        if (~aresetn) begin
+        if (!aresetn) begin
             mcause <= {XLEN{1'b0}};
         end else if (srst) begin
             mcause <= {XLEN{1'b0}};
@@ -553,7 +689,7 @@ module friscv_csr
     // MTVAL - 0x343
     ///////////////////////////////////////////////////////////////////////////
     always @ (posedge aclk or negedge aresetn) begin
-        if (~aresetn) begin
+        if (!aresetn) begin
             mtval <= {XLEN{1'b0}};
         end else if (srst) begin
             mtval <= {XLEN{1'b0}};
@@ -573,7 +709,7 @@ module friscv_csr
     // TODO: Study race condition when CSR is written and interrupt arrives
     ///////////////////////////////////////////////////////////////////////////
     always @ (posedge aclk or negedge aresetn) begin
-        if (~aresetn) begin
+        if (!aresetn) begin
             mip <= {XLEN{1'b0}};
         end else if (srst) begin
             mip <= {XLEN{1'b0}};
@@ -617,7 +753,7 @@ module friscv_csr
 
     // Number of active cycles since moved out of reset
     always @ (posedge aclk or negedge aresetn) begin
-        if (~aresetn) begin
+        if (!aresetn) begin
             rdtime <= {64{1'b0}};
         end else if (srst) begin
             rdtime <= {64{1'b0}};
@@ -641,9 +777,9 @@ module friscv_csr
     assign instcpl_perf_active = perfs[3*32+:32];
     assign instcpl_perf_sleep  = perfs[4*32+:32];
     assign instcpl_perf_stall  = perfs[5*32+:32];
-    assign proc_perf_active = perfs[6*32+:32];
-    assign proc_perf_sleep  = perfs[7*32+:32];
-    assign proc_perf_stall  = perfs[8*32+:32];
+    assign proc_perf_active    = perfs[6*32+:32];
+    assign proc_perf_sleep     = perfs[7*32+:32];
+    assign proc_perf_stall     = perfs[8*32+:32];
 
 
     //////////////////////////////////////////////////////////////////////////

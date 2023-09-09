@@ -50,6 +50,21 @@
     - 0 or 1
     - default: 0, no multiply/divide support
 
+- USER_MODE
+    - activate user mode support
+    - 0 or 1
+    - default: 0, not supported
+
+- SUPERVISOR_MODE
+    - activate supervisor mode support
+    - 0 or 1
+    - default: 0, not supported
+
+- HYPERVISOR_MODE
+    - activate hypervisor mode support
+    - 0 or 1
+    - default: 0, not supported
+
 - PROCESSING_BUS_PIPELINE
     - insert a pipeline at processing unit input bus
     - 0 or 1
