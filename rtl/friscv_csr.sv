@@ -100,6 +100,11 @@ module friscv_csr
     logic                    sw_irq_sync;
 
 
+    ///////////////////////////////////////////////////////////////////////////
+    // Build mstatus content 
+    // @data: the new value to write into the CSR
+    // @returns the formatted register based on spec and extension supported
+    ///////////////////////////////////////////////////////////////////////////
     function automatic logic [XLEN-1:0] get_mstatus (
         input logic [XLEN-1:0] data
     );
@@ -274,7 +279,7 @@ module friscv_csr
     logic [XLEN-1:0] mtval;         // 0x343    MRW
     logic [XLEN-1:0] mip;           // 0x344    MRW
 
-    // Machine Memory Protection
+    // Physical Memory Protection (PMP)
     // logic [XLEN-1:0] pmpcfg0;       // 0x3A0    MRW (not implemented)
     // logic [XLEN-1:0] pmpcfg1;       // 0x3A1    MRW (not implemented)
     // logic [XLEN-1:0] pmpcfg2;       // 0x3A2    MRW (not implemented)

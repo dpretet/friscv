@@ -17,19 +17,24 @@
 
 FRISCV is a SystemVerilog implementation of the [RISCV ISA](https://riscv.org):
 
-- Support RV32I & RV32E architecture
-- Support Zifencei
-- Support Zicsr
-- Support Zicntr
-- Support Zihpm
-- Support M extension (multiply/divide)
-- Machine-mode only
-- Implement a 3-stage pipeline
-- Support global and software interrupts
-- Clint extension
+- Built around a 3-stage pipeline
 - In-order execution
 - AXI4-lite for instruction and data bus
 - Instruction & data cache units
+- Privilege modes:
+    - Machine-mode only for simple embedded system
+    - User-mode for secure embedded system
+- Physical memory protection (PMP)
+- Physical memory attribute (PMA)
+- External, software and timer interrupts
+- Support multiple (optional) extensions:
+    - RV32I & RV32E architecture
+    - Zifencei
+    - Zicsr
+    - Zicntr
+    - Zihpm
+    - M extension (multiply/divide)
+    - Clint extension
 
 The core is [compliant](./test/riscv-tests/README.md) with the official RISCV
 testsuite.
@@ -62,6 +67,7 @@ More details of the architecture can be found in the:
 
 The core is verified with several testsuites, present in [test](./test) folder:
 - [White-Box Assembler testsuite](./test/wba_testsuite/README.md)
+- [Privilege / Security testsuite](./test/priv_sec_testsuite/README.md)
 - [RISCV Compliance testsuite](./test/riscv-tests/README.md)
 - [C testsuite](./test/c_testsuite/README.md)
 - [Apps testsuite](./test/apps/README.md)

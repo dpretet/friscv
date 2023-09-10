@@ -21,6 +21,12 @@ module friscv_control
         parameter XLEN = 32,
         // Reduced RV32 arch
         parameter RV32E = 0,
+        // Support hypervisor mode
+        parameter HYPERVISOR_MODE   = 0,
+        // Support supervisor mode
+        parameter SUPERVISOR_MODE   = 0,
+        // Support user mode
+        parameter USER_MODE         = 0,
         // Address bus width defined for both control and AXI4 address signals
         parameter AXI_ADDR_W = ILEN,
         // AXI ID width, setup by default to 8 and unused
@@ -193,11 +199,13 @@ module friscv_control
     logic [XLEN       -1:0] mtval_info;
     logic                   load_misaligned;
     logic                   store_misaligned;
+    logic                   illegal_instruction;
     logic                   wfi_not_allowed;
     logic                   trap_occuring;
     logic                   sync_trap_occuring;
     logic                   async_trap_occuring;
-
+    logic                   ecall_umode;
+    logic                   ecall_mmode;
     logic [2          -1:0] priv_mode;
 
     // Logger setup
@@ -524,7 +532,6 @@ module friscv_control
 
     assign pc_val = pc_reg;
 
-    assign priv_mode = `MMODE;
 
     assign flush_reqs = flush_pipe;
 
@@ -541,6 +548,7 @@ module friscv_control
             arid <= {AXI_ID_W{1'b0}};
             flush_blocks <= 1'b0;
             flush_pipe <= 1'b0;
+            priv_mode <= `MMODE;
         end else if (srst == 1'b1) begin
             cfsm <= BOOT;
             arvalid <= 1'b0;
@@ -552,6 +560,7 @@ module friscv_control
             arid <= {AXI_ID_W{1'b0}};
             flush_blocks <= 1'b0;
             flush_pipe <= 1'b0;
+            priv_mode <= `MMODE;
         end else begin
 
             case (cfsm)
@@ -561,6 +570,7 @@ module friscv_control
                 ///////////////////////////////////////////////////////////////
                 default: begin
 
+                    priv_mode <= `MMODE;
                     arid <= AXI_ID_MASK;
                     araddr <= BOOT_ADDR;
                     pc_reg <= BOOT_ADDR;
@@ -699,6 +709,7 @@ module friscv_control
                                 status[0] <= 1'b1;
                                 flush_pipe <= 1'b1;
                                 pc_reg <= mtvec;
+                                if (USER_MODE) priv_mode <= `MMODE;
 
                             // Reach an EBREAK instruction, need to stall the core
                             end else if (sys[`IS_EBREAK]) begin
@@ -719,6 +730,7 @@ module friscv_control
                                 status[2] <= 1'b1;
                                 flush_pipe <= 1'b1;
                                 pc_reg <= sb_mepc;
+                                if (USER_MODE) priv_mode <= `UMODE;
 
                             // Reach a FENCE.i instruction, need to flush the cache
                             // the instruction pipeline
@@ -1074,6 +1086,24 @@ module friscv_control
     assign load_misaligned = proc_exceptions[`LD_MA];
     assign store_misaligned = proc_exceptions[`ST_MA];
 
+    assign inst_dec_error = dec_error & (cfsm==FETCH) & inst_ready;
+
+    generate 
+    if (USER_MODE) begin: UMODE_EXPEC
+        assign illegal_instruction = (priv_mode==`MMODE)                 ? '0         :
+                                     (sys[`IS_MRET])                     ? inst_ready : 
+                                     (sys[`IS_CSR] && csr[9:8] != 2'b00) ? inst_ready : 
+                                     // Check if WFI must be trapped or not
+                                     (sys[`IS_WFI] )                     ? inst_ready : 
+                                                                           '0;
+    end else begin : NO_UMODE
+        assign illegal_instruction = '0;
+    end
+    endgenerate
+
+    assign ecall_umode = (sys[`ECALL] && priv_mode==`UMODE);
+    assign ecall_mmode = (sys[`ECALL] && priv_mode==`MMODE);
+
     ///////////////////////////////////////////////////////////////////////////
     //
     // Asynchronous exceptions code:
@@ -1108,12 +1138,11 @@ module friscv_control
     // Highest   |  3               |   Instruction address breakpoint
     // ------------------------------------------------------------------------
     //           |  12              |   Instruction page fault
-    // ------------------------------------------------------------------------
     //           |  1               |   Instruction access fault
     // ------------------------------------------------------------------------
     //           |  2               |   Illegal instruction
     //           |  0               |   Instruction address misaligned
-    //           |  8,9,11          |   Environment call (U/S/M modes)
+    //           |  8,9,11          |   Environment call from U/S/M modes
     //           |  3               |   Environment break
     //           |  3               |   Load/Store/AMO address breakpoint
     // ------------------------------------------------------------------------
@@ -1135,10 +1164,12 @@ module friscv_control
                          (csr_sb[`MTIP])        ? {1'b1, {XLEN-5{1'b0}}, 4'h7} :
                          (csr_sb[`MEIP])        ? {1'b1, {XLEN-5{1'b0}}, 4'hB} :
                          // then follow sync exceptions
-                         (inst_addr_misaligned) ? {XLEN{1'b0}} :
-                         (csr_ro_wr)            ? {{XLEN-4{1'b0}}, 4'h1} :
+                         (illegal_instruction)  ? {{XLEN-4{1'b0}}, 4'h2} :
+                         (csr_ro_wr)            ? {{XLEN-4{1'b0}}, 4'h2} :
                          (inst_dec_error)       ? {{XLEN-4{1'b0}}, 4'h2} :
-                         (sys[`IS_ECALL])       ? {{XLEN-4{1'b0}}, 4'hB} :
+                         (inst_addr_misaligned) ? {XLEN{1'b0}} :
+                         (ecall_umode)          ? {{XLEN-4{1'b0}}, 4'h8} :
+                         (ecall_mmode)          ? {{XLEN-4{1'b0}}, 4'hB} :
                          (sys[`IS_EBREAK])      ? {{XLEN-4{1'b0}}, 4'h3} :
                          (store_misaligned)     ? {{XLEN-4{1'b0}}, 4'h6} :
                          (load_misaligned)      ? {{XLEN-4{1'b0}}, 4'h4} :
@@ -1147,6 +1178,8 @@ module friscv_control
     // MTVAL: exception-specific information
     assign mtval_info = (inst_dec_error)       ? instruction :
                         (wfi_not_allowed)      ? instruction :
+                        (illegal_instruction)  ? instruction :
+                        (csr_ro_wr)            ? instruction :
                         (inst_addr_misaligned) ? pc_reg      :
                         (sys[`IS_ECALL])       ? pc_reg      :
                         (sys[`IS_EBREAK])      ? pc_reg      :
@@ -1161,12 +1194,12 @@ module friscv_control
     assign sync_trap_occuring = csr_ro_wr            |
                                 inst_addr_misaligned |
                                 load_misaligned      |
+                                // wfi_not_allowed      |
+                                // illegal_instruction  |
                                 store_misaligned     |
                                 inst_dec_error       ;
 
     assign trap_occuring = async_trap_occuring | sync_trap_occuring;
-
-    assign inst_dec_error = dec_error & (cfsm==FETCH) & inst_ready;
 
 endmodule
 

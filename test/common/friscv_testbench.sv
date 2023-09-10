@@ -102,7 +102,7 @@ module friscv_testbench(
     // Support supervisor mode
     parameter SUPERVISOR_MODE = 0;
     // Support user mode
-    parameter USER_MODE = 0;
+    parameter USER_MODE = 1;
     // Insert a pipeline on instruction bus coming from the controller
     parameter PROCESSING_BUS_PIPELINE = 1;
 

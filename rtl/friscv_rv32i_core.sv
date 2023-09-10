@@ -371,17 +371,20 @@ module friscv_rv32i_core
 
     friscv_control
     #(
-        .ILEN           (ILEN),
-        .XLEN           (XLEN),
-        .RV32E          (RV32E),
-        .AXI_ADDR_W     (AXI_ADDR_W),
-        .AXI_ID_W       (AXI_ID_W),
-        .AXI_ID_MASK    (AXI_IMEM_MASK),
-        .AXI_DATA_W     (XLEN),
+        .ILEN            (ILEN),
+        .XLEN            (XLEN),
+        .RV32E           (RV32E),
+        .HYPERVISOR_MODE (HYPERVISOR_MODE),
+        .SUPERVISOR_MODE (SUPERVISOR_MODE),
+        .USER_MODE       (USER_MODE),
+        .AXI_ADDR_W      (AXI_ADDR_W),
+        .AXI_ID_W        (AXI_ID_W),
+        .AXI_ID_MASK     (AXI_IMEM_MASK),
+        .AXI_DATA_W      (XLEN),
         // No OR in control, so no internal FIFO, reducing latency
-        .OSTDREQ_NUM    (0),
+        .OSTDREQ_NUM     (0),
         // .OSTDREQ_NUM    (INST_OSTDREQ_NUM),
-        .BOOT_ADDR      (BOOT_ADDR)
+        .BOOT_ADDR       (BOOT_ADDR)
     )
     control
     (

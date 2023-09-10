@@ -1,5 +1,8 @@
 # DOING
 
+- [ ] Support U-mode
+- [ ] Support PMP
+- [ ] Support PMA
 
 
 # BACKLOG
@@ -40,13 +43,13 @@ Cache Stages
 Misc.
 
 - [ ] Create a HW test platform
-    - [ ] Cloud
     - [ ] Analogue pocket
+    - [C] Cloud
 - [ ] Add registers to configure the core in platform
 - [ ] Support completly a profile
 - [ ] 64 bits support
 - [ ] Atomic operations for single core
-- [ ] Support privileged instructions, supervisor mode & user mode
+- [ ] Support privileged instructions & supervisor mode
       - voir les CSRs dans la privileged mode, implementer les compteurs par mode
       - https://danielmangum.com/posts/risc-v-bytes-privilege-levels/
       - https://mobile.twitter.com/hasheddan/status/1514581031092899843?s=12&t=MMNTY_iRC48CjykLQBdTkQ
@@ -66,9 +69,10 @@ Misc.
 - [ ] Multi-core platform:
     - [ ] Counters and timers should be reworked
     - [ ] Nb core configurable
-    - [ ] Support PLIC
+    - [ ] PLIC controller
     - [ ] Extended atomic operation support
     - [ ] Implement a L2 cache stage
+- [ ] Deactivate the core with WFI (clock gating)
 
 
 AXI4 Infrastructure
