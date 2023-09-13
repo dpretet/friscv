@@ -233,6 +233,13 @@ main() {
             run_sims "$TB" "$SIMULATOR"
         fi
 
+        if [ "$2" == "priv_sec-testsuite" ] || [ "$2" == "all" ]; then
+            echo ""
+            printinfo "Start Privilege/Security Simulation flow"
+            cd "${FRISCV_DIR}/test/priv_sec_testsuite"
+            run_sims "$TB" "$SIMULATOR"
+        fi
+
         if [ "$2" == "sv-testsuite" ] || [ "$2" == "all" ]; then
             echo ""
             printinfo "Start SV Simulation flow"
