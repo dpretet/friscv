@@ -257,8 +257,10 @@ module friscv_control
         else if (cause=='h0)  get_mcause_desc = "Instruction address misaligned";
         else if (cause=='h4)  get_mcause_desc = "LOAD address misaligned";
         else if (cause=='h6)  get_mcause_desc = "STORE address misaligned";
-        else if (cause=='h2)  get_mcause_desc = "Instruction decoding error";
-        else if (cause=='hB)  get_mcause_desc = "Environment call";
+        else if (cause=='h10) get_mcause_desc = "Instruction decoding error";
+        else if (cause=='h8)  get_mcause_desc = "Environment call (U-mode)";
+        else if (cause=='hB)  get_mcause_desc = "Environment call (M-mode)";
+        else if (cause=='h2)  get_mcause_desc = "Illegal instruction";
         // Asynchronous Trap
         else if (cause=='h80000003)  get_mcause_desc = "Machine Software Interrupt";
         else if (cause=='h80000007)  get_mcause_desc = "Machine Timer Interrupt";
@@ -1094,7 +1096,7 @@ module friscv_control
                                      (sys[`IS_MRET])                     ? inst_ready : 
                                      (sys[`IS_CSR] && csr[9:8] != 2'b00) ? inst_ready : 
                                      // Check if WFI must be trapped or not
-                                     (sys[`IS_WFI] )                     ? inst_ready : 
+                                     // (sys[`IS_WFI] )                     ? inst_ready : 
                                                                            '0;
     end else begin : NO_UMODE
         assign illegal_instruction = '0;
@@ -1164,26 +1166,27 @@ module friscv_control
                          (csr_sb[`MTIP])        ? {1'b1, {XLEN-5{1'b0}}, 4'h7} :
                          (csr_sb[`MEIP])        ? {1'b1, {XLEN-5{1'b0}}, 4'hB} :
                          // then follow sync exceptions
-                         (illegal_instruction)  ? {{XLEN-4{1'b0}}, 4'h2} :
-                         (csr_ro_wr)            ? {{XLEN-4{1'b0}}, 4'h2} :
-                         (inst_dec_error)       ? {{XLEN-4{1'b0}}, 4'h2} :
-                         (inst_addr_misaligned) ? {XLEN{1'b0}} :
-                         (ecall_umode)          ? {{XLEN-4{1'b0}}, 4'h8} :
-                         (ecall_mmode)          ? {{XLEN-4{1'b0}}, 4'hB} :
-                         (sys[`IS_EBREAK])      ? {{XLEN-4{1'b0}}, 4'h3} :
-                         (store_misaligned)     ? {{XLEN-4{1'b0}}, 4'h6} :
-                         (load_misaligned)      ? {{XLEN-4{1'b0}}, 4'h4} :
-                                                  {XLEN{1'b0}};
+                         (illegal_instruction)  ? {{XLEN-4{1'b0}}, 4'h2}  :
+                         (csr_ro_wr)            ? {{XLEN-4{1'b0}}, 4'h2}  :
+                         (inst_addr_misaligned) ? '0                      :
+                         (ecall_umode)          ? {{XLEN-4{1'b0}}, 4'h8}  :
+                         (ecall_mmode)          ? {{XLEN-4{1'b0}}, 4'hB}  :
+                         (sys[`IS_EBREAK])      ? {{XLEN-4{1'b0}}, 4'h3}  :
+                         (store_misaligned)     ? {{XLEN-4{1'b0}}, 4'h6}  :
+                         (load_misaligned)      ? {{XLEN-4{1'b0}}, 4'h4}  :
+                         (inst_dec_error)       ? {{XLEN-5{1'b0}}, 5'h18} :
+                                                  '0;
 
     // MTVAL: exception-specific information
     assign mtval_info = (inst_dec_error)       ? instruction :
                         (wfi_not_allowed)      ? instruction :
                         (illegal_instruction)  ? instruction :
+                        (inst_dec_error)       ? instruction :
                         (csr_ro_wr)            ? instruction :
                         (inst_addr_misaligned) ? pc_reg      :
                         (sys[`IS_ECALL])       ? pc_reg      :
                         (sys[`IS_EBREAK])      ? pc_reg      :
-                                                 {XLEN{1'b0}};
+                                                 '0;
 
     // Trigger the trap handling execution in main FSM
 
@@ -1194,8 +1197,7 @@ module friscv_control
     assign sync_trap_occuring = csr_ro_wr            |
                                 inst_addr_misaligned |
                                 load_misaligned      |
-                                // wfi_not_allowed      |
-                                // illegal_instruction  |
+                                illegal_instruction  |
                                 store_misaligned     |
                                 inst_dec_error       ;
 

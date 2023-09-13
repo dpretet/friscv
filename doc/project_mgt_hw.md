@@ -135,7 +135,6 @@ Verification/Validation
     - [ ] https://github.com/chipsalliance/Surelog
     - [ ] https://stackoverflow.com/questions/65534532/how-to-estimation-a-chip-size-with-standard-cell-library
 - [ ] Core config
-    - [ ] Supporter des set de config du core en test bench.
     - [ ] Faire un test de synthèse selon les configs du core
     - [ ] Support cache disable in testbench
 - [ ] Error Logger Interface
@@ -173,6 +172,8 @@ Hardware Tests
 
 # DONE
 
+- [X] v1.6.0
+    - [X] Supporter des set de config du core en test bench.
 - [X] v1.5.1: maintenance
     - [X] Preload jal even if processing is busy
     - [X] Print des tests qui ne marchent pas, un par un, dans le bash

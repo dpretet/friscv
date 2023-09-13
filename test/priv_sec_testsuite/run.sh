@@ -7,17 +7,9 @@
 # -o pipefail: causes a pipeline to fail if any command fails
 # set -e -o pipefail
 
-#------------------------------------------------------------------------------
-# Variables and setup
-#------------------------------------------------------------------------------
-
-# Don't assert a testbench error if X31 is asserted
-ERROR_STATUS_X31=1
-# Generate an external IRQ on the EIRQ IO
-GEN_EIRQ=1
+cfg_file="config.cfg"
 
 source ../common/functions.sh
-
 
 #------------------------------------------------------------------------------
 # Main
@@ -35,30 +27,24 @@ main() {
     if [ $do_clean -eq 1 ]; then clean; fi
 
     # Compile appplication if necessary
-    if [ $NO_COMPILE -eq 0 ]; then
+    if [ "$NO_COMPILE" -eq 0 ]; then
         if [ -n "$(find tests/ -maxdepth 1 -name \*.v -print -quit)" ] ; then
             echo "INFO: Found compiled programs, execute ./run -C to rebuild from scratch"
         else
             set -e
-            make -C ./tests XLEN=$XLEN
+            make -C ./tests XLEN=32
             set +e
         fi
     fi
 
     # If user specified a testcase, or a testsuite, use it
     if [[ -n $TC ]]; then
-        run_testsuite "$TC"
+        run_testsuite "$TC" "$cfg_file"
     # Else run all the supported testsuite
     else
         # Execute the testsuites
-        run_testsuite "./tests/rv32ui-p*.v"
-        if [[ -f "./tests/rv32um-p*.v" ]]; then run_testsuite "./tests/rv32um-p*.v"; fi
+        run_testsuite "./tests/rv32ui-p*.v" "$cfg_file"
     fi
-
-    # OK, sounds good, exit gently
-    echo -e "${GREEN}SUCCESS: Testsuite successfully terminated ^^${NC}"
-
-    exit 0
 }
 
 main "$@"

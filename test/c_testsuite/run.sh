@@ -11,12 +11,12 @@
 # Variables and setup
 #------------------------------------------------------------------------------
 
+cfg_file="config.cfg"
+
 # Timeout upon which the simulation is ran
 TIMEOUT=200000
 # Minumum value the program counter should reach in bytes
 MIN_PC=65692
-# Check X31 used to detect testcase execution error
-ERROR_STATUS_X31=1
 
 source ../common/functions.sh
 
@@ -35,18 +35,17 @@ main() {
 
     # Clean up compiled applications and exit
     if [ $do_clean -eq 1 ]; then
-        clean
         for dir in tests/*/; do
             if [ "$dir" != "tests/common/" ]; then
                 echo "INFO: Clean $dir"
                 make clean -C "$dir";
             fi
         done
-        exit 0;
+        clean
     fi
 
     # Build all applications
-    if [ $NO_COMPILE -eq 0 ]; then
+    if [ "$NO_COMPILE" -eq 0 ]; then
         echo "INFO: C tests"
         set -e
         for dir in tests/*/; do
@@ -60,17 +59,12 @@ main() {
 
     # If user specified a testcase, or a testsuite, use it
     if [[ -n $TC ]]; then
-        run_testsuite "$TC"
+        run_testsuite "$TC" "$cfg_file"
     # Else run all the supported testsuite
     else
         # Execute the testsuites
-        run_testsuite "./tests/*.v"
+        run_testsuite "./tests/*.v" "$cfg_file"
     fi
-
-    # OK, sounds good, exit gently
-    echo -e "${GREEN}SUCCESS: C testsuite successfully terminated ^^${NC}"
-
-    exit 0
 }
 
 main "$@"

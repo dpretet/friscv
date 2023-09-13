@@ -76,6 +76,10 @@ module friscv_testbench(
     `define TB_CHOICE 0
     `endif
 
+    `ifndef USER_MODE
+    `define USER_MODE 0
+    `endif
+
     parameter TB_CHOICE = (`TB_CHOICE==0) ? "CORE" : "PLATFORM";
 
     // Instruction length
@@ -102,7 +106,7 @@ module friscv_testbench(
     // Support supervisor mode
     parameter SUPERVISOR_MODE = 0;
     // Support user mode
-    parameter USER_MODE = 1;
+    parameter USER_MODE = `USER_MODE;
     // Insert a pipeline on instruction bus coming from the controller
     parameter PROCESSING_BUS_PIPELINE = 1;
 

@@ -18,25 +18,16 @@ BLUE='\033[0;34m'
 GREEN='\033[0;32m'
 NC='\033[0m' # No Color
 
-# Architecture choice
-XLEN=32
-# Instruction width
-ILEN=32
-# Enable both instruction & data caches
-CACHE_EN=1
-# Cache block width in bits
-CACHE_BLOCK_W=128
-# Number of instruction per cache block
-INST_PER_BLOCK=$(($CACHE_BLOCK_W/$ILEN))
-# Boot address, will be determined by python during elf extraction
-BOOT_ADDR=0
-
 
 #----------------------------------------------------------------
 # This section gathers parameters enabled or setup conditionally
 # in a flow (WBA, C, RISCV, ...)
 #----------------------------------------------------------------
 
+# Used to format the RAM file
+INST_PER_LINE=
+# Boot address, will be determined by python during elf extraction
+BOOT_ADDR=0
 # Force run without trying to compile again C or ASM programs
 # Can be overridden by -- no-compile argument
 NO_COMPILE=0
@@ -54,8 +45,6 @@ TC=
 [[ -z $NO_VCD ]] && NO_VCD=0
 # INTERACTIVE enable a UART to read/write from Verilator
 [[ -z $INTERACTIVE ]] && INTERACTIVE=0
-# Generate an external IRQ in the core
-[[ -z $GEN_EIRQ ]] && GEN_EIRQ=0
 # RAM is by default in compliance mode
 [[ -z $RAM_MODE ]] && RAM_MODE="compliance"
 
@@ -66,6 +55,7 @@ TC=
 [[ -z $TRACE_FETCHER ]] && TRACE_FETCHER=1
 [[ -z $TRACE_PUSHER ]] && TRACE_PUSHER=1
 [[ -z $TRACE_TB_RAM ]] && TRACE_TB_RAM=1
+[[ -z $TRACE_REGISTERS ]] && TRACE_REGISTERS=1
 
 # Variable used to check if RTL sources or testbench changed. Only compile if 1
 to_compile=0
@@ -74,6 +64,27 @@ to_compile=0
 ts_res=""
 ts_ret=0
 
+
+#------------------------------------------------------------------------------
+# Read a configuration file listing parameters and values, comma separated
+#------------------------------------------------------------------------------
+read_config() {
+
+    cen=0 # cache enable
+    cw=32 # cache width
+
+    DEFINES="FRISV_SIM=1;USE_SVL=1;"
+
+    while IFS=, read -r name value; do
+        DEFINES="${DEFINES}${name}=${value};"
+        [[ "$name" == "CACHE_BLOCK_W" ]] && cw="$value"
+        [[ "$name" == "CACHE_EN" ]] && cen="$value"
+    done < "$1"
+
+    # Compute the number of instruction per line to format in RAM init file for the instruction cache
+    [[ "$cen" -eq 1 ]] && INST_PER_LINE=$(($cw/32)) || INST_PER_LINE=1
+}
+#------------------------------------------------------------------------------
 
 #------------------------------------------------------------------------------
 # Clean compiled programs
@@ -98,14 +109,11 @@ clean() {
 
 get_defines() {
 
+    read_config "$1"
+
     # Print testcase description and its configuration
-    echo ""
-    echo -e "${BLUE}INFO: Execute ${test}${NC}"
-    echo ""
-    echo "  - XLEN:             $XLEN"
+    echo "  - Config file:      $cfg_file"
     echo "  - BOOT_ADDR:        $BOOT_ADDR"
-    echo "  - CACHE_EN:         $CACHE_EN"
-    echo "  - CACHE_BLOCK_W:    $CACHE_BLOCK_W"
     echo "  - TIMEOUT:          $TIMEOUT"
     echo "  - MIN_PC:           $MIN_PC"
     echo "  - TB_CHOICE:        $TB_CHOICE (0=CORE, 1=PLATFORM)"
@@ -113,36 +121,24 @@ get_defines() {
     echo "  - SIMULATOR:        $SIM"
     echo "  - NO_VCD:           $NO_VCD"
     echo "  - INTERACTIVE:      $INTERACTIVE"
-    echo "  - ERROR_STATUS_X31: $ERROR_STATUS_X31"
-    echo "  - GEN_EIRQ:         $GEN_EIRQ"
     echo "  - RAM_MODE:         $RAM_MODE"
-    echo "  - TRACE_CONTROL:    $TRACE_CONTROL"
-    echo "  - TRACE_CACHE:      $TRACE_CACHE"
-    echo "  - TRACE_BLOCKS:     $TRACE_BLOCKS"
-    echo "  - TRACE_FETCHER:    $TRACE_FETCHER"
-    echo "  - TRACE_PUSHER:     $TRACE_PUSHER"
-    echo "  - TRACE_TB_RAM:     $TRACE_TB_RAM"
 
-    DEFINES="${DEFINES}XLEN=$XLEN;"
     DEFINES="${DEFINES}BOOT_ADDR=$BOOT_ADDR;"
-    DEFINES="${DEFINES}CACHE_EN=$CACHE_EN;"
-    DEFINES="${DEFINES}CACHE_BLOCK_W=$CACHE_BLOCK_W;"
     DEFINES="${DEFINES}TIMEOUT=$TIMEOUT;"
     DEFINES="${DEFINES}MIN_PC=$MIN_PC;"
     DEFINES="${DEFINES}TB_CHOICE=$TB_CHOICE;"
     DEFINES="${DEFINES}TCNAME=$test_name;"
     DEFINES="${DEFINES}INTERACTIVE=$INTERACTIVE;"
-    DEFINES="${DEFINES}ERROR_STATUS_X31=$ERROR_STATUS_X31;"
-    DEFINES="${DEFINES}GEN_EIRQ=$GEN_EIRQ;"
 
     [[ $RAM_MODE == "performance" ]] && DEFINES="${DEFINES}RAM_MODE_PERF=1;"
 
-    [[ $TRACE_CONTROL -eq 1 ]] && DEFINES="${DEFINES}TRACE_CONTROL=$TRACE_CONTROL;"
-    [[ $TRACE_CACHE   -eq 1 ]] && DEFINES="${DEFINES}TRACE_CACHE=$TRACE_CACHE;"
-    [[ $TRACE_BLOCKS  -eq 1 ]] && DEFINES="${DEFINES}TRACE_BLOCKS=$TRACE_BLOCKS;"
-    [[ $TRACE_FETCHER -eq 1 ]] && DEFINES="${DEFINES}TRACE_FETCHER=$TRACE_FETCHER;"
-    [[ $TRACE_PUSHER  -eq 1 ]] && DEFINES="${DEFINES}TRACE_PUSHER=$TRACE_PUSHER;"
-    [[ $TRACE_TB_RAM  -eq 1 ]] && DEFINES="${DEFINES}TRACE_TB_RAM=$TRACE_TB_RAM;"
+    [[ $TRACE_CONTROL   -eq 1 ]] && DEFINES="${DEFINES}TRACE_CONTROL=$TRACE_CONTROL;"
+    [[ $TRACE_CACHE     -eq 1 ]] && DEFINES="${DEFINES}TRACE_CACHE=$TRACE_CACHE;"
+    [[ $TRACE_BLOCKS    -eq 1 ]] && DEFINES="${DEFINES}TRACE_BLOCKS=$TRACE_BLOCKS;"
+    [[ $TRACE_FETCHER   -eq 1 ]] && DEFINES="${DEFINES}TRACE_FETCHER=$TRACE_FETCHER;"
+    [[ $TRACE_PUSHER    -eq 1 ]] && DEFINES="${DEFINES}TRACE_PUSHER=$TRACE_PUSHER;"
+    [[ $TRACE_REGISTERS -eq 1 ]] && DEFINES="${DEFINES}TRACE_REGISTERS=$TRACE_REGISTERS;"
+    [[ $TRACE_TB_RAM    -eq 1 ]] && DEFINES="${DEFINES}TRACE_TB_RAM=$TRACE_TB_RAM;"
 
     [[ $NO_VCD -eq 1 ]] && DEFINES="${DEFINES}NO_VCD=1;"
 
@@ -217,6 +213,8 @@ run_tests() {
     # Execute one by one the available tests
     for test in $1; do
 
+        echo -e "${BLUE}INFO: Execute ${test}${NC}"
+
         # Go to run-only once we know the testbench has been compiled one time
         if [[ $did_compile -eq 1 ]]; then
             run_only="-run-only"
@@ -232,14 +230,8 @@ run_tests() {
         test_file=$(basename "$test")
         test_name=${test_file%%.*}
 
-        ## SVLogger and so extra logging/tracing can be deactivated. Usefull for Apps testsuite
-        if [[ -z $NO_SVL ]]; then
-            DEFINES="FRISV_SIM=1;USE_SVL=1;"
-        else
-            DEFINES="FRISV_SIM=1;"
-        fi
-
-        get_defines
+        # Grab all defines necessary for testbench & flow setup
+        get_defines "$2"
 
         # Execute the testcase with SVUT
         svutRun -t ./friscv_testbench.sv \
@@ -254,7 +246,7 @@ run_tests() {
         # Grab the return code used later to determine the compliance status
         ts_ret=$((ts_ret+_tc_ret))
         # Prepare results to print
-        gather_result "$(basename "$test" .v)" "$_tc_ret"
+        gather_result "$test_name" "$_tc_ret"
         # Pack all intermediate results into a single file
         cat tc.log >> simulation.log
         rm -f tc.log
@@ -264,7 +256,7 @@ run_tests() {
             cp ./friscv_testbench.vcd "./tests/$test_name.vcd"
         fi
 
-        # Create the trace of the C execution
+        # Create the trace of the C execution (function jumps)
         if [ -f "./trace_control.csv" ] && [ -f "tests/${test_name}.symbols" ]; then
             ../common/trace.py --itrace trace_control.csv \
                                --otrace "tests/${test_name}_trace.csv" \
@@ -323,6 +315,9 @@ check_status() {
         echo "  - error count: $ec"
         echo "  - testsuite status: $ts_ret"
         exit 1
+    else
+        # OK, sounds good, exit gently
+        echo -e "${GREEN}SUCCESS: Testsuite successfully terminated ^^${NC}"
     fi
 }
 #------------------------------------------------------------------------------
@@ -336,18 +331,6 @@ get_args() {
 
     while [ "$1" != "" ]; do
         case $1 in
-            --cache_en )
-                shift
-                CACHE_EN=$1
-            ;;
-            --cache_block )
-                shift
-                CACHE_BLOCK_W=$1
-            ;;
-            -x | --xlen )
-                shift
-                XLEN=$1
-            ;;
             -c | --clean )
                 do_clean=1
             ;;
@@ -373,6 +356,10 @@ get_args() {
             --simulator )
                 shift
                 SIM=$1
+            ;;
+            --cfg )
+                shift
+                cfg_file=$1
             ;;
             --novcd )
                 shift
@@ -407,15 +394,13 @@ usage: bash ./run.sh ...
 
 -c    | --clean             Clean-up and exit
 -h    | --help              Brings up this menu
--x    | --xlen              XLEN, 32 or 64 bits (32 bits by default)
 -t    | --timeout           Timeout in number of cycles before the simulation stops (10000 by default, 0 inactivate it)
-        --cache_en          Enable instruction and data caches (Enabled by default)
-        --cache_block       Cache line width in bits (128 bits by default)
         --tb                'core' or 'platform' ('core' by default)
         --tc                A specific testcase to launch, can use wildcard if enclosed with ' (Run all by default)
         --simulator         Choose between icarus or verilator (icarus is default)
         --novcd             Don't dump VCD during simulation (Dump by default)
         --nocompile         Don't try to compile C or assembler (CI tests only)
+        --cfg               Pass a specific configuration files
 EOF
 }
 #------------------------------------------------------------------------------
