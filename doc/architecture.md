@@ -18,6 +18,7 @@ The FRISCV core is compact and composed by:
 - the cache units, one for instuction bus, one for data bus
 - the CSR unit, providing the registers to connect the features and extensions
 - the ISA registers, shared between control and processing units
+- the MPU (memory protection unit) composed by PMP and PMA for less-privilege mode memory access
 
 
 `Platform`
@@ -41,7 +42,7 @@ instructions across the hart. The unit is composed by several pieces:
 
 - The central FSM sequencing the execution
 - The program counter management based on current instruction to execute
-- A FIFO to buffer the incoming instructions
+- A FIFO to buffer the incoming instructions (optional)
 - An instruction decoder to decompose the machine code and ease the processing
 
 <p align="center"> <img src="assets/control-fetch.png"> </p>
@@ -64,9 +65,9 @@ addresses `0x4` and `0x5` are discarded and only instructions from `0xA` will be
 this new memory section read, the control unit increments the address channel ID when jumping to
 ease this batch identification.
 
-The FIFO present as a front-end of the module is very important to store incoming instructions in
-case the processing unit, the CSRs are not ready to execute an instruction (for instance if reading
-the external central memory).
+The FIFO present as a front-end of the module can be activated to store incoming instructions in
+case the processing unit is not ready to execute an instruction (for instance if reading
+the external central memory or executing a division).
 
 In case the control unit pre-loaded too much instruction while a branch needs to be taken, it can
 flush the front-end FIFO and the iCache buffer and restarts faster to follow the new branch.
@@ -223,19 +224,19 @@ request to the memory controller. This path is needed to manage IO R/W while the
 cachable.
 
 
-#### Read Out-Of-Order Management
+#### Out-Of-Order Management
 
 <p align="center"> <img src="./assets/dCache-ooo.png"> </p>
 
-Read request can target either an IO region or a cachable region, the application needs to
-indicate this information with ARCACHE. Block-Fetcher stage (same module than iCache) manages the
+Read/Write request can target either an IO region or a cachable region, the application needs to
+indicate this information with ACACHE. Block-Fetcher stage (same module than iCache) manages the
 read request in the cache blocks, IO-Fetcher manages the IO request to route directly in the memory
-with the memory controller. Because read request can come back out-of-order with the latency
-different between block and memory, the dCache uses one more module to manage that. The OoO Manager
-module substitutes ARID to make it unique for each read request and uses them to reorder the read
-data completion to the application. This stage can be deactivated if not necessary, if the
-application can manage by itself the reordering or if doesn't target IO region (Block-Fetcher always
-completes requets in-order).
+with the memory controller. Pusher maanges all the write requests. Because read or write requests
+can come back out-of-order with the latency different between block and memory, the dCache uses one
+more module to manage that. The OoO Manager module substitutes AID to make it unique for each r/w
+request and uses them to reorder the completions to the application. This stage can be
+deactivated if not necessary, if the application can manage by itself the reordering or if doesn't
+target IO region (Block-Fetcher always completes requets in-order).
 
 
 #### AXI4 Ordering Rules

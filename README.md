@@ -1,10 +1,10 @@
 
-                         ███████╗██████╗ ██╗███████╗ ██████╗██╗   ██╗
-                         ██╔════╝██╔══██╗██║██╔════╝██╔════╝██║   ██║
-                         █████╗  ██████╔╝██║███████╗██║     ██║   ██║
-                         ██╔══╝  ██╔══██╗██║╚════██║██║     ╚██╗ ██╔╝
-                         ██║     ██║  ██║██║███████║╚██████╗ ╚████╔╝
-                         ╚═╝     ╚═╝  ╚═╝╚═╝╚══════╝ ╚═════╝  ╚═══╝
+     ███████╗██████╗ ██╗███████╗ ██████╗██╗   ██╗
+     ██╔════╝██╔══██╗██║██╔════╝██╔════╝██║   ██║
+     █████╗  ██████╔╝██║███████╗██║     ██║   ██║
+     ██╔══╝  ██╔══██╗██║╚════██║██║     ╚██╗ ██╔╝
+     ██║     ██║  ██║██║███████║╚██████╗ ╚████╔╝
+     ╚═╝     ╚═╝  ╚═╝╚═╝╚══════╝ ╚═════╝  ╚═══╝
 
 ![CI](https://github.com/dpretet/friscv/actions/workflows/ci.yaml/badge.svg?branch=master)
 [![GitHub license](https://img.shields.io/github/license/dpretet/friscv)](https://github.com/dpretet/friscv/blob/master/LICENSE)
@@ -54,9 +54,10 @@ The IP is decribed in two layers:
 The core is compact and composed by:
 - the control unit, fetching and sequencing the instructions
 - the processing unit, executing the arithmetic and memory access instructions
-- the cache units
+- the cache units, one for instruction, one for data bus
 - the CSR unit
 - the ISA registers
+- the memory protection unit for less-privilege mode memory access
 
 More details of the architecture can be found in the:
 - Architecture [chapter](./doc/architecture.md).
