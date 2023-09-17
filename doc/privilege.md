@@ -72,6 +72,7 @@ The privilege modes support have been designed based on RISC-V ISA specification
 - Study PMA (Physical Memory Attribute) (section 3.6)
 - Replace existing IO_MAP by PMP & PMA
 - Support cycle registers per mode
+- Pass compliance with U-mode
 
 
 ## Supervisor

@@ -666,6 +666,7 @@ module friscv_control
                             `endif
                             status[3] <= 1'b1;
                             flush_pipe <= 1'b1;
+                            if (USER_MODE) priv_mode <= `MMODE;
                             pc_reg <= mtvec;
 
                         // Needs to jump or branch thus stop the pipeline
@@ -1090,21 +1091,21 @@ module friscv_control
 
     assign inst_dec_error = dec_error & (cfsm==FETCH) & inst_ready;
 
-    generate 
+    generate
     if (USER_MODE) begin: UMODE_EXPEC
         assign illegal_instruction = (priv_mode==`MMODE)                 ? '0         :
-                                     (sys[`IS_MRET])                     ? inst_ready : 
-                                     (sys[`IS_CSR] && csr[9:8] != 2'b00) ? inst_ready : 
+                                     (sys[`IS_MRET])                     ? inst_ready :
+                                     (sys[`IS_CSR] && csr[9:8] != 2'b00) ? inst_ready :
                                      // Check if WFI must be trapped or not
-                                     // (sys[`IS_WFI] )                     ? inst_ready : 
+                                     // (sys[`IS_WFI] )                     ? inst_ready :
                                                                            '0;
     end else begin : NO_UMODE
         assign illegal_instruction = '0;
     end
     endgenerate
 
-    assign ecall_umode = (sys[`ECALL] && priv_mode==`UMODE);
-    assign ecall_mmode = (sys[`ECALL] && priv_mode==`MMODE);
+    assign ecall_umode = (sys[`IS_ECALL] && priv_mode==`UMODE);
+    assign ecall_mmode = (sys[`IS_ECALL] && priv_mode==`MMODE);
 
     ///////////////////////////////////////////////////////////////////////////
     //

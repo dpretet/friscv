@@ -2,8 +2,14 @@
 
 Testsuite very dedicated to privilege and security features in the HART.
 
-## Test 1: M-mode/U-mode transition
+For more information about the bash front-end flow:
 
-Focus on moving between M-mode, to boot the hart and configure it, and U-mode to execute
-some instructions. Basic scenario to ensure the U-mode is alive.
+```bash
+./run.sh -h
+```
 
+## Test 0: M-mode/U-mode transition
+
+Basic test to ensure we can move back and forth the modes and manage correctly ecall/mret and
+execute a basic program. It also checks the error management if u-mode runtime tries to use m-mode
+instructions or tries to access CSR registers reserved to m-mode

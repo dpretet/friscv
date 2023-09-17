@@ -169,12 +169,14 @@ _start:                                                                 \
 trap_vector:                                                            \
         /* test whether the test came from pass/fail */                 \
         csrr t5, mcause;                                                \
-        li t6, CAUSE_USER_ECALL;                                        \
-        beq t5, t6, write_tohost;                                       \
-        li t6, CAUSE_SUPERVISOR_ECALL;                                  \
-        beq t5, t6, write_tohost;                                       \
-        li t6, CAUSE_MACHINE_ECALL;                                     \
-        beq t5, t6, write_tohost;                                       \
+        li t4, CAUSE_USER_ECALL;                                        \
+        beq t5, t4, ECALL_USER_MODE;                                    \
+        li t4, CAUSE_SUPERVISOR_ECALL;                                  \
+        beq t5, t4, ECALL_SUPERVISOR_MODE;                              \
+        li t4, CAUSE_MACHINE_ECALL;                                     \
+        beq t5, t4, ECALL_MACHINE_MODE;                                 \
+        li t4, 2;                                                       \
+        beq t5, t4, ILLEGAL_INSTRUCTION;                                \
         /* if an mtvec_handler is defined, jump to it */                \
         la t5, mtvec_handler;                                           \
         beqz t5, 1f;                                                    \
@@ -188,9 +190,7 @@ handle_exception:                                                       \
   other_exception:                                                      \
         /* some unhandlable exception occurred */                       \
   1:    ori TESTNUM, TESTNUM, 1337;                                     \
-  write_tohost:                                                         \
         sw TESTNUM, tohost, t5;                                         \
-        j write_tohost;                                                 \
 reset_vector:                                                           \
         INIT_XREG;                                                      \
         RISCV_MULTICORE_DISABLE;                                        \

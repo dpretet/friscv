@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.107 (w)1999-2020 BSI
-[*] Thu Apr 20 18:56:23 2023
+[*] Sat Sep 16 11:53:18 2023
 [*]
 [dumpfile] "/Users/damien/workspace/hdl/friscv/test/riscv-tests/friscv_testbench.vcd"
-[dumpfile_mtime] "Mon Apr 17 18:46:54 2023"
-[dumpfile_size] 6519480
+[dumpfile_mtime] "Wed Sep 13 18:20:19 2023"
+[dumpfile_size] 1779051
 [savefile] "/Users/damien/workspace/hdl/friscv/test/common/debug_core_verilator.gtkw"
-[timestart] 5908
-[size] 2560 1440
+[timestart] 1
+[size] 1440 900
 [pos] -1 -1
-*-4.164201 5944 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-9.303937 1589 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] friscv_testbench.
 [treeopen] friscv_testbench.friscv_testbench.
 [treeopen] friscv_testbench.friscv_testbench.genblk2.
@@ -17,15 +17,14 @@
 [treeopen] friscv_testbench.friscv_testbench.genblk2.dut.control.
 [treeopen] friscv_testbench.friscv_testbench.genblk2.dut.csrs.
 [treeopen] friscv_testbench.friscv_testbench.genblk2.dut.processing.
-[treeopen] friscv_testbench.friscv_testbench.genblk2.dut.USE_ICACHE.
 [treeopen] friscv_testbench.friscv_testbench.genblk2.dut.USE_ICACHE.icache.
 [sst_width] 335
 [signals_width] 526
 [sst_expanded] 1
-[sst_vpaned_height] 460
-@c00201
+[sst_vpaned_height] 642
+@c00200
 -Testbench
-@25
+@24
 friscv_testbench.friscv_testbench.AXI_ADDR_W[31:0]
 friscv_testbench.friscv_testbench.AXI_DATA_W[31:0]
 friscv_testbench.friscv_testbench.AXI_DMEM_MASK[31:0]
@@ -47,78 +46,81 @@ friscv_testbench.friscv_testbench.INST_OSTDREQ_NUM[31:0]
 friscv_testbench.friscv_testbench.MIN_PC[31:0]
 friscv_testbench.friscv_testbench.M_EXTENSION[31:0]
 friscv_testbench.friscv_testbench.PROCESSING_BUS_PIPELINE[31:0]
-friscv_testbench.friscv_testbench.PROCESSING_QUEUE_DEPTH[31:0]
 friscv_testbench.friscv_testbench.RV32E[31:0]
 friscv_testbench.friscv_testbench.TB_CHOICE[63:0]
 friscv_testbench.friscv_testbench.TIMEOUT[31:0]
 friscv_testbench.friscv_testbench.XLEN[31:0]
-@23
+@22
 friscv_testbench.friscv_testbench.TIMEOUT[31:0]
 friscv_testbench.friscv_testbench.timer[31:0]
-@1401201
+@1401200
 -Testbench
-@800201
+@800200
 -Control
-@29
+@28
 friscv_testbench.friscv_testbench.genblk2.dut.isa_registers.aclk
-@201
+@200
 -
-@23
+@22
 friscv_testbench.friscv_testbench.genblk2.dut.control.araddr[31:0]
 [color] 3
 friscv_testbench.friscv_testbench.genblk2.dut.control.arid[7:0]
-@29
+@28
 friscv_testbench.friscv_testbench.genblk2.dut.control.arvalid
 friscv_testbench.friscv_testbench.genblk2.dut.control.arready
 [color] 2
 friscv_testbench.friscv_testbench.genblk2.dut.control.fifo_empty
-@23
+@22
 friscv_testbench.friscv_testbench.genblk2.dut.control.instruction[31:0]
-@201
+@200
 -
-@23
+@22
 friscv_testbench.friscv_testbench.genblk2.dut.control.cfsm[3:0]
-@201
+@28
+friscv_testbench.friscv_testbench.genblk2.dut.control.priv_mode[1:0]
+@23
+friscv_testbench.friscv_testbench.genblk2.dut.csrs.mstatus[31:0]
+@200
 -
-@29
+@28
 friscv_testbench.friscv_testbench.genblk2.dut.control.proc_valid
 friscv_testbench.friscv_testbench.genblk2.dut.control.proc_ready
-@23
+@22
 friscv_testbench.friscv_testbench.genblk2.dut.control.proc_instbus[85:0]
-@201
+@200
 -
-@29
+@28
 friscv_testbench.friscv_testbench.genblk2.dut.control.ctrl_rd_wr
-@23
+@22
 friscv_testbench.friscv_testbench.genblk2.dut.control.ctrl_rd_addr[4:0]
 friscv_testbench.friscv_testbench.genblk2.dut.control.ctrl_rd_val[31:0]
-@201
+@200
 -
-@29
+@28
 friscv_testbench.friscv_testbench.genblk2.dut.processing.memfy.memfy_rd_wr
-@23
+@22
 friscv_testbench.friscv_testbench.genblk2.dut.processing.memfy.memfy_rd_addr[4:0]
 friscv_testbench.friscv_testbench.genblk2.dut.processing.memfy.memfy_rd_val[31:0]
-@201
+@200
 -
-@29
+@28
 friscv_testbench.friscv_testbench.genblk2.dut.processing.alu.alu_rd_wr
-@23
+@22
 friscv_testbench.friscv_testbench.genblk2.dut.processing.alu.alu_rd_addr[4:0]
 friscv_testbench.friscv_testbench.genblk2.dut.processing.alu.alu_rd_val[31:0]
-@201
+@200
 -
-@800029
+@800028
 friscv_testbench.friscv_testbench.genblk2.dut.processing.proc_rd_wr[2:0]
-@29
+@28
 (0)friscv_testbench.friscv_testbench.genblk2.dut.processing.proc_rd_wr[2:0]
 (1)friscv_testbench.friscv_testbench.genblk2.dut.processing.proc_rd_wr[2:0]
 (2)friscv_testbench.friscv_testbench.genblk2.dut.processing.proc_rd_wr[2:0]
-@1001201
+@1001200
 -group_end
-@201
+@200
 -
-@23
+@22
 friscv_testbench.friscv_testbench.genblk2.dut.isa_registers.x1_ra[31:0]
 friscv_testbench.friscv_testbench.genblk2.dut.isa_registers.x2_sp[31:0]
 friscv_testbench.friscv_testbench.genblk2.dut.isa_registers.x3_gp[31:0]
@@ -150,92 +152,91 @@ friscv_testbench.friscv_testbench.genblk2.dut.isa_registers.x28_t3[31:0]
 friscv_testbench.friscv_testbench.genblk2.dut.isa_registers.x29_t4[31:0]
 friscv_testbench.friscv_testbench.genblk2.dut.isa_registers.x30_t5[31:0]
 friscv_testbench.friscv_testbench.genblk2.dut.isa_registers.x31_t6[31:0]
-@201
+@200
 -
 -
 -
 -
 -
 -
-@1000201
+@1000200
 -Control
-@23
+@22
 friscv_testbench.friscv_testbench.genblk2.dut.USE_ICACHE.icache.ctrl_araddr[31:0]
 friscv_testbench.friscv_testbench.genblk2.dut.USE_ICACHE.icache.ctrl_arid[7:0]
-@29
+@28
 friscv_testbench.friscv_testbench.genblk2.dut.USE_ICACHE.icache.ctrl_arready
 friscv_testbench.friscv_testbench.genblk2.dut.USE_ICACHE.icache.ctrl_arvalid
-@201
+@200
 -
-@29
-friscv_testbench.friscv_testbench.genblk2.dut.USE_ICACHE.icache.fetcher.fifo_empty_if
+@28
 friscv_testbench.friscv_testbench.genblk2.dut.USE_ICACHE.icache.fetcher.cache_ren
-@23
+@22
 friscv_testbench.friscv_testbench.genblk2.dut.USE_ICACHE.icache.fetcher.cache_raddr[31:0]
-@201
+@200
 -
-@29
+@28
 friscv_testbench.friscv_testbench.genblk2.dut.USE_ICACHE.icache.fetcher.cache_hit
 friscv_testbench.friscv_testbench.genblk2.dut.USE_ICACHE.icache.fetcher.cache_miss
-@201
+@200
 -
-@23
+@22
 friscv_testbench.friscv_testbench.genblk2.dut.USE_ICACHE.icache.ctrl_rid[7:0]
-@29
+@28
 friscv_testbench.friscv_testbench.genblk2.dut.USE_ICACHE.icache.ctrl_rready
 friscv_testbench.friscv_testbench.genblk2.dut.USE_ICACHE.icache.ctrl_rvalid
-@201
+@200
 -
-@c00201
+@c00200
 -Bus Perf
-@23
+@22
 friscv_testbench.friscv_testbench.genblk2.dut.bus_perf.NB_BUS[31:0]
 friscv_testbench.friscv_testbench.genblk2.dut.bus_perf.REG_W[31:0]
-@29
+@28
 friscv_testbench.friscv_testbench.genblk2.dut.bus_perf.aclk
 friscv_testbench.friscv_testbench.genblk2.dut.bus_perf.aresetn
 friscv_testbench.friscv_testbench.genblk2.dut.bus_perf.srst
-@23
+@22
 friscv_testbench.friscv_testbench.genblk2.dut.bus_perf.perfs[287:0]
-@29
+@28
 friscv_testbench.friscv_testbench.genblk2.dut.bus_perf.valid[2:0]
 friscv_testbench.friscv_testbench.genblk2.dut.bus_perf.ready[2:0]
-@201
+@200
 -
 -
-@29
+@28
 friscv_testbench.friscv_testbench.genblk2.dut.inst_arvalid_s
 friscv_testbench.friscv_testbench.genblk2.dut.inst_arready_s
-@201
+@200
 -
-@23
+@22
 friscv_testbench.friscv_testbench.genblk2.dut.csrs.instreq_perf_active[31:0]
 friscv_testbench.friscv_testbench.genblk2.dut.csrs.instreq_perf_sleep[31:0]
 friscv_testbench.friscv_testbench.genblk2.dut.csrs.instreq_perf_stall[31:0]
-@201
+@200
 -
-@29
+@28
 friscv_testbench.friscv_testbench.genblk2.dut.inst_rvalid_s
 friscv_testbench.friscv_testbench.genblk2.dut.inst_rready_s
-@201
+@200
 -
-@23
+@22
 friscv_testbench.friscv_testbench.genblk2.dut.csrs.instcpl_perf_active[31:0]
 friscv_testbench.friscv_testbench.genblk2.dut.csrs.instcpl_perf_sleep[31:0]
 friscv_testbench.friscv_testbench.genblk2.dut.csrs.instcpl_perf_stall[31:0]
-@201
+@200
 -
-@29
+@28
 friscv_testbench.friscv_testbench.genblk2.dut.proc_valid
 friscv_testbench.friscv_testbench.genblk2.dut.proc_ready
 friscv_testbench.friscv_testbench.genblk2.dut.proc_busy
-@201
+@200
 -
-@23
+@22
 friscv_testbench.friscv_testbench.genblk2.dut.csrs.proc_perf_active[31:0]
 friscv_testbench.friscv_testbench.genblk2.dut.csrs.proc_perf_sleep[31:0]
 friscv_testbench.friscv_testbench.genblk2.dut.csrs.proc_perf_stall[31:0]
-@1401201
+@1401200
 -Bus Perf
 [pattern_trace] 1
 [pattern_trace] 0
