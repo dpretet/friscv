@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.107 (w)1999-2020 BSI
-[*] Sun Sep 17 13:56:01 2023
+[*] Mon Sep 18 18:47:15 2023
 [*]
 [dumpfile] "/Users/damien/workspace/hdl/friscv/test/priv_sec_testsuite/friscv_testbench.vcd"
-[dumpfile_mtime] "Sun Sep 17 13:55:53 2023"
-[dumpfile_size] 1896801
+[dumpfile_mtime] "Sun Sep 17 14:47:10 2023"
+[dumpfile_size] 1851591
 [savefile] "/Users/damien/workspace/hdl/friscv/test/common/debug_platform_verilator.gtkw"
-[timestart] 1853
+[timestart] 240
 [size] 1440 900
 [pos] -1 -1
-*-2.607932 1861 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-7.607932 1981 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] friscv_testbench.
 [treeopen] friscv_testbench.friscv_testbench.
 [treeopen] friscv_testbench.friscv_testbench.genblk2.
@@ -145,7 +145,7 @@ friscv_testbench.friscv_testbench.genblk2.axi4l_ram.p1_bvalid
 -
 @28
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.control.aclk
-@200
+@201
 -
 @28
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.control.priv_mode[1:0]
@@ -162,9 +162,8 @@ friscv_testbench.friscv_testbench.genblk2.dut.cpu0.control.pc_reg[31:0]
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.control.instruction[31:0]
 @200
 -
-@29
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.control.trap_occuring
 @28
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.control.trap_occuring
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.control.illegal_instruction
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.control.ecall_mmode
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.control.ecall_umode

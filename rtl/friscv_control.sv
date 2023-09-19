@@ -906,6 +906,8 @@ module friscv_control
                             mcause <= mcause_code;
                             mtval_wr <= 1'b1;
                             mtval <= mtval_info;
+                            mstatus_wr <= 1'b1;
+                            mstatus <= mstatus_for_trap;
 
                         // Reach an EBREAK instruction, need to stall the core
                         end else if (sys[`IS_EBREAK]) begin
@@ -1023,32 +1025,48 @@ module friscv_control
 
 
     // MSTATUS CSR to write when executing MRET
-    assign mstatus_for_mret = {sb_mstatus[XLEN-1:13],  // WPRI
+    assign mstatus_for_mret = {sb_mstatus[XLEN-1:23],  // WPRI
+                               sb_mstatus[22],         // TSR
+                               sb_mstatus[21],         // TW
+                               sb_mstatus[20],         // TVM
+                               sb_mstatus[19],         // MXR
+                               sb_mstatus[18],         // SUM
+                               sb_mstatus[17],         // MPRV
+                               2'b0,                   // XS
+                               sb_mstatus[14:13],      // FS
                                priv_mode,              // MPP
-                               sb_mstatus[10:9],       // WPRI
+                               sb_mstatus[10:9],       // VS
                                1'b0,                   // SPP
                                1'b0,                   // MPIE
-                               sb_mstatus[6],          // WPRI
+                               1'b0,                   // UBE
                                1'b0,                   // SPIE
-                               1'b0,                   // UPIE
+                               1'b0,                   // WPRI
                                sb_mstatus[7],          // MIE
-                               sb_mstatus[2],          // WPRI
-                               1'b0,                   // SIE
-                               1'b0};                  // UIE
+                               1'b0,                   // WPRI
+                               sb_mstatus[5],          // SIE
+                               1'b0};                  // WPRI
 
     // MSTATUS CSR when handling a trap
-    assign mstatus_for_trap = {sb_mstatus[XLEN-1:13],  // WPRI
+    assign mstatus_for_trap = {sb_mstatus[XLEN-1:23],  // WPRI
+                               sb_mstatus[22],         // TSR
+                               sb_mstatus[21],         // TW
+                               sb_mstatus[20],         // TVM
+                               sb_mstatus[19],         // MXR
+                               sb_mstatus[18],         // SUM
+                               sb_mstatus[17],         // MPRV
+                               2'b0,                   // XS
+                               sb_mstatus[14:13],      // FS
                                priv_mode,              // MPP
-                               sb_mstatus[10:9],       // WPRI
+                               sb_mstatus[10:9],       // VS
                                1'b0,                   // SPP
                                sb_mstatus[3],          // MPIE
-                               sb_mstatus[6],          // WPRI
-                               1'b0,                   // SPIE
-                               1'b0,                   // UPIE
+                               1'b0,                   // UBE
+                               sb_mstatus[1],          // SPIE
+                               1'b0,                   // WPRI
                                1'b0,                   // MIE
-                               sb_mstatus[2],          // WPRI
+                               1'b0,                   // WPRI
                                1'b0,                   // SIE
-                               1'b0};                  // UIE
+                               1'b0};                  // WPRI
 
     // MTVEC computation:
     assign mtvec = (async_trap_occuring && sb_mtvec[1:0]!=2'b0) ?

@@ -138,7 +138,7 @@ module friscv_csr
         else
             get_mstatus[18] = '0;
         // MPRV
-        if (SUPERVISOR_MODE)
+        if (SUPERVISOR_MODE || USER_MODE)
             get_mstatus[17] = data[17];
         else
             get_mstatus[17] = '0;

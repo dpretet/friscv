@@ -68,12 +68,34 @@ The privilege modes support have been designed based on RISC-V ISA specification
     - A zone can be readable, writable, executable
     - PMP checks are applied to all accesses whose effective privilege mode is S or U, including
       instruction fetches and data accesses in S and U mode, and data accesses in M-mode when the
-      MPRV bit in mstatus is set and the MPP field in mstatus contains S or U (page 56)
+      MPRV bit in mstatus is set and the MPP field in mstatus contains S or U (page 56 & page 23)
 - Study PMA (Physical Memory Attribute) (section 3.6)
 - Replace existing IO_MAP by PMP & PMA
 - Support cycle registers per mode
 - Pass compliance with U-mode
+- WFI
+    - Support MSTATUS.TW
+    - NOP if interrupts are disabled?
+- mcounteren: accessibility to lower privilege modes
+- mcountinhibit: stop a specific counter
+- Machine Environment Configuration Registers (menvcfg and menvcfgh)
 
+
+Doc review
+- mstatus OK
+- mtvec NO CHANGES
+- mideleg / medeleg NA
+- mip / mep NA
+    - no delegation
+    - everything is handled by m-mode
+- mcycle / minstret NO CHANGES
+- mcounteren / mcountinhibit OK
+- mscratch NA
+- mepc NA
+- mcause NA
+- mtval NA
+- menvcfg and menvcfgh OK
+- mtime and mtimecmp NA
 
 ## Supervisor
 

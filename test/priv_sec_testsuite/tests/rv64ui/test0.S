@@ -34,6 +34,11 @@ ECALL_SUPERVISOR_MODE:
 
 ECALL_USER_MODE:
     add x20, x20, 1
+    # Check mstatus.mpp is correct, storing u-mode
+    li t3, 0x1800
+    csrr t4, mstatus
+    and t4, t4, t3
+    bne x0, t4, fail
     # Increment PC value to return next instruction
     csrr t4, mepc
     add t4, t4, 4
@@ -70,7 +75,7 @@ TEST3:
     csrr t4, mstatus
     add x1, x1, 1
     bne x20, x1, fail
-    
+
 
 j pass
 

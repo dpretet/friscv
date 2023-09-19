@@ -10,14 +10,14 @@ For more information about the bash front-end flow:
 ./run.sh -h
 ```
 
-## Test 1: Sequence of LUI/AUIPC/Arithmetic instructions
+## Test 1: LUI/AUIPC/Arithmetic interleaving
 
 Injects a set of alternating LUI / AUIPC / aritmetic instructions to ensure the
 control unit correctly handles this kind of situation. All these instructions
 are executed in one cycle and shouldn't introduce any wait cycles between each
 others.
 
-## Test 2: Sequence of LOAD/STORE/ARITHMETIC instructions
+## Test 2: LOAD/STORE/ARITHMETIC interleaving
 
 Injects a set of alternating LUI / AUIPC / LOAD  /STORE aritmetic instructions
 to ensure the control unit correctly handles this kind of situation.
@@ -26,7 +26,7 @@ While aritmetic instructions are completed in one cycle, LOAD and STORE can
 span over several cycles. This test will ensure incoming instructions between
 them will not be lost and so the control unit properly manages this situation.
 
-## Test 3: Check FENCE/FENCE.i instructions
+## Test 3: FENCE/FENCE.i instructions
 
 Executes FENCE and FENCE.i between ALU and memfy instructions. The test is
 supposed for the moment harmless for FENCE because the processor doesn't support neither
@@ -37,7 +37,7 @@ out-of-order or parallel executions.
 Executes memory and arithmetic instructions break up by JAL and
 JALR instruction to ensure branching doesn't introduce failures.
 
-## Test 5: CSRs - Throttle execution by accessing the ISA CSRs
+## Test 5: CSRs access
 
 Executes memory and arithmetic instructions break up by CSR accesses.
 
@@ -46,7 +46,7 @@ Executes memory and arithmetic instructions break up by CSR accesses.
 Stresses out outstanding requests management in Memfy module when issuing
 multiple read or write requests.
 
-## Test 7: RDCYCLE/RDTIME and RDINSTRET
+## Test 7: RDCYCLE/RDTIME/RDINSTRET
 
 Checks instret, cycle and time are incremented accordingly the spec
 

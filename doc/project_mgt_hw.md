@@ -1,16 +1,19 @@
 # DOING
 
-- [ ] Support U-mode
-- [ ] Support PMP
-- [ ] Support PMA
+- [ ] v1.6.0: Kernel-capable Hart
+    - [X] Supporter des set de config du core en test bench.
+    - [-] Support U-mode
+    - [ ] Support PMP
+    - [ ] Support PMA
+    - [ ] Atomic operations for single core
 
 
 # BACKLOG
 
-N.B. : Any new feature and ISA should be carefully study to ensure a proper
-       exception and interrupt handling
+Any new features should be carefully study to ensure a proper exception and interrupt handling
 
-Memory
+## Memory
+
 - [ ] Better manage ACACHE attribute
     - [ ] Correct value driven from memfy
     - [ ] Use it correctly across the cache
@@ -25,7 +28,8 @@ Memory
     - [ ] Manage write response from cache or interco, don’t wait endpoint
     - [ ] Raise exception also from cache
 
-Cache Stages
+
+## Cache Stages
 
 - [ ] AXI4 + Wrap mode for read
 - [ ] Support datapath adaptation from memory controller
@@ -40,42 +44,44 @@ Cache Stages
 - [ ] OoO read: miss could be stacked and served later waiting for cache fill and continue reading the next address
 - [ ] Fully concurrent read / write access (Issue #1)
 
-Misc.
 
+## Miscellanous
+
+- [ ] Machine Configuration Pointer Register (mconfigptr)
 - [ ] Create a HW test platform
     - [ ] Analogue pocket
     - [C] Cloud
-- [ ] Add registers to configure the core in platform
-- [ ] Support completly a profile
-- [ ] 64 bits support
-- [ ] Atomic operations for single core
-- [ ] Support privileged instructions & supervisor mode
-      - voir les CSRs dans la privileged mode, implementer les compteurs par mode
-      - https://danielmangum.com/posts/risc-v-bytes-privilege-levels/
-      - https://mobile.twitter.com/hasheddan/status/1514581031092899843?s=12&t=MMNTY_iRC48CjykLQBdTkQ
-      - https://man7.org/linux/man-pages/man2/syscall.2.html
-      - https://www.youtube.com/watch?app=desktop&v=1-8oYzL_Thk
-      - https://jborza.com/emulation/2021/04/22/ecalls-and-syscalls.html
-- [ ] Support MMU extension
-- [ ] Debug Support / JTAG interface / GDB Usage / OpenOCD
-        - https://tomverbeure.github.io/2021/07/18/VexRiscv-OpenOCD-and-Traps.html
-        - https://tomverbeure.github.io/2022/02/20/GDBWave-Post-Simulation-RISCV-SW-Debugging.html
-        - https://github.com/BLangOS/VexRiscV_with_HW-GDB_Server
-- [ ] Zicond extension
+- [ ] Add registers to configure the core in platform (use custom CSR)
 - [ ] Support CLIC controller
 - [ ] Random peripheral
 - [ ] UART: Support 9/10 bits & parity
-- [ ] AXI platform
+- [ ] Deactivate the core with WFI (clock gating)
+
+
+## Next-Gen Architecture
+
+- [ ] High-end architecture
+    - [ ] Supervisor mode
+        - https://danielmangum.com/posts/risc-v-bytes-privilege-levels/
+        - https://mobile.twitter.com/hasheddan/status/1514581031092899843?s=12&t=MMNTY_iRC48CjykLQBdTkQ
+        - https://man7.org/linux/man-pages/man2/syscall.2.html
+        - https://www.youtube.com/watch?app=desktop&v=1-8oYzL_Thk
+        - https://jborza.com/emulation/2021/04/22/ecalls-and-syscalls.html
+    - [ ] 64 bits support
+    - [ ] Support MMU extension
 - [ ] Multi-core platform:
     - [ ] Counters and timers should be reworked
     - [ ] Nb core configurable
     - [ ] PLIC controller
     - [ ] Extended atomic operation support
     - [ ] Implement a L2 cache stage
-- [ ] Deactivate the core with WFI (clock gating)
+- [ ] Debug Support / JTAG interface / GDB Usage / OpenOCD
+        - https://tomverbeure.github.io/2021/07/18/VexRiscv-OpenOCD-and-Traps.html
+        - https://tomverbeure.github.io/2022/02/20/GDBWave-Post-Simulation-RISCV-SW-Debugging.html
+        - https://github.com/BLangOS/VexRiscV_with_HW-GDB_Server
 
 
-AXI4 Infrastructure
+## AXI4 Infrastructure
 
 - [ ] Detect address collision in memfy for better performance
     - support concurrent r/w in dCache
@@ -91,12 +97,9 @@ AXI4 Infrastructure
 - [ ] Out of order support in AXI (memfy if not using cache)
 
 
-Control
+## Control
 
 - [ ] Detect IO requests to forward info for FENCE execution
-- [ ] Move LUI into processing to prepare future extension support
-    - [ ] Read ASM to be sure its used for processing and not control
-    - [ ] Benchmark waveform doesn’t reveal high usage
 - [ ] Branch prediction
     - [ ] https://en.wikipedia.org/wiki/Branch_target_predictor
     - [ ] https://www.tutorialspoint.com/what-are-the-types-of-dynamic-branch-prediction
@@ -106,9 +109,9 @@ Control
 - [ ] Rewind pipeline (L0 local cache)
 
 
-Processing
+## Processing
 
-- [ ] Processing: parameter to deactivate hazard detection, save logic and measure gain
+- [ ] Parameter to deactivate hazard detection, save logic and measure gain
 - [ ] Memfy:
     - If not ready, and request present, the FSM can’t drive further data
     - Manage RRESP/BRESP in the exception bus
@@ -121,9 +124,12 @@ Processing
     - [ ] https://en.m.wikipedia.org/wiki/Hazard_(computer_architecture)#Data_hazards
     - [ ] https://en.m.wikipedia.org/wiki/Tomasulo%27s_algorithm
 - [ ] RVV for machine learning
+- [ ] Move LUI into processing to prepare future extension support
+    - [ ] Read ASM to be sure its used for processing and not control
+    - [ ] Benchmark waveform doesn’t reveal high usage
 
 
-Verification/Validation
+## Verification/Validation
 
 - [ ] Drop lxt2 waveform
 - [ ] Create app per benchmark
@@ -146,7 +152,8 @@ Verification/Validation
 - [ ] SV Testbench: be able to assert or not a flush req along a new request on the same cycle
 - [ ] Revoir la RAM AXI pour les temps de réponses write compliance et speed
 
-Hardware Tests
+
+## Hardware Tests
 
 - [ ] Support LiteX: https://github.com/litex-hub/litex-boards, https://pcotret.gitlab.io/blog/processor_in_litex/
 - [ ] Azure: https://www.xilinx.com/products/boards-and-kits/alveo/cloud-solutions/microsoft-azure.html
@@ -172,8 +179,6 @@ Hardware Tests
 
 # DONE
 
-- [X] v1.6.0
-    - [X] Supporter des set de config du core en test bench.
 - [X] v1.5.1: maintenance
     - [X] Preload jal even if processing is busy
     - [X] Print des tests qui ne marchent pas, un par un, dans le bash
