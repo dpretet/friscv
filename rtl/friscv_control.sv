@@ -87,18 +87,10 @@ module friscv_control
         output logic                      ctrl_rd_wr,
         output logic [5             -1:0] ctrl_rd_addr,
         output logic [XLEN          -1:0] ctrl_rd_val,
-        // CSR registers
-        output logic                      mepc_wr,
-        output logic [XLEN          -1:0] mepc,
-        output logic                      mstatus_wr,
-        output logic [XLEN          -1:0] mstatus,
-        output logic                      mcause_wr,
-        output logic [XLEN          -1:0] mcause,
-        output logic                      mtval_wr,
-        output logic [XLEN          -1:0] mtval,
-        output logic [64            -1:0] instret,
+
         // CSR shared bus
-        input  wire  [`CSR_SB_W     -1:0] csr_sb
+        input  wire  [`CSR_SB_W     -1:0] csr_sb,
+        output logic [`CTRL_SB_W    -1:0] ctrl_sb
     );
 
 
@@ -174,6 +166,7 @@ module friscv_control
     // Two flags used intot the FSM to stall the process and control
     // the instruction storage
     logic                   cant_jump;
+    logic                   cant_trap;
     logic                   cant_process;
     logic                   cant_lui_auipc;
     logic                   cant_sys;
@@ -187,9 +180,24 @@ module friscv_control
     logic                   fifo_empty;
     logic [XLEN       -1:0] mtvec;
 
+    // Shared bus signals
     logic [XLEN       -1:0] sb_mepc;
     logic [XLEN       -1:0] sb_mtvec;
     logic [XLEN       -1:0] sb_mstatus;
+    logic                   sb_mie;
+    logic                   sb_mtip;
+    logic                   sb_msip;
+    logic                   sb_meip;
+    logic                   mepc_wr;
+    logic [XLEN       -1:0] mepc;
+    logic                   mstatus_wr;
+    logic [XLEN       -1:0] mstatus;
+    logic                   mcause_wr;
+    logic [XLEN       -1:0] mcause;
+    logic                   mtval_wr;
+    logic [XLEN       -1:0] mtval;
+    logic [64         -1:0] instret;
+    logic                   clr_meip;
 
     logic [XLEN       -1:0] mstatus_for_mret;
     logic [XLEN       -1:0] mstatus_for_trap;
@@ -308,9 +316,24 @@ module friscv_control
     // CSR Shared bus extraction
     ///////////////////////////////////////////////////////////////////////////
 
-    assign sb_mtvec   = csr_sb[`MTVEC   +: XLEN];
-    assign sb_mstatus = csr_sb[`MSTATUS +: XLEN];
-    assign sb_mepc    = csr_sb[`MEPC    +: XLEN];
+    assign sb_mtvec   = csr_sb[`CSR_SB_MTVEC   +: XLEN];
+    assign sb_mstatus = csr_sb[`CSR_SB_MSTATUS +: XLEN];
+    assign sb_mepc    = csr_sb[`CSR_SB_MEPC    +: XLEN];
+    assign sb_mie     = csr_sb[`CSR_SB_MIE];
+    assign sb_meip    = csr_sb[`CSR_SB_MEIP];
+    assign sb_mtip    = csr_sb[`CSR_SB_MTIP];
+    assign sb_msip    = csr_sb[`CSR_SB_MSIP];
+
+    assign ctrl_sb = {instret, clr_meip, 
+                      mtval_wr, mtval,
+                      mcause_wr, mcause,
+                      mstatus_wr, mstatus,
+                      mepc_wr, mepc};
+
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Input stage 
+    ///////////////////////////////////////////////////////////////////////////
 
     assign push_inst = rvalid & (arid == rid);
 
@@ -660,14 +683,16 @@ module friscv_control
                         // interrupt, a wrong instruction, ...
                         if (trap_occuring) begin
 
-                            `ifdef USE_SVL
-                            print_mcause("Handling a trap -> MCAUSE=0x", mcause_code);
-                            print_instruction;
-                            `endif
-                            status[3] <= 1'b1;
-                            flush_pipe <= 1'b1;
-                            if (USER_MODE) priv_mode <= `MMODE;
-                            pc_reg <= mtvec;
+                            if (!cant_trap) begin
+                                `ifdef USE_SVL
+                                print_mcause("Handling a trap -> MCAUSE=0x", mcause_code);
+                                print_instruction;
+                                `endif
+                                status[3] <= 1'b1;
+                                flush_pipe <= 1'b1;
+                                if (USER_MODE) priv_mode <= `MMODE;
+                                pc_reg <= mtvec;
+                            end
 
                         // Needs to jump or branch thus stop the pipeline
                         // and reload new instructions
@@ -814,12 +839,13 @@ module friscv_control
                 // Wait for Interrupt (software, timer, external)
                 ///////////////////////////////////////////////////////////////
                 WFI: begin
-                    if (csr_sb[`MSIP] || csr_sb[`MTIP] || csr_sb[`MEIP]) begin
+                    if (sb_msip || sb_mtip || sb_meip) begin
                         `ifdef USE_SVL
                         print_mcause("WFI -> MCAUSE=0x", mcause_code);
                         `endif
                         status <= 5'b0;
                         flush_pipe <= 1'b1;
+                        if (USER_MODE) priv_mode <= `MMODE;
                         arid <= next_id(arid, MAX_ID, AXI_ID_MASK);
                         araddr <= mtvec;
                         pc_reg <= mtvec;
@@ -844,7 +870,7 @@ module friscv_control
 
     // Trace control when jumping/branching for debug purpose
     always @ (posedge aclk) begin
-        if (flush_pipe || (cfsm==WFI && (csr_sb[`MSIP] || csr_sb[`MTIP] || csr_sb[`MEIP]))) begin
+        if (flush_pipe || (cfsm==WFI && (sb_msip || sb_mtip || sb_meip))) begin
             `ifdef TRACE_CONTROL
             $fwrite(f, "@ %0t,%x\n", $realtime, sb_mepc);
             `endif
@@ -864,6 +890,7 @@ module friscv_control
             mcause <= {XLEN{1'b0}};
             mtval_wr <= 1'b0;
             mtval <= {XLEN{1'b0}};
+            clr_meip <= 1'b0;
         end else if (srst == 1'b1) begin
             mepc_wr <= 1'b0;
             mepc <= {XLEN{1'b0}};
@@ -873,6 +900,7 @@ module friscv_control
             mcause <= {XLEN{1'b0}};
             mtval_wr <= 1'b0;
             mtval <= {XLEN{1'b0}};
+            clr_meip <= 1'b0;
         end else begin
 
             if (cfsm==FETCH) begin
@@ -884,7 +912,7 @@ module friscv_control
 
                 if (inst_ready) begin
 
-                    if (trap_occuring) begin
+                    if (trap_occuring && !cant_trap) begin
 
                         mepc_wr <= 1'b1;
                         mepc <= pc_reg;
@@ -894,8 +922,11 @@ module friscv_control
                         mtval <= mtval_info;
                         mstatus_wr <= 1'b1;
                         mstatus <= mstatus_for_trap;
+                        clr_meip <= (mcause_code == 'h8000000B);
 
                     end else if (|sys || |fence) begin
+
+                        clr_meip <= 1'b0;
 
                         // Reach an ECALL instruction, jump to trap handler
                         if (sys[`IS_ECALL] && !proc_busy && csr_ready) begin
@@ -931,9 +962,15 @@ module friscv_control
 
                         end
                     end
+                end else begin
+                    clr_meip <= 1'b0;
+                    mepc_wr <= 1'b0;
+                    mcause_wr <= 1'b0;
+                    mstatus_wr <= 1'b0;
+                    mtval_wr <= 1'b0;
                 end
 
-            end else if (cfsm==WFI && (csr_sb[`MSIP] || csr_sb[`MTIP] || csr_sb[`MEIP])) begin
+            end else if (cfsm==WFI && (sb_msip || sb_mtip || sb_meip)) begin
 
                 mcause_wr <= 1'b1;
                 mcause <= mcause_code;
@@ -941,12 +978,14 @@ module friscv_control
                 mtval <= mtval_info;
                 mstatus_wr <= 1'b1;
                 mstatus <= mstatus_for_trap;
+                clr_meip <= (mcause_code == 'h8000000B);
 
             end else begin
                 mepc_wr <= 1'b0;
                 mstatus_wr <= 1'b0;
                 mcause_wr <= 1'b0;
                 mtval_wr <= 1'b0;
+                clr_meip <= 1'b0;
             end
         end
     end
@@ -970,6 +1009,8 @@ module friscv_control
     assign cant_lui_auipc = lui_auipc & (proc_busy | !csr_ready);
 
     assign cant_sys = |sys & (proc_busy | !csr_ready);
+
+    assign cant_trap = (proc_busy | !csr_ready);
 
 
     ///////////////////////////////////////////////////////////////////////////
@@ -1181,9 +1222,9 @@ module friscv_control
 
     // MCAUSE switching logic based on above listed priorities
     assign mcause_code = // aync exceptions have highest priority
-                         (csr_sb[`MSIP])        ? {1'b1, {XLEN-5{1'b0}}, 4'h3} :
-                         (csr_sb[`MTIP])        ? {1'b1, {XLEN-5{1'b0}}, 4'h7} :
-                         (csr_sb[`MEIP])        ? {1'b1, {XLEN-5{1'b0}}, 4'hB} :
+                         (sb_msip)              ? {1'b1, {XLEN-5{1'b0}}, 4'h3} :
+                         (sb_mtip)              ? {1'b1, {XLEN-5{1'b0}}, 4'h7} :
+                         (sb_meip)              ? {1'b1, {XLEN-5{1'b0}}, 4'hB} :
                          // then follow sync exceptions
                          (illegal_instruction)  ? {{XLEN-4{1'b0}}, 4'h2}  :
                          (csr_ro_wr)            ? {{XLEN-4{1'b0}}, 4'h2}  :
@@ -1209,9 +1250,7 @@ module friscv_control
 
     // Trigger the trap handling execution in main FSM
 
-    assign async_trap_occuring = csr_sb[`MSIP] |
-                                 csr_sb[`MTIP] |
-                                 csr_sb[`MEIP] ;
+    assign async_trap_occuring = (sb_mtip | sb_msip | sb_meip ) & sb_mie;
 
     assign sync_trap_occuring = csr_ro_wr            |
                                 inst_addr_misaligned |

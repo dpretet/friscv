@@ -13,3 +13,8 @@ For more information about the bash front-end flow:
 Basic test to ensure we can move back and forth the modes and manage correctly ecall/mret and
 execute a basic program. It also checks the error management if u-mode runtime tries to use m-mode
 instructions or tries to access CSR registers reserved to m-mode
+
+## Test 1: Interrupts
+
+Generate interrupts and manage them. Check U-mode move back M-mode to handle the interrupt. Check
+WFI is correctly supported by U-mode.

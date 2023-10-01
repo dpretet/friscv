@@ -177,6 +177,15 @@ trap_vector:                                                            \
         beq t5, t4, ECALL_MACHINE_MODE;                                 \
         li t4, 2;                                                       \
         beq t5, t4, ILLEGAL_INSTRUCTION;                                \
+        lui t4, %hi(CAUSE_MEIP);                                        \
+        addi t4, t4, %lo(CAUSE_MEIP);                                   \
+        beq t5, t4, INTP;                                               \
+        lui t4, %hi(CAUSE_MSIP);                                        \
+        addi t4, t4, %lo(CAUSE_MSIP);                                   \
+        beq t5, t4, INTP;                                               \
+        lui t4, %hi(CAUSE_MTIP);                                        \
+        addi t4, t4, %lo(CAUSE_MTIP);                                   \
+        beq t5, t4, INTP;                                               \
         /* if an mtvec_handler is defined, jump to it */                \
         la t5, mtvec_handler;                                           \
         beqz t5, 1f;                                                    \

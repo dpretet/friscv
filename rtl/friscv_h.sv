@@ -159,16 +159,29 @@
 //////////////////////////////////////////////////////////////////
 
 // CSR shared bus placement
-`define MTVEC    0
-`define MEPC    `MTVEC + `XLEN
-`define MSTATUS `MEPC + `XLEN
-`define MEIP    `MSTATUS + `XLEN
-`define MTIP    `MEIP + 1
-`define MSIP    `MTIP + 1
+`define CSR_SB_MTVEC   0
+`define CSR_SB_MEPC    `CSR_SB_MTVEC + `XLEN
+`define CSR_SB_MSTATUS `CSR_SB_MEPC + `XLEN
+`define CSR_SB_MIE     `CSR_SB_MSTATUS + `XLEN
+`define CSR_SB_MEIP    `CSR_SB_MIE + 1
+`define CSR_SB_MTIP    `CSR_SB_MEIP + 1
+`define CSR_SB_MSIP    `CSR_SB_MTIP + 1
 
 // CSR shared bus width
-`define CSR_SB_W `MSIP + 1
+`define CSR_SB_W `CSR_SB_MSIP + 1
 
+`define CTRL_SB_MEPC       0
+`define CTRL_SB_MEPC_WR    `CTRL_SB_MEPC + `XLEN 
+`define CTRL_SB_MSTATUS    `CTRL_SB_MEPC_WR + 1
+`define CTRL_SB_MSTATUS_WR `CTRL_SB_MSTATUS + `XLEN
+`define CTRL_SB_MCAUSE     `CTRL_SB_MSTATUS_WR + 1
+`define CTRL_SB_MCAUSE_WR  `CTRL_SB_MCAUSE + `XLEN
+`define CTRL_SB_MTVAL      `CTRL_SB_MCAUSE_WR + 1
+`define CTRL_SB_MTVAL_WR   `CTRL_SB_MTVAL + `XLEN 
+`define CTRL_CLR_MEIP      `CTRL_SB_MTVAL_WR + 1
+`define CTRL_INSTRET       `CTRL_CLR_MEIP + 1
+
+`define CTRL_SB_W `CTRL_INSTRET + `XLEN*2
 
 //////////////////////////////////////////////////////////////////
 // execution mode

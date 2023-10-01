@@ -236,16 +236,8 @@ module friscv_rv32i_core
 
     logic [5                   -1:0] ctrl_status;
 
-    logic                            ctrl_mepc_wr;
-    logic [XLEN                -1:0] ctrl_mepc;
-    logic                            ctrl_mstatus_wr;
-    logic [XLEN                -1:0] ctrl_mstatus;
-    logic                            ctrl_mcause_wr;
-    logic [XLEN                -1:0] ctrl_mcause;
-    logic                            ctrl_mtval_wr;
-    logic [XLEN                -1:0] ctrl_mtval;
     logic [`CSR_SB_W           -1:0] csr_sb;
-    logic [64                  -1:0] ctrl_rdinstret;
+    logic [`CTRL_SB_W          -1:0] ctrl_sb;
 
 
     //////////////////////////////////////////////////////////////////////////
@@ -423,16 +415,8 @@ module friscv_rv32i_core
         .ctrl_rd_wr         (ctrl_rd_wr),
         .ctrl_rd_addr       (ctrl_rd_addr),
         .ctrl_rd_val        (ctrl_rd_val),
-        .mepc_wr            (ctrl_mepc_wr),
-        .mepc               (ctrl_mepc),
-        .mstatus_wr         (ctrl_mstatus_wr),
-        .mstatus            (ctrl_mstatus),
-        .mcause_wr          (ctrl_mcause_wr),
-        .mcause             (ctrl_mcause),
-        .mtval_wr           (ctrl_mtval_wr),
-        .mtval              (ctrl_mtval),
-        .instret            (ctrl_rdinstret),
-        .csr_sb             (csr_sb)
+        .csr_sb             (csr_sb),
+        .ctrl_sb            (ctrl_sb)
     );
 
 
@@ -553,17 +537,9 @@ module friscv_rv32i_core
         .rd_wr_en        (csr_rd_wr),
         .rd_wr_addr      (csr_rd_addr),
         .rd_wr_val       (csr_rd_val),
-        .ctrl_mepc_wr    (ctrl_mepc_wr),
-        .ctrl_mepc       (ctrl_mepc),
-        .ctrl_mstatus_wr (ctrl_mstatus_wr),
-        .ctrl_mstatus    (ctrl_mstatus),
-        .ctrl_mcause_wr  (ctrl_mcause_wr),
-        .ctrl_mcause     (ctrl_mcause),
-        .ctrl_mtval_wr   (ctrl_mtval_wr),
-        .ctrl_mtval      (ctrl_mtval),
-        .ctrl_rdinstret  (ctrl_rdinstret),
         .perfs           (perfs),
-        .csr_sb          (csr_sb)
+        .csr_sb          (csr_sb),
+        .ctrl_sb         (ctrl_sb)
     );
 
     friscv_bus_perf

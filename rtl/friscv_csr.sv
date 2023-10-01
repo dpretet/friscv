@@ -49,20 +49,11 @@ module friscv_csr
         output logic                   rd_wr_en,
         output logic [5          -1:0] rd_wr_addr,
         output logic [XLEN       -1:0] rd_wr_val,
-        // External source of CSRs
-        input  wire                    ctrl_mepc_wr,
-        input  wire  [XLEN       -1:0] ctrl_mepc,
-        input  wire                    ctrl_mstatus_wr,
-        input  wire  [XLEN       -1:0] ctrl_mstatus,
-        input  wire                    ctrl_mcause_wr,
-        input  wire  [XLEN       -1:0] ctrl_mcause,
-        input  wire                    ctrl_mtval_wr,
-        input  wire  [XLEN       -1:0] ctrl_mtval,
-        input  wire  [64         -1:0] ctrl_rdinstret,
         // Performance registers bus
         input  wire  [PERF_REG_W*3*PERF_NB_BUS -1:0] perfs,
         // CSR shared bus
-        output logic [`CSR_SB_W  -1:0] csr_sb
+        output logic [`CSR_SB_W  -1:0] csr_sb,
+        input  logic [`CTRL_SB_W -1:0] ctrl_sb
     );
 
     // ------------------------------------------------------------------------
@@ -98,6 +89,18 @@ module friscv_csr
     logic                    ext_irq_sync;
     logic                    timer_irq_sync;
     logic                    sw_irq_sync;
+
+    // External source of CSRs
+    logic                    ctrl_mepc_wr;
+    logic  [XLEN       -1:0] ctrl_mepc;
+    logic                    ctrl_mstatus_wr;
+    logic  [XLEN       -1:0] ctrl_mstatus;
+    logic                    ctrl_mcause_wr;
+    logic  [XLEN       -1:0] ctrl_mcause;
+    logic                    ctrl_mtval_wr;
+    logic  [XLEN       -1:0] ctrl_mtval;
+    logic  [64         -1:0] ctrl_rdinstret;
+    logic                    ctrl_clr_meip;
 
 
     ///////////////////////////////////////////////////////////////////////////
@@ -719,21 +722,21 @@ module friscv_csr
         end else if (srst) begin
             mip <= {XLEN{1'b0}};
         end else begin
-            if (ext_irq_sync || timer_irq_sync || sw_irq_sync) begin
+            if (ext_irq_sync || timer_irq_sync || sw_irq_sync || ctrl_clr_meip) begin
                 // external interrupt enable && external interrupt pin asserted
-                if (mstatus[3] && mie[11] && ext_irq_sync) begin
+                if (mie[11] && ext_irq_sync) begin
                     mip[11] <= 1'b1;
-                end else begin
+                end else if (ctrl_clr_meip) begin
                     mip[11] <= 1'b0;
                 end
                 // software interrupt enable && software interrupt pin asserted
-                if (mstatus[3] && mie[3] && sw_irq_sync) begin
+                if (mie[3] && sw_irq_sync) begin
                     mip[3] <= 1'b1;
                 end else begin
                     mip[3] <= 1'b0;
                 end
                 // timer interrupt enable && timer interrupt pin asserted
-                if (mstatus[3] && mie[7] && timer_irq_sync) begin
+                if (mie[7] && timer_irq_sync) begin
                     mip[7] <= 1'b1;
                 end else begin
                     mip[7] <= 1'b0;
@@ -791,14 +794,20 @@ module friscv_csr
     // CSR Shared bus, for registers used across the processor
     //////////////////////////////////////////////////////////////////////////
 
-    assign csr_sb[`MTVEC+:XLEN] = mtvec;
-    assign csr_sb[`MEPC+:XLEN] = mepc;
-    assign csr_sb[`MSTATUS+:XLEN] = mstatus;
+    assign csr_sb[`CSR_SB_MTVEC+:XLEN] = mtvec;
+    assign csr_sb[`CSR_SB_MEPC+:XLEN] = mepc;
+    assign csr_sb[`CSR_SB_MSTATUS+:XLEN] = mstatus;
 
-    assign csr_sb[`MEIP] = mip[11];
-    assign csr_sb[`MTIP] = mip[7];
-    assign csr_sb[`MSIP] = mip[3];
+    assign csr_sb[`CSR_SB_MIE] = mstatus[3];
+    assign csr_sb[`CSR_SB_MEIP] = mip[11];
+    assign csr_sb[`CSR_SB_MTIP] = mip[7];
+    assign csr_sb[`CSR_SB_MSIP] = mip[3];
 
+    assign {ctrl_rdinstret, ctrl_clr_meip, 
+            ctrl_mtval_wr, ctrl_mtval,
+            ctrl_mcause_wr, ctrl_mcause,
+            ctrl_mstatus_wr, ctrl_mstatus,
+            ctrl_mepc_wr, ctrl_mepc} = ctrl_sb;
 endmodule
 
 `resetall

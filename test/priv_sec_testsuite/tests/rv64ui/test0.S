@@ -76,6 +76,9 @@ TEST3:
     add x1, x1, 1
     bne x20, x1, fail
 
+INTP:
+    ebreak
+
 
 j pass
 
