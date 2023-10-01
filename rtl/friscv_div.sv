@@ -54,6 +54,7 @@ module friscv_div
     logic [WIDTH         -1:0] quot_next;               // intermediate quotient
     logic [WIDTH           :0] acc, acc_next, rem_sub;  // accumulator (1 bit wider)
     logic                      computing;
+    logic [2*WIDTH         :0] acc_quot_w;
 
     localparam                 CWIDTH = $clog2(WIDTH);
     logic [CWIDTH        -1:0] step_cnt;                   // iteration counter
@@ -137,12 +138,17 @@ module friscv_div
                 quot_sign <= signed_div & (divd[WIDTH-1] ^ divs[WIDTH-1]);
                 rem_sign <= signed_div & divd[WIDTH-1];
 
+                // Previous version commented because issue from verilator 5.016
                 // Convert dividend to positive
                 if (signed_div & divd[WIDTH-1]) begin
-                    {acc, quot} <= {{WIDTH{1'b0}}, inv_sign(divd), 1'b0};
+                    // {acc, quot} <= {{WIDTH{1'b0}}, inv_sign(divd), 1'b0};
                 end else begin
-                    {acc, quot} <= {{WIDTH{1'b0}}, divd, 1'b0};
+                    // {acc, quot} <= {{WIDTH{1'b0}}, divd, 1'b0};
                 end
+
+                // For Verilator 5.016
+                quot <= acc_quot_w[0+:WIDTH];
+                acc <= acc_quot_w[WIDTH+:(WIDTH+1)];
 
                 // Convert divisor to positive
                 if (signed_div & divs[WIDTH-1]) _divs <= inv_sign(divs);
@@ -174,6 +180,15 @@ module friscv_div
                 o_valid <= 1'b0;
 				div_pending <= 1'b0;
             end
+        end
+    end
+
+    // For Verilator 5.016
+    always @ (*) begin
+        if (signed_div & divd[WIDTH-1]) begin
+            acc_quot_w = {{WIDTH{1'b0}}, inv_sign(divd), 1'b0};
+        end else begin
+            acc_quot_w = {{WIDTH{1'b0}}, divd, 1'b0};
         end
     end
 
