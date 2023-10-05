@@ -22,11 +22,13 @@ module friscv_control
         // Reduced RV32 arch
         parameter RV32E = 0,
         // Support hypervisor mode
-        parameter HYPERVISOR_MODE   = 0,
+        parameter HYPERVISOR_MODE = 0,
         // Support supervisor mode
-        parameter SUPERVISOR_MODE   = 0,
+        parameter SUPERVISOR_MODE = 0,
         // Support user mode
-        parameter USER_MODE         = 0,
+        parameter USER_MODE = 0,
+        // PMP / PMA supported
+        parameter MPU_SUPPORT = 0,
         // Address bus width defined for both control and AXI4 address signals
         parameter AXI_ADDR_W = ILEN,
         // AXI ID width, setup by default to 8 and unused

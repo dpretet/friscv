@@ -114,6 +114,21 @@
 `define IS_WFI    5
 
 //////////////////////////////////////////////////////////////////
+// PMP / PMA
+//////////////////////////////////////////////////////////////////
+
+`define PMP_OFF   0
+`define PMP_TOR   1
+`define PMP_NA4   2
+`define PMP_NAPOT 3
+
+`define PMP_R 0
+`define PMP_W 1
+`define PMP_X 2
+`define PMP_A 3
+`define PMP_L 7
+
+//////////////////////////////////////////////////////////////////
 // Instruction bus feeding ALUs
 //////////////////////////////////////////////////////////////////
 
@@ -159,13 +174,33 @@
 //////////////////////////////////////////////////////////////////
 
 // CSR shared bus placement
-`define CSR_SB_MTVEC   0
-`define CSR_SB_MEPC    `CSR_SB_MTVEC + `XLEN
-`define CSR_SB_MSTATUS `CSR_SB_MEPC + `XLEN
-`define CSR_SB_MIE     `CSR_SB_MSTATUS + `XLEN
-`define CSR_SB_MEIP    `CSR_SB_MIE + 1
-`define CSR_SB_MTIP    `CSR_SB_MEIP + 1
-`define CSR_SB_MSIP    `CSR_SB_MTIP + 1
+`define CSR_SB_PMPCFG0      0
+`define CSR_SB_PMPCFG1      `CSR_SB_PMPCFG0 + `XLEN
+`define CSR_SB_PMPCFG2      `CSR_SB_PMPCFG1 + `XLEN
+`define CSR_SB_PMPCFG3      `CSR_SB_PMPCFG2 + `XLEN
+`define CSR_SB_PMPADDR0     `CSR_SB_PMPCFG3 + `XLEN
+`define CSR_SB_PMPADDR1     `CSR_SB_PMPADDR0 + `XLEN
+`define CSR_SB_PMPADDR2     `CSR_SB_PMPADDR1 + `XLEN
+`define CSR_SB_PMPADDR3     `CSR_SB_PMPADDR2 + `XLEN
+`define CSR_SB_PMPADDR4     `CSR_SB_PMPADDR3 + `XLEN
+`define CSR_SB_PMPADDR5     `CSR_SB_PMPADDR4 + `XLEN
+`define CSR_SB_PMPADDR6     `CSR_SB_PMPADDR5 + `XLEN
+`define CSR_SB_PMPADDR7     `CSR_SB_PMPADDR6 + `XLEN
+`define CSR_SB_PMPADDR8     `CSR_SB_PMPADDR7 + `XLEN
+`define CSR_SB_PMPADDR9     `CSR_SB_PMPADDR8 + `XLEN
+`define CSR_SB_PMPADDR10    `CSR_SB_PMPADDR9 + `XLEN
+`define CSR_SB_PMPADDR11    `CSR_SB_PMPADDR10 + `XLEN
+`define CSR_SB_PMPADDR12    `CSR_SB_PMPADDR11 + `XLEN
+`define CSR_SB_PMPADDR13    `CSR_SB_PMPADDR12 + `XLEN
+`define CSR_SB_PMPADDR14    `CSR_SB_PMPADDR13 + `XLEN
+`define CSR_SB_PMPADDR15    `CSR_SB_PMPADDR14 + `XLEN
+`define CSR_SB_MTVEC        `CSR_SB_PMPADDR15 + `XLEN
+`define CSR_SB_MEPC         `CSR_SB_MTVEC + `XLEN
+`define CSR_SB_MSTATUS      `CSR_SB_MEPC + `XLEN
+`define CSR_SB_MIE          `CSR_SB_MSTATUS + `XLEN
+`define CSR_SB_MEIP         `CSR_SB_MIE + 1
+`define CSR_SB_MTIP         `CSR_SB_MEIP + 1
+`define CSR_SB_MSIP         `CSR_SB_MTIP + 1
 
 // CSR shared bus width
 `define CSR_SB_W `CSR_SB_MSIP + 1

@@ -24,6 +24,8 @@ module friscv_csr
         parameter SUPERVISOR_MODE = 0,
         // Support user mode
         parameter USER_MODE = 0,
+        // PMP / PMA supported
+        parameter MPU_SUPPORT = 0,
         // Reduced RV32 arch
         parameter RV32E = 0,
         // MHART_ID CSR value
@@ -210,6 +212,27 @@ module friscv_csr
     localparam MCAUSE       = 12'h342;
     localparam MTVAL        = 12'h343;
     localparam MIP          = 12'h344;
+    // Machine Memory Protection
+    localparam PMPCFG0      = 12'h3A0;
+    localparam PMPCFG1      = 12'h3A1;
+    localparam PMPCFG2      = 12'h3A2;
+    localparam PMPCFG3      = 12'h3A3;
+    localparam PMPADDR0     = 12'h3B0;
+    localparam PMPADDR1     = 12'h3B1;
+    localparam PMPADDR2     = 12'h3B2;
+    localparam PMPADDR3     = 12'h3B3;
+    localparam PMPADDR4     = 12'h3B4;
+    localparam PMPADDR5     = 12'h3B5;
+    localparam PMPADDR6     = 12'h3B6;
+    localparam PMPADDR7     = 12'h3B7;
+    localparam PMPADDR8     = 12'h3B8;
+    localparam PMPADDR9     = 12'h3B9;
+    localparam PMPADDR10    = 12'h3BA;
+    localparam PMPADDR11    = 12'h3BB;
+    localparam PMPADDR12    = 12'h3BC;
+    localparam PMPADDR13    = 12'h3BD;
+    localparam PMPADDR14    = 12'h3BE;
+    localparam PMPADDR15    = 12'h3BF;
 
     /*
      * Supervisor-level CSR addresses
@@ -283,11 +306,26 @@ module friscv_csr
     logic [XLEN-1:0] mip;           // 0x344    MRW
 
     // Physical Memory Protection (PMP)
-    // logic [XLEN-1:0] pmpcfg0;       // 0x3A0    MRW (not implemented)
-    // logic [XLEN-1:0] pmpcfg1;       // 0x3A1    MRW (not implemented)
-    // logic [XLEN-1:0] pmpcfg2;       // 0x3A2    MRW (not implemented)
-    // logic [XLEN-1:0] pmpcfg3;       // 0x3A3    MRW (not implemented)
-    // logic [XLEN-1:0] pmpaddr0;      // 0x3B0    MRW (not implemented)
+    logic [XLEN-1:0] pmpcfg0;       // 0x3A0    MRW
+    logic [XLEN-1:0] pmpcfg1;       // 0x3A1    MRW
+    logic [XLEN-1:0] pmpcfg2;       // 0x3A2    MRW
+    logic [XLEN-1:0] pmpcfg3;       // 0x3A3    MRW
+    logic [XLEN-1:0] pmpaddr0;      // 0x3B0    MRW
+    logic [XLEN-1:0] pmpaddr1;      // 0x3B1    MRW
+    logic [XLEN-1:0] pmpaddr2;      // 0x3B2    MRW
+    logic [XLEN-1:0] pmpaddr3;      // 0x3B3    MRW
+    logic [XLEN-1:0] pmpaddr4;      // 0x3B4    MRW
+    logic [XLEN-1:0] pmpaddr5;      // 0x3B5    MRW
+    logic [XLEN-1:0] pmpaddr6;      // 0x3B6    MRW
+    logic [XLEN-1:0] pmpaddr7;      // 0x3B7    MRW
+    logic [XLEN-1:0] pmpaddr8;      // 0x3B8    MRW
+    logic [XLEN-1:0] pmpaddr9;      // 0x3B9    MRW
+    logic [XLEN-1:0] pmpaddr10;     // 0x3BA    MRW
+    logic [XLEN-1:0] pmpaddr11;     // 0x3BB    MRW
+    logic [XLEN-1:0] pmpaddr12;     // 0x3BC    MRW
+    logic [XLEN-1:0] pmpaddr13;     // 0x3BD    MRW
+    logic [XLEN-1:0] pmpaddr14;     // 0x3BE    MRW
+    logic [XLEN-1:0] pmpaddr15;     // 0x3BF    MRW
 
     // “Zicntr” Standard Extension for Base Counters and Timers
     logic [64  -1:0] rdcycle;          // 0xC00    MRO (0xC80 for 32b MSBs)
@@ -471,6 +509,26 @@ module friscv_csr
         else if (csr==MCAUSE)          oldval = mcause;
         else if (csr==MTVAL)           oldval = mtval;
         else if (csr==MIP)             oldval = mip;
+        else if (csr==PMPCFG0)         oldval = pmpcfg0;
+        else if (csr==PMPCFG1)         oldval = pmpcfg1;
+        else if (csr==PMPCFG2)         oldval = pmpcfg2;
+        else if (csr==PMPCFG3)         oldval = pmpcfg3;
+        else if (csr==PMPADDR0)        oldval = pmpaddr0;
+        else if (csr==PMPADDR1)        oldval = pmpaddr1;
+        else if (csr==PMPADDR2)        oldval = pmpaddr2;
+        else if (csr==PMPADDR3)        oldval = pmpaddr3;
+        else if (csr==PMPADDR4)        oldval = pmpaddr4;
+        else if (csr==PMPADDR5)        oldval = pmpaddr5;
+        else if (csr==PMPADDR6)        oldval = pmpaddr6;
+        else if (csr==PMPADDR7)        oldval = pmpaddr7;
+        else if (csr==PMPADDR8)        oldval = pmpaddr8;
+        else if (csr==PMPADDR9)        oldval = pmpaddr9;
+        else if (csr==PMPADDR10)       oldval = pmpaddr10;
+        else if (csr==PMPADDR11)       oldval = pmpaddr11;
+        else if (csr==PMPADDR12)       oldval = pmpaddr12;
+        else if (csr==PMPADDR13)       oldval = pmpaddr13;
+        else if (csr==PMPADDR14)       oldval = pmpaddr14;
+        else if (csr==PMPADDR15)       oldval = pmpaddr15;
         else if (csr==RDCYCLE)         oldval = rdcycle[0+:XLEN];
         else if (csr==RDTIME)          oldval = rdtime[0+:XLEN];
         else if (csr==RDINSTRET)       oldval = rdinstret[0+:XLEN];
@@ -748,6 +806,98 @@ module friscv_csr
             end
         end
     end
+    //
+    ///////////////////////////////////////////////////////////////////////////
+    // PMPCFG0/3 - 0x3A0-0x3A3
+    ///////////////////////////////////////////////////////////////////////////
+    always @ (posedge aclk or negedge aresetn) begin
+        if (!aresetn) begin
+            pmpcfg0 <= {XLEN{1'b0}};
+            pmpcfg1 <= {XLEN{1'b0}};
+            pmpcfg2 <= {XLEN{1'b0}};
+            pmpcfg3 <= {XLEN{1'b0}};
+        end else if (srst) begin
+            pmpcfg0 <= {XLEN{1'b0}};
+            pmpcfg1 <= {XLEN{1'b0}};
+            pmpcfg2 <= {XLEN{1'b0}};
+            pmpcfg3 <= {XLEN{1'b0}};
+        end else if (MPU_SUPPORT) begin
+            if (csr_wren) begin
+                if (csr==PMPCFG0) begin
+                    pmpcfg0 <= newval;
+                end
+                if (csr==PMPCFG1) begin
+                    pmpcfg1 <= newval;
+                end
+                if (csr==PMPCFG2) begin
+                    pmpcfg2 <= newval;
+                end
+                if (csr==PMPCFG3) begin
+                    pmpcfg3 <= newval;
+                end
+            end
+        end
+    end
+
+    ///////////////////////////////////////////////////////////////////////////
+    // PMPADDR0/15 - 0x3B0-0x3BF
+    ///////////////////////////////////////////////////////////////////////////
+    always @ (posedge aclk or negedge aresetn) begin
+        if (!aresetn) begin
+            pmpaddr0  <= {XLEN{1'b0}};
+            pmpaddr1  <= {XLEN{1'b0}};
+            pmpaddr2  <= {XLEN{1'b0}};
+            pmpaddr3  <= {XLEN{1'b0}};
+            pmpaddr4  <= {XLEN{1'b0}};
+            pmpaddr5  <= {XLEN{1'b0}};
+            pmpaddr6  <= {XLEN{1'b0}};
+            pmpaddr7  <= {XLEN{1'b0}};
+            pmpaddr8  <= {XLEN{1'b0}};
+            pmpaddr9  <= {XLEN{1'b0}};
+            pmpaddr10 <= {XLEN{1'b0}};
+            pmpaddr11 <= {XLEN{1'b0}};
+            pmpaddr12 <= {XLEN{1'b0}};
+            pmpaddr13 <= {XLEN{1'b0}};
+            pmpaddr14 <= {XLEN{1'b0}};
+            pmpaddr15 <= {XLEN{1'b0}};
+        end else if (srst) begin
+            pmpaddr0  <= {XLEN{1'b0}};
+            pmpaddr1  <= {XLEN{1'b0}};
+            pmpaddr2  <= {XLEN{1'b0}};
+            pmpaddr3  <= {XLEN{1'b0}};
+            pmpaddr4  <= {XLEN{1'b0}};
+            pmpaddr5  <= {XLEN{1'b0}};
+            pmpaddr6  <= {XLEN{1'b0}};
+            pmpaddr7  <= {XLEN{1'b0}};
+            pmpaddr8  <= {XLEN{1'b0}};
+            pmpaddr9  <= {XLEN{1'b0}};
+            pmpaddr10 <= {XLEN{1'b0}};
+            pmpaddr11 <= {XLEN{1'b0}};
+            pmpaddr12 <= {XLEN{1'b0}};
+            pmpaddr13 <= {XLEN{1'b0}};
+            pmpaddr14 <= {XLEN{1'b0}};
+            pmpaddr15 <= {XLEN{1'b0}};
+        end else if (MPU_SUPPORT) begin
+            if (csr_wren) begin
+                if (csr==PMPADDR0 ) pmpaddr0  <= newval;
+                if (csr==PMPADDR1 ) pmpaddr1  <= newval;
+                if (csr==PMPADDR2 ) pmpaddr2  <= newval;
+                if (csr==PMPADDR3 ) pmpaddr3  <= newval;
+                if (csr==PMPADDR4 ) pmpaddr4  <= newval;
+                if (csr==PMPADDR5 ) pmpaddr5  <= newval;
+                if (csr==PMPADDR6 ) pmpaddr6  <= newval;
+                if (csr==PMPADDR7 ) pmpaddr7  <= newval;
+                if (csr==PMPADDR8 ) pmpaddr8  <= newval;
+                if (csr==PMPADDR9 ) pmpaddr9  <= newval;
+                if (csr==PMPADDR10) pmpaddr10 <= newval;
+                if (csr==PMPADDR11) pmpaddr11 <= newval;
+                if (csr==PMPADDR12) pmpaddr12 <= newval;
+                if (csr==PMPADDR13) pmpaddr13 <= newval;
+                if (csr==PMPADDR14) pmpaddr14 <= newval;
+                if (csr==PMPADDR15) pmpaddr15 <= newval;
+            end
+        end
+    end
 
     //////////////////////////////////////////////////////////////////////////
     // Counters and timers
@@ -802,6 +952,28 @@ module friscv_csr
     assign csr_sb[`CSR_SB_MEIP] = mip[11];
     assign csr_sb[`CSR_SB_MTIP] = mip[7];
     assign csr_sb[`CSR_SB_MSIP] = mip[3];
+
+    assign csr_sb[`CSR_SB_PMPCFG0+:XLEN] = pmpcfg0;
+    assign csr_sb[`CSR_SB_PMPCFG1+:XLEN] = pmpcfg1;
+    assign csr_sb[`CSR_SB_PMPCFG2+:XLEN] = pmpcfg2;
+    assign csr_sb[`CSR_SB_PMPCFG3+:XLEN] = pmpcfg3;
+
+    assign csr_sb[`CSR_SB_PMPADDR0 +:XLEN] = pmpaddr0;
+    assign csr_sb[`CSR_SB_PMPADDR1 +:XLEN] = pmpaddr1;
+    assign csr_sb[`CSR_SB_PMPADDR2 +:XLEN] = pmpaddr2;
+    assign csr_sb[`CSR_SB_PMPADDR3 +:XLEN] = pmpaddr3;
+    assign csr_sb[`CSR_SB_PMPADDR4 +:XLEN] = pmpaddr4;
+    assign csr_sb[`CSR_SB_PMPADDR5 +:XLEN] = pmpaddr5;
+    assign csr_sb[`CSR_SB_PMPADDR6 +:XLEN] = pmpaddr6;
+    assign csr_sb[`CSR_SB_PMPADDR7 +:XLEN] = pmpaddr7;
+    assign csr_sb[`CSR_SB_PMPADDR8 +:XLEN] = pmpaddr8;
+    assign csr_sb[`CSR_SB_PMPADDR9 +:XLEN] = pmpaddr9;
+    assign csr_sb[`CSR_SB_PMPADDR10+:XLEN] = pmpaddr10;
+    assign csr_sb[`CSR_SB_PMPADDR11+:XLEN] = pmpaddr11;
+    assign csr_sb[`CSR_SB_PMPADDR12+:XLEN] = pmpaddr12;
+    assign csr_sb[`CSR_SB_PMPADDR13+:XLEN] = pmpaddr13;
+    assign csr_sb[`CSR_SB_PMPADDR14+:XLEN] = pmpaddr14;
+    assign csr_sb[`CSR_SB_PMPADDR15+:XLEN] = pmpaddr15;
 
     assign {ctrl_rdinstret, ctrl_clr_meip, 
             ctrl_mtval_wr, ctrl_mtval,
