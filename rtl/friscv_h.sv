@@ -122,11 +122,11 @@
 `define PMP_NA4   2
 `define PMP_NAPOT 3
 
-`define PMP_R 0
-`define PMP_W 1
-`define PMP_X 2
-`define PMP_A 3
-`define PMP_L 7
+`define PMA_R 0
+`define PMA_W 1
+`define PMA_X 2
+`define PMA_A 3 // 4:3
+`define PMA_L 7
 
 //////////////////////////////////////////////////////////////////
 // Instruction bus feeding ALUs

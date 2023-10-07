@@ -14,24 +14,21 @@ module friscv_pmp_region
         // The Sv39 and Sv48 page-based virtual-memory schemes support a 56-bit physical address space, 
         // so the RV64 PMP address registers impose the same limit.
         parameter RLEN = 34,
-        // Registers width, 32 bits for RV32i
+        // Registers width, 32 bits for RV32
         parameter XLEN = 32,
-        // PMP / PMA supported
-        parameter MPU_SUPPORT = 0,
         // Address bus width defined for both control and AXI4 address signals
         parameter AXI_ADDR_W = XLEN
     )(
-        // memory address
-        input  wire  [AXI_ADDR_W   -1:0] addr,
-        output logic                     match,
         // CSR registers
         input  wire  [XLEN         -1:0] pmp_addr,
-        input  wire  [XLEN         -1:0] pmp_addr_m1,
-        input  wire  [XLEN         -1:0] pmp_cfg
+        input  wire  [XLEN         -1:0] pmp_cfg,
+        // Region base addres and mask for NAPOT/NA4
+        output logic [RLEN         -1:0] pmp_base,
+        output logic [RLEN         -1:0] pmp_mask
     );
 
     //////////////////////////////////////////////////////////////////////////
-    // Parameters and variables
+    // Functions, parameters and variables
     //////////////////////////////////////////////////////////////////////////
 
     // Address matching A field encoding
@@ -40,10 +37,7 @@ module friscv_pmp_region
         TOR    = 1,
         NA4    = 2,
         NAPOT  = 3
-    } pc_fsm;
-
-    logic [RLEN-1:0] pmp_base;
-    logic [RLEN-1:0] pmp_mask;
+    } ADDR_MATCH;
 
 
     //////////////////////////////////////////////////////////////////////////
@@ -107,26 +101,20 @@ module friscv_pmp_region
     /////////////////////////////////////////////////////////////////////////////
     // Address matching process
     /////////////////////////////////////////////////////////////////////////////
-    always_comb begin
+    always @ (*) begin
 
         case (pmp_cfg[4:3])
 
             default: begin
-                match = '0;
-            end
-
-            TOR: begin
-                match = '0;
+                {pmp_mask, pmp_base} = {{RLEN{1'b0}}, {{(RLEN-32){1'b0}},pmp_addr<<2}};
             end
 
             NA4: begin
                 {pmp_mask, pmp_base} = get_na4(pmp_addr);
-                match = ((addr & pmp_mask) == pmp_base);
             end
 
             NAPOT: begin
                 {pmp_mask, pmp_base} = get_napot(pmp_addr);
-                match = ((addr & pmp_mask) == pmp_base);
             end
 
         endcase

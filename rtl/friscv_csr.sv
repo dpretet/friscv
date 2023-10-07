@@ -24,12 +24,42 @@ module friscv_csr
         parameter SUPERVISOR_MODE = 0,
         // Support user mode
         parameter USER_MODE = 0,
-        // PMP / PMA supported
-        parameter MPU_SUPPORT = 0,
         // Reduced RV32 arch
         parameter RV32E = 0,
         // MHART_ID CSR value
-        parameter HART_ID = 0
+        parameter HART_ID = 0,
+        // PMP / PMA supported
+        //  = 0, no PMP
+        //  = 1, PMP available but fixed synthesis thus at boot time
+        //  > 1, PMP available and configurable at runtime
+        parameter MPU_SUPPORT = 0,
+        // Number of physical memory protection regions
+        parameter NB_PMP_REGION = 16,
+        // Maximum PMP regions support by the core
+        parameter MAX_PMP_REGION = 16,
+        // PMP value at initialization
+        parameter PMPCFG0_INIT   = 32'h0,
+        parameter PMPCFG1_INIT   = 32'h0,
+        parameter PMPCFG2_INIT   = 32'h0,
+        parameter PMPCFG3_INIT   = 32'h0,
+        parameter PMPADDR0_INIT  = 32'h0,
+        parameter PMPADDR1_INIT  = 32'h0,
+        parameter PMPADDR2_INIT  = 32'h0,
+        parameter PMPADDR3_INIT  = 32'h0,
+        parameter PMPADDR4_INIT  = 32'h0,
+        parameter PMPADDR5_INIT  = 32'h0,
+        parameter PMPADDR6_INIT  = 32'h0,
+        parameter PMPADDR7_INIT  = 32'h0,
+        parameter PMPADDR8_INIT  = 32'h0,
+        parameter PMPADDR9_INIT  = 32'h0,
+        parameter PMPADDR10_INIT = 32'h0,
+        parameter PMPADDR11_INIT = 32'h0,
+        parameter PMPADDR12_INIT = 32'h0,
+        parameter PMPADDR13_INIT = 32'h0,
+        parameter PMPADDR14_INIT = 32'h0,
+        parameter PMPADDR15_INIT = 32'h0,
+        // Virtual memory support
+        parameter MMU_SUPPORT = 0
     )(
         // Clock/reset interface
         input  wire                    aclk,
@@ -806,33 +836,33 @@ module friscv_csr
             end
         end
     end
-    //
+
     ///////////////////////////////////////////////////////////////////////////
     // PMPCFG0/3 - 0x3A0-0x3A3
     ///////////////////////////////////////////////////////////////////////////
     always @ (posedge aclk or negedge aresetn) begin
         if (!aresetn) begin
-            pmpcfg0 <= {XLEN{1'b0}};
-            pmpcfg1 <= {XLEN{1'b0}};
-            pmpcfg2 <= {XLEN{1'b0}};
-            pmpcfg3 <= {XLEN{1'b0}};
+            pmpcfg0 <= PMPCFG0_INIT;
+            pmpcfg1 <= PMPCFG1_INIT;
+            pmpcfg2 <= PMPCFG2_INIT;
+            pmpcfg3 <= PMPCFG3_INIT;
         end else if (srst) begin
-            pmpcfg0 <= {XLEN{1'b0}};
-            pmpcfg1 <= {XLEN{1'b0}};
-            pmpcfg2 <= {XLEN{1'b0}};
-            pmpcfg3 <= {XLEN{1'b0}};
-        end else if (MPU_SUPPORT) begin
+            pmpcfg0 <= PMPCFG0_INIT;
+            pmpcfg1 <= PMPCFG1_INIT;
+            pmpcfg2 <= PMPCFG2_INIT;
+            pmpcfg3 <= PMPCFG3_INIT;
+        end else if (MPU_SUPPORT > 1) begin
             if (csr_wren) begin
-                if (csr==PMPCFG0) begin
+                if (csr==PMPCFG0 && NB_PMP_REGION>=1) begin
                     pmpcfg0 <= newval;
                 end
-                if (csr==PMPCFG1) begin
+                if (csr==PMPCFG1 && NB_PMP_REGION>=5) begin
                     pmpcfg1 <= newval;
                 end
-                if (csr==PMPCFG2) begin
+                if (csr==PMPCFG2 && NB_PMP_REGION>=9) begin
                     pmpcfg2 <= newval;
                 end
-                if (csr==PMPCFG3) begin
+                if (csr==PMPCFG3 && NB_PMP_REGION>=13) begin
                     pmpcfg3 <= newval;
                 end
             end
@@ -844,57 +874,57 @@ module friscv_csr
     ///////////////////////////////////////////////////////////////////////////
     always @ (posedge aclk or negedge aresetn) begin
         if (!aresetn) begin
-            pmpaddr0  <= {XLEN{1'b0}};
-            pmpaddr1  <= {XLEN{1'b0}};
-            pmpaddr2  <= {XLEN{1'b0}};
-            pmpaddr3  <= {XLEN{1'b0}};
-            pmpaddr4  <= {XLEN{1'b0}};
-            pmpaddr5  <= {XLEN{1'b0}};
-            pmpaddr6  <= {XLEN{1'b0}};
-            pmpaddr7  <= {XLEN{1'b0}};
-            pmpaddr8  <= {XLEN{1'b0}};
-            pmpaddr9  <= {XLEN{1'b0}};
-            pmpaddr10 <= {XLEN{1'b0}};
-            pmpaddr11 <= {XLEN{1'b0}};
-            pmpaddr12 <= {XLEN{1'b0}};
-            pmpaddr13 <= {XLEN{1'b0}};
-            pmpaddr14 <= {XLEN{1'b0}};
-            pmpaddr15 <= {XLEN{1'b0}};
+            pmpaddr0  <= PMPADDR0_INIT;
+            pmpaddr1  <= PMPADDR1_INIT;
+            pmpaddr2  <= PMPADDR2_INIT;
+            pmpaddr3  <= PMPADDR3_INIT;
+            pmpaddr4  <= PMPADDR4_INIT;
+            pmpaddr5  <= PMPADDR5_INIT;
+            pmpaddr6  <= PMPADDR6_INIT;
+            pmpaddr7  <= PMPADDR7_INIT;
+            pmpaddr8  <= PMPADDR8_INIT;
+            pmpaddr9  <= PMPADDR9_INIT;
+            pmpaddr10 <= PMPADDR10_INIT;
+            pmpaddr11 <= PMPADDR11_INIT;
+            pmpaddr12 <= PMPADDR12_INIT;
+            pmpaddr13 <= PMPADDR13_INIT;
+            pmpaddr14 <= PMPADDR14_INIT;
+            pmpaddr15 <= PMPADDR15_INIT;
         end else if (srst) begin
-            pmpaddr0  <= {XLEN{1'b0}};
-            pmpaddr1  <= {XLEN{1'b0}};
-            pmpaddr2  <= {XLEN{1'b0}};
-            pmpaddr3  <= {XLEN{1'b0}};
-            pmpaddr4  <= {XLEN{1'b0}};
-            pmpaddr5  <= {XLEN{1'b0}};
-            pmpaddr6  <= {XLEN{1'b0}};
-            pmpaddr7  <= {XLEN{1'b0}};
-            pmpaddr8  <= {XLEN{1'b0}};
-            pmpaddr9  <= {XLEN{1'b0}};
-            pmpaddr10 <= {XLEN{1'b0}};
-            pmpaddr11 <= {XLEN{1'b0}};
-            pmpaddr12 <= {XLEN{1'b0}};
-            pmpaddr13 <= {XLEN{1'b0}};
-            pmpaddr14 <= {XLEN{1'b0}};
-            pmpaddr15 <= {XLEN{1'b0}};
-        end else if (MPU_SUPPORT) begin
+            pmpaddr0  <= PMPADDR0_INIT;
+            pmpaddr1  <= PMPADDR1_INIT;
+            pmpaddr2  <= PMPADDR2_INIT;
+            pmpaddr3  <= PMPADDR3_INIT;
+            pmpaddr4  <= PMPADDR4_INIT;
+            pmpaddr5  <= PMPADDR5_INIT;
+            pmpaddr6  <= PMPADDR6_INIT;
+            pmpaddr7  <= PMPADDR7_INIT;
+            pmpaddr8  <= PMPADDR8_INIT;
+            pmpaddr9  <= PMPADDR9_INIT;
+            pmpaddr10 <= PMPADDR10_INIT;
+            pmpaddr11 <= PMPADDR11_INIT;
+            pmpaddr12 <= PMPADDR12_INIT;
+            pmpaddr13 <= PMPADDR13_INIT;
+            pmpaddr14 <= PMPADDR14_INIT;
+            pmpaddr15 <= PMPADDR15_INIT;
+        end else if (MPU_SUPPORT > 1) begin
             if (csr_wren) begin
-                if (csr==PMPADDR0 ) pmpaddr0  <= newval;
-                if (csr==PMPADDR1 ) pmpaddr1  <= newval;
-                if (csr==PMPADDR2 ) pmpaddr2  <= newval;
-                if (csr==PMPADDR3 ) pmpaddr3  <= newval;
-                if (csr==PMPADDR4 ) pmpaddr4  <= newval;
-                if (csr==PMPADDR5 ) pmpaddr5  <= newval;
-                if (csr==PMPADDR6 ) pmpaddr6  <= newval;
-                if (csr==PMPADDR7 ) pmpaddr7  <= newval;
-                if (csr==PMPADDR8 ) pmpaddr8  <= newval;
-                if (csr==PMPADDR9 ) pmpaddr9  <= newval;
-                if (csr==PMPADDR10) pmpaddr10 <= newval;
-                if (csr==PMPADDR11) pmpaddr11 <= newval;
-                if (csr==PMPADDR12) pmpaddr12 <= newval;
-                if (csr==PMPADDR13) pmpaddr13 <= newval;
-                if (csr==PMPADDR14) pmpaddr14 <= newval;
-                if (csr==PMPADDR15) pmpaddr15 <= newval;
+                if (csr==PMPADDR0  && NB_PMP_REGION>1 ) pmpaddr0  <= newval;
+                if (csr==PMPADDR1  && NB_PMP_REGION>2 ) pmpaddr1  <= newval;
+                if (csr==PMPADDR2  && NB_PMP_REGION>3 ) pmpaddr2  <= newval;
+                if (csr==PMPADDR3  && NB_PMP_REGION>4 ) pmpaddr3  <= newval;
+                if (csr==PMPADDR4  && NB_PMP_REGION>5 ) pmpaddr4  <= newval;
+                if (csr==PMPADDR5  && NB_PMP_REGION>6 ) pmpaddr5  <= newval;
+                if (csr==PMPADDR6  && NB_PMP_REGION>7 ) pmpaddr6  <= newval;
+                if (csr==PMPADDR7  && NB_PMP_REGION>8 ) pmpaddr7  <= newval;
+                if (csr==PMPADDR8  && NB_PMP_REGION>9 ) pmpaddr8  <= newval;
+                if (csr==PMPADDR9  && NB_PMP_REGION>10) pmpaddr9  <= newval;
+                if (csr==PMPADDR10 && NB_PMP_REGION>11) pmpaddr10 <= newval;
+                if (csr==PMPADDR11 && NB_PMP_REGION>12) pmpaddr11 <= newval;
+                if (csr==PMPADDR12 && NB_PMP_REGION>13) pmpaddr12 <= newval;
+                if (csr==PMPADDR13 && NB_PMP_REGION>14) pmpaddr13 <= newval;
+                if (csr==PMPADDR14 && NB_PMP_REGION>14) pmpaddr14 <= newval;
+                if (csr==PMPADDR15 && NB_PMP_REGION>15) pmpaddr15 <= newval;
             end
         end
     end

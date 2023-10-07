@@ -87,6 +87,9 @@ module friscv_memfy
         output logic [5               -1:0] memfy_rd_addr,
         output logic [XLEN            -1:0] memfy_rd_val,
         output logic [XLEN/8          -1:0] memfy_rd_strb,
+        // PMP / PMA Checks
+        output logic [AXI_ADDR_W      -1:0] pmp_addr,
+        input  wire  [4               -1:0] pmp_allow,
         // data memory interface
         output logic                        awvalid,
         input  wire                         awready,
@@ -660,7 +663,7 @@ module friscv_memfy
     // Manage the RD write operation
     ////////////////////////////////////////////////////////////////////////
 
-    generate if (SYNC_RD_WR) begin
+    generate if (SYNC_RD_WR) begin : RD_WR_FFD
 
     always @ (posedge aclk or negedge aresetn) begin
         if (!aresetn) begin
@@ -682,7 +685,7 @@ module friscv_memfy
         end
     end
 
-    end else begin
+    end else begin : RD_WR_COMB
 
         assign memfy_rd_wr = rvalid & rready;
         assign memfy_rd_addr = rd_r;
@@ -702,6 +705,7 @@ module friscv_memfy
 
     // The address to access during a LOAD or a STORE
     assign addr = $signed({{(XLEN-12){imm12[11]}}, imm12}) + $signed(memfy_rs1_val);
+    assign pmp_addr = addr;
 
     // Unused: information forwarded to control unit for FENCE execution:
     // bit 0: memory write
@@ -716,15 +720,15 @@ module friscv_memfy
     ////////////////////////////////////////////////////////////////////////////
     generate
 
-    if (IO_MAP_NB > 0) begin
+    if (IO_MAP_NB > 0) begin : IO_MAP_DEC
 
-        for (genvar i=0;i<IO_MAP_NB;i=i+1) begin
+        for (genvar i=0;i<IO_MAP_NB;i=i+1) begin : GEN_IO_HIT
             assign io_map_hit[i] = (addr>=IO_MAP[i*2*XLEN+:XLEN] && addr<=IO_MAP[i*2*XLEN+XLEN+:XLEN]);
         end
 
         assign is_io_req = |io_map_hit;
 
-    end else begin
+    end else begin : NO_IO_MAP
 
         assign is_io_req = 1'b0;
 

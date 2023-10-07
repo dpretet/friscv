@@ -33,7 +33,7 @@ module friscv_rv32i_core
         // Number of outstanding requests used by the LOAD/STORE unit and dcache
         parameter DATA_OSTDREQ_NUM  = 8,
         // Core Hart ID
-        parameter HART_ID          = 0,
+        parameter HART_ID           = 0,
         // RV32E architecture, limits integer registers to 16, else 32 available
         parameter RV32E             = 0,
         // Floating-point extension support
@@ -48,6 +48,52 @@ module friscv_rv32i_core
         parameter USER_MODE         = 0,
         // Insert a pipeline on instruction bus coming from the controller
         parameter PROCESSING_BUS_PIPELINE = 0,
+
+        ////////////////////////////////////////////////////////////////////////
+        // Physical Memory Protection & Attributes
+        // Virtual Memory
+        ////////////////////////////////////////////////////////////////////////
+
+        // PMP / PMA supported
+        //  = 0, no PMP
+        //  = 1, PMP available but fixed synthesis thus at boot time
+        //  > 1, PMP available and configurable at runtime
+        parameter MPU_SUPPORT = 0,
+        // Number of physical memory protection regions
+        parameter NB_PMP_REGION = 16,
+        // Maximum PMP regions support by the core
+        parameter MAX_PMP_REGION = 16,
+        // PMP value at initialization
+        parameter PMPCFG0_INIT   = 32'h0,
+        parameter PMPCFG1_INIT   = 32'h0,
+        parameter PMPCFG2_INIT   = 32'h0,
+        parameter PMPCFG3_INIT   = 32'h0,
+        parameter PMPADDR0_INIT  = 32'h0,
+        parameter PMPADDR1_INIT  = 32'h0,
+        parameter PMPADDR2_INIT  = 32'h0,
+        parameter PMPADDR3_INIT  = 32'h0,
+        parameter PMPADDR4_INIT  = 32'h0,
+        parameter PMPADDR5_INIT  = 32'h0,
+        parameter PMPADDR6_INIT  = 32'h0,
+        parameter PMPADDR7_INIT  = 32'h0,
+        parameter PMPADDR8_INIT  = 32'h0,
+        parameter PMPADDR9_INIT  = 32'h0,
+        parameter PMPADDR10_INIT = 32'h0,
+        parameter PMPADDR11_INIT = 32'h0,
+        parameter PMPADDR12_INIT = 32'h0,
+        parameter PMPADDR13_INIT = 32'h0,
+        parameter PMPADDR14_INIT = 32'h0,
+        parameter PMPADDR15_INIT = 32'h0,
+        // Virtual memory support
+        parameter MMU_SUPPORT = 0,
+
+        // IO regions for direct read/write access
+        parameter IO_MAP_NB = 0,
+        // IO address ranges, organized by memory region as END-ADDR_START-ADDR:
+        // > 0xEND-MEM2_START-MEM2_END-MEM1_START-MEM1_END-MEM0_START-MEM0
+        // IO mapping can be contiguous or sparse, no restriction on the number,
+        // the size or the range if it fits into the XLEN addressable space
+        parameter [XLEN*2*IO_MAP_NB-1:0] IO_MAP = 64'h001000FF_00100000,
 
         ////////////////////////////////////////////////////////////////////////
         // AXI4 / AXI4-lite interface setup
@@ -78,14 +124,6 @@ module friscv_rv32i_core
         parameter ICACHE_BLOCK_W     = ILEN*4,
         // Number of blocks in the cache
         parameter ICACHE_DEPTH       = 512,
-
-        // IO regions for direct read/write access
-        parameter IO_MAP_NB = 0,
-        // IO address ranges, organized by memory region as END-ADDR_START-ADDR:
-        // > 0xEND-MEM2_START-MEM2_END-MEM1_START-MEM1_END-MEM0_START-MEM0
-        // IO mapping can be contiguous or sparse, no restriction on the number,
-        // the size or the range if it fits into the XLEN addressable space
-        parameter [XLEN*2*IO_MAP_NB-1:0] IO_MAP = 64'h001000FF_00100000,
 
         // Enable cache block prefetch
         parameter DCACHE_PREFETCH_EN = 0,
@@ -240,6 +278,11 @@ module friscv_rv32i_core
     logic [`CTRL_SB_W          -1:0] ctrl_sb;
 
 
+    logic [AXI_ADDR_W    -1:0] imem_addr;
+    logic [AXI_ADDR_W    -1:0] dmem_addr;
+    logic [4             -1:0] imem_allow;
+    logic [4             -1:0] dmem_allow;
+
     //////////////////////////////////////////////////////////////////////////
     // Check parameters setup consistency and break up if not supported
     //////////////////////////////////////////////////////////////////////////
@@ -275,6 +318,23 @@ module friscv_rv32i_core
         `CHECKER((CACHE_EN==1 && (DCACHE_BLOCK_W/XLEN)!=4),
             "Only a ratio = 4 between data bus and cache block width is supported");
 
+        `CHECKER((NB_PMP_REGION > MAX_PMP_REGION),
+            "Wrong PMP configuration, NB_PMP_REGION > MAX_PMP_REGION");
+
+        `CHECKER((MPU_SUPPORT>2),
+            "MPU_SUPPORT can be only 0, 1 or 2");
+
+        `CHECKER((F_EXTENSION),
+            "Floating point extension not supported");
+
+        `CHECKER((SUPERVISOR_MODE),
+            "Supervisor mode not supported");
+
+        `CHECKER((HYPERVISOR_MODE),
+            "Hypervisor mode not supported");
+
+        `CHECKER((MMU_SUPPORT),
+            "MMU not supported");
     end
 
     //////////////////////////////////////////////////////////////////////////
@@ -354,9 +414,6 @@ module friscv_rv32i_core
         .csr_rd_val      (csr_rd_val)
     );
 
-
-
-
     //////////////////////////////////////////////////////////////////////////
     // Central controller sequencing the operations
     //////////////////////////////////////////////////////////////////////////
@@ -415,6 +472,8 @@ module friscv_rv32i_core
         .ctrl_rd_wr         (ctrl_rd_wr),
         .ctrl_rd_addr       (ctrl_rd_addr),
         .ctrl_rd_val        (ctrl_rd_val),
+        .pmp_addr           (imem_addr),
+        .pmp_allow          (imem_allow),
         .csr_sb             (csr_sb),
         .ctrl_sb            (ctrl_sb)
     );
@@ -518,7 +577,31 @@ module friscv_rv32i_core
         .M_EXTENSION     (M_EXTENSION),
         .HYPERVISOR_MODE (HYPERVISOR_MODE),
         .SUPERVISOR_MODE (SUPERVISOR_MODE),
-        .USER_MODE       (USER_MODE)
+        .USER_MODE       (USER_MODE),
+        .MPU_SUPPORT     (MPU_SUPPORT),
+        .NB_PMP_REGION   (NB_PMP_REGION),
+        .MAX_PMP_REGION  (MAX_PMP_REGION),
+        .PMPCFG0_INIT    (PMPCFG0_INIT),
+        .PMPCFG1_INIT    (PMPCFG1_INIT),
+        .PMPCFG2_INIT    (PMPCFG2_INIT),
+        .PMPCFG3_INIT    (PMPCFG3_INIT),
+        .PMPADDR0_INIT   (PMPADDR0_INIT),
+        .PMPADDR1_INIT   (PMPADDR1_INIT),
+        .PMPADDR2_INIT   (PMPADDR2_INIT),
+        .PMPADDR3_INIT   (PMPADDR3_INIT),
+        .PMPADDR4_INIT   (PMPADDR4_INIT),
+        .PMPADDR5_INIT   (PMPADDR5_INIT),
+        .PMPADDR6_INIT   (PMPADDR6_INIT),
+        .PMPADDR7_INIT   (PMPADDR7_INIT),
+        .PMPADDR8_INIT   (PMPADDR8_INIT),
+        .PMPADDR9_INIT   (PMPADDR9_INIT),
+        .PMPADDR10_INIT  (PMPADDR10_INIT),
+        .PMPADDR11_INIT  (PMPADDR11_INIT),
+        .PMPADDR12_INIT  (PMPADDR12_INIT),
+        .PMPADDR13_INIT  (PMPADDR13_INIT),
+        .PMPADDR14_INIT  (PMPADDR14_INIT),
+        .PMPADDR15_INIT  (PMPADDR15_INIT),
+        .MMU_SUPPORT     (MMU_SUPPORT)
     )
     csrs
     (
@@ -542,6 +625,10 @@ module friscv_rv32i_core
         .ctrl_sb         (ctrl_sb)
     );
 
+    ///////////////////////////////////////
+    // Custom CSR for internal benchmarking
+    ///////////////////////////////////////
+
     friscv_bus_perf
     #(
         .REG_W  (PERF_REG_W),
@@ -557,13 +644,37 @@ module friscv_rv32i_core
         .perfs   (perfs)
     );
 
+    ///////////////////////////////////////
+    // MPU, PMP + PMA CSRs
+    ///////////////////////////////////////
+
+    friscv_mpu 
+    #(
+        .ILEN           (ILEN),
+        .XLEN           (XLEN),
+        .MPU_SUPPORT    (MPU_SUPPORT),
+        .NB_PMP_REGION  (NB_PMP_REGION),
+        .MAX_PMP_REGION (MAX_PMP_REGION),
+        .MMU_SUPPORT    (MMU_SUPPORT),
+        .AXI_ADDR_W     (AXI_ADDR_W)
+    )
+    mpu 
+    (
+        .aclk       (aclk),
+        .aresetn    (aresetn),
+        .srst       (srst),
+        .imem_addr  (imem_addr),
+        .imem_allow (imem_allow),
+        .dmem_addr  (dmem_addr),
+        .dmem_allow (dmem_allow),
+        .csr_sb     (csr_sb)
+    );
 
     //////////////////////////////////////////////////////////////////////////
     // All ISA extensions supported:
     //  - standard integer arithmetic
     //  - memory LOAD/STORE
     //  - multiply / divide
-    //  - atomic
     //  - ...
     //////////////////////////////////////////////////////////////////////////
 
@@ -603,6 +714,8 @@ module friscv_rv32i_core
         .proc_rd_addr       (proc_rd_addr),
         .proc_rd_val        (proc_rd_val),
         .proc_rd_strb       (proc_rd_strb),
+        .pmp_addr           (dmem_addr),
+        .pmp_allow          (dmem_allow),
         .awvalid            (memfy_awvalid),
         .awready            (memfy_awready),
         .awaddr             (memfy_awaddr),
@@ -629,6 +742,10 @@ module friscv_rv32i_core
         .rresp              (memfy_rresp),
         .rdata              (memfy_rdata)
     );
+
+    //////////////////////////////////////////////////////////////////////////
+    // Data cache stage
+    //////////////////////////////////////////////////////////////////////////
 
     generate
 

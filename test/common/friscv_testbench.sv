@@ -110,6 +110,73 @@ module friscv_testbench(
     // Insert a pipeline on instruction bus coming from the controller
     parameter PROCESSING_BUS_PIPELINE = 1;
 
+    `ifdef MPU_SUPPORT
+    // PMP / PMA supported
+    //  = 0, no PMP
+    //  = 1, PMP available but fixed synthesis thus at boot time
+    //  > 1, PMP available and configurable at runtime
+    parameter MPU_SUPPORT = `MPU_SUPPORT;
+    // Number of physical memory protection regions
+    parameter NB_PMP_REGION = `NB_PMP_REGION;
+    // Maximum PMP regions support by the core
+    parameter MAX_PMP_REGION = `MAX_PMP_REGION;
+    // PMP value at initialization
+    parameter PMPCFG0_INIT   = `PMPCFG0_INIT;
+    parameter PMPCFG1_INIT   = `PMPCFG1_INIT;
+    parameter PMPCFG2_INIT   = `PMPCFG2_INIT;
+    parameter PMPCFG3_INIT   = `PMPCFG3_INIT;
+    parameter PMPADDR0_INIT  = `PMPADDR0_INIT;
+    parameter PMPADDR1_INIT  = `PMPADDR1_INIT;
+    parameter PMPADDR2_INIT  = `PMPADDR2_INIT;
+    parameter PMPADDR3_INIT  = `PMPADDR3_INIT;
+    parameter PMPADDR4_INIT  = `PMPADDR4_INIT;
+    parameter PMPADDR5_INIT  = `PMPADDR5_INIT;
+    parameter PMPADDR6_INIT  = `PMPADDR6_INIT;
+    parameter PMPADDR7_INIT  = `PMPADDR7_INIT;
+    parameter PMPADDR8_INIT  = `PMPADDR8_INIT;
+    parameter PMPADDR9_INIT  = `PMPADDR9_INIT;
+    parameter PMPADDR10_INIT = `PMPADDR10_INIT;
+    parameter PMPADDR11_INIT = `PMPADDR11_INIT;
+    parameter PMPADDR12_INIT = `PMPADDR12_INIT;
+    parameter PMPADDR13_INIT = `PMPADDR13_INIT;
+    parameter PMPADDR14_INIT = `PMPADDR14_INIT;
+    parameter PMPADDR15_INIT = `PMPADDR15_INIT;
+    `else 
+    // PMP / PMA supported
+    //  = 0, no PMP
+    //  = 1, PMP available but fixed at boot time
+    //  > 1, PMP available and configurable at runtime
+    parameter MPU_SUPPORT = 0;
+    // Number of physical memory protection regions
+    parameter NB_PMP_REGION = 16;
+    // Maximum PMP regions support by the core
+    parameter MAX_PMP_REGION = 16;
+    // PMP value at initialization
+    parameter PMPCFG0_INIT   = 32'h0;
+    parameter PMPCFG1_INIT   = 32'h0;
+    parameter PMPCFG2_INIT   = 32'h0;
+    parameter PMPCFG3_INIT   = 32'h0;
+    parameter PMPADDR0_INIT  = 32'h0;
+    parameter PMPADDR1_INIT  = 32'h0;
+    parameter PMPADDR2_INIT  = 32'h0;
+    parameter PMPADDR3_INIT  = 32'h0;
+    parameter PMPADDR4_INIT  = 32'h0;
+    parameter PMPADDR5_INIT  = 32'h0;
+    parameter PMPADDR6_INIT  = 32'h0;
+    parameter PMPADDR7_INIT  = 32'h0;
+    parameter PMPADDR8_INIT  = 32'h0;
+    parameter PMPADDR9_INIT  = 32'h0;
+    parameter PMPADDR10_INIT = 32'h0;
+    parameter PMPADDR11_INIT = 32'h0;
+    parameter PMPADDR12_INIT = 32'h0;
+    parameter PMPADDR13_INIT = 32'h0;
+    parameter PMPADDR14_INIT = 32'h0;
+    parameter PMPADDR15_INIT = 32'h0;
+    `endif
+
+    // Virtual memory support
+    parameter MMU_SUPPORT = 0;
+
     // Address buses width
     parameter AXI_ADDR_W = XLEN;
     // AXI ID width, setup by default to 8 and unused
@@ -317,7 +384,28 @@ module friscv_testbench(
             .ICACHE_DEPTH               (ICACHE_DEPTH),
             .DCACHE_BLOCK_W             (DCACHE_BLOCK_W),
             .DCACHE_PREFETCH_EN         (DCACHE_PREFETCH_EN),
-            .DCACHE_DEPTH               (DCACHE_DEPTH)
+            .DCACHE_DEPTH               (DCACHE_DEPTH),
+            .MPU_SUPPORT                (MPU_SUPPORT),
+            .PMPCFG0_INIT               (PMPCFG0_INIT),
+            .PMPCFG1_INIT               (PMPCFG1_INIT),
+            .PMPCFG2_INIT               (PMPCFG2_INIT),
+            .PMPCFG3_INIT               (PMPCFG3_INIT),
+            .PMPADDR0_INIT              (PMPADDR0_INIT),
+            .PMPADDR1_INIT              (PMPADDR1_INIT),
+            .PMPADDR2_INIT              (PMPADDR2_INIT),
+            .PMPADDR3_INIT              (PMPADDR3_INIT),
+            .PMPADDR4_INIT              (PMPADDR4_INIT),
+            .PMPADDR5_INIT              (PMPADDR5_INIT),
+            .PMPADDR6_INIT              (PMPADDR6_INIT),
+            .PMPADDR7_INIT              (PMPADDR7_INIT),
+            .PMPADDR8_INIT              (PMPADDR8_INIT),
+            .PMPADDR9_INIT              (PMPADDR9_INIT),
+            .PMPADDR10_INIT             (PMPADDR10_INIT),
+            .PMPADDR11_INIT             (PMPADDR11_INIT),
+            .PMPADDR12_INIT             (PMPADDR12_INIT),
+            .PMPADDR13_INIT             (PMPADDR13_INIT),
+            .PMPADDR14_INIT             (PMPADDR14_INIT),
+            .PMPADDR15_INIT             (PMPADDR15_INIT)
         )
         dut
         (
@@ -505,7 +593,28 @@ module friscv_testbench(
             .ICACHE_DEPTH               (ICACHE_DEPTH),
             .DCACHE_BLOCK_W             (DCACHE_BLOCK_W),
             .DCACHE_PREFETCH_EN         (DCACHE_PREFETCH_EN),
-            .DCACHE_DEPTH               (DCACHE_DEPTH)
+            .DCACHE_DEPTH               (DCACHE_DEPTH),
+            .MPU_SUPPORT                (MPU_SUPPORT),
+            .PMPCFG0_INIT               (PMPCFG0_INIT),
+            .PMPCFG1_INIT               (PMPCFG1_INIT),
+            .PMPCFG2_INIT               (PMPCFG2_INIT),
+            .PMPCFG3_INIT               (PMPCFG3_INIT),
+            .PMPADDR0_INIT              (PMPADDR0_INIT),
+            .PMPADDR1_INIT              (PMPADDR1_INIT),
+            .PMPADDR2_INIT              (PMPADDR2_INIT),
+            .PMPADDR3_INIT              (PMPADDR3_INIT),
+            .PMPADDR4_INIT              (PMPADDR4_INIT),
+            .PMPADDR5_INIT              (PMPADDR5_INIT),
+            .PMPADDR6_INIT              (PMPADDR6_INIT),
+            .PMPADDR7_INIT              (PMPADDR7_INIT),
+            .PMPADDR8_INIT              (PMPADDR8_INIT),
+            .PMPADDR9_INIT              (PMPADDR9_INIT),
+            .PMPADDR10_INIT             (PMPADDR10_INIT),
+            .PMPADDR11_INIT             (PMPADDR11_INIT),
+            .PMPADDR12_INIT             (PMPADDR12_INIT),
+            .PMPADDR13_INIT             (PMPADDR13_INIT),
+            .PMPADDR14_INIT             (PMPADDR14_INIT),
+            .PMPADDR15_INIT             (PMPADDR15_INIT)
         )
         dut
         (

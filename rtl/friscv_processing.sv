@@ -63,6 +63,9 @@ module friscv_processing
         output logic [NB_UNIT*5       -1:0] proc_rd_addr,
         output logic [NB_UNIT*XLEN    -1:0] proc_rd_val,
         output logic [NB_UNIT*XLEN/8  -1:0] proc_rd_strb,
+        // PMP / PMA Checks
+        output logic [AXI_ADDR_W      -1:0] pmp_addr,
+        input  wire  [4               -1:0] pmp_allow,
         // data memory interface
         output logic                        awvalid,
         input  wire                         awready,
@@ -337,6 +340,8 @@ module friscv_processing
         .memfy_rd_addr       (proc_rd_addr[1*5+:5]),
         .memfy_rd_val        (proc_rd_val[1*XLEN+:XLEN]),
         .memfy_rd_strb       (proc_rd_strb[1*XLEN/8+:XLEN/8]),
+        .pmp_addr            (pmp_addr),
+        .pmp_allow           (pmp_allow),
         .awvalid             (awvalid),
         .awready             (awready),
         .awaddr              (awaddr),

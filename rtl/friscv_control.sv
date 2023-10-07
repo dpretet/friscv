@@ -89,7 +89,9 @@ module friscv_control
         output logic                      ctrl_rd_wr,
         output logic [5             -1:0] ctrl_rd_addr,
         output logic [XLEN          -1:0] ctrl_rd_val,
-
+        // PMP / PMA Check
+        output logic [AXI_ADDR_W    -1:0] pmp_addr,
+        input  wire  [4             -1:0] pmp_allow,
         // CSR shared bus
         input  wire  [`CSR_SB_W     -1:0] csr_sb,
         output logic [`CTRL_SB_W    -1:0] ctrl_sb
@@ -559,6 +561,7 @@ module friscv_control
 
     assign pc_val = pc_reg;
 
+    assign pmp_addr = pc_reg;
 
     assign flush_reqs = flush_pipe;
 
