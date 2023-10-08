@@ -223,7 +223,7 @@ module friscv_rv32i_core
     logic                            proc_ready;
     logic                            proc_busy;
     logic [4                   -1:0] proc_fenceinfo;
-    logic [2                   -1:0] proc_exceptions;
+    logic [`PROC_EXP_W         -1:0] proc_exceptions;
 
     logic                            csr_en;
     logic [`INST_BUS_W         -1:0] csr_instbus;
@@ -278,10 +278,10 @@ module friscv_rv32i_core
     logic [`CTRL_SB_W          -1:0] ctrl_sb;
 
 
-    logic [AXI_ADDR_W    -1:0] imem_addr;
-    logic [AXI_ADDR_W    -1:0] dmem_addr;
-    logic [4             -1:0] imem_allow;
-    logic [4             -1:0] dmem_allow;
+    logic [AXI_ADDR_W    -1:0] mpu_imem_addr;
+    logic [AXI_ADDR_W    -1:0] mpu_dmem_addr;
+    logic [4             -1:0] mpu_imem_allow;
+    logic [4             -1:0] mpu_dmem_allow;
 
     //////////////////////////////////////////////////////////////////////////
     // Check parameters setup consistency and break up if not supported
@@ -361,37 +361,37 @@ module friscv_rv32i_core
         .aclk            (aclk),
         .aresetn         (aresetn),
         .srst            (srst),
-        .x1_ra           (dbg_regs[ `X1*XLEN+:XLEN]),
-        .x2_sp           (dbg_regs[ `X2*XLEN+:XLEN]),
-        .x3_gp           (dbg_regs[ `X3*XLEN+:XLEN]),
-        .x4_tp           (dbg_regs[ `X4*XLEN+:XLEN]),
-        .x5_t0           (dbg_regs[ `X5*XLEN+:XLEN]),
-        .x6_t1           (dbg_regs[ `X6*XLEN+:XLEN]),
-        .x7_t2           (dbg_regs[ `X7*XLEN+:XLEN]),
-        .x8_s0_fp        (dbg_regs[ `X8*XLEN+:XLEN]),
-        .x9_s1           (dbg_regs[ `X9*XLEN+:XLEN]),
-        .x10_a0          (dbg_regs[`X10*XLEN+:XLEN]),
-        .x11_a1          (dbg_regs[`X11*XLEN+:XLEN]),
-        .x12_a2          (dbg_regs[`X12*XLEN+:XLEN]),
-        .x13_a3          (dbg_regs[`X13*XLEN+:XLEN]),
-        .x14_a4          (dbg_regs[`X14*XLEN+:XLEN]),
-        .x15_a5          (dbg_regs[`X15*XLEN+:XLEN]),
-        .x16_a6          (dbg_regs[`X16*XLEN+:XLEN]),
-        .x17_a7          (dbg_regs[`X17*XLEN+:XLEN]),
-        .x18_s2          (dbg_regs[`X18*XLEN+:XLEN]),
-        .x19_s3          (dbg_regs[`X19*XLEN+:XLEN]),
-        .x20_s4          (dbg_regs[`X20*XLEN+:XLEN]),
-        .x21_s5          (dbg_regs[`X21*XLEN+:XLEN]),
-        .x22_s6          (dbg_regs[`X22*XLEN+:XLEN]),
-        .x23_s7          (dbg_regs[`X23*XLEN+:XLEN]),
-        .x24_s8          (dbg_regs[`X24*XLEN+:XLEN]),
-        .x25_s9          (dbg_regs[`X25*XLEN+:XLEN]),
-        .x26_s10         (dbg_regs[`X26*XLEN+:XLEN]),
-        .x27_s11         (dbg_regs[`X27*XLEN+:XLEN]),
-        .x28_t3          (dbg_regs[`X28*XLEN+:XLEN]),
-        .x29_t4          (dbg_regs[`X29*XLEN+:XLEN]),
-        .x30_t5          (dbg_regs[`X30*XLEN+:XLEN]),
-        .x31_t6          (dbg_regs[`X31*XLEN+:XLEN]),
+        .x1_ra           (dbg_regs[ `DBG_X1*XLEN+:XLEN]),
+        .x2_sp           (dbg_regs[ `DBG_X2*XLEN+:XLEN]),
+        .x3_gp           (dbg_regs[ `DBG_X3*XLEN+:XLEN]),
+        .x4_tp           (dbg_regs[ `DBG_X4*XLEN+:XLEN]),
+        .x5_t0           (dbg_regs[ `DBG_X5*XLEN+:XLEN]),
+        .x6_t1           (dbg_regs[ `DBG_X6*XLEN+:XLEN]),
+        .x7_t2           (dbg_regs[ `DBG_X7*XLEN+:XLEN]),
+        .x8_s0_fp        (dbg_regs[ `DBG_X8*XLEN+:XLEN]),
+        .x9_s1           (dbg_regs[ `DBG_X9*XLEN+:XLEN]),
+        .x10_a0          (dbg_regs[`DBG_X10*XLEN+:XLEN]),
+        .x11_a1          (dbg_regs[`DBG_X11*XLEN+:XLEN]),
+        .x12_a2          (dbg_regs[`DBG_X12*XLEN+:XLEN]),
+        .x13_a3          (dbg_regs[`DBG_X13*XLEN+:XLEN]),
+        .x14_a4          (dbg_regs[`DBG_X14*XLEN+:XLEN]),
+        .x15_a5          (dbg_regs[`DBG_X15*XLEN+:XLEN]),
+        .x16_a6          (dbg_regs[`DBG_X16*XLEN+:XLEN]),
+        .x17_a7          (dbg_regs[`DBG_X17*XLEN+:XLEN]),
+        .x18_s2          (dbg_regs[`DBG_X18*XLEN+:XLEN]),
+        .x19_s3          (dbg_regs[`DBG_X19*XLEN+:XLEN]),
+        .x20_s4          (dbg_regs[`DBG_X20*XLEN+:XLEN]),
+        .x21_s5          (dbg_regs[`DBG_X21*XLEN+:XLEN]),
+        .x22_s6          (dbg_regs[`DBG_X22*XLEN+:XLEN]),
+        .x23_s7          (dbg_regs[`DBG_X23*XLEN+:XLEN]),
+        .x24_s8          (dbg_regs[`DBG_X24*XLEN+:XLEN]),
+        .x25_s9          (dbg_regs[`DBG_X25*XLEN+:XLEN]),
+        .x26_s10         (dbg_regs[`DBG_X26*XLEN+:XLEN]),
+        .x27_s11         (dbg_regs[`DBG_X27*XLEN+:XLEN]),
+        .x28_t3          (dbg_regs[`DBG_X28*XLEN+:XLEN]),
+        .x29_t4          (dbg_regs[`DBG_X29*XLEN+:XLEN]),
+        .x30_t5          (dbg_regs[`DBG_X30*XLEN+:XLEN]),
+        .x31_t6          (dbg_regs[`DBG_X31*XLEN+:XLEN]),
         .ctrl_rs1_addr   (ctrl_rs1_addr),
         .ctrl_rs1_val    (ctrl_rs1_val),
         .ctrl_rs2_addr   (ctrl_rs2_addr),
@@ -442,7 +442,7 @@ module friscv_rv32i_core
         .srst               (srst),
         .cache_ready        (icache_ready & dcache_ready),
         .status             (ctrl_status),
-        .pc_val             (dbg_regs[`PC*XLEN+:XLEN]),
+        .pc_val             (dbg_regs[`DBG_PC*XLEN+:XLEN]),
         .flush_reqs         (flush_reqs),
         .flush_blocks       (flush_blocks),
         .flush_ack          (flush_ack),
@@ -472,8 +472,8 @@ module friscv_rv32i_core
         .ctrl_rd_wr         (ctrl_rd_wr),
         .ctrl_rd_addr       (ctrl_rd_addr),
         .ctrl_rd_val        (ctrl_rd_val),
-        .pmp_addr           (imem_addr),
-        .pmp_allow          (imem_allow),
+        .mpu_addr           (mpu_imem_addr),
+        .mpu_allow          (mpu_imem_allow),
         .csr_sb             (csr_sb),
         .ctrl_sb            (ctrl_sb)
     );
@@ -663,10 +663,10 @@ module friscv_rv32i_core
         .aclk       (aclk),
         .aresetn    (aresetn),
         .srst       (srst),
-        .imem_addr  (imem_addr),
-        .imem_allow (imem_allow),
-        .dmem_addr  (dmem_addr),
-        .dmem_allow (dmem_allow),
+        .imem_addr  (mpu_imem_addr),
+        .imem_allow (mpu_imem_allow),
+        .dmem_addr  (mpu_dmem_addr),
+        .dmem_allow (mpu_dmem_allow),
         .csr_sb     (csr_sb)
     );
 
@@ -714,8 +714,8 @@ module friscv_rv32i_core
         .proc_rd_addr       (proc_rd_addr),
         .proc_rd_val        (proc_rd_val),
         .proc_rd_strb       (proc_rd_strb),
-        .pmp_addr           (dmem_addr),
-        .pmp_allow          (dmem_allow),
+        .mpu_addr           (mpu_dmem_addr),
+        .mpu_allow          (mpu_dmem_allow),
         .awvalid            (memfy_awvalid),
         .awready            (memfy_awready),
         .awaddr             (memfy_awaddr),

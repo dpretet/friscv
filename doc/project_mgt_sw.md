@@ -9,13 +9,13 @@
         - [ ] https://github.com/ssloy/tinyraytracer
     - [ ] Type conversion
     - [ ] Image resizer
-	- [ ] Generate images with lines, triangles, ray tracing… 24fps
-		- [ ] https://github.com/ssloy/tinyrenderer/wiki/Lesson-2:-Triangle-rasterization-and-back-face-culling
-		- [ ] https://gabrielgambetta.com/computer-graphics-from-scratch/07-filled-triangles.html
-		- [ ] https://github.com/OscarSaharoy/ascii-raytrace
-		- [ ] https://fabiensanglard.net/another_world_polygons/
-	- [ ] Hash table https://github.com/PerformanC/tablec/tree/closed-addressing
-	- [ ] CoreMark https://github.com/eembc/coremark
+    - [ ] Generate images with lines, triangles, ray tracing… 24fps
+        - [ ] https://github.com/ssloy/tinyrenderer/wiki/Lesson-2:-Triangle-rasterization-and-back-face-culling
+        - [ ] https://gabrielgambetta.com/computer-graphics-from-scratch/07-filled-triangles.html
+        - [ ] https://github.com/OscarSaharoy/ascii-raytrace
+        - [ ] https://fabiensanglard.net/another_world_polygons/
+    - [ ] Hash table https://github.com/PerformanC/tablec/tree/closed-addressing
+    - [ ] CoreMark https://github.com/eembc/coremark
 
 # BACKLOG
 
@@ -65,7 +65,11 @@ Minimalistic Unix
 
 # Ideas / Applications
 
-- [ ] Support Linux / FreeBSD / NetBSD: https://github.com/cnlohr/mini-rv32ima
+- [ ] Try https://github.com/berry-lang/berry
+- [ ] Try
+- [ ] Support Linux / FreeBSD / NetBSD
+    - https://github.com/cnlohr/mini-rv32ima
+    - https://popovicu.com/posts/789-kb-linux-without-mmu-riscv/
 - [ ] Code Pong with AI for auto game
 - [ ] Run Doom: https://www.youtube.com/watch?v=uZMNK17VCMU&list=WL&index=1&t=2s
 - [ ] Code the game of life
@@ -86,7 +90,8 @@ Minimalistic Unix
     - Able to update the FPGA bitstream with the new program
 - [ ] Implement a neural network with the processor and TF lite
 - [ ] Retro gaming platform
-
+- [ ] Try Rust
+    - https://popovicu.com/posts/bare-metal-rust-risc-v-with-dynamic-memory/
 DONE:
 
 - [X] Pool arena / malloc-free / integrated in benchmark

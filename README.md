@@ -24,8 +24,7 @@ FRISCV is a SystemVerilog implementation of the [RISCV ISA](https://riscv.org):
 - Privilege modes:
     - Machine-mode only for simple embedded system
     - User-mode for secure embedded system
-- Physical memory protection (PMP)
-- Physical memory attribute (PMA)
+- Physical memory protection (PMP) & Physical Memory Attribute (PMA), up to 16 regions
 - External, software and timer interrupts
 - Support multiple (optional) extensions:
     - RV32I & RV32E architecture

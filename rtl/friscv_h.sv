@@ -146,6 +146,8 @@
 `define SHAMT_W     5
 `define PRED_W      4
 `define SUCC_W      4
+`define PC_W       `XLEN
+`define INST_W     `XLEN
 
 // instruction bus fields's index
 `define OPCODE      0
@@ -159,15 +161,38 @@
 `define IMM20       `IMM12 +  `IMM12_W
 `define CSR         `IMM20 +  `IMM20_W
 `define SHAMT       `CSR +    `CSR_W
+`define PC          `SHAMT +  `SHAMT_W
+`define INST        `PC +     `PC_W 
 
 // total length of ALU instruction bus
 `define INST_BUS_W `OPCODE_W + `FUNCT3_W + `FUNCT7_W + `RS1_W + `RS2_W + \
-                   `RD_W + `ZIMM_W + `IMM12_W + `IMM20_W + `CSR_W + `SHAMT_W
+                   `RD_W + `ZIMM_W + `IMM12_W + `IMM20_W + `CSR_W + `SHAMT_W + \
+                   `PC_W + `INST_W
 
-// Load misaligned in memfy
-`define LD_MA 0
-// Store misaligned in memfy
-`define ST_MA 1
+//////////////////////////////////////////////////////////////////
+// Excpetion bus fron Memfy to Control unit
+//////////////////////////////////////////////////////////////////
+
+`define EXP_PC_W       `XLEN
+`define EXP_INST_W     `XLEN
+`define EXP_ADDR_W     `XLEN
+
+// PC raising the exception
+`define EXP_PC 0
+// Instruction raising the expection
+`define EXP_INST `EXP_PC + `EXP_PC_W
+// Address raising hte exception
+`define EXP_ADDR `EXP_INST + `EXP_INST_W
+// Load misaligned
+`define LDMA   `EXP_ADDR + `EXP_ADDR_W
+// Store misaligned
+`define STMA   `LDMA + 1
+// Load access fault
+`define LAF    `STMA + 1
+// Store access fault
+`define SAF    `LAF + 1
+
+`define PROC_EXP_W `SAF + 1
 
 //////////////////////////////////////////////////////////////////
 // CSR Shared Bus Definition

@@ -53,7 +53,7 @@ module friscv_processing
         input  wire  [`INST_BUS_W     -1:0] proc_instbus,
         output logic [4               -1:0] proc_fenceinfo,
         output logic                        proc_busy,
-        output logic [2               -1:0] proc_exceptions,
+        output logic [`PROC_EXP_W     -1:0] proc_exceptions,
         // ISA registers interface
         output logic [NB_UNIT*5       -1:0] proc_rs1_addr,
         input  wire  [NB_UNIT*XLEN    -1:0] proc_rs1_val,
@@ -64,8 +64,8 @@ module friscv_processing
         output logic [NB_UNIT*XLEN    -1:0] proc_rd_val,
         output logic [NB_UNIT*XLEN/8  -1:0] proc_rd_strb,
         // PMP / PMA Checks
-        output logic [AXI_ADDR_W      -1:0] pmp_addr,
-        input  wire  [4               -1:0] pmp_allow,
+        output logic [AXI_ADDR_W      -1:0] mpu_addr,
+        input  wire  [4               -1:0] mpu_allow,
         // data memory interface
         output logic                        awvalid,
         input  wire                         awready,
@@ -340,8 +340,8 @@ module friscv_processing
         .memfy_rd_addr       (proc_rd_addr[1*5+:5]),
         .memfy_rd_val        (proc_rd_val[1*XLEN+:XLEN]),
         .memfy_rd_strb       (proc_rd_strb[1*XLEN/8+:XLEN/8]),
-        .pmp_addr            (pmp_addr),
-        .pmp_allow           (pmp_allow),
+        .mpu_addr            (mpu_addr),
+        .mpu_allow           (mpu_allow),
         .awvalid             (awvalid),
         .awready             (awready),
         .awaddr              (awaddr),
@@ -412,7 +412,7 @@ module friscv_processing
     //
     ///////////////////////////////////////////////////////////////////////////
 
-    assign proc_exceptions[0+:2] = memfy_exceptions;
+    assign proc_exceptions = memfy_exceptions;
 
 endmodule
 

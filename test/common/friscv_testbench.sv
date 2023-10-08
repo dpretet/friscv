@@ -786,11 +786,11 @@ module friscv_testbench(
 
     endtask
 
-    assign pc = dbg_regs[`PC*XLEN+:XLEN];
+    assign pc = dbg_regs[`DBG_PC*XLEN+:XLEN];
 
     `ifdef ERROR_STATUS_X31
         if (`ERROR_STATUS_X31)
-            assign error_status_reg = (dbg_regs[`X31*XLEN+:XLEN] > 0) ? 1'b1 : 1'b0;
+            assign error_status_reg = (dbg_regs[`DBG_X31*XLEN+:XLEN] > 0) ? 1'b1 : 1'b0;
         else
             assign error_status_reg = 1'b0;
     `else

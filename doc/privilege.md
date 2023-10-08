@@ -81,7 +81,11 @@ The privilege modes support have been designed based on RISC-V ISA specification
 - mcountinhibit: stop a specific counter
 - Machine Environment Configuration Registers (menvcfg and menvcfgh)
 
-## PMP
+## PMP / PMA
+
+To support secure processing and contain faults, it is desirable to limit the physical addresses
+accessible by software running on a hart. PMP violations are always trapped precisely at the
+processor.
 
 PMP checks are applied to all accesses whose effective privilege mode is S or U, including
 instruction fetches and data accesses in S and U mode, and data accesses in M-mode when the MPRV bit
@@ -176,6 +180,17 @@ TOR: preceding PMP address register forms the bottom of the address range (If re
 to TOR, address 0x00 is the lower bound)
 
 [Sifive slides](https://cdn2.hubspot.net/hubfs/3020607/SiFive-RISCVCoreIP.pdf?t=1512606290763)
+
+
+Test:
+- read/execute instruction outside allowed regions (U-mode)
+- read/write data in U-mode
+- read/write data in M-mode with MPRV + MPP w/ U-mode
+    -> Store = store access-fault
+    -> Load = load access-fault
+    -> Execute = instruction access-fault
+- all region configuration mode
+
 
 ## Interrupts
 

@@ -75,7 +75,7 @@ module friscv_memfy
         output logic [NB_INT_REG      -1:0] memfy_regs_sts,
         output logic [4               -1:0] memfy_fenceinfo,
         input  wire  [`INST_BUS_W     -1:0] memfy_instbus,
-        output logic [2               -1:0] memfy_exceptions,
+        output logic [`PROC_EXP_W     -1:0] memfy_exceptions,
         // register source 1 query interface
         output logic [5               -1:0] memfy_rs1_addr,
         input  wire  [XLEN            -1:0] memfy_rs1_val,
@@ -88,8 +88,8 @@ module friscv_memfy
         output logic [XLEN            -1:0] memfy_rd_val,
         output logic [XLEN/8          -1:0] memfy_rd_strb,
         // PMP / PMA Checks
-        output logic [AXI_ADDR_W      -1:0] pmp_addr,
-        input  wire  [4               -1:0] pmp_allow,
+        output logic [AXI_ADDR_W      -1:0] mpu_addr,
+        input  wire  [4               -1:0] mpu_allow,
         // data memory interface
         output logic                        awvalid,
         input  wire                         awready,
@@ -297,6 +297,8 @@ module friscv_memfy
     logic        [`OPCODE_W   -1:0] opcode_r;
     logic        [`FUNCT3_W   -1:0] funct3_r;
     logic        [`RD_W       -1:0] rd_r;
+    logic        [`EXP_INST_W -1:0] inst;
+    logic        [`EXP_PC_W   -1:0] pc;
 
     logic                           load_misaligned;
     logic                           store_misaligned;
@@ -335,12 +337,14 @@ module friscv_memfy
     //
     ///////////////////////////////////////////////////////////////////////////
 
-    assign opcode = memfy_instbus[`OPCODE +: `OPCODE_W];
-    assign funct3 = memfy_instbus[`FUNCT3 +: `FUNCT3_W];
-    assign rs1    = memfy_instbus[`RS1    +: `RS1_W   ];
-    assign rs2    = memfy_instbus[`RS2    +: `RS2_W   ];
-    assign rd     = memfy_instbus[`RD     +: `RD_W    ];
-    assign imm12  = memfy_instbus[`IMM12  +: `IMM12_W ];
+    assign opcode = memfy_instbus[`OPCODE   +: `OPCODE_W  ];
+    assign funct3 = memfy_instbus[`FUNCT3   +: `FUNCT3_W  ];
+    assign rs1    = memfy_instbus[`RS1      +: `RS1_W     ];
+    assign rs2    = memfy_instbus[`RS2      +: `RS2_W     ];
+    assign rd     = memfy_instbus[`RD       +: `RD_W      ];
+    assign imm12  = memfy_instbus[`IMM12    +: `IMM12_W   ];
+    assign pc     = memfy_instbus[`EXP_PC   +: `EXP_PC_W  ];
+    assign inst   = memfy_instbus[`EXP_INST +: `EXP_INST_W];
 
 
     ///////////////////////////////////////////////////////////////////////////
@@ -705,7 +709,7 @@ module friscv_memfy
 
     // The address to access during a LOAD or a STORE
     assign addr = $signed({{(XLEN-12){imm12[11]}}, imm12}) + $signed(memfy_rs1_val);
-    assign pmp_addr = addr;
+    assign mpu_addr = addr;
 
     // Unused: information forwarded to control unit for FENCE execution:
     // bit 0: memory write
@@ -814,9 +818,19 @@ module friscv_memfy
                               (opcode==`STORE && funct3==`SW && addr[1:0]!=2'b0) ? 1'b1 :
                                                                                    1'b0 ;
 
-    assign memfy_exceptions[`LD_MA] = load_misaligned & memfy_valid & memfy_ready;
+    assign memfy_exceptions[`LAF] = memfy_valid & memfy_ready & (opcode==`LOAD) & !mpu_allow[`PMA_R]; 
 
-    assign memfy_exceptions[`ST_MA] = store_misaligned & memfy_valid & memfy_ready;
+    assign memfy_exceptions[`SAF] = memfy_valid & memfy_ready & (opcode==`STORE) & !mpu_allow[`PMA_W]; 
+
+    assign memfy_exceptions[`LDMA] = memfy_valid & memfy_ready & load_misaligned;
+
+    assign memfy_exceptions[`STMA] = memfy_valid & memfy_ready & store_misaligned;
+
+    assign memfy_exceptions[`EXP_PC +: `EXP_PC_W] = pc;
+
+    assign memfy_exceptions[`EXP_INST +: `EXP_INST_W] = inst;
+
+    assign memfy_exceptions[`EXP_ADDR +: `EXP_ADDR_W] = addr;
 
 endmodule
 

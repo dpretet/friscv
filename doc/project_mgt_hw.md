@@ -97,7 +97,7 @@ Any new features should be carefully study to ensure a proper exception and inte
 - [ ] Out of order support in AXI (memfy if not using cache)
 
 
-## Control
+## Control / CSR
 
 - [ ] Detect IO requests to forward info for FENCE execution
 - [ ] Branch prediction
@@ -107,6 +107,7 @@ Any new features should be carefully study to ensure a proper exception and inte
     - [ ] https://github.com/tommythorn/yarvi/blob/master/rtl/yarvi.v#L184
     - [ ] https://danluu.com/branch-prediction
 - [ ] Rewind pipeline (L0 local cache)
+- [ ] Pipeline PMP CSR up to MPU setup path and stop the core with csr_ready during few cycles
 
 
 ## Processing
@@ -115,7 +116,7 @@ Any new features should be carefully study to ensure a proper exception and inte
 - [ ] Memfy:
     - If not ready, and request present, the FSM can’t drive further data
     - Manage RRESP/BRESP in the exception bus
-- [ ] Support F extension
+- [ ] Support F extension: https://bellard.org/softfp/
 - [ ] Division
     - [ ] Save bandwidth by removing dead cycles
     - [ ] Manage pow2 division by shifting
@@ -163,6 +164,8 @@ Any new features should be carefully study to ensure a proper exception and inte
 
 # Ideas / Applications
 
+- [ ] Include a DMA in platform
+    - must respect PMP / PMA
 - [ ] Next CPU architecture:
     - Super scalar architecture
         - https://en.m.wikipedia.org/wiki/Instruction-level_parallelism

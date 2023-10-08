@@ -167,7 +167,7 @@ _start:                                                                 \
         j reset_vector;                                                 \
         .align 2;                                                       \
 trap_vector:                                                            \
-        /* test whether the test came from pass/fail */                 \
+        /* Environment call */                                          \
         csrr t5, mcause;                                                \
         li t4, CAUSE_USER_ECALL;                                        \
         beq t5, t4, ECALL_USER_MODE;                                    \

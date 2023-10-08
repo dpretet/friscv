@@ -73,7 +73,7 @@ module friscv_control
         input  wire                       proc_ready,
         output logic [`INST_BUS_W   -1:0] proc_instbus,
         input  wire  [4             -1:0] proc_fenceinfo,
-        input  wire  [2             -1:0] proc_exceptions,
+        input  wire  [`PROC_EXP_W   -1:0] proc_exceptions,
         input  wire                       proc_busy,
         // interface to activate teh CSR management
         output logic                      csr_en,
@@ -90,8 +90,8 @@ module friscv_control
         output logic [5             -1:0] ctrl_rd_addr,
         output logic [XLEN          -1:0] ctrl_rd_val,
         // PMP / PMA Check
-        output logic [AXI_ADDR_W    -1:0] pmp_addr,
-        input  wire  [4             -1:0] pmp_allow,
+        output logic [AXI_ADDR_W    -1:0] mpu_addr,
+        input  wire  [4             -1:0] mpu_allow,
         // CSR shared bus
         input  wire  [`CSR_SB_W     -1:0] csr_sb,
         output logic [`CTRL_SB_W    -1:0] ctrl_sb
@@ -211,14 +211,21 @@ module friscv_control
     logic [XLEN       -1:0] mtval_info;
     logic                   load_misaligned;
     logic                   store_misaligned;
+    logic                   inst_access_fault;
     logic                   illegal_instruction;
-    logic                   wfi_not_allowed;
+    logic                   wfi_tw;
     logic                   trap_occuring;
     logic                   sync_trap_occuring;
     logic                   async_trap_occuring;
     logic                   ecall_umode;
     logic                   ecall_mmode;
     logic [2          -1:0] priv_mode;
+    logic                   load_access_fault;
+    logic                   store_access_fault;
+
+    logic [`EXP_INST_W-1:0] exp_inst;
+    logic [`EXP_ADDR_W-1:0] exp_addr;
+    logic [`EXP_PC_W  -1:0] exp_pc;
 
     // Logger setup
     `ifdef USE_SVL
@@ -462,17 +469,19 @@ module friscv_control
 
     assign csr_en = inst_ready && sys[`IS_CSR] & (cfsm==FETCH) & !proc_busy;
 
-    assign proc_instbus[`OPCODE +: `OPCODE_W] = opcode;
-    assign proc_instbus[`FUNCT3 +: `FUNCT3_W] = funct3;
-    assign proc_instbus[`FUNCT7 +: `FUNCT7_W] = funct7;
-    assign proc_instbus[`RS1    +: `RS1_W   ] = rs1   ;
-    assign proc_instbus[`RS2    +: `RS2_W   ] = rs2   ;
-    assign proc_instbus[`RD     +: `RD_W    ] = rd    ;
-    assign proc_instbus[`ZIMM   +: `ZIMM_W  ] = zimm  ;
-    assign proc_instbus[`IMM12  +: `IMM12_W ] = imm12 ;
-    assign proc_instbus[`IMM20  +: `IMM20_W ] = imm20 ;
-    assign proc_instbus[`CSR    +: `CSR_W   ] = csr   ;
-    assign proc_instbus[`SHAMT  +: `SHAMT_W ] = shamt ;
+    assign proc_instbus[`OPCODE   +: `OPCODE_W ] = opcode;
+    assign proc_instbus[`FUNCT3   +: `FUNCT3_W ] = funct3;
+    assign proc_instbus[`FUNCT7   +: `FUNCT7_W ] = funct7;
+    assign proc_instbus[`RS1      +: `RS1_W    ] = rs1   ;
+    assign proc_instbus[`RS2      +: `RS2_W    ] = rs2   ;
+    assign proc_instbus[`RD       +: `RD_W     ] = rd    ;
+    assign proc_instbus[`ZIMM     +: `ZIMM_W   ] = zimm  ;
+    assign proc_instbus[`IMM12    +: `IMM12_W  ] = imm12 ;
+    assign proc_instbus[`IMM20    +: `IMM20_W  ] = imm20 ;
+    assign proc_instbus[`CSR      +: `CSR_W    ] = csr   ;
+    assign proc_instbus[`SHAMT    +: `SHAMT_W  ] = shamt ;
+    assign proc_instbus[`INST     +: `INST_W   ] = instruction;
+    assign proc_instbus[`PC       +: `PC_W     ] = pc_reg;
 
     assign csr_instbus = proc_instbus;
 
@@ -561,7 +570,7 @@ module friscv_control
 
     assign pc_val = pc_reg;
 
-    assign pmp_addr = pc_reg;
+    assign mpu_addr = pc_reg;
 
     assign flush_reqs = flush_pipe;
 
@@ -1022,6 +1031,7 @@ module friscv_control
     //
     // ISA registers write stage
     //
+    //(inst_access_fault)    ? exp_pc      :
     ///////////////////////////////////////////////////////////////////////////
 
     // register source 1 & 2 read
@@ -1148,20 +1158,31 @@ module friscv_control
     // illegal instruction exception. An implementation may have WFI always raise an illegal instruction
     // exception in less-privileged modes when TW=1, even if there are pending globally-disabled interrupts
     // when the instruction is executed. TW is read-only 0 when there are no modes less privileged than M.
-    assign wfi_not_allowed = 1'b0;
-
-    assign load_misaligned = proc_exceptions[`LD_MA];
-    assign store_misaligned = proc_exceptions[`ST_MA];
+    assign wfi_tw = 1'b0;
 
     assign inst_dec_error = dec_error & (cfsm==FETCH) & inst_ready;
+
+    assign inst_access_fault = (!mpu_allow[`PMA_X] | !mpu_allow[`PMA_R]) & (priv_mode == `UMODE);
+
+    assign load_misaligned = proc_exceptions[`LDMA];
+
+    assign store_misaligned = proc_exceptions[`STMA];
+
+    assign load_access_fault = proc_exceptions[`LAF];
+
+    assign store_access_fault = proc_exceptions[`SAF];
+
+    assign exp_pc = proc_exceptions[`EXP_PC +: `EXP_PC_W];
+
+    assign exp_inst = proc_exceptions[`EXP_INST +: `EXP_INST_W];
+
+    assign exp_addr = proc_exceptions[`EXP_ADDR +: `EXP_ADDR_W];
 
     generate
     if (USER_MODE) begin: UMODE_EXPEC
         assign illegal_instruction = (priv_mode==`MMODE)                 ? '0         :
                                      (sys[`IS_MRET])                     ? inst_ready :
                                      (sys[`IS_CSR] && csr[9:8] != 2'b00) ? inst_ready :
-                                     // Check if WFI must be trapped or not
-                                     // (sys[`IS_WFI] )                     ? inst_ready :
                                                                            '0;
     end else begin : NO_UMODE
         assign illegal_instruction = '0;
@@ -1213,6 +1234,9 @@ module friscv_control
     //           |  3               |   Environment break
     //           |  3               |   Load/Store/AMO address breakpoint
     // ------------------------------------------------------------------------
+    //           |  5               |   Load access fault
+    //           |  7               |   Store access fault
+    // ------------------------------------------------------------------------
     //           |  6               |   Store/AMO address misaligned
     //           |  4               |   Load address misaligned
     // ------------------------------------------------------------------------
@@ -1231,26 +1255,32 @@ module friscv_control
                          (sb_mtip)              ? {1'b1, {XLEN-5{1'b0}}, 4'h7} :
                          (sb_meip)              ? {1'b1, {XLEN-5{1'b0}}, 4'hB} :
                          // then follow sync exceptions
+                         (inst_access_fault)    ? {{XLEN-4{1'b0}}, 4'h1}  :
                          (illegal_instruction)  ? {{XLEN-4{1'b0}}, 4'h2}  :
                          (csr_ro_wr)            ? {{XLEN-4{1'b0}}, 4'h2}  :
                          (inst_addr_misaligned) ? '0                      :
                          (ecall_umode)          ? {{XLEN-4{1'b0}}, 4'h8}  :
                          (ecall_mmode)          ? {{XLEN-4{1'b0}}, 4'hB}  :
                          (sys[`IS_EBREAK])      ? {{XLEN-4{1'b0}}, 4'h3}  :
-                         (store_misaligned)     ? {{XLEN-4{1'b0}}, 4'h6}  :
+                         (load_access_fault)    ? {{XLEN-4{1'b0}}, 4'h5}  :
+                         (store_access_fault)   ? {{XLEN-4{1'b0}}, 4'h7}  :
                          (load_misaligned)      ? {{XLEN-4{1'b0}}, 4'h4}  :
+                         (store_misaligned)     ? {{XLEN-4{1'b0}}, 4'h6}  :
                          (inst_dec_error)       ? {{XLEN-5{1'b0}}, 5'h18} :
                                                   '0;
 
     // MTVAL: exception-specific information
-    assign mtval_info = (inst_dec_error)       ? instruction :
-                        (wfi_not_allowed)      ? instruction :
+    assign mtval_info = (inst_access_fault)    ? instruction :
                         (illegal_instruction)  ? instruction :
-                        (inst_dec_error)       ? instruction :
                         (csr_ro_wr)            ? instruction :
                         (inst_addr_misaligned) ? pc_reg      :
                         (sys[`IS_ECALL])       ? pc_reg      :
                         (sys[`IS_EBREAK])      ? pc_reg      :
+                        (load_access_fault)    ? exp_addr    :
+                        (store_access_fault)   ? exp_addr    :
+                        (load_misaligned)      ? exp_addr    :
+                        (store_misaligned )    ? exp_addr    :
+                        (inst_dec_error)       ? instruction :
                                                  '0;
 
     // Trigger the trap handling execution in main FSM
@@ -1262,6 +1292,9 @@ module friscv_control
                                 load_misaligned      |
                                 illegal_instruction  |
                                 store_misaligned     |
+                                inst_access_fault    |
+                                load_access_fault    |
+                                store_access_fault   |
                                 inst_dec_error       ;
 
     assign trap_occuring = async_trap_occuring | sync_trap_occuring;
