@@ -48,6 +48,8 @@ module friscv_rv32i_core
         parameter USER_MODE         = 0,
         // Insert a pipeline on instruction bus coming from the controller
         parameter PROCESSING_BUS_PIPELINE = 0,
+        // Timeout applied for WFI 
+        parameter WFI_TW = 100,
 
         ////////////////////////////////////////////////////////////////////////
         // Physical Memory Protection & Attributes
@@ -100,12 +102,12 @@ module friscv_rv32i_core
         ////////////////////////////////////////////////////////////////////////
 
         // Address bus width defined for both control and AXI4 address signals
-        parameter AXI_ADDR_W         = XLEN,
+        parameter AXI_ADDR_W        = XLEN,
         // AXI ID width, setup by default to 8 and unused
-        parameter AXI_ID_W           = 8,
+        parameter AXI_ID_W          = 8,
         // AXI4 data width, for instruction and a data bus
-        parameter AXI_IMEM_W         = XLEN,
-        parameter AXI_DMEM_W         = XLEN,
+        parameter AXI_IMEM_W        = XLEN,
+        parameter AXI_DMEM_W        = XLEN,
         // ID used by instruction and data buses
         parameter AXI_IMEM_MASK     = 'h10,
         parameter AXI_DMEM_MASK     = 'h20,
@@ -433,7 +435,8 @@ module friscv_rv32i_core
         // No OR in control, so no internal FIFO, reducing latency
         .OSTDREQ_NUM     (0),
         // .OSTDREQ_NUM    (INST_OSTDREQ_NUM),
-        .BOOT_ADDR       (BOOT_ADDR)
+        .BOOT_ADDR       (BOOT_ADDR),
+        .WFI_TW          (WFI_TW)
     )
     control
     (

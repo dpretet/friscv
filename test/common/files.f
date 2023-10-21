@@ -36,6 +36,7 @@
 ../../rtl/friscv_div.sv
 ../../rtl/friscv_bus_perf.sv
 ../../rtl/friscv_mpu.sv
+../../rtl/friscv_pmp_region.sv
 ../../dep/axi-crossbar/rtl/axicb_checker.sv
 ../../dep/axi-crossbar/rtl/axicb_crossbar_lite_top.sv
 ../../dep/axi-crossbar/rtl/axicb_crossbar_top.sv

@@ -812,7 +812,7 @@ module friscv_csr
         end else begin
             if (ext_irq_sync || timer_irq_sync || sw_irq_sync || ctrl_clr_meip) begin
                 // external interrupt enable && external interrupt pin asserted
-                if (mie[11] && ext_irq_sync) begin
+                if ( ext_irq_sync) begin
                     mip[11] <= 1'b1;
                 end else if (ctrl_clr_meip) begin
                     mip[11] <= 1'b0;
@@ -854,16 +854,28 @@ module friscv_csr
         end else if (MPU_SUPPORT > 1) begin
             if (csr_wren) begin
                 if (csr==PMPCFG0 && NB_PMP_REGION>=1) begin
-                    pmpcfg0 <= newval;
+                    if (!pmpcfg0[0*8+7]) pmpcfg0[0+:8]  <= newval[0+:8];
+                    if (!pmpcfg0[1*8+7]) pmpcfg0[8+:8]  <= newval[8+:8];
+                    if (!pmpcfg0[2*8+7]) pmpcfg0[16+:8] <= newval[16+:8];
+                    if (!pmpcfg0[3*8+7]) pmpcfg0[24+:8] <= newval[24+:8];
                 end
                 if (csr==PMPCFG1 && NB_PMP_REGION>=5) begin
-                    pmpcfg1 <= newval;
+                    if (!pmpcfg1[0*8+7]) pmpcfg1[0+:8]  <= newval[0+:8];
+                    if (!pmpcfg1[1*8+7]) pmpcfg1[8+:8]  <= newval[8+:8];
+                    if (!pmpcfg1[2*8+7]) pmpcfg1[16+:8] <= newval[16+:8];
+                    if (!pmpcfg1[3*8+7]) pmpcfg1[24+:8] <= newval[24+:8];
                 end
                 if (csr==PMPCFG2 && NB_PMP_REGION>=9) begin
-                    pmpcfg2 <= newval;
+                    if (!pmpcfg2[0*8+7]) pmpcfg2[0+:8]  <= newval[0+:8];
+                    if (!pmpcfg2[1*8+7]) pmpcfg2[8+:8]  <= newval[8+:8];
+                    if (!pmpcfg2[2*8+7]) pmpcfg2[16+:8] <= newval[16+:8];
+                    if (!pmpcfg2[3*8+7]) pmpcfg2[24+:8] <= newval[24+:8];
                 end
                 if (csr==PMPCFG3 && NB_PMP_REGION>=13) begin
-                    pmpcfg3 <= newval;
+                    if (!pmpcfg3[0*8+7]) pmpcfg3[0+:8]  <= newval[0+:8];
+                    if (!pmpcfg3[1*8+7]) pmpcfg3[8+:8]  <= newval[8+:8];
+                    if (!pmpcfg3[2*8+7]) pmpcfg3[16+:8] <= newval[16+:8];
+                    if (!pmpcfg3[3*8+7]) pmpcfg3[24+:8] <= newval[24+:8];
                 end
             end
         end
@@ -909,22 +921,22 @@ module friscv_csr
             pmpaddr15 <= PMPADDR15_INIT;
         end else if (MPU_SUPPORT > 1) begin
             if (csr_wren) begin
-                if (csr==PMPADDR0  && NB_PMP_REGION>1 ) pmpaddr0  <= newval;
-                if (csr==PMPADDR1  && NB_PMP_REGION>2 ) pmpaddr1  <= newval;
-                if (csr==PMPADDR2  && NB_PMP_REGION>3 ) pmpaddr2  <= newval;
-                if (csr==PMPADDR3  && NB_PMP_REGION>4 ) pmpaddr3  <= newval;
-                if (csr==PMPADDR4  && NB_PMP_REGION>5 ) pmpaddr4  <= newval;
-                if (csr==PMPADDR5  && NB_PMP_REGION>6 ) pmpaddr5  <= newval;
-                if (csr==PMPADDR6  && NB_PMP_REGION>7 ) pmpaddr6  <= newval;
-                if (csr==PMPADDR7  && NB_PMP_REGION>8 ) pmpaddr7  <= newval;
-                if (csr==PMPADDR8  && NB_PMP_REGION>9 ) pmpaddr8  <= newval;
-                if (csr==PMPADDR9  && NB_PMP_REGION>10) pmpaddr9  <= newval;
-                if (csr==PMPADDR10 && NB_PMP_REGION>11) pmpaddr10 <= newval;
-                if (csr==PMPADDR11 && NB_PMP_REGION>12) pmpaddr11 <= newval;
-                if (csr==PMPADDR12 && NB_PMP_REGION>13) pmpaddr12 <= newval;
-                if (csr==PMPADDR13 && NB_PMP_REGION>14) pmpaddr13 <= newval;
-                if (csr==PMPADDR14 && NB_PMP_REGION>14) pmpaddr14 <= newval;
-                if (csr==PMPADDR15 && NB_PMP_REGION>15) pmpaddr15 <= newval;
+                if (csr==PMPADDR0  && !pmpcfg0[0*8+7] && NB_PMP_REGION > 0 ) pmpaddr0  <= newval;
+                if (csr==PMPADDR1  && !pmpcfg0[1*8+7] && NB_PMP_REGION > 1 ) pmpaddr1  <= newval;
+                if (csr==PMPADDR2  && !pmpcfg0[2*8+7] && NB_PMP_REGION > 2 ) pmpaddr2  <= newval;
+                if (csr==PMPADDR3  && !pmpcfg0[3*8+7] && NB_PMP_REGION > 3 ) pmpaddr3  <= newval;
+                if (csr==PMPADDR4  && !pmpcfg1[0*8+7] && NB_PMP_REGION > 4 ) pmpaddr4  <= newval;
+                if (csr==PMPADDR5  && !pmpcfg1[1*8+7] && NB_PMP_REGION > 5 ) pmpaddr5  <= newval;
+                if (csr==PMPADDR6  && !pmpcfg1[2*8+7] && NB_PMP_REGION > 6 ) pmpaddr6  <= newval;
+                if (csr==PMPADDR7  && !pmpcfg1[3*8+7] && NB_PMP_REGION > 7 ) pmpaddr7  <= newval;
+                if (csr==PMPADDR8  && !pmpcfg2[0*8+7] && NB_PMP_REGION > 8 ) pmpaddr8  <= newval;
+                if (csr==PMPADDR9  && !pmpcfg2[1*8+7] && NB_PMP_REGION > 9 ) pmpaddr9  <= newval;
+                if (csr==PMPADDR10 && !pmpcfg2[2*8+7] && NB_PMP_REGION > 10) pmpaddr10 <= newval;
+                if (csr==PMPADDR11 && !pmpcfg2[3*8+7] && NB_PMP_REGION > 11) pmpaddr11 <= newval;
+                if (csr==PMPADDR12 && !pmpcfg3[0*8+7] && NB_PMP_REGION > 12) pmpaddr12 <= newval;
+                if (csr==PMPADDR13 && !pmpcfg3[1*8+7] && NB_PMP_REGION > 13) pmpaddr13 <= newval;
+                if (csr==PMPADDR14 && !pmpcfg3[2*8+7] && NB_PMP_REGION > 14) pmpaddr14 <= newval;
+                if (csr==PMPADDR15 && !pmpcfg3[3*8+7] && NB_PMP_REGION > 15) pmpaddr15 <= newval;
             end
         end
     end
@@ -982,6 +994,9 @@ module friscv_csr
     assign csr_sb[`CSR_SB_MEIP] = mip[11];
     assign csr_sb[`CSR_SB_MTIP] = mip[7];
     assign csr_sb[`CSR_SB_MSIP] = mip[3];
+    assign csr_sb[`CSR_SB_MEIE] = mie[11];
+    assign csr_sb[`CSR_SB_MTIE] = mie[7];
+    assign csr_sb[`CSR_SB_MSIE] = mie[3];
 
     assign csr_sb[`CSR_SB_PMPCFG0+:XLEN] = pmpcfg0;
     assign csr_sb[`CSR_SB_PMPCFG1+:XLEN] = pmpcfg1;

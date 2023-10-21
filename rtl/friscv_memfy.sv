@@ -297,11 +297,19 @@ module friscv_memfy
     logic        [`OPCODE_W   -1:0] opcode_r;
     logic        [`FUNCT3_W   -1:0] funct3_r;
     logic        [`RD_W       -1:0] rd_r;
-    logic        [`EXP_INST_W -1:0] inst;
-    logic        [`EXP_PC_W   -1:0] pc;
+    logic        [`INST_W     -1:0] inst;
+    logic        [`PC_W       -1:0] pc;
+    logic        [`PRIV_W     -1:0] priv;
+    logic        [`PRIV_W     -1:0] mpp;
+    logic                           mprv;
 
     logic                           load_misaligned;
     logic                           store_misaligned;
+    logic                           check_access;
+    logic                           load_access_fault;
+    logic                           store_access_fault;
+
+    logic                           active_access;
 
     logic                           memfy_ready_fsm;
     logic                           stall_bus;
@@ -343,8 +351,11 @@ module friscv_memfy
     assign rs2    = memfy_instbus[`RS2      +: `RS2_W     ];
     assign rd     = memfy_instbus[`RD       +: `RD_W      ];
     assign imm12  = memfy_instbus[`IMM12    +: `IMM12_W   ];
-    assign pc     = memfy_instbus[`EXP_PC   +: `EXP_PC_W  ];
-    assign inst   = memfy_instbus[`EXP_INST +: `EXP_INST_W];
+    assign pc     = memfy_instbus[`PC       +: `PC_W      ];
+    assign inst   = memfy_instbus[`INST     +: `INST_W    ];
+    assign priv   = memfy_instbus[`PRIV     +: `PRIV_W    ];
+    assign mpp    = memfy_instbus[`PRIV     +: `PRIV_W    ];
+    assign mprv   = memfy_instbus[`MPRV                   ];
 
 
     ///////////////////////////////////////////////////////////////////////////
@@ -424,7 +435,7 @@ module friscv_memfy
                         opcode_r <= opcode;
 
                         // STORE
-                        if (opcode==`STORE) begin
+                        if (opcode==`STORE && mpu_allow[`PMA_W] && !store_misaligned) begin
 
                             if (waiting_rd_cpl || arvalid) begin
                                 state <= WAIT;
@@ -449,7 +460,7 @@ module friscv_memfy
                             arvalid <= 1'b0;
 
                         // LOAD
-                        end else begin
+                        end else if (opcode==`LOAD && mpu_allow[`PMA_R] && !load_misaligned) begin
                             if (waiting_wr_cpl || awvalid) begin
                                 state <= WAIT;
                                 arvalid <= 1'b0;
@@ -461,6 +472,14 @@ module friscv_memfy
                             awvalid <= 1'b0;
                             wvalid <= 1'b0;
                             wstrb <= {XLEN/8{1'b0}};
+
+                        // LOAD / STORE misaligned or not allowed
+                        end else begin
+                            memfy_ready_fsm <= 1'b1;
+                            awvalid <= 1'b0;
+                            wvalid <= 1'b0;
+                            wstrb <= {XLEN/8{1'b0}};
+                            arvalid <= 1'b0;
                         end
 
                     // Wait for an instruction
@@ -469,7 +488,6 @@ module friscv_memfy
                         awvalid <= 1'b0;
                         wvalid <= 1'b0;
                         wstrb <= {XLEN/8{1'b0}};
-                        arvalid <= 1'b0;
                         arvalid <= 1'b0;
                     end
                 end
@@ -532,7 +550,7 @@ module friscv_memfy
     // Store outstanding read request info for data alignment of the completion
     ///////////////////////////////////////////////////////////////////////////
 
-    assign push_rd_or = memfy_valid & memfy_ready & (opcode==`LOAD);
+    assign push_rd_or = memfy_valid & memfy_ready & (opcode==`LOAD) & !load_misaligned;
 
     friscv_scfifo
     #(
@@ -806,25 +824,40 @@ module friscv_memfy
     // Exception flags, driven back to control unit
     //////////////////////////////////////////////////////////////////////////
 
+    assign active_access = memfy_valid & memfy_ready;
+
+    // Check access fault if u-mode or m-mode setup with u-mode rights
+    assign check_access = (priv==`UMODE) || (priv==`MMODE && mpp==`UMODE && mprv) ||
+                                            (priv==`MMODE && mpu_allow[3]); // locked
+
     // LOAD is not XLEN-boundary aligned
     assign load_misaligned = (opcode==`LOAD && (funct3==`LH || funct3==`LHU) &&
-                                (addr[1:0]==2'h3 || addr[1:0]==2'h1))           ? 1'b1 :
-                             (opcode==`LOAD && funct3==`LW  && addr[1:0]!=2'b0) ? 1'b1 :
+                                (addr[1:0]==2'h3 || addr[1:0]==2'h1))           ? active_access :
+                             (opcode==`LOAD && funct3==`LW  && addr[1:0]!=2'b0) ? active_access :
                                                                                   1'b0 ;
 
     // STORE is not XLEN-boundary aligned
     assign store_misaligned = (opcode==`STORE && funct3==`SH &&
-                                (addr[1:0]==2'h3 || addr[1:0]==2'h1))            ? 1'b1 :
-                              (opcode==`STORE && funct3==`SW && addr[1:0]!=2'b0) ? 1'b1 :
+                                (addr[1:0]==2'h3 || addr[1:0]==2'h1))            ? active_access :
+                              (opcode==`STORE && funct3==`SW && addr[1:0]!=2'b0) ? active_access :
                                                                                    1'b0 ;
 
-    assign memfy_exceptions[`LAF] = memfy_valid & memfy_ready & (opcode==`LOAD) & !mpu_allow[`PMA_R]; 
+    // Load access outside am allowed region
+    assign load_access_fault = (opcode==`LOAD) & !mpu_allow[`PMA_R] & check_access & active_access; 
 
-    assign memfy_exceptions[`SAF] = memfy_valid & memfy_ready & (opcode==`STORE) & !mpu_allow[`PMA_W]; 
+    // Store access outside am allowed region
+    assign store_access_fault = (opcode==`STORE) & !mpu_allow[`PMA_W] & check_access & active_access; 
 
-    assign memfy_exceptions[`LDMA] = memfy_valid & memfy_ready & load_misaligned;
 
-    assign memfy_exceptions[`STMA] = memfy_valid & memfy_ready & store_misaligned;
+    // Shared bus routing back to control unit
+
+    assign memfy_exceptions[`LAF] = load_access_fault;
+
+    assign memfy_exceptions[`SAF] = store_access_fault;
+
+    assign memfy_exceptions[`LDMA] = load_misaligned;
+
+    assign memfy_exceptions[`STMA] = store_misaligned;
 
     assign memfy_exceptions[`EXP_PC +: `EXP_PC_W] = pc;
 

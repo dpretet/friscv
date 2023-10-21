@@ -148,6 +148,7 @@
 `define SUCC_W      4
 `define PC_W       `XLEN
 `define INST_W     `XLEN
+`define PRIV_W     2
 
 // instruction bus fields's index
 `define OPCODE      0
@@ -163,11 +164,14 @@
 `define SHAMT       `CSR +    `CSR_W
 `define PC          `SHAMT +  `SHAMT_W
 `define INST        `PC +     `PC_W 
+`define PRIV        `INST +   `INST_W
+`define MPP         `PRIV +   `PRIV_W
+`define MPRV        `MPP +    `PRIV_W
 
 // total length of ALU instruction bus
 `define INST_BUS_W `OPCODE_W + `FUNCT3_W + `FUNCT7_W + `RS1_W + `RS2_W + \
                    `RD_W + `ZIMM_W + `IMM12_W + `IMM20_W + `CSR_W + `SHAMT_W + \
-                   `PC_W + `INST_W
+                   `PC_W + `INST_W + 2*`PRIV_W + 1
 
 //////////////////////////////////////////////////////////////////
 // Excpetion bus fron Memfy to Control unit
@@ -177,22 +181,21 @@
 `define EXP_INST_W     `XLEN
 `define EXP_ADDR_W     `XLEN
 
-// PC raising the exception
-`define EXP_PC 0
+`define EXP_PC      0
 // Instruction raising the expection
-`define EXP_INST `EXP_PC + `EXP_PC_W
+`define EXP_INST    `EXP_PC + `EXP_PC_W
 // Address raising hte exception
-`define EXP_ADDR `EXP_INST + `EXP_INST_W
+`define EXP_ADDR    `EXP_INST + `EXP_INST_W
 // Load misaligned
-`define LDMA   `EXP_ADDR + `EXP_ADDR_W
+`define LDMA        `EXP_ADDR + `EXP_ADDR_W
 // Store misaligned
-`define STMA   `LDMA + 1
+`define STMA        `LDMA + 1
 // Load access fault
-`define LAF    `STMA + 1
+`define LAF         `STMA + 1
 // Store access fault
-`define SAF    `LAF + 1
+`define SAF         `LAF + 1
 
-`define PROC_EXP_W `SAF + 1
+`define PROC_EXP_W  `SAF + 1
 
 //////////////////////////////////////////////////////////////////
 // CSR Shared Bus Definition
@@ -226,9 +229,12 @@
 `define CSR_SB_MEIP         `CSR_SB_MIE + 1
 `define CSR_SB_MTIP         `CSR_SB_MEIP + 1
 `define CSR_SB_MSIP         `CSR_SB_MTIP + 1
+`define CSR_SB_MEIE         `CSR_SB_MSIP + 1
+`define CSR_SB_MTIE         `CSR_SB_MEIE + 1
+`define CSR_SB_MSIE         `CSR_SB_MTIE + 1
 
 // CSR shared bus width
-`define CSR_SB_W `CSR_SB_MSIP + 1
+`define CSR_SB_W `CSR_SB_MSIE + 1
 
 `define CTRL_SB_MEPC       0
 `define CTRL_SB_MEPC_WR    `CTRL_SB_MEPC + `XLEN 

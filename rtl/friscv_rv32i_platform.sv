@@ -24,19 +24,19 @@ module friscv_rv32i_platform
 
         // Instruction length (always 32, whatever the architecture,
         // compressed ISA is not supported)
-        parameter ILEN               = 32,
+        parameter ILEN              = 32,
         // RISCV Architecture
-        parameter XLEN               = 32,
+        parameter XLEN              = 32,
         // Boot address used by the control unit
-        parameter BOOT_ADDR          = 0,
+        parameter BOOT_ADDR         = 0,
         // Number of outstanding requests used by the control unit and icache
         parameter INST_OSTDREQ_NUM  = 8,
         // Number of outstanding requests used by the LOAD/STORE unit and dcache
         parameter DATA_OSTDREQ_NUM  = 8,
         // Core Hart ID
-        parameter HART_ID            = 0,
+        parameter HART_ID           = 0,
         // RV32E architecture, limits integer registers to 16, else 32 available
-        parameter RV32E              = 0,
+        parameter RV32E             = 0,
         // Floating-point extension support
         parameter F_EXTENSION       = 0,
         // Multiply/Divide extension support
@@ -49,6 +49,8 @@ module friscv_rv32i_platform
         parameter USER_MODE         = 0,
         // Insert a pipeline on instruction bus coming from the controller
         parameter PROCESSING_BUS_PIPELINE = 0,
+        // Timeout applied for WFI 
+        parameter WFI_TW = 100,
 
         ////////////////////////////////////////////////////////////////////////
         // Physical Memory Protection & Attributes
@@ -93,11 +95,11 @@ module friscv_rv32i_platform
         ////////////////////////////////////////////////////////////////////////
 
         // Address bus width defined for both control and AXI4 address signals
-        parameter AXI_ADDR_W         = XLEN,
+        parameter AXI_ADDR_W        = XLEN,
         // AXI ID width, setup by default to 8 and unused
-        parameter AXI_ID_W           = 8,
+        parameter AXI_ID_W          = 8,
         // AXI4 data width
-        parameter AXI_DATA_W         = XLEN*4,
+        parameter AXI_DATA_W        = XLEN*4,
         // ID used by instruction and data buses
         parameter AXI_IMEM_MASK     = 'h80,
         parameter AXI_DMEM_MASK     = 'h10,
@@ -365,6 +367,7 @@ module friscv_rv32i_platform
         .SUPERVISOR_MODE            (SUPERVISOR_MODE),
         .USER_MODE                  (USER_MODE),
         .PROCESSING_BUS_PIPELINE    (PROCESSING_BUS_PIPELINE),
+        .WFI_TW                     (WFI_TW), 
         .BOOT_ADDR                  (BOOT_ADDR),
         .INST_OSTDREQ_NUM           (INST_OSTDREQ_NUM),
         .DATA_OSTDREQ_NUM           (DATA_OSTDREQ_NUM),

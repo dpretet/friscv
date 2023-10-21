@@ -202,7 +202,7 @@ TEST_30:
 
 TEST_31:
 
-    li  x3, 31
+    li x3, 31
     li x5, 0
     li x7, 100
 

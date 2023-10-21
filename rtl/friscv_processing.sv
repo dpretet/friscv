@@ -131,7 +131,7 @@ module friscv_processing
     logic [`INST_BUS_W     -1:0] proc_instbus_p;
 	logic 						 proc_busy_r;
 
-    logic [2               -1:0] memfy_exceptions;
+    logic [`PROC_EXP_W     -1:0] memfy_exceptions;
 
 
     // Assignment of M extension on integer registers' interface

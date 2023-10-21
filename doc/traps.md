@@ -1,4 +1,6 @@
-# Volume 1 (Exception Occurences)
+# Specs
+
+Notes found in Volume 1 (Exception Occurences)
 
 Exceptions, Traps, and Interrupts (specs v1.6) :
 
@@ -39,12 +41,6 @@ Various notes taken across the specification about traps:
   complete execution successfully or raise an exception. The exception raised can be either an
   address-misaligned exception or an access-fault exception
 
-
-
-# Volume 2 (Exception Occruences, to be continued... )
-
-## Misc.
-
 CSR Chapter:
 
 - Attempts to access a non-existent CSR raise an illegal instruction exception.
@@ -59,23 +55,37 @@ CSR Chapter:
 - Implementations are permitted but not required to raise an illegal instruction exception if an
   instruction attempts to write a non-supported value to a WLRL field.
 
-MSTATUS Chapter:
+Interrupts:
 
-- Interrupts are globally enabled when xIE=1 and globally disabled when xIE=0
-    - Interrupts for lower-privilege modes, w < x, are always globally disabled regardless of the setting of any global wIE
-    - Interrupts for higher-privilege modes, y > x, are always globally enabled regardless of the setting of the global yIE
+- Bits mip.MEIP and mie.MEIE are the interrupt-pending and interrupt-enable bits for machine-level
+  external interrupts. MEIP is read-only in mip, and is set and cleared by a platform-specific
+  interrupt controller.
 
-- For lower privilege modes, any trap (synchronous or asynchronous) is usually taken at a higher
-  privilege mode with interrupts disabled upon entry.
-- The higher-level trap handler will either service the trap and return using the stacked
-  information, or, if not returning immediately to the interrupted context, will save the privilege
-  stack before re-enabling interrupts, so only one entry per stack is required.
+- Bits mip.MTIP and mie.MTIE are the interrupt-pending and interrupt-enable bits for machine timer
+  interrupts. MTIP is read-only in mip, and is cleared by writing to the memory-mapped machine-mode
+  timer compare register.
 
-- An MRET or SRET instruction is used to return from a trap in M-mode or S-mode respectively
+- Bits mip.MSIP and mie.MSIE are the interrupt-pending and interrupt-enable bits for machine- level
+  software interrupts. MSIP is read-only in mip, and is written by accesses to memory-mapped control
+  registers, which are used by remote harts to provide machine-level interprocessor interrupts. A
+  hart can write its own MSIP bit using the same memory-mapped control register. If a system has
+  only one hart, or if a platform standard supports the delivery of machine-level interprocessor
+  interrupts through external interrupts (MEI) instead, then mip.MSIP and mie.MSIE may both be
+  read-only zeros.
+
+- An interrupt i will trap to M-mode (causing the privilege mode to change to M-mode) if all of the
+  following are true: (a) either the current privilege mode is M and the MIE bit in the mstatus
+  register is set, or the current privilege mode has less privilege than M-mode; (b) bit i is set in
+  both mip and mie; and (c) if register mideleg exists, bit i is not set in mideleg.
+
+- Each individual bit in register mip may be writable or may be read-only. When bit i in mip is
+  writable, a pending interrupt i can be cleared by writing 0 to this bit. If interrupt i can become
+  pending but bit i in mip is read-only, the implementation must provide some other mechanism for
+  clearing the pending interrupt.
+
+- A xRET instruction is used to return from a trap in M-mode or S-mode respectively
 
 - The mstatus register keeps track of and controls the hart’s current operating state.
-
-- Virtual memory, N/A for the moment
 
 - Extension Context Status in mstatus Register
 
@@ -88,15 +98,6 @@ MTVEC:
   consisting of a vector base address (BASE) and a vector mode (MODE).
 
 - Vectored mode: Asynchronous interrupts set pc to BASE+4×cause, elsepc is to set to BASE
-
-MEDELEG / MIDELEG
-
-- To indicate that certain exceptions and interrupts should be processed directly by a lower
-  privilege level
-
-
-MIP / MIE
-
 
 MEPC
 
@@ -142,79 +143,53 @@ exception when TSR=1 in mstatus
 
 WFI
 
-The Wait for Interrupt instruction (WFI) provides a hint to the implementation
-that the current hart can be stalled until an interrupt might need servicing
+The Wait for Interrupt instruction (WFI) provides a hint to the implementation that the current hart
+can be stalled until an interrupt might need servicing. Execution of the WFI instruction can also be
+used to inform the hardware platform that suitable interrupts should preferentially be routed to
+this hart. WFI is available in all privileged modes, and optionally available to U-mode.
 
-This instruction may raise an illegal instruction exception when TW=1 in mstatus
+If an enabled interrupt is present or later becomes present while the hart is stalled, the interrupt
+trap will be taken on the following instruction, i.e., execution resumes in the trap handler and
+mepc = pc + 4.
 
+The purpose of the WFI instruction is to provide a hint to the implementation, and so a legal
+implementation is to simply implement WFI as a NOP.
 
-If an enabled interrupt is present or later becomes present while the hart is
-stalled, the interrupt exception will be taken on the following instruction,
-i.e., execution resumes in the trap handler and mepc = pc + 4.
+The WFI instruction can also be executed when interrupts are disabled. The operation of WFI must be
+unaffected by the global interrupt bits in mstatus (MIE and SIE) and the delegation register mideleg
+but should honor the individual interrupt enables. If the event that causes the hart to resume
+execution does not cause an interrupt to be taken, execution will resume at pc + 4.
 
+Trap Management:
 
-Mentions in Virtual Memory, Atomic operations and Supervisor mode
-
-
-# Trap Management:
-
-xCAUSE: store the trap cause
-xEPC: address of the instruction triggering the trap
-xTVAL: written with exception specific datum
-xPP in STATUS: active privilege mode at the moment of the trap
-xPIE: written with the current xIE value
-xIE: cleared
-
-# Clint from other IPS:
-
-https://riscv.org/wp-content/uploads/2018/05/riscv-privileged-BCN.v7-2.pdf
-
-Armleo:
-
-https://github.com/armleo/ArmleoCPU/blob/main-development/src/armleosoc_axi_clint.sv
-
-out: software interrupt s-mode (ssip)
-out: software interrupt m-mode (msip)
-out: timer interrupt
-in: timer increment
-
-Pulp-Platform:
-
-https://github.com/pulp-platform/clint/blob/master/src/clint.sv
-
-out: software interrupt m-mode (msip)
-out: timer interrupt
-in: timer increment
-
-# Notes
-
-3 interrupts:
-
-- external: Simple IO or from PLIC (?)
-- timer: memory-mapped peripheral, shared across a multi core architecture
-- sotware: ecrire dans mip qui est une sortie, mais peut elle rentrer ensuite?
-  Peut etre par une IRQ externe?
+- xCAUSE: store the trap cause
+- xEPC: address of the instruction triggering the trap
+- xTVAL: written with exception specific datum
+- xPP in STATUS: active privilege mode at the moment of the trap
+- xPIE: written with the current xIE value
+- xIE: cleared
 
 
-Stackoverflow thread about software interrupts:
+# Implementation choice:
 
-https://stackoverflow.com/questions/64863737/risc-v-software-interrupts
+The hart waits for the pipeline is empty before handling a trap, leading to enter the trap mechanism
+with few cycles delay. This is true for both asynchronous and synchronous traps.
 
-Stackoverflow about RISC-V Interrupt Handling Flow
+WFI:
+- U-mode doesn't handle `WFI` if interrupts are enabled, it always traps m-mode.
+- if MIE/SIE, wait for one of them and trap with m-mode. Resume to mepc=pc+4 with u-mode
+- if mie/sie are off:
+    - if any MTIE/MEIE/MSIE asserted, wait for them and move to pc+4, stay in u-mode
+    - if MTIE/MEIE/MSIE are disabled, acts as a NOP and move to pc+4, stay in u-mode
+- `WFI` could trigger a low-power mechanism in the future, enabling clock-gating or power-gating
 
-https://stackoverflow.com/questions/61913210/risc-v-interrupt-handling-flow/61916199#61916199
+MEIP:
+- MEIP is cleared internally, withtout user intervention, when the interrupt is received. The user
+  will never read it high but could read mcause to know external interrupt being the trap source.
 
-# RISCV Esperanto slides
+MSIP:
+- implemented in a memory-mapped register but the input of a hart has never tested because
+  no multicore platform as been yet developed.
 
-https://riscv.org/wp-content/uploads/2018/05/riscv-privileged-BCN.v7-2.pdf
-
-PLIC:
-- gathers external interrupt and route them to the different harts
-- Interrupts can target multiple harts simultaneously
-
-Sotfware interrupts:
-
-Software interrupt are how harts interrupt each other
-- Mechanism for inter-hart interrupts (IPIs)
-- Setting the appropriate <x>SIP bit in another hart is performed by a MMIO write
-- But a hart can set its own <x>SIP bit if currmode >= <x>
+MTIP:
+- can be configured and cleared by memory-mapped timer register

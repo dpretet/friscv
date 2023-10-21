@@ -3,9 +3,11 @@
 - [ ] v1.6.0: Kernel-capable Hart
     - [X] Supporter des set de config du core en test bench.
     - [-] Support U-mode
-    - [ ] Support PMP
-    - [ ] Support PMA
+    - [-] Support PMP/PMA
     - [ ] Atomic operations for single core
+    - [ ] fence/fence.i instructions
+    - [ ] AXI Exception management with a CLIC
+    - [ ] Zc extension
 
 
 # BACKLOG
@@ -27,6 +29,17 @@ Any new features should be carefully study to ensure a proper exception and inte
     - [ ] Support exception code for memory access error
     - [ ] Manage write response from cache or interco, don’t wait endpoint
     - [ ] Raise exception also from cache
+- [ ] Support AXI response
+    - drive APROT with priv_mode
+    - raise an exception (which one? a custom mcause?)
+    - test with mapping outside interconnect memory region
+    - manage in a clic controller and so avoid custom spec implementation
+      could be used for other purpose later
+- [ ] Support fine-grain permission over memory range
+    - RISCV doesn't define privilege permission over PMP region
+    - raise an exception
+    - methode AER-like pour les enregistrer: src, address, permission
+    - trig an interrupt catched with PLIC controller
 
 
 ## Cache Stages
@@ -56,6 +69,14 @@ Any new features should be carefully study to ensure a proper exception and inte
 - [ ] Random peripheral
 - [ ] UART: Support 9/10 bits & parity
 - [ ] Deactivate the core with WFI (clock gating)
+- [ ] Security Extension
+    - Custom pmpsec CSR
+        - priv/non-priv
+        - cacheability
+        - shareability
+        - io/mem
+    - HW isolation by CPU / Thread IDs
+
 
 
 ## Next-Gen Architecture
@@ -75,6 +96,7 @@ Any new features should be carefully study to ensure a proper exception and inte
     - [ ] PLIC controller
     - [ ] Extended atomic operation support
     - [ ] Implement a L2 cache stage
+    - [ ] Extended Security / Sandboxing
 - [ ] Debug Support / JTAG interface / GDB Usage / OpenOCD
         - https://tomverbeure.github.io/2021/07/18/VexRiscv-OpenOCD-and-Traps.html
         - https://tomverbeure.github.io/2022/02/20/GDBWave-Post-Simulation-RISCV-SW-Debugging.html

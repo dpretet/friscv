@@ -214,6 +214,12 @@ module friscv_testbench(
     parameter TIMEOUT = `TIMEOUT;
     // Minimum program counter value a test needs to reach
     parameter MIN_PC = `MIN_PC;
+    `ifdef WFI_TW
+    // Timeout applied for WFI 
+    parameter WFI_TW = `WFI_TW;
+    `else
+    parameter WFI_TW = 0;
+    `endif
 
     `ifdef RAM_MODE_PERF
     parameter RAM_MODE = 1;
@@ -372,6 +378,7 @@ module friscv_testbench(
             .SUPERVISOR_MODE            (SUPERVISOR_MODE),
             .USER_MODE                  (USER_MODE),
             .PROCESSING_BUS_PIPELINE    (PROCESSING_BUS_PIPELINE),
+            .WFI_TW                     (WFI_TW), 
             .AXI_ADDR_W                 (AXI_ADDR_W),
             .AXI_ID_W                   (AXI_ID_W),
             .AXI_IMEM_W                 (AXI_IMEM_W),
@@ -582,6 +589,7 @@ module friscv_testbench(
             .SUPERVISOR_MODE            (SUPERVISOR_MODE),
             .USER_MODE                  (USER_MODE),
             .PROCESSING_BUS_PIPELINE    (PROCESSING_BUS_PIPELINE),
+            .WFI_TW                     (WFI_TW), 
             .AXI_ADDR_W                 (AXI_ADDR_W),
             .AXI_ID_W                   (AXI_ID_W),
             .AXI_DATA_W                 (AXI_DATA_W),

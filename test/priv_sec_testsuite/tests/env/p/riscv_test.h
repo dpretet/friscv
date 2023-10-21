@@ -175,7 +175,7 @@ trap_vector:                                                            \
         beq t5, t4, ECALL_SUPERVISOR_MODE;                              \
         li t4, CAUSE_MACHINE_ECALL;                                     \
         beq t5, t4, ECALL_MACHINE_MODE;                                 \
-        li t4, 2;                                                       \
+        li t4, CAUSE_ILLEGAL_INSTRUCTION;                               \
         beq t5, t4, ILLEGAL_INSTRUCTION;                                \
         lui t4, %hi(CAUSE_MEIP);                                        \
         addi t4, t4, %lo(CAUSE_MEIP);                                   \
@@ -186,6 +186,12 @@ trap_vector:                                                            \
         lui t4, %hi(CAUSE_MTIP);                                        \
         addi t4, t4, %lo(CAUSE_MTIP);                                   \
         beq t5, t4, INTP;                                               \
+        li t4, CAUSE_LOAD_ACCESS;                                       \
+        beq t5, t4, EXP_SERVICE;                                        \
+        li t4, CAUSE_STORE_ACCESS;                                      \
+        beq t5, t4, EXP_SERVICE;                                        \
+        li t4, CAUSE_FETCH_ACCESS;                                      \
+        beq t5, t4, EXP_SERVICE;                                        \
         /* if an mtvec_handler is defined, jump to it */                \
         la t5, mtvec_handler;                                           \
         beqz t5, 1f;                                                    \

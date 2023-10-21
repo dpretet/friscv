@@ -27,6 +27,8 @@ RVTEST_CODE_BEGIN
 
 j TEST
 
+EXP_SERVICE:
+
 # Not supported for the moment
 ECALL_SUPERVISOR_MODE:
     add x31, x31, 1

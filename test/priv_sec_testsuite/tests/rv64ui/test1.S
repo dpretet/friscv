@@ -29,6 +29,8 @@ RVTEST_CODE_BEGIN
 
 j TEST
 
+EXP_SERVICE:
+
 # Not supported for the moment
 ECALL_SUPERVISOR_MODE:
     add x31, x31, 1
@@ -82,7 +84,7 @@ TEST:
 TEST1:
     li t0, 0
     li t1, 0
-    li t2, 10
+    li t2, 100
 LOOP_OVER:
     addi t0, t0, 1
     sw t0, 0(x0)

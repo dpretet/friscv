@@ -42,7 +42,9 @@ module friscv_control
         // Number of outstanding requests supported
         parameter OSTDREQ_NUM = 4,
         // Primary address to boot to load the firmware
-        parameter BOOT_ADDR = 0
+        parameter BOOT_ADDR = 0,
+        // Timeout applied for WFI
+        parameter WFI_TW = 100
     )(
         // clock & reset
         input  wire                       aclk,
@@ -192,6 +194,9 @@ module friscv_control
     logic                   sb_mtip;
     logic                   sb_msip;
     logic                   sb_meip;
+    logic                   sb_mtie;
+    logic                   sb_msie;
+    logic                   sb_meie;
     logic                   mepc_wr;
     logic [XLEN       -1:0] mepc;
     logic                   mstatus_wr;
@@ -223,9 +228,16 @@ module friscv_control
     logic                   load_access_fault;
     logic                   store_access_fault;
 
-    logic [`EXP_INST_W-1:0] exp_inst;
     logic [`EXP_ADDR_W-1:0] exp_addr;
-    logic [`EXP_PC_W  -1:0] exp_pc;
+
+    localparam PROC_EXP_FIFO_W = 4 + XLEN;
+    localparam MAX_PROC_EXP = $clog2(4);
+
+    logic [PROC_EXP_FIFO_W-1:0] proc_exp_i;
+    logic [PROC_EXP_FIFO_W-1:0] proc_exp_o;
+    logic                       push_proc_exp;
+    logic                       pull_proc_exp;
+    logic                       proc_exp_empty;
 
     // Logger setup
     `ifdef USE_SVL
@@ -334,8 +346,11 @@ module friscv_control
     assign sb_meip    = csr_sb[`CSR_SB_MEIP];
     assign sb_mtip    = csr_sb[`CSR_SB_MTIP];
     assign sb_msip    = csr_sb[`CSR_SB_MSIP];
+    assign sb_meie    = csr_sb[`CSR_SB_MEIE];
+    assign sb_mtie    = csr_sb[`CSR_SB_MTIE];
+    assign sb_msie    = csr_sb[`CSR_SB_MSIE];
 
-    assign ctrl_sb = {instret, clr_meip, 
+    assign ctrl_sb = {instret, clr_meip,
                       mtval_wr, mtval,
                       mcause_wr, mcause,
                       mstatus_wr, mstatus,
@@ -343,7 +358,7 @@ module friscv_control
 
 
     ///////////////////////////////////////////////////////////////////////////
-    // Input stage 
+    // Input stage
     ///////////////////////////////////////////////////////////////////////////
 
     assign push_inst = rvalid & (arid == rid);
@@ -465,7 +480,7 @@ module friscv_control
     //
     ///////////////////////////////////////////////////////////////////////////
 
-    assign proc_valid = inst_ready & processing & (cfsm==FETCH) & csr_ready;
+    assign proc_valid = inst_ready & processing & (cfsm==FETCH) & csr_ready & !trap_occuring;
 
     assign csr_en = inst_ready && sys[`IS_CSR] & (cfsm==FETCH) & !proc_busy;
 
@@ -482,6 +497,9 @@ module friscv_control
     assign proc_instbus[`SHAMT    +: `SHAMT_W  ] = shamt ;
     assign proc_instbus[`INST     +: `INST_W   ] = instruction;
     assign proc_instbus[`PC       +: `PC_W     ] = pc_reg;
+    assign proc_instbus[`PRIV     +: `PRIV_W   ] = priv_mode;
+    assign proc_instbus[`MPP      +: `PRIV_W   ] = sb_mstatus[11+:2];
+    assign proc_instbus[`MPRV                  ] = sb_mstatus[17];
 
     assign csr_instbus = proc_instbus;
 
@@ -786,17 +804,19 @@ module friscv_control
                                 cfsm <= FENCE_I;
 
                             // Reach an WFI, wait for an interrupt
-                            // TODO: could miss an interrupt if processing is too long
                             end else if (sys[`IS_WFI] && !proc_busy && csr_ready) begin
-                                `ifdef USE_SVL
-                                print_instruction;
-                                log.info("WFI -> Stall and wait for interrupt");
-                                `endif
-                                status[4] <= 1'b1;
-                                flush_pipe <= 1'b1;
-                                pc_reg <= mtvec;
-                                arvalid <= 1'b0;
-                                cfsm <= WFI;
+
+                                if ({sb_msie,sb_mtie,sb_meie} != 3'b0) begin
+                                    `ifdef USE_SVL
+                                    print_instruction;
+                                    log.info("WFI -> Stall and wait for interrupt");
+                                    `endif
+                                    status[4] <= 1'b1;
+                                    flush_pipe <= 1'b1;
+                                    pc_reg <= mtvec;
+                                    arvalid <= 1'b0;
+                                    cfsm <= WFI;
+                                end
 
                             // CSR instructions
                             end else if (sys[`IS_CSR] && !cant_sys) begin
@@ -853,7 +873,7 @@ module friscv_control
                 // Wait for Interrupt (software, timer, external)
                 ///////////////////////////////////////////////////////////////
                 WFI: begin
-                    if (sb_msip || sb_mtip || sb_meip) begin
+                    if (sb_msip&sb_msie || sb_mtip&sb_mtie || sb_meip&sb_meie) begin
                         `ifdef USE_SVL
                         print_mcause("WFI -> MCAUSE=0x", mcause_code);
                         `endif
@@ -884,7 +904,7 @@ module friscv_control
 
     // Trace control when jumping/branching for debug purpose
     always @ (posedge aclk) begin
-        if (flush_pipe || (cfsm==WFI && (sb_msip || sb_mtip || sb_meip))) begin
+        if (flush_pipe || (cfsm==WFI && (sb_msip&sb_msie || sb_mtip&sb_mtie || sb_meip&sb_meie))) begin
             `ifdef TRACE_CONTROL
             $fwrite(f, "@ %0t,%x\n", $realtime, sb_mepc);
             `endif
@@ -984,7 +1004,7 @@ module friscv_control
                     mtval_wr <= 1'b0;
                 end
 
-            end else if (cfsm==WFI && (sb_msip || sb_mtip || sb_meip)) begin
+            end else if (cfsm==WFI && (sb_msip&sb_msie || sb_mtip&sb_mtie || sb_meip&sb_meie)) begin
 
                 mcause_wr <= 1'b1;
                 mcause <= mcause_code;
@@ -1031,7 +1051,6 @@ module friscv_control
     //
     // ISA registers write stage
     //
-    //(inst_access_fault)    ? exp_pc      :
     ///////////////////////////////////////////////////////////////////////////
 
     // register source 1 & 2 read
@@ -1151,38 +1170,108 @@ module friscv_control
     // PC is not aligned with XLEN boundary
     assign inst_addr_misaligned = (pc[1:0]!=2'b0) ? jump_branch : 1'b0;
 
-    // TODO: Support correctly TW with privilege mode
-    // When TW=0, the WFI instruction may execute in lower privilege modes when not prevented for some
-    // other reason. When TW=1, then if WFI is executed in any less-privileged mode, and it does not
-    // complete within an implementation-specific, bounded time limit, the WFI instruction causes an
-    // illegal instruction exception. An implementation may have WFI always raise an illegal instruction
-    // exception in less-privileged modes when TW=1, even if there are pending globally-disabled interrupts
-    // when the instruction is executed. TW is read-only 0 when there are no modes less privileged than M.
-    assign wfi_tw = 1'b0;
+    //////////////////////////////////////////////////////////////////////
+    // WFI timeout management
+    //////////////////////////////////////////////////////////////////////
+    generate if (USER_MODE) begin: WFI_TIMEOUT
 
+        localparam TW_W = $clog2(WFI_TW);
+        logic [TW_W:0] tw;
+
+        always @ (posedge aclk or negedge aresetn) begin
+            if (!aresetn) begin
+                tw <= '0;
+                wfi_tw <= 1'b0;
+            end else if (srst) begin
+                tw <= '0;
+                wfi_tw <= 1'b0;
+            end else begin
+
+                if (cfsm==WFI && priv_mode!=`MMODE) begin
+                    tw <= tw + 1'b1;
+                end else begin
+                    tw <= '0;
+                end
+
+                wfi_tw <= (tw >= WFI_TW);
+            end
+        end
+
+    end else begin: NO_WFI_TW
+        assign wfi_tw = 1'b0;
+    end
+    endgenerate
+    //////////////////////////////////////////////////////////////////////
+
+    // Unsupported instruction
     assign inst_dec_error = dec_error & (cfsm==FETCH) & inst_ready;
 
-    assign inst_access_fault = (!mpu_allow[`PMA_X] | !mpu_allow[`PMA_R]) & (priv_mode == `UMODE);
+    // Is fetching instruction on forbidden memory region 
+    assign inst_access_fault = (!mpu_allow[`PMA_X] | !mpu_allow[`PMA_R]) &
+                                  (priv_mode == `UMODE ||
+                                   priv_mode==`MMODE && mpu_allow[3] /*locked*/);
 
-    assign load_misaligned = proc_exceptions[`LDMA];
+    //////////////////////////////////////////////////////////////////////
+    // Stores the incoming excpetions from processing. Can't handle 
+    // multiple exceptions on the same cycle but should not arrive
+    //////////////////////////////////////////////////////////////////////
+    friscv_scfifo
+    #(
+        .PASS_THRU  (0),
+        .ADDR_WIDTH (MAX_PROC_EXP),
+        .DATA_WIDTH (PROC_EXP_FIFO_W)
+    )
+    proc_exp_fifo
+    (
+        .aclk     (aclk),
+        .aresetn  (aresetn),
+        .srst     (srst),
+        .flush    (1'b0),
+        .data_in  (proc_exp_i),
+        .push     (push_proc_exp),
+        .full     (),
+        .afull    (),
+        .data_out (proc_exp_o),
+        .pull     (pull_proc_exp),
+        .empty    (proc_exp_empty),
+        .aempty   ()
+    );
 
-    assign store_misaligned = proc_exceptions[`STMA];
+    // Push as soon an exception is detected
+    assign push_proc_exp = proc_exceptions[`LDMA] |
+                           proc_exceptions[`STMA] |
+                           proc_exceptions[`LAF]  |
+                           proc_exceptions[`SAF]  ;
 
-    assign load_access_fault = proc_exceptions[`LAF];
+    // Pull when we trap for one the processing exceptions
+    assign pull_proc_exp = (trap_occuring && !cant_trap && 
+                            (mcause_code == 32'h5 ||
+                             mcause_code == 32'h7 ||
+                             mcause_code == 32'h4 ||
+                             mcause_code == 32'h6 )
+                           );
 
-    assign store_access_fault = proc_exceptions[`SAF];
+    assign proc_exp_i = {proc_exceptions[`LDMA] ,
+                         proc_exceptions[`STMA] ,
+                         proc_exceptions[`LAF]  ,
+                         proc_exceptions[`SAF]  ,
+                         proc_exceptions[`EXP_ADDR +: `EXP_ADDR_W]} ;
 
-    assign exp_pc = proc_exceptions[`EXP_PC +: `EXP_PC_W];
+    assign exp_addr = proc_exp_o[0+:XLEN];
+    assign store_access_fault = proc_exp_o[XLEN+0] & !proc_exp_empty;
+    assign load_access_fault = proc_exp_o[XLEN+1] & !proc_exp_empty;
+    assign store_misaligned = proc_exp_o[XLEN+2] & !proc_exp_empty;
+    assign load_misaligned = proc_exp_o[XLEN+3] & !proc_exp_empty;
 
-    assign exp_inst = proc_exceptions[`EXP_INST +: `EXP_INST_W];
+    //////////////////////////////////////////////////////////////////////
 
-    assign exp_addr = proc_exceptions[`EXP_ADDR +: `EXP_ADDR_W];
-
+    // User mode is trying to execute an instruction reserved for M-mode
     generate
-    if (USER_MODE) begin: UMODE_EXPEC
+    if (USER_MODE) begin: UMODE_ILLEGAL_INST
         assign illegal_instruction = (priv_mode==`MMODE)                 ? '0         :
                                      (sys[`IS_MRET])                     ? inst_ready :
                                      (sys[`IS_CSR] && csr[9:8] != 2'b00) ? inst_ready :
+                                     (wfi_tw)                            ? 1'b1       :
                                                                            '0;
     end else begin : NO_UMODE
         assign illegal_instruction = '0;
@@ -1251,9 +1340,9 @@ module friscv_control
 
     // MCAUSE switching logic based on above listed priorities
     assign mcause_code = // aync exceptions have highest priority
-                         (sb_msip)              ? {1'b1, {XLEN-5{1'b0}}, 4'h3} :
-                         (sb_mtip)              ? {1'b1, {XLEN-5{1'b0}}, 4'h7} :
-                         (sb_meip)              ? {1'b1, {XLEN-5{1'b0}}, 4'hB} :
+                         (sb_msip & sb_msie)    ? {1'b1, {XLEN-5{1'b0}}, 4'h3} :
+                         (sb_mtip & sb_mtie)    ? {1'b1, {XLEN-5{1'b0}}, 4'h7} :
+                         (sb_meip & sb_meie)    ? {1'b1, {XLEN-5{1'b0}}, 4'hB} :
                          // then follow sync exceptions
                          (inst_access_fault)    ? {{XLEN-4{1'b0}}, 4'h1}  :
                          (illegal_instruction)  ? {{XLEN-4{1'b0}}, 4'h2}  :
@@ -1285,7 +1374,7 @@ module friscv_control
 
     // Trigger the trap handling execution in main FSM
 
-    assign async_trap_occuring = (sb_mtip | sb_msip | sb_meip ) & sb_mie;
+    assign async_trap_occuring = (sb_msip&sb_msie | sb_mtip&sb_mtie | sb_meip&sb_meie) & sb_mie;
 
     assign sync_trap_occuring = csr_ro_wr            |
                                 inst_addr_misaligned |

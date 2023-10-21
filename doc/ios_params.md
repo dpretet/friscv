@@ -146,6 +146,22 @@
       `AXI_ADDR_W` * 2 * `IO_MAP_NB` (bits)
     - default: 64'h001000FF_00100000
 
+- MPU_SUPPORT
+    - enable MPU in a hart
+    - 0 deactivate the MPU, 1 activates it but configuration is fixed base on PMPCFGx
+      and PMPADDRx (PMPCFG.lock should be set to 1), 2 enable an on-the-fly configurable MPU
+    - default: 0, disabled
+
+- PMPCFGx
+    - four registers mapped on ISA CSRs registers (same description than specification)
+    - configure PMP regions (refer to specfication)
+    - default: 0
+
+- PMPADDRx
+    - sixteen registers mapped on ISA CSRs registers (same description than specification)
+    - configure memory region address
+    - default: 0
+
 ## Platform
 
 All parameters listed in [core](#core) section apply here
