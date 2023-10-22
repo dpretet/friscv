@@ -21,7 +21,7 @@ module friscv_pmp_region
     )(
         // CSR registers
         input  wire  [XLEN         -1:0] pmp_addr,
-        input  wire  [XLEN         -1:0] pmp_cfg,
+        input  wire  [8            -1:0] pmp_cfg,
         // Region base addres and mask for NAPOT/NA4
         output logic [RLEN         -1:0] pmp_base,
         output logic [RLEN         -1:0] pmp_mask
