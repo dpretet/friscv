@@ -60,6 +60,8 @@ Any new features should be carefully study to ensure a proper exception and inte
 
 ## Miscellanous
 
+- [ ] mcountinhibit: stop a specific counter
+- [ ] Machine Environment Configuration Registers (menvcfg and menvcfgh)
 - [ ] Machine Configuration Pointer Register (mconfigptr)
 - [ ] Create a HW test platform
     - [ ] Analogue pocket

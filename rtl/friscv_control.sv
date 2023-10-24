@@ -190,6 +190,7 @@ module friscv_control
     logic [XLEN       -1:0] sb_mepc;
     logic [XLEN       -1:0] sb_mtvec;
     logic [XLEN       -1:0] sb_mstatus;
+    logic [XLEN       -1:0] sb_mcounteren;
     logic                   sb_mie;
     logic                   sb_mtip;
     logic                   sb_msip;
@@ -218,6 +219,7 @@ module friscv_control
     logic                   store_misaligned;
     logic                   inst_access_fault;
     logic                   illegal_instruction;
+    logic                   illegal_csr;
     logic                   wfi_tw;
     logic                   trap_occuring;
     logic                   sync_trap_occuring;
@@ -293,9 +295,9 @@ module friscv_control
         else if (cause=='hB)  get_mcause_desc = "Environment call (M-mode)";
         else if (cause=='h2)  get_mcause_desc = "Illegal instruction";
         // Asynchronous Trap
-        else if (cause=='h80000003)  get_mcause_desc = "Machine Software Interrupt";
-        else if (cause=='h80000007)  get_mcause_desc = "Machine Timer Interrupt";
-        else if (cause=='h8000000B)  get_mcause_desc = "Machine External Interrupt";
+        else if (cause=='h80000003) get_mcause_desc = "Machine Software Interrupt";
+        else if (cause=='h80000007) get_mcause_desc = "Machine Timer Interrupt";
+        else if (cause=='h8000000B) get_mcause_desc = "Machine External Interrupt";
         // All other unknown interrupts
         else get_mcause_desc = "Unknown Trap Cause";
     endfunction
@@ -339,16 +341,17 @@ module friscv_control
     // CSR Shared bus extraction
     ///////////////////////////////////////////////////////////////////////////
 
-    assign sb_mtvec   = csr_sb[`CSR_SB_MTVEC   +: XLEN];
-    assign sb_mstatus = csr_sb[`CSR_SB_MSTATUS +: XLEN];
-    assign sb_mepc    = csr_sb[`CSR_SB_MEPC    +: XLEN];
-    assign sb_mie     = csr_sb[`CSR_SB_MIE];
-    assign sb_meip    = csr_sb[`CSR_SB_MEIP];
-    assign sb_mtip    = csr_sb[`CSR_SB_MTIP];
-    assign sb_msip    = csr_sb[`CSR_SB_MSIP];
-    assign sb_meie    = csr_sb[`CSR_SB_MEIE];
-    assign sb_mtie    = csr_sb[`CSR_SB_MTIE];
-    assign sb_msie    = csr_sb[`CSR_SB_MSIE];
+    assign sb_mtvec      = csr_sb[`CSR_SB_MTVEC   +: XLEN];
+    assign sb_mstatus    = csr_sb[`CSR_SB_MSTATUS +: XLEN];
+    assign sb_mepc       = csr_sb[`CSR_SB_MEPC    +: XLEN];
+    assign sb_mcounteren = csr_sb[`CSR_SB_MCOUNTEREN +: XLEN];
+    assign sb_mie        = csr_sb[`CSR_SB_MIE];
+    assign sb_meip       = csr_sb[`CSR_SB_MEIP];
+    assign sb_mtip       = csr_sb[`CSR_SB_MTIP];
+    assign sb_msip       = csr_sb[`CSR_SB_MSIP];
+    assign sb_meie       = csr_sb[`CSR_SB_MEIE];
+    assign sb_mtie       = csr_sb[`CSR_SB_MTIE];
+    assign sb_msie       = csr_sb[`CSR_SB_MSIE];
 
     assign ctrl_sb = {instret, clr_meip,
                       mtval_wr, mtval,
@@ -482,7 +485,7 @@ module friscv_control
 
     assign proc_valid = inst_ready & processing & (cfsm==FETCH) & csr_ready & !trap_occuring;
 
-    assign csr_en = inst_ready && sys[`IS_CSR] & (cfsm==FETCH) & !proc_busy;
+    assign csr_en = inst_ready && sys[`IS_CSR] & (cfsm==FETCH) & !proc_busy & !illegal_csr;
 
     assign proc_instbus[`OPCODE   +: `OPCODE_W ] = opcode;
     assign proc_instbus[`FUNCT3   +: `FUNCT3_W ] = funct3;
@@ -1268,13 +1271,24 @@ module friscv_control
     // User mode is trying to execute an instruction reserved for M-mode
     generate
     if (USER_MODE) begin: UMODE_ILLEGAL_INST
-        assign illegal_instruction = (priv_mode==`MMODE)                 ? '0         :
-                                     (sys[`IS_MRET])                     ? inst_ready :
-                                     (sys[`IS_CSR] && csr[9:8] != 2'b00) ? inst_ready :
-                                     (wfi_tw)                            ? 1'b1       :
-                                                                           '0;
+
+        assign illegal_instruction = (priv_mode==`MMODE)  ? '0         :
+                                     (sys[`IS_MRET])      ? inst_ready :
+                                     (illegal_csr)        ? inst_ready :
+                                     (wfi_tw)             ? 1'b1       :
+                                                            '0         ;
+
+        assign illegal_csr = (priv_mode==`MMODE || !sys[`IS_CSR])    ? '0   :
+                             (csr[11:0]=='hC00 && !sb_mcounteren[0]) ? 1'b1 : // Cycle  
+                             (csr[11:0]=='hC01 && !sb_mcounteren[1]) ? 1'b1 : // Time  
+                             (csr[11:0]=='hC02 && !sb_mcounteren[2]) ? 1'b1 : // Instret  
+                             (csr[11:4]=='hFC)                       ? 1'b1 : // Custom perf. registers  
+                             (csr[ 9:8]!=2'b00)                      ? 1'b1 : // M-Mode only registers 
+                                                                       1'b0 ;
+
     end else begin : NO_UMODE
         assign illegal_instruction = '0;
+        assign illegal_csr = '0;
     end
     endgenerate
 

@@ -265,7 +265,8 @@ reset_vector:                                                           \
         li a7, 93;                                                      \
         addi a0, TESTNUM, 0;                                            \
         add x31, x31, 1;                                                \
-        ebreak
+        ebreak;                                                         \
+        ebreak;                                                         \
 
 //-----------------------------------------------------------------------
 // Data Section Macro

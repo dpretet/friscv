@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.4.0 (w)1999-2022 BSI
-[*] Sun Oct 22 18:08:09 2023
+[*] Sun Oct 22 18:40:10 2023
 [*]
-[dumpfile] "/Users/damien/workspace/hdl/friscv/test/wba_testsuite/friscv_testbench.vcd"
-[dumpfile_mtime] "Sun Oct 22 18:07:49 2023"
-[dumpfile_size] 1961741
+[dumpfile] "/Users/damien/workspace/hdl/friscv/test/priv_sec_testsuite/friscv_testbench.vcd"
+[dumpfile_mtime] "Sun Oct 22 18:10:23 2023"
+[dumpfile_size] 2015157
 [savefile] "/Users/damien/workspace/hdl/friscv/test/priv_sec_testsuite/debug_platform_verilator.gtkw"
-[timestart] 1937
+[timestart] 2212
 [size] 1440 900
 [pos] -1 -1
-*-5.496682 2106 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-4.496682 2287 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] friscv_testbench.
 [treeopen] friscv_testbench.friscv_testbench.
 [treeopen] friscv_testbench.friscv_testbench.genblk2.
@@ -21,7 +21,7 @@
 [treeopen] friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.
 [treeopen] friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_ICACHE.icache.cache_blocks.
 [sst_width] 255
-[signals_width] 263
+[signals_width] 237
 [sst_expanded] 1
 [sst_vpaned_height] 234
 @c00200
@@ -93,16 +93,16 @@ friscv_testbench.friscv_testbench.genblk2.axi4l_ram.p1_bvalid
 -
 @1401200
 -Interconnect
-@c00201
+@c00200
 -CSRs
-@201
+@200
 -
 @23
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.csrs.pmpcfg0[31:0]
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.csrs.pmpcfg1[31:0]
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.csrs.pmpcfg2[31:0]
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.csrs.pmpcfg3[31:0]
-@201
+@200
 -
 @23
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.csrs.pmpaddr0[31:0]
@@ -121,17 +121,17 @@ friscv_testbench.friscv_testbench.genblk2.dut.cpu0.csrs.pmpaddr12[31:0]
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.csrs.pmpaddr13[31:0]
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.csrs.pmpaddr14[31:0]
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.csrs.pmpaddr15[31:0]
-@201
+@200
 -
 @23
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.csrs.ctrl_mstatus[31:0]
 @29
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.csrs.ctrl_mstatus_wr
-@201
+@200
 -
 @23
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.csrs.mstatus[31:0]
-@1401201
+@1401200
 -CSRs
 @c00200
 -ISA Regsiters

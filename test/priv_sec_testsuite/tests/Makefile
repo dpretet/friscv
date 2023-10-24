@@ -43,11 +43,11 @@ vpath %.S $(src_dir)
 define compile_template
 
 $$($(1)_p_tests): $(1)-p-%: $(1)/%.S
-	$$(RISCV_GCC) $(2) $$(RISCV_GCC_OPTS) -I$(env_dir)/p -I$(src_dir)/macros/scalar -T$(env_dir)/p/link.ld $$< -o $$@.elf
+	$$(RISCV_GCC) $(2) $$(RISCV_GCC_OPTS) -I$(env_dir) -I$(env_dir)/p -I$(src_dir)/macros/scalar -T$(env_dir)/p/link.ld $$< -o $$@.elf
 $(1)_tests += $$($(1)_p_tests)
 
 $$($(1)_v_tests): $(1)-v-%: $(1)/%.S
-	$$(RISCV_GCC) $(2) $$(RISCV_GCC_OPTS) -DENTROPY=0x$$(shell echo \$$@ | md5sum | cut -c 1-7) -std=gnu99 -O2 -I$(env_dir)/v -I$(src_dir)/macros/scalar -T$(env_dir)/v/link.ld $(env_dir)/v/entry.S $(env_dir)/v/*.c $$< -o $$@.elf
+	$$(RISCV_GCC) $(2) $$(RISCV_GCC_OPTS) -DENTROPY=0x$$(shell echo \$$@ | md5sum | cut -c 1-7) -std=gnu99 -O2 -I$(env_dir) -I$(env_dir)/v -I$(src_dir)/macros/scalar -T$(env_dir)/v/link.ld $(env_dir)/v/entry.S $(env_dir)/v/*.c $$< -o $$@.elf
 $(1)_tests += $$($(1)_v_tests)
 
 $(1)_tests_dump = $$(addsuffix .asm, $$($(1)_tests))

@@ -117,7 +117,7 @@ module friscv_mpu
                 )
                 pmp_region 
                 (
-                    .pmp_addr    (csr_sb[4*XLEN+i*XLEN+:XLEN]), // 4*XLEN = 4 * PMPCFG
+                    .pmp_addr    (csr_sb[4*XLEN+i*XLEN+:XLEN]), // 4*XLEN = 4 * PMPCFG bc is on first position on the bus
                     .pmp_cfg     (csr_sb[i*8+:8]),
                     .pmp_base    (pmp_base[i*RLEN+:RLEN]),
                     .pmp_mask    (pmp_mask[i*RLEN+:RLEN])

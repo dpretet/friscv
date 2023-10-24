@@ -566,6 +566,7 @@ module friscv_csr
         else if (csr==RDTIMEH)         oldval = rdtime[32+:32];
         else if (csr==RDINSTRETH)      oldval = rdinstret[32+:32];
         else if (csr==MHART_ID)        oldval = mhartid;
+        else if (csr==MCOUNTEREN)      oldval = mcounteren;
         else if (csr==INSTREQ_ACTIVE)  oldval = instreq_perf_active;
         else if (csr==INSTREQ_SLEEP)   oldval = instreq_perf_sleep;
         else if (csr==INSTREQ_STALL)   oldval = instreq_perf_stall;
@@ -838,6 +839,23 @@ module friscv_csr
     end
 
     ///////////////////////////////////////////////////////////////////////////
+    // MCOUNTEREN - 0x306
+    ///////////////////////////////////////////////////////////////////////////
+    always @ (posedge aclk or negedge aresetn) begin
+        if (!aresetn) begin
+            mcounteren <= {XLEN{1'b0}};
+        end else if (srst) begin
+            mcounteren <= {XLEN{1'b0}};
+        end else begin
+            if (csr_wren) begin
+                if (csr==MCOUNTEREN) begin
+                    mcounteren <= newval;
+                end
+            end
+        end
+    end
+
+    ///////////////////////////////////////////////////////////////////////////
     // PMPCFG0/3 - 0x3A0-0x3A3
     ///////////////////////////////////////////////////////////////////////////
     always @ (posedge aclk or negedge aresetn) begin
@@ -989,6 +1007,7 @@ module friscv_csr
     assign csr_sb[`CSR_SB_MTVEC+:XLEN] = mtvec;
     assign csr_sb[`CSR_SB_MEPC+:XLEN] = mepc;
     assign csr_sb[`CSR_SB_MSTATUS+:XLEN] = mstatus;
+    assign csr_sb[`CSR_SB_MCOUNTEREN+:XLEN] = mcounteren;
 
     assign csr_sb[`CSR_SB_MIE] = mstatus[3];
     assign csr_sb[`CSR_SB_MEIP] = mip[11];

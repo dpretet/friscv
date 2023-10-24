@@ -226,7 +226,8 @@
 `define CSR_SB_MEPC         `CSR_SB_MTVEC + `XLEN
 `define CSR_SB_MSTATUS      `CSR_SB_MEPC + `XLEN
 `define CSR_SB_MIE          `CSR_SB_MSTATUS + `XLEN
-`define CSR_SB_MEIP         `CSR_SB_MIE + 1
+`define CSR_SB_MCOUNTEREN   `CSR_SB_MIE + `XLEN
+`define CSR_SB_MEIP         `CSR_SB_MCOUNTEREN + `XLEN
 `define CSR_SB_MTIP         `CSR_SB_MEIP + 1
 `define CSR_SB_MSIP         `CSR_SB_MTIP + 1
 `define CSR_SB_MEIE         `CSR_SB_MSIP + 1
