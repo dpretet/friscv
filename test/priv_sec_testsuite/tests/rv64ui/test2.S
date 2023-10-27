@@ -11,7 +11,7 @@
 
 # Configure PMP and check the address matching are OK and out-of-range
 # and forbidden access are correctly handled
-# 
+#
 # x31 is the error status register to trigger the testbench status
 # when encounter a problem during the testcase
 ######################################################################
@@ -92,7 +92,7 @@ ILLEGAL_INSTRUCTION:
 ////////////////////////////////////////////
 // Erase all PMP configurations
 ////////////////////////////////////////////
-ERASE_PMP: 
+ERASE_PMP:
     csrw pmpcfg0, x0
     csrw pmpcfg1, x0
     csrw pmpcfg2, x0
@@ -119,13 +119,13 @@ ERASE_PMP:
 // Write all PMP registers to check it's accessible without limitations
 ///////////////////////////////////////////////////////////////////////
 CHECK_RW_PMP:
-    
+
     // pmpaddr0
     lui t4, %hi(PMPADDR)
     addi t4, t4, %lo(PMPADDR)
     csrw pmpaddr0, t4
     csrr t5, pmpaddr0
-    bne t4, t5, fail 
+    bne t4, t5, fail
     csrw pmpaddr0, x0
 
     // pmpaddr1
@@ -133,7 +133,7 @@ CHECK_RW_PMP:
     addi t4, t4, %lo(PMPADDR)
     csrw pmpaddr1, t4
     csrr t5, pmpaddr1
-    bne t4, t5, fail 
+    bne t4, t5, fail
     csrw pmpaddr1, x0
 
     // pmpaddr2
@@ -141,7 +141,7 @@ CHECK_RW_PMP:
     addi t4, t4, %lo(PMPADDR)
     csrw pmpaddr2, t4
     csrr t5, pmpaddr2
-    bne t4, t5, fail 
+    bne t4, t5, fail
     csrw pmpaddr2, x0
 
     // pmpaddr3
@@ -149,7 +149,7 @@ CHECK_RW_PMP:
     addi t4, t4, %lo(PMPADDR)
     csrw pmpaddr3, t4
     csrr t5, pmpaddr3
-    bne t4, t5, fail 
+    bne t4, t5, fail
     csrw pmpaddr3, x0
 
     // pmpaddr4
@@ -157,7 +157,7 @@ CHECK_RW_PMP:
     addi t4, t4, %lo(PMPADDR)
     csrw pmpaddr4, t4
     csrr t5, pmpaddr4
-    bne t4, t5, fail 
+    bne t4, t5, fail
     csrw pmpaddr4, x0
 
     // pmpaddr5
@@ -165,7 +165,7 @@ CHECK_RW_PMP:
     addi t4, t4, %lo(PMPADDR)
     csrw pmpaddr5, t4
     csrr t5, pmpaddr5
-    bne t4, t5, fail 
+    bne t4, t5, fail
     csrw pmpaddr5, x0
 
     // pmpaddr6
@@ -173,7 +173,7 @@ CHECK_RW_PMP:
     addi t4, t4, %lo(PMPADDR)
     csrw pmpaddr6, t4
     csrr t5, pmpaddr6
-    bne t4, t5, fail 
+    bne t4, t5, fail
     csrw pmpaddr6, x0
 
     // pmpaddr7
@@ -181,7 +181,7 @@ CHECK_RW_PMP:
     addi t4, t4, %lo(PMPADDR)
     csrw pmpaddr7, t4
     csrr t5, pmpaddr7
-    bne t4, t5, fail 
+    bne t4, t5, fail
     csrw pmpaddr7, x0
 
     // pmpaddr8
@@ -189,7 +189,7 @@ CHECK_RW_PMP:
     addi t4, t4, %lo(PMPADDR)
     csrw pmpaddr8, t4
     csrr t5, pmpaddr8
-    bne t4, t5, fail 
+    bne t4, t5, fail
     csrw pmpaddr8, x0
 
     // pmpaddr9
@@ -197,7 +197,7 @@ CHECK_RW_PMP:
     addi t4, t4, %lo(PMPADDR)
     csrw pmpaddr9, t4
     csrr t5, pmpaddr9
-    bne t4, t5, fail 
+    bne t4, t5, fail
     csrw pmpaddr9, x0
 
     // pmpaddr10
@@ -205,7 +205,7 @@ CHECK_RW_PMP:
     addi t4, t4, %lo(PMPADDR)
     csrw pmpaddr10, t4
     csrr t5, pmpaddr10
-    bne t4, t5, fail 
+    bne t4, t5, fail
     csrw pmpaddr10, x0
 
     // pmpaddr1
@@ -213,7 +213,7 @@ CHECK_RW_PMP:
     addi t4, t4, %lo(PMPADDR)
     csrw pmpaddr11, t4
     csrr t5, pmpaddr11
-    bne t4, t5, fail 
+    bne t4, t5, fail
     csrw pmpaddr11, x0
 
     // pmpaddr12
@@ -221,7 +221,7 @@ CHECK_RW_PMP:
     addi t4, t4, %lo(PMPADDR)
     csrw pmpaddr12, t4
     csrr t5, pmpaddr12
-    bne t4, t5, fail 
+    bne t4, t5, fail
     csrw pmpaddr12, x0
 
     // pmpaddr13
@@ -229,7 +229,7 @@ CHECK_RW_PMP:
     addi t4, t4, %lo(PMPADDR)
     csrw pmpaddr13, t4
     csrr t5, pmpaddr13
-    bne t4, t5, fail 
+    bne t4, t5, fail
     csrw pmpaddr13, x0
 
     // pmpaddr14
@@ -237,7 +237,7 @@ CHECK_RW_PMP:
     addi t4, t4, %lo(PMPADDR)
     csrw pmpaddr14, t4
     csrr t5, pmpaddr14
-    bne t4, t5, fail 
+    bne t4, t5, fail
     csrw pmpaddr14, x0
 
     // pmpaddr15
@@ -245,15 +245,15 @@ CHECK_RW_PMP:
     addi t4, t4, %lo(PMPADDR)
     csrw pmpaddr15, t4
     csrr t5, pmpaddr15
-    bne t4, t5, fail 
+    bne t4, t5, fail
     csrw pmpaddr15, x0
-    
+
     // pmpcfg0
     lui t4, %hi(PMPCFG)
     addi t4, t4, %lo(PMPCFG)
     csrw pmpcfg0, t4
     csrr t5, pmpcfg0
-    bne t4, t5, fail 
+    bne t4, t5, fail
     csrw pmpcfg0, x0
 
     // pmpcfg1
@@ -261,7 +261,7 @@ CHECK_RW_PMP:
     addi t4, t4, %lo(PMPCFG)
     csrw pmpcfg1, t4
     csrr t5, pmpcfg1
-    bne t4, t5, fail 
+    bne t4, t5, fail
     csrw pmpcfg1, x0
 
     // pmpcfg2
@@ -269,7 +269,7 @@ CHECK_RW_PMP:
     addi t4, t4, %lo(PMPCFG)
     csrw pmpcfg2, t4
     csrr t5, pmpcfg2
-    bne t4, t5, fail 
+    bne t4, t5, fail
     csrw pmpcfg2, x0
 
     // pmpaddr3
@@ -277,7 +277,7 @@ CHECK_RW_PMP:
     addi t4, t4, %lo(PMPCFG)
     csrw pmpcfg3, t4
     csrr t5, pmpcfg3
-    bne t4, t5, fail 
+    bne t4, t5, fail
     csrw pmpcfg3, x0
     j RET_ECALL
 
@@ -301,23 +301,21 @@ INTP_SERVICE:
 
 EXP_SERVICE:
     addi s0, s0, 1
-    j RET_ECALL
+    # j RET_ECALL
+    mret
 
 ////////////////////////////////////////////
-# Configure a NAPOT region
+# Configure a NAPOT / NA4 region
 ////////////////////////////////////////////
+SET_NA4:
 SET_NAPOT:
     j RET_ECALL
 
-////////////////////////////////////////////
-# Configure a NA4 region
-////////////////////////////////////////////
-SET_NA4:
-    j RET_ECALL
 
 ////////////////////////////////////////////
 # Configure a TOR region
 ////////////////////////////////////////////
+SET_PMP:
 SET_TOR:
     li t0, 4
     blt a0, t0, CFGREG0
@@ -332,8 +330,11 @@ SET_TOR:
     j RET_ECALL
 
 CFGREG0:
+    // prepare address, must be store by removing 2 LSBs
     srli a1, a1, 2
+    // load configuration to update
     csrr t1, pmpcfg0
+    // check pmp region to configure
     li t0, 0
     beq t0, a0, 0f
     li t0, 1
@@ -366,6 +367,7 @@ CFGREG0:
     slli a3, a3, 24
     j 4f
 4:
+    // Store config and start MPU
     or t1, t1, a3
     csrw pmpcfg0, t1
     j RET_ECALL
@@ -499,16 +501,13 @@ CFGREG3:
 //////////////////////////////////////////////////
 PMP_SERVICE:
     li t0, OFF
-    beq a3, t0, RET_ECALL
+    beq a4, t0, RET_ECALL
     li t0, TOR
-    andi t1, a3, TOR
-    beq t1, t0, SET_TOR
+    beq a4, t0, SET_TOR
     li t0, NA4
-    andi t1, a3, NA4
-    beq t1, t0, SET_NA4
+    beq a4, t0, SET_NA4
     li t0, NAPOT
-    andi t1, a3, NA4
-    beq t1, t0, SET_NAPOT
+    beq a4, t0, SET_NAPOT
     // region type unsupported, returns an error
     li a0, 1
     j RET_ECALL
@@ -583,7 +582,8 @@ TEST3_1TOR:
     li a0, 0       // pmp number
     li a1, S1MB    // base address
     li a2, 0       // size
-    li a3, TOR_RWX // type
+    li a3, TOR_RWX // permissions
+    li a4, TOR     // type
     li a7, 8
     ecall
 // Run some duties into the region
@@ -595,16 +595,55 @@ TEST3_OUT_OF_BOUND:
     # lui t0, %hi(S1MB)
     # addi t0, t0, %lo(S1MB)
     sw x0, 0(t0) // raise an exception, which will increment s0
+    # bunch of nop to wait for exception handling
+    nop
+    nop
+    nop
     // Check the exception has been handled correctly
-    // TODO: insert NOP like to be sure we catch the exp
     li t0, 1
     bne s0, t0, fail
 
-TEST_R_ALLOWED:
-TEST_W_ALLOWED:
+TEST3_TEARDOWN:
+    li a7, 0
+    ecall
+    # j pass
+
+// NAPOT region - 1MB RWX
+TEST4_1NAPOT:
+    // Configure the region
+    li a0, 0         // pmp number
+    li a1, 0         // base address
+    li a2, S1MB      // size
+    li a3, NAPOT_RWX // permissions
+    li a3, NAPOT     // type
+    li a7, 8
+    ecall
+// Run some duties into the region
+TEST4_RW_ACCESS:
+    call LD_ST_ARITH
+// Try to access outside the memory region
+TEST4_OUT_OF_BOUND:
+    li t0, S1MB
+    # lui t0, %hi(S1MB)
+    # addi t0, t0, %lo(S1MB)
+    sw x0, 0(t0) // raise an exception, which will increment s0
+    # bunch of nop to wait for exception handling
+    nop
+    nop
+    nop
+    // Check the exception has been handled correctly
+    li t0, 1
+    bne s0, t0, fail
+
+TEST4_TEARDOWN:
+    li a7, 0
+    ecall
     j pass
 
+
+//////////////////////////////////////////////////////
 // Stupid loop to access the memory over a small range
+//////////////////////////////////////////////////////
 LD_ST_ARITH:
     li t0, 0
     li t1, 10
@@ -619,9 +658,10 @@ LD_ST_ARITH:
     slli t3, t0, 2
     bne t0, t1, 1b
     ret
+//////////////////////////////////////////////////////
 
 
-TEST_PASSFAIL 
+TEST_PASSFAIL
 
 RVTEST_CODE_END
 

@@ -18,8 +18,8 @@
 # when encounter a problem during the testcase
 
 # Machine interrupt enable (MSTATUS)
-.equ MIE_ON,    0x00000088
-.equ MIE_OFF,   0xFFFFFFF7
+.equ MPIE_ON,   0x00000080
+.equ MPIE_OFF,  0xFFFFFFF7
 # Machine external interrupt enable (MIE)
 .equ MEIE_ON,   0x00000800
 .equ MEIE_OFF,  0xFFFFF7FF
@@ -41,8 +41,8 @@ ECALL_USER_MODE:
     li t4, 9
     bne a7, t4, RET_ECALL
     # Enable IRQ
-    lui t5, %hi(MIE_ON)
-    addi t5, t5, %lo(MIE_ON)
+    lui t5, %hi(MPIE_ON)
+    addi t5, t5, %lo(MPIE_ON)
     csrr t4, mstatus
     or t4, t4, t5
     csrw mstatus, t4

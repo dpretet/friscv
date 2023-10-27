@@ -659,18 +659,28 @@ module friscv_control
                     // new instruction from memory:
                     ///////////////////////////////////////////////////////////
 
+                    // 
+                    // Any trap handling, asynchronous and synchronous
+                    //
+                    if (trap_occuring) begin
+
+                        // Get a new ID for the new batch
+                        arid <= next_id(arid, MAX_ID, AXI_ID_MASK);
+                        // Jump to trap handler
+                        araddr <= mtvec;
+
                     //
                     //   - ECALL / MRET / JALR / Any branching
                     //
-                    if (inst_ready && !proc_busy &&
-                        (jump_branch || sys[`IS_ECALL] || sys[`IS_MRET] || trap_occuring))
+                    end else if (inst_ready && !proc_busy &&
+                        (jump_branch || sys[`IS_ECALL] || sys[`IS_MRET]))
                     begin
 
                         // Get a new ID for the new batch
                         arid <= next_id(arid, MAX_ID, AXI_ID_MASK);
 
-                        // ECALL / Trap handling
-                        if (sys[`IS_ECALL] || trap_occuring) araddr <= mtvec;
+                        // ECALL
+                        if (sys[`IS_ECALL]) araddr <= mtvec;
                         // MRET
                         else if (sys[`IS_MRET]) araddr <= sb_mepc;
                         // jalr / branch
@@ -705,7 +715,23 @@ module friscv_control
 
                     ///////////////////////////////////////////////////////////
                     // Manages the PC vs the different instructions to execute
-                    if (inst_ready) begin
+
+                    // Move to the trap handling when received an
+                    // interrupt, a wrong instruction, ...
+                    if (trap_occuring) begin
+
+                        if (!cant_trap) begin
+                            `ifdef USE_SVL
+                            print_mcause("Handling a trap -> MCAUSE=0x", mcause_code);
+                            print_instruction;
+                            `endif
+                            status[3] <= 1'b1;
+                            flush_pipe <= 1'b1;
+                            if (USER_MODE) priv_mode <= `MMODE;
+                            pc_reg <= mtvec;
+                        end
+
+                    end else if (inst_ready) begin
 
                         // Need to branch/process but ALU/memfy/CSR didn't finish
                         // to execute last instruction, so store PCs.
@@ -713,25 +739,9 @@ module friscv_control
                             pc_jal_saved <= pc_plus4;
                             pc_auipc_saved <= pc_reg;
                         end
-
-                        // Move to the trap handling when received an
-                        // interrupt, a wrong instruction, ...
-                        if (trap_occuring) begin
-
-                            if (!cant_trap) begin
-                                `ifdef USE_SVL
-                                print_mcause("Handling a trap -> MCAUSE=0x", mcause_code);
-                                print_instruction;
-                                `endif
-                                status[3] <= 1'b1;
-                                flush_pipe <= 1'b1;
-                                if (USER_MODE) priv_mode <= `MMODE;
-                                pc_reg <= mtvec;
-                            end
-
                         // Needs to jump or branch thus stop the pipeline
                         // and reload new instructions
-                        end else if (jalr | branching) begin
+                        if (jalr | branching) begin
 
                             if (!cant_jump) begin
                                 print_instruction;
@@ -947,21 +957,21 @@ module friscv_control
                 mcause_wr <= 1'b0;
                 mtval_wr <= 1'b0;
 
-                if (inst_ready) begin
+                if (trap_occuring && !cant_trap) begin
 
-                    if (trap_occuring && !cant_trap) begin
+                    mepc_wr <= 1'b1;
+                    mepc <= pc_reg;
+                    mcause_wr <= 1'b1;
+                    mcause <= mcause_code;
+                    mtval_wr <= 1'b1;
+                    mtval <= mtval_info;
+                    mstatus_wr <= 1'b1;
+                    mstatus <= mstatus_for_trap;
+                    clr_meip <= (mcause_code == 'h8000000B);
 
-                        mepc_wr <= 1'b1;
-                        mepc <= pc_reg;
-                        mcause_wr <= 1'b1;
-                        mcause <= mcause_code;
-                        mtval_wr <= 1'b1;
-                        mtval <= mtval_info;
-                        mstatus_wr <= 1'b1;
-                        mstatus <= mstatus_for_trap;
-                        clr_meip <= (mcause_code == 'h8000000B);
+                end else if (inst_ready) begin
 
-                    end else if (|sys || |fence) begin
+                    if (|sys || |fence) begin
 
                         clr_meip <= 1'b0;
 
@@ -1388,7 +1398,7 @@ module friscv_control
 
     // Trigger the trap handling execution in main FSM
 
-    assign async_trap_occuring = (sb_msip&sb_msie | sb_mtip&sb_mtie | sb_meip&sb_meie) & sb_mie;
+    assign async_trap_occuring = (sb_msip&sb_msie | sb_mtip&sb_mtie | sb_meip&sb_meie&!clr_meip) & sb_mie;
 
     assign sync_trap_occuring = csr_ro_wr            |
                                 inst_addr_misaligned |

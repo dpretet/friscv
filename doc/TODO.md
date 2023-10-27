@@ -30,6 +30,15 @@
 
 # Testcases
 
+Traps
+- [ ] Nested interrupts
+- [ ] Vector interrupts
+- [ ] Interrupts mixed over exceptions
+
+Loop d'access de RW avec des illegal access (misaligned et illegal)
+Faire varier la periode de l'EIRQ
+Ecrire un contexte switch pour les tests
+
 U-mode
 - [X] pass from/to m-mode/u-mode
 - [X] try mret in u-mode, needs to fail
@@ -55,8 +64,9 @@ MPU:
     - [ ] read/write data in U-mode
     - [ ] read/write data in M-mode with MPRV + MPP w/ U-mode
 - [ ] locked access to change configuration
-- [ ] locked region accessed wrongly by m-mode- pass xIE & xIP to the control
+- [ ] locked region accessed wrongly by m-mode
 
+Final:
 - Pass compliance with U-mode
 - Review testcases
 - Parse again the documentation
