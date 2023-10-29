@@ -122,6 +122,10 @@ module friscv_csr
     logic                    timer_irq_sync;
     logic                    sw_irq_sync;
 
+    logic                    ext_irq_pulse;
+    logic                    timer_irq_pulse;
+    logic                    sw_irq_pulse;
+
     // External source of CSRs
     logic                    ctrl_mepc_wr;
     logic  [XLEN       -1:0] ctrl_mepc;
@@ -407,7 +411,8 @@ module friscv_csr
     assign ready = 1'b1;
 
     //////////////////////////////////////////////////////////////////////////
-    // Synchronize the IRQs in the core's clock domain
+    // Synchronize the IRQs in the core's clock domain and transoform them
+    // into a single pulse
     //////////////////////////////////////////////////////////////////////////
 
     friscv_bit_sync
@@ -449,6 +454,32 @@ module friscv_csr
         .bit_o   (sw_irq_sync)
     );
 
+    friscv_pulser eirq_pulse 
+    (
+    .aclk    (aclk),
+    .aresetn (aresetn),
+    .srst    (srst),
+    .intp    (ext_irq_sync),
+    .pulse   (ext_irq_pulse)
+    );
+
+    friscv_pulser tirq_pulse 
+    (
+    .aclk    (aclk),
+    .aresetn (aresetn),
+    .srst    (srst),
+    .intp    (timer_irq_sync),
+    .pulse   (timer_irq_pulse)
+    );
+
+    friscv_pulser sirq_pulse 
+    (
+    .aclk    (aclk),
+    .aresetn (aresetn),
+    .srst    (srst),
+    .intp    (sw_irq_sync),
+    .pulse   (sw_irq_pulse)
+    );
 
     //////////////////////////////////////////////////////////////////////////
     // ISA register Write Stage
@@ -811,21 +842,21 @@ module friscv_csr
         end else if (srst) begin
             mip <= {XLEN{1'b0}};
         end else begin
-            if (ext_irq_sync || timer_irq_sync || sw_irq_sync || ctrl_clr_meip) begin
+            if (ext_irq_pulse || timer_irq_pulse || sw_irq_pulse || ctrl_clr_meip) begin
                 // external interrupt enable && external interrupt pin asserted
-                if ( ext_irq_sync) begin
+                if (ext_irq_pulse) begin
                     mip[11] <= 1'b1;
                 end else if (ctrl_clr_meip) begin
                     mip[11] <= 1'b0;
                 end
                 // software interrupt enable && software interrupt pin asserted
-                if (mie[3] && sw_irq_sync) begin
+                if (sw_irq_pulse) begin
                     mip[3] <= 1'b1;
                 end else begin
                     mip[3] <= 1'b0;
                 end
                 // timer interrupt enable && timer interrupt pin asserted
-                if (mie[7] && timer_irq_sync) begin
+                if (timer_irq_pulse) begin
                     mip[7] <= 1'b1;
                 end else begin
                     mip[7] <= 1'b0;

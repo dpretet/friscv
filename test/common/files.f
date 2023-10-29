@@ -10,6 +10,7 @@
 ../../rtl/friscv_memfy.sv
 ../../rtl/friscv_registers.sv
 ../../rtl/friscv_csr.sv
+../../rtl/friscv_pulser.sv
 ../../rtl/friscv_scfifo.sv
 ../../rtl/friscv_ram.sv
 ../../rtl/friscv_rambe.sv

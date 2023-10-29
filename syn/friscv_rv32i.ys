@@ -30,6 +30,7 @@ read -sv2012 ../rtl/friscv_rv32i_core.sv
 read -sv2012 ../rtl/friscv_axi_or_tracker.sv
 read -sv2012 ../rtl/friscv_mpu.sv
 read -sv2012 ../rtl/friscv_pmp_region.sv
+read -sv2012 ../rtl/friscv_pulser.sv
 
 # synthsize the core
 synth -top friscv_rv32i_core

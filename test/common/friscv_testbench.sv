@@ -141,7 +141,7 @@ module friscv_testbench(
     parameter PMPADDR13_INIT = `PMPADDR13_INIT;
     parameter PMPADDR14_INIT = `PMPADDR14_INIT;
     parameter PMPADDR15_INIT = `PMPADDR15_INIT;
-    `else 
+    `else
     // PMP / PMA supported
     //  = 0, no PMP
     //  = 1, PMP available but fixed at boot time
@@ -215,7 +215,7 @@ module friscv_testbench(
     // Minimum program counter value a test needs to reach
     parameter MIN_PC = `MIN_PC;
     `ifdef WFI_TW
-    // Timeout applied for WFI 
+    // Timeout applied for WFI
     parameter WFI_TW = `WFI_TW;
     `else
     parameter WFI_TW = 0;
@@ -328,31 +328,63 @@ module friscv_testbench(
     assign imem_wvalid = 1'b0;
     assign imem_bready = 1'b1;
 
-    initial ext_irq = 1'b0;
-
     `ifdef GEN_EIRQ
-        generate
-        if (`GEN_EIRQ>0) begin
-            always @ (posedge aclk or negedge aresetn) begin
-                integer cnt;
-                if (!aresetn) begin
-                    ext_irq <= 1'b0;
-                    cnt <= 0;
-                end else if (srst) begin
-                    ext_irq <= 1'b0;
-                    cnt <= 0;
+
+    generate if (`GEN_EIRQ>0) begin
+
+        integer cnt;
+        logic [31:0] xirq_lfsr;
+        logic [7 :0] irq_reset;
+        logic [3 :0] next_eirq;
+        logic [3 :0] next_sirq;
+
+        lfsr32
+        #(
+        .KEY ('1)
+        )
+        irq_lsfr
+        (
+        .aclk    (aclk),
+        .aresetn (aresetn),
+        .srst    (srst),
+        .en      (1'b1),
+        .lfsr    (xirq_lfsr)
+        );
+
+        always @ (posedge aclk or negedge aresetn) begin
+            if (!aresetn) begin
+                cnt <= 0;
+                irq_reset <= '1;
+                next_eirq <= '1;
+                next_sirq <= '1;
+            end else if (srst) begin
+                cnt <= 0;
+                irq_reset <= '1;
+                next_eirq <= '1;
+                next_sirq <= '1;
+            end else begin
+                if (cnt == irq_reset) begin
+                    irq_reset <= xirq_lfsr[7:0];
+                    next_eirq <= xirq_lfsr[8+:4];
+                    next_sirq <= xirq_lfsr[16+:4];
+                    cnt <= 'h0;
                 end else begin
-                    if (cnt == 100) begin
-                        cnt <= 0;
-                        ext_irq <= 1'b1;
-                    end else begin
-                        cnt <= cnt + 1;
-                        ext_irq <= 1'b0;
-                    end
+                    cnt <= cnt + 1;
                 end
             end
         end
-        endgenerate
+
+        assign ext_irq = (cnt >= (irq_reset-next_eirq));
+        assign sw_irq = (cnt >= (irq_reset-next_sirq));
+
+    end else begin
+        assign ext_irq = '0;
+        assign sw_irq = '0;
+    end
+    endgenerate
+    `else
+        assign ext_irq = '0;
+        assign sw_irq = '0;
     `endif
 
     // Run the testbench by using only the CPU core
@@ -361,7 +393,6 @@ module friscv_testbench(
     if (TB_CHOICE=="CORE") begin
 
         assign timer_irq = 1'b0;
-        assign sw_irq = 1'b0;
 
         friscv_rv32i_core
         #(
@@ -378,7 +409,7 @@ module friscv_testbench(
             .SUPERVISOR_MODE            (SUPERVISOR_MODE),
             .USER_MODE                  (USER_MODE),
             .PROCESSING_BUS_PIPELINE    (PROCESSING_BUS_PIPELINE),
-            .WFI_TW                     (WFI_TW), 
+            .WFI_TW                     (WFI_TW),
             .AXI_ADDR_W                 (AXI_ADDR_W),
             .AXI_ID_W                   (AXI_ID_W),
             .AXI_IMEM_W                 (AXI_IMEM_W),
@@ -463,9 +494,9 @@ module friscv_testbench(
         axi4l_ram
         #(
             `ifdef RAM_MODE_PERF
-                .MODE ("performance"),
+             .MODE ("performance"),
             `else
-                .MODE ("compliance"),
+             .MODE ("compliance"),
             `endif
             .INIT             ("test.v"),
             .AXI_ADDR_W       (AXI_ADDR_W),
@@ -530,7 +561,6 @@ module friscv_testbench(
     end else if (TB_CHOICE=="PLATFORM") begin
 
         assign timer_irq = 1'b0;
-        assign sw_irq = 1'b0;
         assign rtc = aclk;
 
         // Can't use interactive mode with Verilator
@@ -589,7 +619,7 @@ module friscv_testbench(
             .SUPERVISOR_MODE            (SUPERVISOR_MODE),
             .USER_MODE                  (USER_MODE),
             .PROCESSING_BUS_PIPELINE    (PROCESSING_BUS_PIPELINE),
-            .WFI_TW                     (WFI_TW), 
+            .WFI_TW                     (WFI_TW),
             .AXI_ADDR_W                 (AXI_ADDR_W),
             .AXI_ID_W                   (AXI_ID_W),
             .AXI_DATA_W                 (AXI_DATA_W),
@@ -667,9 +697,9 @@ module friscv_testbench(
         axi4l_ram
         #(
             `ifdef RAM_MODE_PERF
-                .MODE ("performance"),
+            .MODE ("performance"),
             `else
-                .MODE ("compliance"),
+            .MODE ("compliance"),
             `endif
             .INIT             ("test.v"),
             .AXI_ADDR_W       (AXI_ADDR_W),

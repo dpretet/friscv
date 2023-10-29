@@ -183,9 +183,15 @@ WFI:
     - if MTIE/MEIE/MSIE are disabled, acts as a NOP and move to pc+4, stay in u-mode
 - `WFI` could trigger a low-power mechanism in the future, enabling clock-gating or power-gating
 
+MIP:
+
+MIP registers contains the three interrupt fiels: external, software and timer interrupts lines.
+The hart permits to read and write the three bits.
+
 MEIP:
 - MEIP is cleared internally, withtout user intervention, when the interrupt is received. The user
-  will never read it high but could read mcause to know external interrupt being the trap source.
+  will most likely not read it high but could read mcause to know external interrupt being the trap 
+  source.
 
 MSIP:
 - implemented in a memory-mapped register but the input of a hart has never tested because
