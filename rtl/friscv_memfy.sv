@@ -435,7 +435,7 @@ module friscv_memfy
                         opcode_r <= opcode;
 
                         // STORE
-                        if (opcode==`STORE && mpu_allow[`PMA_W] && !store_misaligned) begin
+                        if (opcode==`STORE && mpu_allow[`ALW_W] && !store_misaligned) begin
 
                             if (waiting_rd_cpl || arvalid) begin
                                 state <= WAIT;
@@ -460,7 +460,7 @@ module friscv_memfy
                             arvalid <= 1'b0;
 
                         // LOAD
-                        end else if (opcode==`LOAD && mpu_allow[`PMA_R] && !load_misaligned) begin
+                        end else if (opcode==`LOAD && mpu_allow[`ALW_R] && !load_misaligned) begin
                             if (waiting_wr_cpl || awvalid) begin
                                 state <= WAIT;
                                 arvalid <= 1'b0;
@@ -637,14 +637,14 @@ module friscv_memfy
         end else begin
 
             // Write xfers tracker
-            if (memfy_valid && memfy_ready && opcode==`STORE && !bvalid && !max_wr_or) begin
+            if (memfy_valid && memfy_ready && opcode==`STORE && !bvalid && !max_wr_or && mpu_allow[`ALW_W]) begin
                 wr_or_cnt <= wr_or_cnt + 1'b1;
             end else if (!(memfy_valid && memfy_ready && opcode==`STORE) && bvalid && bready && wr_or_cnt!={MAX_OR_W{1'b0}}) begin
                 wr_or_cnt <= wr_or_cnt - 1'b1;
             end
 
             // Read xfers tracker
-            if (memfy_valid && memfy_ready && opcode==`LOAD && !memfy_rd_wr && !max_rd_or) begin
+            if (memfy_valid && memfy_ready && opcode==`LOAD && !memfy_rd_wr && !max_rd_or && mpu_allow[`ALW_R]) begin
                 rd_or_cnt <= rd_or_cnt + 1'b1;
             end else if (!(memfy_valid && memfy_ready && opcode==`LOAD) && memfy_rd_wr && rd_or_cnt!={MAX_OR_W{1'b0}}) begin
                 rd_or_cnt <= rd_or_cnt - 1'b1;
@@ -769,7 +769,7 @@ module friscv_memfy
 
     ------------------------------------------------------------------------------------------------
          ACACHE      |              AWCACHE                  |              ARCACHE
-    [3] [2] [1] [0]  |                                       |                     
+    [3] [2] [1] [0]  |                                       |
     ------------------------------------------------------------------------------------------------
      0   0   0   0   | Device Non-cacheable Non-bufferable   | Device Non-cacheable Non-bufferable
      0   0   0   1   | Device Non-cacheable Bufferable       | Device Non-cacheable Bufferable
@@ -781,7 +781,7 @@ module friscv_memfy
                      | Write-Through Read-Allocate           |
     ------------------------------------------------------------------------------------------------
      0   1   1   1   | Write-Back No-Allocate                | Write-Back Read-Allocate
-                     | Write-Back Read-Allocate              | 
+                     | Write-Back Read-Allocate              |
     ------------------------------------------------------------------------------------------------
      1   0   1   0   | Write-Through Write-Allocate          | Write-Through No-Allocate
                      |                                       | Write-Through Write-Allocate
@@ -843,10 +843,10 @@ module friscv_memfy
                                                                                    1'b0 ;
 
     // Load access outside am allowed region
-    assign load_access_fault = (opcode==`LOAD) & !mpu_allow[`PMA_R] & check_access & active_access; 
+    assign load_access_fault = (opcode==`LOAD) & !mpu_allow[`ALW_R] & check_access & active_access;
 
     // Store access outside am allowed region
-    assign store_access_fault = (opcode==`STORE) & !mpu_allow[`PMA_W] & check_access & active_access; 
+    assign store_access_fault = (opcode==`STORE) & !mpu_allow[`ALW_W] & check_access & active_access;
 
 
     // Shared bus routing back to control unit

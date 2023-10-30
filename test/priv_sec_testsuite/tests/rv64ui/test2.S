@@ -88,7 +88,6 @@ ILLEGAL_INSTRUCTION:
     ebreak
 
 
-
 ////////////////////////////////////////////
 // Erase all PMP configurations
 ////////////////////////////////////////////
@@ -308,8 +307,15 @@ EXP_SERVICE:
 # Configure a NAPOT / NA4 region
 ////////////////////////////////////////////
 SET_NA4:
-SET_NAPOT:
     j RET_ECALL
+SET_NAPOT:
+    # napot_size = ((size/2)-1)
+    srli a2, a2, 1
+    addi a2, a2, -1
+    # pmp_addr = (base + napot_size)>>2
+    add a1, a1, a2
+    srli a1, a1, 2
+    j SET_PMP
 
 
 ////////////////////////////////////////////
@@ -589,11 +595,20 @@ TEST3_1TOR:
 // Run some duties into the region
 TEST3_RW_ACCESS:
     call LD_ST_ARITH
-// Try to access outside the memory region
+// Try to access the extreme boundaries of the memory region
+TEST3_BOUNDS:
+    li t0, S1MB
+    // Check lowest bound
+    sw t0, 0(zero)
+    lw t1, 0(zero)
+    bne t0, t1, fail
+    // Check highest bound
+    sw t0, -4(t0)
+    lw t1, -4(t0)
+    bne t0, t1, fail
+
 TEST3_OUT_OF_BOUND:
     li t0, S1MB
-    # lui t0, %hi(S1MB)
-    # addi t0, t0, %lo(S1MB)
     sw x0, 0(t0) // raise an exception, which will increment s0
     # bunch of nop to wait for exception handling
     nop
@@ -606,7 +621,7 @@ TEST3_OUT_OF_BOUND:
 TEST3_TEARDOWN:
     li a7, 0
     ecall
-    # j pass
+    li s0, 0
 
 // NAPOT region - 1MB RWX
 TEST4_1NAPOT:
@@ -621,6 +636,17 @@ TEST4_1NAPOT:
 // Run some duties into the region
 TEST4_RW_ACCESS:
     call LD_ST_ARITH
+// Try to access the extreme boundaries of the memory region
+TEST4_BOUNDS:
+    li t0, S1MB
+    // Check lowest bound
+    sw t0, 0(zero)
+    lw t1, 0(zero)
+    bne t0, t1, fail
+    // Check highest bound
+    sw t0, -4(t0)
+    lw t1, -4(t0)
+    bne t0, t1, fail
 // Try to access outside the memory region
 TEST4_OUT_OF_BOUND:
     li t0, S1MB
@@ -634,10 +660,12 @@ TEST4_OUT_OF_BOUND:
     // Check the exception has been handled correctly
     li t0, 1
     bne s0, t0, fail
+    li s0, 0
 
 TEST4_TEARDOWN:
     li a7, 0
     ecall
+    li s0, 0
     j pass
 
 

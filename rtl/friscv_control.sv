@@ -1220,9 +1220,9 @@ module friscv_control
     assign inst_dec_error = dec_error & (cfsm==FETCH) & inst_ready;
 
     // Is fetching instruction on forbidden memory region 
-    assign inst_access_fault = (!mpu_allow[`PMA_X] | !mpu_allow[`PMA_R]) &
+    assign inst_access_fault = (!mpu_allow[`ALW_X] | !mpu_allow[`ALW_R]) &
                                   (priv_mode == `UMODE ||
-                                   priv_mode==`MMODE && mpu_allow[3] /*locked*/);
+                                   priv_mode==`MMODE && mpu_allow[`ALW_L]);
 
     //////////////////////////////////////////////////////////////////////
     // Stores the incoming excpetions from processing. Can't handle 
