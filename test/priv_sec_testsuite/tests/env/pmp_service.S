@@ -201,8 +201,8 @@ CHECK_RW_PMP:
 ////////////////////////////////////////////
 INTP_SERVICE:
     # Enable IRQ
-    lui t5, %hi(MIE_ON)
-    addi t5, t5, %lo(MIE_ON)
+    lui t5, %hi(MPIE_ON)
+    addi t5, t5, %lo(MPIE_ON)
     csrr t4, mstatus
     or t4, t4, t5
     csrw mstatus, t4

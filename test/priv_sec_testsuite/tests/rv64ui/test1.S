@@ -19,7 +19,7 @@
 
 # Machine interrupt enable (MSTATUS)
 .equ MPIE_ON,   0x00000080
-.equ MPIE_OFF,  0xFFFFFFF7
+.equ MPIE_OFF,  0xFFFFFF7F
 # Machine external interrupt enable (MIE)
 .equ MEIE_ON,   0x00000800
 .equ MEIE_OFF,  0xFFFFF7FF
@@ -37,9 +37,14 @@ ECALL_SUPERVISOR_MODE:
     ebreak
 
 ECALL_USER_MODE:
-    # Check if ECALL is a syscall to enable interrupts 
+    li t4, 7
+    beq t4, a7, DISABLE_EIRQ
+    li t4, 8
+    beq t4, a7, DISABLE_INTP
     li t4, 9
     bne a7, t4, RET_ECALL
+
+ENABLE_INTP:
     # Enable IRQ
     lui t5, %hi(MPIE_ON)
     addi t5, t5, %lo(MPIE_ON)
@@ -52,6 +57,24 @@ ECALL_USER_MODE:
     csrr t4, mie
     or t4, t4, t5
     csrw mie, t4
+    j RET_ECALL
+
+DISABLE_INTP:
+    lui t5, %hi(MPIE_OFF)
+    addi t5, t5, %lo(MPIE_OFF)
+    csrr t4, mstatus
+    and t4, t4, t5
+    csrw mstatus, t4
+    j RET_ECALL
+
+DISABLE_EIRQ:
+    lui t5, %hi(MEIE_OFF)
+    addi t5, t5, %lo(MEIE_OFF)
+    csrr t4, mie
+    and t4, t4, t5
+    csrw mie, t4
+    j RET_ECALL
+
 RET_ECALL:
     # Increment PC value to return next instruction
     csrr t4, mepc
@@ -92,12 +115,28 @@ LOOP_OVER:
     bne t0, t2, LOOP_OVER
     bne t0, t1, fail
 
-// Use WFI to wait for the interrupt
+// Use WFI to wait for the interrupt with EIRQ enable
 TEST2:
     li x20, 0
     li t1, 1
     wfi
     bne x20, t1, fail
+
+// Use WFI to wait for the interrupt with EIRQ disabled
+TEST3:
+    li a7, 8
+    ecall
+    wfi
+
+// Use WFI without interrupt enabled, must be a NOP
+TEST4:
+    li a7, 7
+    ecall
+    nop
+    wfi
+    nop
+    wfi
+    nop
 
 j pass
 

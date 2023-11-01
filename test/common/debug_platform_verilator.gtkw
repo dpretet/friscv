@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.4.0 (w)1999-2022 BSI
-[*] Wed Nov  1 17:02:29 2023
+[*] Wed Nov  1 17:32:10 2023
 [*]
 [dumpfile] "/Users/damien/workspace/hdl/friscv/test/priv_sec_testsuite/friscv_testbench.vcd"
-[dumpfile_mtime] "Wed Nov  1 17:00:10 2023"
-[dumpfile_size] 224490635
+[dumpfile_mtime] "Wed Nov  1 17:03:56 2023"
+[dumpfile_size] 9007697
 [savefile] "/Users/damien/workspace/hdl/friscv/test/priv_sec_testsuite/debug_platform_verilator.gtkw"
-[timestart] 6064
+[timestart] 6058
 [size] 2560 1440
 [pos] -1 -1
-*-5.355745 6248 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-5.355745 6239 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] friscv_testbench.
 [treeopen] friscv_testbench.friscv_testbench.
 [treeopen] friscv_testbench.friscv_testbench.genblk2.
@@ -25,7 +25,7 @@
 [treeopen] friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.
 [treeopen] friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_ICACHE.icache.cache_blocks.
 [sst_width] 365
-[signals_width] 334
+[signals_width] 344
 [sst_expanded] 1
 [sst_vpaned_height] 365
 @c00200
@@ -288,7 +288,9 @@ friscv_testbench.friscv_testbench.genblk2.dut.cpu0.control.proc_valid
 -
 @28
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.control.trap_occuring
+@29
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.control.async_trap_occuring
+@28
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.control.sync_trap_occuring
 @200
 -
@@ -610,9 +612,7 @@ friscv_testbench.friscv_testbench.genblk2.dut.cpu0.mpu.MPU_ON.PMP_REGION_CHECKER
 -Region 1
 @22
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.mpu.MPU_ON.PMP_REGION_CHECKERS[1].REGION_ACTIVE.pmp_region.pmp_cfg[7:0]
-@23
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.mpu.MPU_ON.PMP_REGION_CHECKERS[1].REGION_ACTIVE.pmp_region.pmp_addr[31:0]
-@22
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.mpu.MPU_ON.PMP_REGION_CHECKERS[1].REGION_ACTIVE.pmp_region.pmp_base[31:0]
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.mpu.MPU_ON.PMP_REGION_CHECKERS[1].REGION_ACTIVE.pmp_region.pmp_mask[31:0]
 @1000200

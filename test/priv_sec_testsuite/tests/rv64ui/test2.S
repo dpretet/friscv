@@ -23,8 +23,8 @@
 ######################################################################
 
 # Machine interrupt enable (MSTATUS)
-.equ MIE_ON,    0x00000088
-.equ MIE_OFF,   0xFFFFFFF7
+.equ MPIE_ON,   0x00000080
+.equ MPIE_OFF,  0xFFFFFFF7
 # Machine external interrupt enable (MIE)
 .equ MEIE_ON,   0x00000800
 .equ MEIE_OFF,  0xFFFFF7FF

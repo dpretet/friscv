@@ -18,3 +18,7 @@ instructions or tries to access CSR registers reserved to m-mode
 
 Generate interrupts and manage them. Check U-mode move back M-mode to handle the interrupt. Check
 WFI is correctly supported by U-mode.
+
+## Test 2: Check PMP Regions
+
+Checks the three memory region types and tries access across the region and out of its boundaries

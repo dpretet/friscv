@@ -826,9 +826,12 @@ module friscv_control
                                     `endif
                                     status[4] <= 1'b1;
                                     flush_pipe <= 1'b1;
-                                    pc_reg <= mtvec;
+                                    if (sb_mie)
+                                        pc_reg <= mtvec;
                                     arvalid <= 1'b0;
                                     cfsm <= WFI;
+                                end else begin
+                                    pc_reg <= pc;
                                 end
 
                             // CSR instructions
@@ -892,10 +895,16 @@ module friscv_control
                         `endif
                         status <= 5'b0;
                         flush_pipe <= 1'b1;
-                        if (USER_MODE) priv_mode <= `MMODE;
-                        arid <= next_id(arid, MAX_ID, AXI_ID_MASK);
-                        araddr <= mtvec;
-                        pc_reg <= mtvec;
+                        if (USER_MODE && sb_mie) priv_mode <= `MMODE;
+                        
+                        if (sb_mie) begin
+                            arid <= next_id(arid, MAX_ID, AXI_ID_MASK);
+                            araddr <= mtvec;
+                            pc_reg <= mtvec;
+                        end else begin
+                            araddr <= pc;
+                            pc_reg <= pc;
+                        end
                         arvalid <= 1'b1;
                         cfsm <= FETCH;
                     end
@@ -1200,7 +1209,7 @@ module friscv_control
                 wfi_tw <= 1'b0;
             end else begin
 
-                if (cfsm==WFI && priv_mode!=`MMODE) begin
+                if (cfsm==WFI && priv_mode!=`MMODE && sb_mie) begin
                     tw <= tw + 1'b1;
                 end else begin
                     tw <= '0;
