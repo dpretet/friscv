@@ -1,29 +1,33 @@
 [*]
 [*] GTKWave Analyzer v3.4.0 (w)1999-2022 BSI
-[*] Thu Oct 26 19:01:31 2023
+[*] Wed Nov  1 17:02:29 2023
 [*]
 [dumpfile] "/Users/damien/workspace/hdl/friscv/test/priv_sec_testsuite/friscv_testbench.vcd"
-[dumpfile_mtime] "Thu Oct 26 18:59:38 2023"
-[dumpfile_size] 7831491
+[dumpfile_mtime] "Wed Nov  1 17:00:10 2023"
+[dumpfile_size] 224490635
 [savefile] "/Users/damien/workspace/hdl/friscv/test/priv_sec_testsuite/debug_platform_verilator.gtkw"
-[timestart] 1868
-[size] 1440 900
+[timestart] 6064
+[size] 2560 1440
 [pos] -1 -1
-*-3.355745 1895 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-5.355745 6248 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] friscv_testbench.
 [treeopen] friscv_testbench.friscv_testbench.
 [treeopen] friscv_testbench.friscv_testbench.genblk2.
+[treeopen] friscv_testbench.friscv_testbench.genblk2.axi4l_ram.
 [treeopen] friscv_testbench.friscv_testbench.genblk2.dut.
 [treeopen] friscv_testbench.friscv_testbench.genblk2.dut.cpu0.
 [treeopen] friscv_testbench.friscv_testbench.genblk2.dut.cpu0.control.
 [treeopen] friscv_testbench.friscv_testbench.genblk2.dut.cpu0.csrs.
-[treeopen] friscv_testbench.friscv_testbench.genblk2.dut.cpu0.mpu.
+[treeopen] friscv_testbench.friscv_testbench.genblk2.dut.cpu0.mpu.MPU_ON.PMP_REGION_CHECKERS[0].REGION_ACTIVE.
+[treeopen] friscv_testbench.friscv_testbench.genblk2.dut.cpu0.mpu.MPU_ON.PMP_REGION_CHECKERS[1].REGION_ACTIVE.
 [treeopen] friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.
+[treeopen] friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.
+[treeopen] friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.
 [treeopen] friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_ICACHE.icache.cache_blocks.
-[sst_width] 255
-[signals_width] 230
+[sst_width] 365
+[signals_width] 334
 [sst_expanded] 1
-[sst_vpaned_height] 397
+[sst_vpaned_height] 365
 @c00200
 -AXI4-lite RAM
 @22
@@ -93,7 +97,7 @@ friscv_testbench.friscv_testbench.genblk2.axi4l_ram.p1_bvalid
 -
 @1401200
 -Interconnect
-@c00200
+@800200
 -CSRs
 @200
 -
@@ -136,9 +140,22 @@ friscv_testbench.friscv_testbench.genblk2.dut.cpu0.csrs.ctrl_mepc[31:0]
 @22
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.csrs.mstatus[31:0]
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.csrs.mepc[31:0]
-@1401200
+@200
+-
+@28
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.csrs.csr_rden
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.csrs.csr_wren
+@22
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.csrs.csr[11:0]
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.csrs.newval[31:0]
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.csrs.oldval[31:0]
+@200
+-
+@22
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.csrs.pmpcfg0[31:0]
+@1000200
 -CSRs
-@c00200
+@800200
 -ISA Regsiters
 @200
 -
@@ -176,7 +193,7 @@ friscv_testbench.friscv_testbench.genblk2.dut.cpu0.isa_registers.x30_t5[31:0]
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.isa_registers.x31_t6[31:0]
 @200
 -
-@1401200
+@1000200
 -ISA Regsiters
 @c00200
 -iCache
@@ -245,7 +262,7 @@ friscv_testbench.friscv_testbench.genblk2.dut.cpu0.control.rid[7:0]
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.control.priv_mode[1:0]
 @22
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.control.cfsm[3:0]
-@201
+@200
 -
 @28
 [color] 3
@@ -287,6 +304,8 @@ friscv_testbench.friscv_testbench.genblk2.dut.cpu0.control.csr_ro_wr
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.control.inst_addr_misaligned
 @200
 -
+@c00200
+-CSRs
 @c00022
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.control.sys[5:0]
 @28
@@ -410,10 +429,65 @@ friscv_testbench.friscv_testbench.genblk2.dut.cpu0.control.sb_mtie
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.control.sb_mtip
 @22
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.control.sb_mtvec[31:0]
+@1401200
+-CSRs
 @200
 -
 @1000200
 -control
+@800200
+-Memfy
+@28
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_valid
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_ready
+@22
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.mpu_allow[3:0]
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.addr[31:0]
+@28
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_ready_fsm
+@200
+-
+@22
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.awaddr[31:0]
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.awid[7:0]
+@28
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.awready
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.awvalid
+@22
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.wdata[31:0]
+@28
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.bvalid
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.bresp[1:0]
+@200
+-
+@22
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.araddr[31:0]
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.arid[7:0]
+@28
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.arready
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.arvalid
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.rvalid
+@22
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.rdata[31:0]
+@200
+-
+@28
+[color] 3
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.waiting_rd_cpl
+[color] 3
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.waiting_wr_cpl
+@200
+-
+@28
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.check_access
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.load_access_fault
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.load_misaligned
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.store_access_fault
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.store_misaligned
+@200
+-
+@1000200
+-Memfy
 @c00200
 -Registers
 @22
@@ -450,7 +524,7 @@ friscv_testbench.friscv_testbench.genblk2.dut.cpu0.isa_registers.x30_t5[31:0]
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.isa_registers.x31_t6[31:0]
 @1401200
 -Registers
-@c00200
+@800200
 -MPU
 @22
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.mpu.imem_addr[31:0]
@@ -482,6 +556,27 @@ friscv_testbench.friscv_testbench.genblk2.dut.cpu0.mpu.pmp_active[15:0]
 @1401200
 -PMP Cfg
 @c00200
+-PMP Base
+@22
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.mpu.pmp_base0[31:0]
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.mpu.pmp_base1[31:0]
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.mpu.pmp_base2[31:0]
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.mpu.pmp_base3[31:0]
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.mpu.pmp_base4[31:0]
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.mpu.pmp_base5[31:0]
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.mpu.pmp_base6[31:0]
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.mpu.pmp_base7[31:0]
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.mpu.pmp_base8[31:0]
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.mpu.pmp_base9[31:0]
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.mpu.pmp_base10[31:0]
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.mpu.pmp_base11[31:0]
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.mpu.pmp_base12[31:0]
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.mpu.pmp_base13[31:0]
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.mpu.pmp_base14[31:0]
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.mpu.pmp_base15[31:0]
+@1401200
+-PMP Base
+@c00200
 -PMP Mask
 @22
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.mpu.pmp_mask0[31:0]
@@ -502,168 +597,26 @@ friscv_testbench.friscv_testbench.genblk2.dut.cpu0.mpu.pmp_mask14[31:0]
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.mpu.pmp_mask15[31:0]
 @1401200
 -PMP Mask
-@800200
--PMP Base
-@22
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.mpu.pmp_base0[31:0]
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.mpu.pmp_base1[31:0]
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.mpu.pmp_base2[31:0]
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.mpu.pmp_base3[31:0]
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.mpu.pmp_base4[31:0]
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.mpu.pmp_base5[31:0]
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.mpu.pmp_base6[31:0]
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.mpu.pmp_base7[31:0]
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.mpu.pmp_base8[31:0]
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.mpu.pmp_base9[31:0]
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.mpu.pmp_base10[31:0]
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.mpu.pmp_base11[31:0]
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.mpu.pmp_base12[31:0]
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.mpu.pmp_base13[31:0]
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.mpu.pmp_base14[31:0]
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.mpu.pmp_base15[31:0]
-@1000200
--PMP Base
-@1401200
--MPU
 @c00200
--Memfy
-@28
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_valid
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_ready
+-Region 0
 @22
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.mpu_allow[3:0]
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.addr[31:0]
-@200
--
-@22
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.awaddr[31:0]
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.awid[7:0]
-@28
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.awready
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.awvalid
-@200
--
-@22
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.araddr[31:0]
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.arid[7:0]
-@28
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.arready
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.arvalid
-@200
--
-@28
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.check_access
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.load_access_fault
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.load_misaligned
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.store_access_fault
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.store_misaligned
-@200
--
-@c00022
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-@28
-(0)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(1)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(2)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(3)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(4)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(5)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(6)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(7)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(8)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(9)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(10)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(11)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(12)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(13)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(14)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(15)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(16)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(17)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(18)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(19)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(20)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(21)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(22)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(23)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(24)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(25)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(26)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(27)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(28)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(29)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(30)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(31)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(32)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(33)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(34)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(35)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(36)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(37)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(38)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(39)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(40)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(41)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(42)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(43)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(44)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(45)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(46)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(47)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(48)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(49)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(50)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(51)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(52)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(53)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(54)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(55)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(56)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(57)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(58)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(59)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(60)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(61)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(62)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(63)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(64)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(65)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(66)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(67)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(68)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(69)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(70)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(71)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(72)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(73)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(74)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(75)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(76)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(77)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(78)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(79)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(80)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(81)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(82)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(83)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(84)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(85)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(86)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(87)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(88)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(89)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(90)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(91)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(92)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(93)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(94)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(95)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(96)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(97)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(98)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
-(99)friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_exceptions[99:0]
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.mpu.MPU_ON.PMP_REGION_CHECKERS[0].REGION_ACTIVE.pmp_region.pmp_cfg[7:0]
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.mpu.MPU_ON.PMP_REGION_CHECKERS[0].REGION_ACTIVE.pmp_region.pmp_addr[31:0]
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.mpu.MPU_ON.PMP_REGION_CHECKERS[0].REGION_ACTIVE.pmp_region.pmp_base[31:0]
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.mpu.MPU_ON.PMP_REGION_CHECKERS[0].REGION_ACTIVE.pmp_region.pmp_mask[31:0]
 @1401200
--group_end
--Memfy
+-Region 0
+@800200
+-Region 1
+@22
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.mpu.MPU_ON.PMP_REGION_CHECKERS[1].REGION_ACTIVE.pmp_region.pmp_cfg[7:0]
+@23
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.mpu.MPU_ON.PMP_REGION_CHECKERS[1].REGION_ACTIVE.pmp_region.pmp_addr[31:0]
+@22
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.mpu.MPU_ON.PMP_REGION_CHECKERS[1].REGION_ACTIVE.pmp_region.pmp_base[31:0]
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.mpu.MPU_ON.PMP_REGION_CHECKERS[1].REGION_ACTIVE.pmp_region.pmp_mask[31:0]
+@1000200
+-Region 1
+-MPU
 [pattern_trace] 1
 [pattern_trace] 0

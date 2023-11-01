@@ -1288,12 +1288,12 @@ module friscv_control
                                      (wfi_tw)             ? 1'b1       :
                                                             '0         ;
 
-        assign illegal_csr = (priv_mode==`MMODE || !sys[`IS_CSR])    ? '0   :
-                             (csr[11:0]=='hC00 && !sb_mcounteren[0]) ? 1'b1 : // Cycle  
-                             (csr[11:0]=='hC01 && !sb_mcounteren[1]) ? 1'b1 : // Time  
-                             (csr[11:0]=='hC02 && !sb_mcounteren[2]) ? 1'b1 : // Instret  
-                             (csr[11:4]=='hFC)                       ? 1'b1 : // Custom perf. registers  
-                             (csr[ 9:8]!=2'b00)                      ? 1'b1 : // M-Mode only registers 
+        assign illegal_csr = (priv_mode==`MMODE || !sys[`IS_CSR])    ? 1'b0       :
+                             (csr[11:0]=='hC00 && !sb_mcounteren[0]) ? inst_ready : // Cycle  
+                             (csr[11:0]=='hC01 && !sb_mcounteren[1]) ? inst_ready : // Time  
+                             (csr[11:0]=='hC02 && !sb_mcounteren[2]) ? inst_ready : // Instret  
+                             (csr[11:4]=='hFC)                       ? inst_ready : // Custom perf. registers  
+                             (csr[ 9:8]!=2'b00)                      ? inst_ready : // M-Mode only registers 
                                                                        1'b0 ;
 
     end else begin : NO_UMODE

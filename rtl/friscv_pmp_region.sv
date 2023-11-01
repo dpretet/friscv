@@ -69,7 +69,7 @@ module friscv_pmp_region
         logic [RLEN-1:0] mask;
         logic [XLEN-1:0] size;
     begin
-        size = 3;
+        size = 2;
         mask = '1 << size;
         base = {csr_addr, 2'b0} & mask;
         get_na4 = {mask, base};

@@ -1,6 +1,6 @@
-<mxfile host="Electron" modified="2023-09-14T19:49:00.684Z" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/21.7.5 Chrome/114.0.5735.289 Electron/25.8.1 Safari/537.36" etag="lHCfS6ivD3LtVeVxaESx" version="21.7.5" type="device" pages="12">
+<mxfile host="Electron" modified="2023-11-01T17:05:43.676Z" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/22.0.3 Chrome/114.0.5735.289 Electron/25.8.4 Safari/537.36" etag="zpjCElzXcYmcPEIFGgQm" version="22.0.3" type="device" pages="13">
   <diagram id="lXQN5M1yLeDDPKZTw-jW" name="Archi Overview">
-    <mxGraphModel dx="5597" dy="4224" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+    <mxGraphModel dx="1781" dy="1868" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -4999,6 +4999,196 @@
         </mxCell>
         <mxCell id="4qA_Ou25cbh_iAMn-ero-16" value="Exceptions" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
           <mxGeometry x="1010" y="515" width="70" height="60" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="AkA55wKDZA8zp6P0_93_" name="SystemMPU">
+    <mxGraphModel dx="1622" dy="509" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="hVrQNYr3S25uazdb7e0g-10" value="SecGate" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="265" y="540" width="70" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="hVrQNYr3S25uazdb7e0g-11" value="SecGate" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="425" y="540" width="70" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="hVrQNYr3S25uazdb7e0g-12" value="SecGate" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="585" y="540" width="70" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="hVrQNYr3S25uazdb7e0g-6" value="Crossbar" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="240" y="480" width="440" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="WTpHacI3UPhnswADc8oo-6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" edge="1" parent="1" source="hVrQNYr3S25uazdb7e0g-7">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="300" y="680" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="hVrQNYr3S25uazdb7e0g-7" value="ROM" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="240" y="590" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="WTpHacI3UPhnswADc8oo-5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" edge="1" parent="1" source="hVrQNYr3S25uazdb7e0g-8">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="460" y="680" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="hVrQNYr3S25uazdb7e0g-8" value="I/O Peripherals" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="370" y="590" width="180" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="WTpHacI3UPhnswADc8oo-9" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" edge="1" parent="1" source="hVrQNYr3S25uazdb7e0g-9">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="620" y="680" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="hVrQNYr3S25uazdb7e0g-9" value="RAM" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="560" y="590" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="hVrQNYr3S25uazdb7e0g-15" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="hVrQNYr3S25uazdb7e0g-10" target="hVrQNYr3S25uazdb7e0g-7">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="hVrQNYr3S25uazdb7e0g-14" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="hVrQNYr3S25uazdb7e0g-11" target="hVrQNYr3S25uazdb7e0g-8">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="hVrQNYr3S25uazdb7e0g-13" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="hVrQNYr3S25uazdb7e0g-12" target="hVrQNYr3S25uazdb7e0g-9">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="hVrQNYr3S25uazdb7e0g-19" value="Processing &lt;br&gt;Core" style="rounded=0;whiteSpace=wrap;html=1;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="240" y="380" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="hVrQNYr3S25uazdb7e0g-20" value="Domain ID filter, to block completely access from certain masters" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="-80" y="555" width="220" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="hVrQNYr3S25uazdb7e0g-21" value="" style="endArrow=classic;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;strokeColor=#999999;" edge="1" parent="1" source="hVrQNYr3S25uazdb7e0g-20">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="330" y="580" as="sourcePoint" />
+            <mxPoint x="250" y="560" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="hVrQNYr3S25uazdb7e0g-26" value="" style="endArrow=classic;html=1;rounded=0;exitX=0;exitY=0.5;exitDx=0;exitDy=0;" edge="1" parent="1" source="hVrQNYr3S25uazdb7e0g-27">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="796" y="413.5" as="sourcePoint" />
+            <mxPoint x="676" y="309" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="hVrQNYr3S25uazdb7e0g-27" value="SecIntp" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="736" y="294" width="60" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="hVrQNYr3S25uazdb7e0g-28" value="" style="endArrow=classic;html=1;rounded=0;exitX=0;exitY=0.5;exitDx=0;exitDy=0;" edge="1" parent="1" source="hVrQNYr3S25uazdb7e0g-29">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="796" y="433.5" as="sourcePoint" />
+            <mxPoint x="676" y="329" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="hVrQNYr3S25uazdb7e0g-29" value="SecIntp" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="736" y="314" width="60" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="hVrQNYr3S25uazdb7e0g-30" value="" style="endArrow=classic;html=1;rounded=0;exitX=0;exitY=0.5;exitDx=0;exitDy=0;" edge="1" parent="1" source="hVrQNYr3S25uazdb7e0g-31">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="796" y="453.5" as="sourcePoint" />
+            <mxPoint x="676" y="349" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="hVrQNYr3S25uazdb7e0g-31" value="SecIntp" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="736" y="334" width="60" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="hVrQNYr3S25uazdb7e0g-34" value="Memory Protection Unit&lt;br&gt;&lt;ul&gt;&lt;li&gt;check memory region boundaries&lt;/li&gt;&lt;li&gt;check R/W/X permission&lt;/li&gt;&lt;/ul&gt;" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="190" y="150" width="260" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="hVrQNYr3S25uazdb7e0g-35" value="" style="endArrow=classic;html=1;rounded=0;strokeColor=#999999;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="320" y="200" as="sourcePoint" />
+            <mxPoint x="390" y="280" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="hVrQNYr3S25uazdb7e0g-36" value="&lt;h1&gt;Corner Cases&lt;/h1&gt;&lt;p&gt;- If RESP != 0, load/store records addr/priv/ID and raises an exception&lt;/p&gt;&lt;p&gt;- if RESP != 0, load/store records addr/priv/ID and raises en exception. Exception controller records the security interrupt and the meta data (srcID/dstID/priv/addr)&lt;/p&gt;&lt;p&gt;- Exception controller needs to manage CDC + pulse creation&lt;/p&gt;&lt;p&gt;- Besoin de faire du OoO depuis le load/store store et le linker avec l&#39;ID du cache&lt;/p&gt;" style="text;html=1;strokeColor=none;fillColor=none;spacing=5;spacingTop=-20;whiteSpace=wrap;overflow=hidden;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="1080" y="40" width="564" height="180" as="geometry" />
+        </mxCell>
+        <mxCell id="WTpHacI3UPhnswADc8oo-1" value="RootCore" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="280" y="1240" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="WTpHacI3UPhnswADc8oo-3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.141;entryY=-0.017;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="hVrQNYr3S25uazdb7e0g-19" target="hVrQNYr3S25uazdb7e0g-6">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="WTpHacI3UPhnswADc8oo-4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.648;entryY=0.017;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" target="hVrQNYr3S25uazdb7e0g-6">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="525" y="440" as="sourcePoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="WTpHacI3UPhnswADc8oo-7" value="SecIntp" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="270" y="680" width="60" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="WTpHacI3UPhnswADc8oo-8" value="SecIntp" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="430" y="680" width="60" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="WTpHacI3UPhnswADc8oo-10" value="SecIntp" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="590" y="680" width="60" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="WTpHacI3UPhnswADc8oo-11" value="" style="endArrow=classic;html=1;rounded=0;strokeColor=#999999;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="640" y="160" as="sourcePoint" />
+            <mxPoint x="590" y="270" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="WTpHacI3UPhnswADc8oo-13" value="RootCore is the main procesor, owning Expection Controller (XEPC) and managing exceptions across the system:&lt;br&gt;&lt;ul&gt;&lt;li style=&quot;&quot;&gt;AXI error response for its own transfer&lt;/li&gt;&lt;li style=&quot;&quot;&gt;Transfer access fault if a core / process tries to access forbidden region&lt;/li&gt;&lt;/ul&gt;" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="630" y="90" width="260" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="WTpHacI3UPhnswADc8oo-16" value="" style="group" vertex="1" connectable="0" parent="1">
+          <mxGeometry x="370" y="290" width="300" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="WTpHacI3UPhnswADc8oo-14" value="" style="group;strokeColor=#007FFF;strokeWidth=2;container=0;" vertex="1" connectable="0" parent="WTpHacI3UPhnswADc8oo-16">
+          <mxGeometry width="300" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="hVrQNYr3S25uazdb7e0g-1" value="Control" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="WTpHacI3UPhnswADc8oo-16">
+          <mxGeometry x="100" y="10" width="110" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="hVrQNYr3S25uazdb7e0g-2" value="MPU" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="WTpHacI3UPhnswADc8oo-16">
+          <mxGeometry x="10" y="10" width="80" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="hVrQNYr3S25uazdb7e0g-3" value="Load / Store" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="WTpHacI3UPhnswADc8oo-16">
+          <mxGeometry x="100" y="80" width="110" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="hVrQNYr3S25uazdb7e0g-4" value="XPEC&lt;br&gt;Ctrl" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="WTpHacI3UPhnswADc8oo-16">
+          <mxGeometry x="220" y="10" width="70" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="hVrQNYr3S25uazdb7e0g-18" value="RootCore" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="WTpHacI3UPhnswADc8oo-16">
+          <mxGeometry x="235" y="120" width="60" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="WTpHacI3UPhnswADc8oo-17" value="Any kind of processing:&lt;br&gt;&lt;ul&gt;&lt;li&gt;a DMA&lt;/li&gt;&lt;li&gt;another processor&lt;/li&gt;&lt;li&gt;a GPU&lt;/li&gt;&lt;li&gt;a NPU&lt;/li&gt;&lt;/ul&gt;&lt;div&gt;Could manage its own exception with a processor or be managed by RootCore.&amp;nbsp;&lt;/div&gt;&lt;div&gt;&lt;br&gt;Security exception are not managed here, the core will only receive an ERR response&lt;/div&gt;" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="-140" y="290" width="240" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="WTpHacI3UPhnswADc8oo-18" value="" style="endArrow=classic;html=1;rounded=0;strokeColor=#999999;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="100" y="360" as="sourcePoint" />
+            <mxPoint x="220" y="400" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="WTpHacI3UPhnswADc8oo-19" value="Interrupt raised on privilege / ID access fault. Respond ERR on AXI along this interrupt.&lt;br&gt;The slave also stores meta data to help debugging in a small FIFO (srcID, destID, addr, priv)" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="720" y="720" width="250" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="WTpHacI3UPhnswADc8oo-20" value="" style="endArrow=classic;html=1;rounded=0;strokeColor=#999999;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="780" y="600" as="sourcePoint" />
+            <mxPoint x="710" y="610" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="WTpHacI3UPhnswADc8oo-21" value="All peripheral embedds fine-grain filtering of access. Some internal region could be prevented of access fault (priv fault, ID fault, addr fault)." style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="796" y="560" width="250" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="WTpHacI3UPhnswADc8oo-22" value="" style="endArrow=classic;html=1;rounded=0;strokeColor=#999999;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="720" y="750" as="sourcePoint" />
+            <mxPoint x="670" y="730" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="WTpHacI3UPhnswADc8oo-23" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" edge="1" parent="1" source="hVrQNYr3S25uazdb7e0g-36" target="hVrQNYr3S25uazdb7e0g-36">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="WTpHacI3UPhnswADc8oo-25" value="&lt;h1&gt;Questions&lt;/h1&gt;&lt;p&gt;&lt;/p&gt;&lt;ul&gt;&lt;li&gt;Should the MPU map be shared by all the processing elements?&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;&lt;/p&gt;" style="text;html=1;strokeColor=none;fillColor=none;spacing=5;spacingTop=-20;whiteSpace=wrap;overflow=hidden;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="1080" y="240" width="520" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="WTpHacI3UPhnswADc8oo-26" value="&lt;h1&gt;Scenarios&lt;/h1&gt;&lt;p&gt;&lt;/p&gt;&lt;ul&gt;&lt;li&gt;RootCore accesses a peripheral with user-mode and experience an access fault (store/load/instruction)&lt;/li&gt;&lt;li style=&quot;border-color: var(--border-color);&quot;&gt;RootCore accesses a peripheral with machine-mode and experience an access fault (instruction)&lt;/li&gt;&lt;li style=&quot;border-color: var(--border-color);&quot;&gt;PE accesses a peripheral with wrong privilege&lt;/li&gt;&lt;li style=&quot;border-color: var(--border-color);&quot;&gt;PE accesses a peripheral in forbidden region&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;&lt;/p&gt;" style="text;html=1;strokeColor=none;fillColor=none;spacing=5;spacingTop=-20;whiteSpace=wrap;overflow=hidden;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="1080" y="400" width="480" height="220" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>

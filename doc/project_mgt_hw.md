@@ -5,7 +5,6 @@
     - [-] Support U-mode
     - [-] Support PMP/PMA
     - [ ] Atomic operations for single core
-    - [ ] fence/fence.i instructions
     - [ ] AXI Exception management with a CLIC
     - [ ] Zc extension
 
