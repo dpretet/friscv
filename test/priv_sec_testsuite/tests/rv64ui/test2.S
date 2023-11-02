@@ -99,19 +99,25 @@ TEST2:
     li a7, 1
     ecall
 
+TEST3_SETUP:
+    li s1, 0
+    li s2, 16
+
 // TOR region - 1MB RWX
 TEST3_1TOR:
     // Configure the region
-    li a0, 0       // pmp number
-    li a1, S1MB    // base address
-    li a2, 0       // size
-    li a3, TOR_RWX // permissions
-    li a4, TOR     // type
+    add a0, s1, zero // pmp number
+    li a1, S1MB      // base address
+    li a2, 0         // size
+    li a3, TOR_RWX   // permissions
+    li a4, TOR       // type
     li a7, 8
     ecall
+
 // Run some duties into the region
 TEST3_RW_ACCESS:
     call LD_ST_ARITH
+
 // Try to access the extreme boundaries of the memory region
 TEST3_BOUNDS:
     li t0, S1MB
@@ -141,20 +147,29 @@ TEST3_TEARDOWN:
     ecall
     # Reset error count
     li s0, 0
+    # Continue to loop over all PMP region until reaching region 15
+    addi s1, s1, 1
+    bne s1, s2, TEST3_1TOR
+
+TEST4_SETUP:
+    li s1, 0
+    li s2, 16
 
 // NAPOT region - 1MB RWX
 TEST4_1NAPOT:
     // Configure the region
-    li a0, 0         // pmp number
+    add a0, s1, zero // pmp number
     li a1, 0         // base address
     li a2, S1MB      // size
     li a3, NAPOT_RWX // permissions
     li a4, NAPOT     // type
     li a7, 8
     ecall
+
 // Run some duties into the region
 TEST4_RW_ACCESS:
     call LD_ST_ARITH
+
 // Try to access the extreme boundaries of the memory region
 TEST4_BOUNDS:
     li t0, S1MB
@@ -166,6 +181,7 @@ TEST4_BOUNDS:
     sw t0, -4(t0)
     lw t1, -4(t0)
     bne t0, t1, fail
+
 // Try to access outside the memory region
 TEST4_OUT_OF_BOUND:
     li t0, S1MB
@@ -184,6 +200,9 @@ TEST4_TEARDOWN:
     ecall
     # Reset error count
     li s0, 0
+    # Continue to loop over all PMP region until reaching region 15
+    addi s1, s1, 1
+    bne s1, s2, TEST4_1NAPOT
 
 // NA4 region - 2MB RWX
 TEST5_NA4:

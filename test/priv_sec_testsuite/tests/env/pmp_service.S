@@ -250,7 +250,6 @@ SET_PMP:
     li t0, 16
     blt a0, t0, CFGREG3
     // region number not supported (>16)
-    li a0, 1
     j RET_ECALL
 
 CFGREG0:
@@ -298,13 +297,13 @@ CFGREG1:
     // load configuration to update
     csrr t1, pmpcfg1
     // select pmp region to configure
-    li t0, 0
+    li t0, 4
     beq t0, a0, 0f
-    li t0, 1
+    li t0, 5
     beq t0, a0, 1f
-    li t0, 2
+    li t0, 6
     beq t0, a0, 2f
-    li t0, 3
+    li t0, 7
     beq t0, a0, 3f
 0:
     csrw pmpaddr4, a1
@@ -338,13 +337,13 @@ CFGREG2:
     // load configuration to update
     csrr t1, pmpcfg2
     // select pmp region to configure
-    li t0, 0
+    li t0, 8
     beq t0, a0, 0f
-    li t0, 1
+    li t0, 9
     beq t0, a0, 1f
-    li t0, 2
+    li t0, 10
     beq t0, a0, 2f
-    li t0, 3
+    li t0, 11
     beq t0, a0, 3f
 0:
     csrw pmpaddr8, a1
@@ -358,18 +357,18 @@ CFGREG2:
     slli a3, a3, 8
     j 4f
 2:
+    csrw pmpaddr10, a1
     li t0, 0xFF00FFFF
     and t1, t1, t0
     slli a3, a3, 16
     j 4f
 3:
-    csrw pmpaddr10, a1
+    csrw pmpaddr11, a1
     li t0, 0x00FFFFFF
     and t1, t1, t0
     slli a3, a3, 24
     j 4f
 4:
-    csrw pmpaddr11, a1
     or t1, t1, a3
     csrw pmpcfg2, t1
     j RET_ECALL
@@ -379,13 +378,13 @@ CFGREG3:
     // load configuration to update
     csrr t1, pmpcfg3
     // select pmp region to configure
-    li t0, 0
+    li t0, 12
     beq t0, a0, 0f
-    li t0, 1
+    li t0, 13
     beq t0, a0, 1f
-    li t0, 2
+    li t0, 14
     beq t0, a0, 2f
-    li t0, 3
+    li t0, 15
     beq t0, a0, 3f
 0:
     csrw pmpaddr12, a1
