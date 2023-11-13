@@ -35,38 +35,37 @@ Traps
 - [ ] Vector interrupts
 - [ ] Interrupts mixed over exceptions
 
-Loop d'access de RW avec des illegal access (misaligned et illegal)
-Faire varier la periode de l'EIRQ
-Ecrire un contexte switch pour les tests
+- [X] Faire varier la periode de l'EIRQ
 
 U-mode
 - [X] pass from/to m-mode/u-mode
 - [X] try mret in u-mode, needs to fail
 - [X] try to access m-mode only CSRs
 
-Interrupt
+Traps
 - [X] Do something within a loop with interrupt enabled, data needs to be OK
-- [ ] WFI in u-mode, interrupt enabled, trapped in m-mode
-- [ ] WFI in u-mode, interrupt disabled, NOP
+- [X] WFI in u-mode, interrupt enabled, trapped in m-mode
+- [X] WFI in u-mode, interrupt disabled, NOP
 - [ ] Add test for vector table
 - [ ] Test des exception load/store misaligned
-- [ ] test MSTATUS.TW
+- [ ] Test MSTATUS.TW
 
 MPU:
 - [X] configure registers
-- [ ] all region configuration mode: NA4 / NAPOT / TOR
-- [ ] multiple mixed region type and size
-- [ ] Access exceptions
-    -> Store = store access-fault
-    -> Load = load access-fault
-    -> Execute = instruction access-fault
-    - [ ] read/execute instruction outside allowed regions (U-mode)
-    - [ ] read/write data in U-mode
-    - [ ] read/write data in M-mode with MPRV + MPP w/ U-mode
+- [X] all region configuration mode: NA4 / NAPOT / TOR
+- [X] multiple mixed region type and size
+- [-] Access exceptions
+    - [X] execute instruction outside allowed regions (U-mode)
+    - [X] write data in U-mode
+    - [X] read data in U-mode
+    - [ ] read data in M-mode with MPRV=1 + MPP w/ U-mode
+    - [ ] write data in M-mode with MPRV=1 + MPP w/ U-mode
+    - [ ] execute in M-mode without X + locked region
 - [ ] locked access to change configuration
-- [ ] locked region accessed wrongly by m-mode
+- [ ] region's permissions overlap
 
 Final:
 - Pass compliance with U-mode
+- Run REPL app
 - Review testcases
 - Parse again the documentation

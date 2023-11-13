@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.4.0 (w)1999-2022 BSI
-[*] Wed Nov  1 17:32:10 2023
+[*] Tue Nov  7 19:31:27 2023
 [*]
 [dumpfile] "/Users/damien/workspace/hdl/friscv/test/priv_sec_testsuite/friscv_testbench.vcd"
-[dumpfile_mtime] "Wed Nov  1 17:03:56 2023"
-[dumpfile_size] 9007697
+[dumpfile_mtime] "Sun Nov  5 19:46:50 2023"
+[dumpfile_size] 61559319
 [savefile] "/Users/damien/workspace/hdl/friscv/test/priv_sec_testsuite/debug_platform_verilator.gtkw"
-[timestart] 6058
-[size] 2560 1440
+[timestart] 1
+[size] 1440 900
 [pos] -1 -1
-*-5.355745 6239 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-14.355745 29879 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] friscv_testbench.
 [treeopen] friscv_testbench.friscv_testbench.
 [treeopen] friscv_testbench.friscv_testbench.genblk2.
@@ -24,10 +24,10 @@
 [treeopen] friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.
 [treeopen] friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_DCACHE.dcache.
 [treeopen] friscv_testbench.friscv_testbench.genblk2.dut.cpu0.USE_ICACHE.icache.cache_blocks.
-[sst_width] 365
-[signals_width] 344
+[sst_width] 253
+[signals_width] 262
 [sst_expanded] 1
-[sst_vpaned_height] 365
+[sst_vpaned_height] 211
 @c00200
 -AXI4-lite RAM
 @22
@@ -104,7 +104,9 @@ friscv_testbench.friscv_testbench.genblk2.axi4l_ram.p1_bvalid
 @22
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.csrs.pmpcfg0[31:0]
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.csrs.pmpcfg1[31:0]
+@23
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.csrs.pmpcfg2[31:0]
+@22
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.csrs.pmpcfg3[31:0]
 @200
 -
@@ -125,34 +127,6 @@ friscv_testbench.friscv_testbench.genblk2.dut.cpu0.csrs.pmpaddr12[31:0]
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.csrs.pmpaddr13[31:0]
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.csrs.pmpaddr14[31:0]
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.csrs.pmpaddr15[31:0]
-@200
--
-@28
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.csrs.ctrl_mstatus_wr
-@22
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.csrs.ctrl_mstatus[31:0]
-@28
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.csrs.ctrl_mepc_wr
-@22
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.csrs.ctrl_mepc[31:0]
-@200
--
-@22
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.csrs.mstatus[31:0]
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.csrs.mepc[31:0]
-@200
--
-@28
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.csrs.csr_rden
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.csrs.csr_wren
-@22
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.csrs.csr[11:0]
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.csrs.newval[31:0]
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.csrs.oldval[31:0]
-@200
--
-@22
-friscv_testbench.friscv_testbench.genblk2.dut.cpu0.csrs.pmpcfg0[31:0]
 @1000200
 -CSRs
 @800200
@@ -288,9 +262,7 @@ friscv_testbench.friscv_testbench.genblk2.dut.cpu0.control.proc_valid
 -
 @28
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.control.trap_occuring
-@29
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.control.async_trap_occuring
-@28
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.control.sync_trap_occuring
 @200
 -
@@ -306,7 +278,7 @@ friscv_testbench.friscv_testbench.genblk2.dut.cpu0.control.csr_ro_wr
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.control.inst_addr_misaligned
 @200
 -
-@c00200
+@800200
 -CSRs
 @c00022
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.control.sys[5:0]
@@ -413,6 +385,8 @@ friscv_testbench.friscv_testbench.genblk2.dut.cpu0.csrs.mtvec[31:0]
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.control.aclk
 @200
 -
+@28
+friscv_testbench.friscv_testbench.genblk2.dut.cpu0.control.sb_mie
 @22
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.control.sb_mcounteren[31:0]
 @28
@@ -431,13 +405,13 @@ friscv_testbench.friscv_testbench.genblk2.dut.cpu0.control.sb_mtie
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.control.sb_mtip
 @22
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.control.sb_mtvec[31:0]
-@1401200
+@1000200
 -CSRs
 @200
 -
 @1000200
 -control
-@800200
+@c00200
 -Memfy
 @28
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.memfy_valid
@@ -488,7 +462,7 @@ friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.store_access
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.processing.memfy.store_misaligned
 @200
 -
-@1000200
+@1401200
 -Memfy
 @c00200
 -Registers
@@ -526,7 +500,7 @@ friscv_testbench.friscv_testbench.genblk2.dut.cpu0.isa_registers.x30_t5[31:0]
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.isa_registers.x31_t6[31:0]
 @1401200
 -Registers
-@800200
+@c00200
 -MPU
 @22
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.mpu.imem_addr[31:0]
@@ -617,6 +591,7 @@ friscv_testbench.friscv_testbench.genblk2.dut.cpu0.mpu.MPU_ON.PMP_REGION_CHECKER
 friscv_testbench.friscv_testbench.genblk2.dut.cpu0.mpu.MPU_ON.PMP_REGION_CHECKERS[1].REGION_ACTIVE.pmp_region.pmp_mask[31:0]
 @1000200
 -Region 1
+@1401200
 -MPU
 [pattern_trace] 1
 [pattern_trace] 0

@@ -659,7 +659,7 @@ module friscv_control
                     // new instruction from memory:
                     ///////////////////////////////////////////////////////////
 
-                    // 
+                    //
                     // Any trap handling, asynchronous and synchronous
                     //
                     if (trap_occuring) begin
@@ -896,7 +896,7 @@ module friscv_control
                         status <= 5'b0;
                         flush_pipe <= 1'b1;
                         if (USER_MODE && sb_mie) priv_mode <= `MMODE;
-                        
+
                         if (sb_mie) begin
                             arid <= next_id(arid, MAX_ID, AXI_ID_MASK);
                             araddr <= mtvec;
@@ -1190,7 +1190,7 @@ module friscv_control
                        ) ? 1'b1 : 1'b0;
 
     // PC is not aligned with XLEN boundary
-    assign inst_addr_misaligned = (pc[1:0]!=2'b0) ? jump_branch : 1'b0;
+    assign inst_addr_misaligned = (pc_reg[1:0]!=2'b0) ? inst_ready : 1'b0;
 
     //////////////////////////////////////////////////////////////////////
     // WFI timeout management
@@ -1228,13 +1228,13 @@ module friscv_control
     // Unsupported instruction
     assign inst_dec_error = dec_error & (cfsm==FETCH) & inst_ready;
 
-    // Is fetching instruction on forbidden memory region 
-    assign inst_access_fault = (!mpu_allow[`ALW_X] | !mpu_allow[`ALW_R]) &
+    // Is fetching instruction on forbidden memory region
+    assign inst_access_fault = !mpu_allow[`ALW_X] &
                                   (priv_mode == `UMODE ||
-                                   priv_mode==`MMODE && mpu_allow[`ALW_L]);
+                                   priv_mode == `MMODE & mpu_allow[`ALW_L]);
 
     //////////////////////////////////////////////////////////////////////
-    // Stores the incoming excpetions from processing. Can't handle 
+    // Stores the incoming excpetions from processing. Can't handle
     // multiple exceptions on the same cycle but should not arrive
     //////////////////////////////////////////////////////////////////////
     friscv_scfifo
@@ -1266,7 +1266,7 @@ module friscv_control
                            proc_exceptions[`SAF]  ;
 
     // Pull when we trap for one the processing exceptions
-    assign pull_proc_exp = (trap_occuring && !cant_trap && 
+    assign pull_proc_exp = (trap_occuring && !cant_trap &&
                             (mcause_code == 32'h5 ||
                              mcause_code == 32'h7 ||
                              mcause_code == 32'h4 ||
@@ -1298,11 +1298,11 @@ module friscv_control
                                                             '0         ;
 
         assign illegal_csr = (priv_mode==`MMODE || !sys[`IS_CSR])    ? 1'b0       :
-                             (csr[11:0]=='hC00 && !sb_mcounteren[0]) ? inst_ready : // Cycle  
-                             (csr[11:0]=='hC01 && !sb_mcounteren[1]) ? inst_ready : // Time  
-                             (csr[11:0]=='hC02 && !sb_mcounteren[2]) ? inst_ready : // Instret  
-                             (csr[11:4]=='hFC)                       ? inst_ready : // Custom perf. registers  
-                             (csr[ 9:8]!=2'b00)                      ? inst_ready : // M-Mode only registers 
+                             (csr[11:0]=='hC00 && !sb_mcounteren[0]) ? inst_ready : // Cycle
+                             (csr[11:0]=='hC01 && !sb_mcounteren[1]) ? inst_ready : // Time
+                             (csr[11:0]=='hC02 && !sb_mcounteren[2]) ? inst_ready : // Instret
+                             (csr[11:4]=='hFC)                       ? inst_ready : // Custom perf. registers
+                             (csr[ 9:8]!=2'b00)                      ? inst_ready : // M-Mode only registers
                                                                        1'b0 ;
 
     end else begin : NO_UMODE

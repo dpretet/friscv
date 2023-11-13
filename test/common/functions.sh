@@ -156,10 +156,10 @@ gather_result() {
     msg=$(grep -ni "ERROR:" tc.log)
 
     if [ "$2" -eq 1 ] || [ "$ec" != 0 ]; then
-        ts_res="${ts_res} - $1:\t❌\n"
+        ts_res="${ts_res}  ❌ $1\n"
         ts_res="${ts_res}$msg\n"
     else
-        ts_res="${ts_res} - $1:\t✅\n"
+        ts_res="${ts_res}  ✅ $1\n"
     fi
 }
 #------------------------------------------------------------------------------

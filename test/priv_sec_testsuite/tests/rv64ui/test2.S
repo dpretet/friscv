@@ -29,24 +29,6 @@
 .equ MEIE_ON,   0x00000800
 .equ MEIE_OFF,  0xFFFFF7FF
 
-.equ PMPCFG0,  0x0
-.equ PMPCFG1,  0x0
-.equ PMPCFG2,  0x0
-.equ PMPCFG3,  0x0
-.equ PMPADDR,  0xFFFFFFFF
-.equ PMPCFG,   0x77777777
-
-.equ S2MB,     0x200000
-.equ S1MB,     0x100000
-.equ S512K,    0x80000
-.equ S256K,    0x40000
-.equ S64KB,    0x10000
-.equ S16KB,    0x10000
-.equ S4KB,     0x4000
-.equ S1KB,     0x1000
-
-
-
 
 RVTEST_RV64U
 RVTEST_CODE_BEGIN
@@ -80,6 +62,11 @@ ILLEGAL_INSTRUCTION:
     ebreak
 
 
+EXP_SERVICE:
+    addi s0, s0, 1
+    mret
+
+
 ##################################################
 #
 # Testcases
@@ -99,11 +86,11 @@ TEST2:
     li a7, 1
     ecall
 
+// TOR region - 1MB RWX
 TEST3_SETUP:
     li s1, 0
     li s2, 16
 
-// TOR region - 1MB RWX
 TEST3_1TOR:
     // Configure the region
     add a0, s1, zero // pmp number
@@ -151,11 +138,12 @@ TEST3_TEARDOWN:
     addi s1, s1, 1
     bne s1, s2, TEST3_1TOR
 
+
+// NAPOT region - 1MB RWX
 TEST4_SETUP:
     li s1, 0
     li s2, 16
 
-// NAPOT region - 1MB RWX
 TEST4_1NAPOT:
     // Configure the region
     add a0, s1, zero // pmp number

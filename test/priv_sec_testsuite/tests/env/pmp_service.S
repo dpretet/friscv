@@ -214,11 +214,6 @@ INTP_SERVICE:
     csrw mie, t4
     j RET_ECALL
 
-EXP_SERVICE:
-    addi s0, s0, 1
-    # j RET_ECALL
-    mret
-
 ////////////////////////////////////////////
 # Configure a NAPOT / NA4 region
 ////////////////////////////////////////////

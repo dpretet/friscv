@@ -6,7 +6,9 @@
     - [-] Support PMP/PMA
     - [ ] Atomic operations for single core
     - [ ] AXI Exception management with a CLIC
+        - maange all traps into it?
     - [ ] Zc extension
+    - [ ] https://github.com/eembc/coremark
 
 
 # BACKLOG
@@ -39,6 +41,7 @@ Any new features should be carefully study to ensure a proper exception and inte
     - raise an exception
     - methode AER-like pour les enregistrer: src, address, permission
     - trig an interrupt catched with PLIC controller
+    - https://www.cl.cam.ac.uk/research/security/ctsrd/cheri/cheri-risc-v.html
 
 
 ## Cache Stages
@@ -55,6 +58,7 @@ Any new features should be carefully study to ensure a proper exception and inte
 - [ ] New cache associativity (2 / 4 / 8 ways configurable)
 - [ ] OoO read: miss could be stacked and served later waiting for cache fill and continue reading the next address
 - [ ] Fully concurrent read / write access (Issue #1)
+    - Split memfy in load unit & store unit
 
 
 ## Miscellanous
