@@ -602,7 +602,7 @@ module friscv_memfy
             end else if (srst) begin
                 regs_or[i] <= '0;
             end else begin
-                if ((memfy_valid && memfy_ready && opcode==`LOAD && !max_rd_or && rd == i[4:0]) &&
+                if ((memfy_valid && memfy_ready && opcode==`LOAD && !max_rd_or && rd == i[4:0] && mpu_allow[`ALW_R] && !load_misaligned) &&
                    !(rvalid & rready && rd_r==i[4:0]))
                begin
                     regs_or[i] <= regs_or[i] + 1;
@@ -637,14 +637,14 @@ module friscv_memfy
         end else begin
 
             // Write xfers tracker
-            if (memfy_valid && memfy_ready && opcode==`STORE && !bvalid && !max_wr_or && mpu_allow[`ALW_W]) begin
+            if (memfy_valid && memfy_ready && opcode==`STORE && !bvalid && !max_wr_or && mpu_allow[`ALW_W] && !store_misaligned) begin
                 wr_or_cnt <= wr_or_cnt + 1'b1;
             end else if (!(memfy_valid && memfy_ready && opcode==`STORE) && bvalid && bready && wr_or_cnt!={MAX_OR_W{1'b0}}) begin
                 wr_or_cnt <= wr_or_cnt - 1'b1;
             end
 
             // Read xfers tracker
-            if (memfy_valid && memfy_ready && opcode==`LOAD && !memfy_rd_wr && !max_rd_or && mpu_allow[`ALW_R]) begin
+            if (memfy_valid && memfy_ready && opcode==`LOAD && !memfy_rd_wr && !max_rd_or && mpu_allow[`ALW_R] && !load_misaligned) begin
                 rd_or_cnt <= rd_or_cnt + 1'b1;
             end else if (!(memfy_valid && memfy_ready && opcode==`LOAD) && memfy_rd_wr && rd_or_cnt!={MAX_OR_W{1'b0}}) begin
                 rd_or_cnt <= rd_or_cnt - 1'b1;

@@ -192,6 +192,12 @@ trap_vector:                                                            \
         beq t5, t4, EXP_SERVICE;                                        \
         li t4, CAUSE_FETCH_ACCESS;                                      \
         beq t5, t4, EXP_SERVICE;                                        \
+        li t4, CAUSE_MISALIGNED_LOAD;                                       \
+        beq t5, t4, EXP_SERVICE;                                        \
+        li t4, CAUSE_MISALIGNED_STORE;                                       \
+        beq t5, t4, EXP_SERVICE;                                        \
+        li t4, CAUSE_MISALIGNED_FETCH;                                       \
+        beq t5, t4, EXP_SERVICE;                                        \
         /* if an mtvec_handler is defined, jump to it */                \
         la t5, mtvec_handler;                                           \
         beqz t5, 1f;                                                    \
