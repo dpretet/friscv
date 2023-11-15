@@ -77,13 +77,13 @@ TEST:
 
 # Erase first all PMP configuration
 TEST1:
-    li a7, 0
+    li a7, SVC_ERASE
     ecall
 
 // Try to write the PMP address/config with stupid values
 // to check the registers are fully implemented
 TEST2:
-    li a7, 1
+    li a7, SVC_CHECK
     ecall
 
 // TOR region - 1MB RWX
@@ -98,7 +98,7 @@ TEST3_1TOR:
     li a2, 0         // size
     li a3, TOR_RWX   // permissions
     li a4, TOR       // type
-    li a7, 8
+    li a7, SVC_SETUP
     ecall
 
 // Run some duties into the region
@@ -151,7 +151,7 @@ TEST4_1NAPOT:
     li a2, S1MB      // size
     li a3, NAPOT_RWX // permissions
     li a4, NAPOT     // type
-    li a7, 8
+    li a7, SVC_SETUP
     ecall
 
 // Run some duties into the region
@@ -200,7 +200,7 @@ TEST5_NA4:
     li a2, S256K     // size
     li a3, NAPOT_RWX // permissions
     li a4, NAPOT     // type
-    li a7, 8
+    li a7, SVC_SETUP
     ecall
     // Configure a NA4
     li a0, 1         // pmp number
@@ -208,7 +208,7 @@ TEST5_NA4:
     li a2, 4         // size
     li a3, NA4_RWX   // permissions
     li a4, NA4       // type
-    li a7, 8
+    li a7, SVC_SETUP
     ecall
 // Try to access the extreme boundaries of the memory region
 TEST5_REGION:

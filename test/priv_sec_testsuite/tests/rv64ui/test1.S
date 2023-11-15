@@ -24,6 +24,10 @@
 .equ MEIE_ON,   0x00000800
 .equ MEIE_OFF,  0xFFFFF7FF
 
+.equ SVC_DIS_EIRQ, 7
+.equ SVC_DIS_INTP, 8
+.equ SVC_EN_INTP, 9
+
 RVTEST_RV64U
 RVTEST_CODE_BEGIN
 
@@ -37,12 +41,13 @@ ECALL_SUPERVISOR_MODE:
     ebreak
 
 ECALL_USER_MODE:
-    li t4, 7
+    li t4, SVC_DIS_EIRQ
     beq t4, a7, DISABLE_EIRQ
-    li t4, 8
+    li t4, SVC_DIS_INTP
     beq t4, a7, DISABLE_INTP
-    li t4, 9
-    bne a7, t4, RET_ECALL
+    li t4, SVC_EN_INTP
+    beq a7, t4, ENABLE_INTP
+    j RET_ECALL
 
 ENABLE_INTP:
     # Enable IRQ
@@ -100,7 +105,7 @@ INTP:
 
 TEST:
     # Enable interrupts thru a syscall
-    li a7, 9
+    li a7, SVC_EN_INTP
     ecall
 
 // Loop to wait for a interrupt
@@ -124,13 +129,13 @@ TEST2:
 
 // Use WFI to wait for the interrupt with EIRQ disabled
 TEST3:
-    li a7, 8
+    li a7, SVC_DIS_INTP
     ecall
     wfi
 
 // Use WFI without interrupt enabled, must be a NOP
 TEST4:
-    li a7, 7
+    li a7, SVC_DIS_EIRQ
     ecall
     nop
     wfi

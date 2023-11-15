@@ -104,7 +104,7 @@ TEST_SETUP:
     li a2, S256K     // size
     li a3, NAPOT_RWX // permissions
     li a4, NAPOT     // type
-    li a7, 8
+    li a7, SVC_SETUP
     ecall
 
 
@@ -120,7 +120,7 @@ TEST2_SETUP:
     li a2, S256K     // size
     li a3, NAPOT_R   // permissions
     li a4, NAPOT     // type
-    li a7, 8
+    li a7, SVC_SETUP
     ecall
 
 TEST2:
@@ -146,7 +146,7 @@ TEST3_SETUP:
     li a2, S256K     // size
     li a3, NAPOT_W   // permissions
     li a4, NAPOT     // type
-    li a7, 8
+    li a7, SVC_SETUP
     ecall
 
 TEST3:
@@ -173,7 +173,7 @@ TEST4_SETUP:
     li a2, S256K     // size
     li a3, NAPOT_RW  // permissions
     li a4, NAPOT     // type
-    li a7, 8
+    li a7, SVC_SETUP
     ecall
 
 TEST4:

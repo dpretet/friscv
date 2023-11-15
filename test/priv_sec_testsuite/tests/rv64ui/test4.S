@@ -104,7 +104,7 @@ TEST_SETUP:
     li a2, S256K     // size
     li a3, NAPOT_RWX // permissions
     li a4, NAPOT     // type
-    li a7, 8
+    li a7, SVC_SETUP
     ecall
 
     # Reset error flag

@@ -3,6 +3,11 @@
 
 #include "pmp.S"
 
+.equ SVC_ERASE, 0
+.equ SVC_CHECK, 1
+.equ SVC_SETUP, 8
+.equ SVC_INTP,  9
+
 ////////////////////////////////////////////
 // Erase all PMP configurations
 ////////////////////////////////////////////
