@@ -695,6 +695,10 @@ module friscv_rv32i_core
         .MAX_UNIT          (MAX_ALU_UNIT),
         .DATA_OSTDREQ_NUM  (DATA_OSTDREQ_NUM),
         .INST_BUS_PIPELINE (PROCESSING_BUS_PIPELINE),
+        .HYPERVISOR_MODE   (HYPERVISOR_MODE),
+        .SUPERVISOR_MODE   (SUPERVISOR_MODE),
+        .MPU_SUPPORT       (MPU_SUPPORT),
+        .USER_MODE         (USER_MODE),
         .IO_MAP_NB         (IO_MAP_NB),
         .IO_MAP            (IO_MAP)
     )

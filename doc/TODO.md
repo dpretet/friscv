@@ -30,11 +30,6 @@
 
 # Testcases
 
-Traps
-- [ ] Nested interrupts
-- [ ] Vector interrupts
-- [ ] Interrupts mixed over exceptions
-
 - [X] Faire varier la periode de l'EIRQ
 
 U-mode
@@ -46,8 +41,8 @@ Traps
 - [X] Do something within a loop with interrupt enabled, data needs to be OK
 - [X] WFI in u-mode, interrupt enabled, trapped in m-mode
 - [X] WFI in u-mode, interrupt disabled, NOP
+- [X] Test des exception load/store misaligned
 - [ ] Add test for vector table
-- [ ] Test des exception load/store misaligned
 - [ ] Test MSTATUS.TW
 
 MPU:
@@ -58,11 +53,10 @@ MPU:
     - [X] execute instruction outside allowed regions (U-mode)
     - [X] write data in U-mode
     - [X] read data in U-mode
-    - [ ] read data in M-mode with MPRV=1 + MPP w/ U-mode
-    - [ ] write data in M-mode with MPRV=1 + MPP w/ U-mode
-    - [ ] execute in M-mode without X + locked region
-- [ ] locked access to change configuration
-- [ ] region's permissions overlap
+    - [X] read data in M-mode with MPRV=1 + MPP=U-mode
+    - [X] write data in M-mode with MPRV=1 + MPP=U-mode
+    - [X] execute in M-mode without X + locked region
+- [X] locked access to change configuration
 
 Final:
 - Pass compliance with U-mode

@@ -35,6 +35,14 @@ module friscv_processing
         parameter DATA_OSTDREQ_NUM  = 8,
         // Add pipeline on Rd write stage
         parameter SYNC_RD_WR = 0,
+        // Support hypervisor mode
+        parameter HYPERVISOR_MODE = 0,
+        // Support supervisor mode
+        parameter SUPERVISOR_MODE = 0,
+        // Support user mode
+        parameter USER_MODE = 0,
+        // PMP / PMA supported
+        parameter MPU_SUPPORT = 0,
         // IO regions for direct read/write access
         parameter IO_MAP_NB = 1,
         // IO address ranges, organized by memory region as END-ADDR_START-ADDR:
@@ -316,6 +324,10 @@ module friscv_processing
         .AXI_DATA_W        (AXI_DATA_W),
         .AXI_ID_MASK       (AXI_ID_MASK),
         .SYNC_RD_WR        (SYNC_RD_WR),
+        .HYPERVISOR_MODE   (HYPERVISOR_MODE),
+        .SUPERVISOR_MODE   (SUPERVISOR_MODE),
+        .USER_MODE         (USER_MODE),
+        .MPU_SUPPORT       (MPU_SUPPORT),
         .IO_MAP_NB         (IO_MAP_NB),
         .IO_MAP            (IO_MAP)
     )

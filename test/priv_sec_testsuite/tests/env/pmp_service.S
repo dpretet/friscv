@@ -3,10 +3,18 @@
 
 #include "pmp.S"
 
-.equ SVC_ERASE, 0
-.equ SVC_CHECK, 1
-.equ SVC_SETUP, 8
-.equ SVC_INTP,  9
+.equ SVC_ERASE,        0
+.equ SVC_CHECK,        1
+.equ SVC_SETUP,        8
+.equ SVC_INTP,         9
+.equ SVC_MPRV,         10
+.equ SVC_READ,         11
+.equ SVC_WRITE,        12
+.equ SVC_EXE,          13
+.equ SVC_CHECK_REGION, 14
+
+.EQU MPRV_ON,  0x00020000
+.EQU MPRV_OFF, 0xFFFDFFFF
 
 ////////////////////////////////////////////
 // Erase all PMP configurations
@@ -218,6 +226,69 @@ INTP_SERVICE:
     or t4, t4, t5
     csrw mie, t4
     j RET_ECALL
+
+////////////////////////////////////////////
+// Check a configured region matches a 
+// a configuration
+// TODO: support another region than 1
+////////////////////////////////////////////
+CHECK_PMP_REGION:
+    csrr t0, pmpcfg0
+    li t1, 0xFF 
+    srli t0, t0, 8
+    and t0, t0, t1
+    bne t0, a3, 1f
+    li a0, 0
+    j RET_ECALL
+1:
+    li a0, 1
+    j RET_ECALL
+
+////////////////////////////////////////////
+# Setup MPRV bit
+////////////////////////////////////////////
+MPRV_SERVICE:
+    csrr t0, mstatus
+    bne a0, zero,2f
+1:
+    li t1, MPRV_OFF
+    and t0, t0, t1
+    j 3f
+2: 
+    li t1, MPRV_ON
+    or t0, t0, t1
+3:
+    csrw mstatus, t0
+    j RET_ECALL
+
+MACHINE_READ_SERVICE:
+    lw x0, 0(a0)
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+
+MACHINE_WRITE_SERVICE:
+    sw x0, 0(a0)
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+
+MACHINE_EXE_SERVICE:
+    jalr zero, 0(a0)
+    nop
+    nop
+    nop
+    nop
 
 ////////////////////////////////////////////
 # Configure a NAPOT / NA4 region
@@ -452,17 +523,33 @@ PMP_SERVICE:
 /////////////////////////////////////////////////////
 ECALL_USER_MODE:
     # Init PMP registers
-    li t4, 0
+    li t4, SVC_ERASE
     beq a7, t4, ERASE_PMP
     # Setup PMPADDRs/CFGs with 0xFFFFFFFF/0x77777777
-    li t4, 1
+    li t4, SVC_CHECK
     beq a7, t4, CHECK_RW_PMP
     # PMP service
-    li t4, 8
+    li t4, SVC_SETUP
     beq a7, t4, PMP_SERVICE
     # Interrupt service
-    li t4, 9
+    li t4, SVC_INTP
     beq a7, t4, INTP_SERVICE
+    # MPRV service
+    li t4, SVC_MPRV
+    beq a7, t4, MPRV_SERVICE
+    # Machine read service
+    li t4, SVC_READ
+    beq a7, t4, MACHINE_READ_SERVICE
+    # Machine write service
+    li t4, SVC_WRITE
+    beq a7, t4, MACHINE_WRITE_SERVICE
+    # Machine execute service
+    li t4, SVC_EXE
+    beq a7, t4, MACHINE_EXE_SERVICE
+    # Check a region matches a configuration
+    li t4, SVC_CHECK_REGION
+    beq a7, t4, CHECK_PMP_REGION
+    # Unrecognized service
     j RET_ECALL
 
 ////////////////////////////////////////////

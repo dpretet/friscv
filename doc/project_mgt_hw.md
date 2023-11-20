@@ -2,11 +2,16 @@
 
 - [ ] v1.6.0: Kernel-capable Hart
     - [X] Supporter des set de config du core en test bench.
-    - [-] Support U-mode
-    - [-] Support PMP/PMA
-    - [ ] Atomic operations for single core
-    - [ ] AXI Exception management with a CLIC
-        - maange all traps into it?
+    - [X] Support U-mode
+    - [X] Support PMP/PMA
+    - [ ] Atomic operations
+        - stage to execute the instruction, controlling ldst Stages
+        - memfy exposes two interfaces for requests.
+        - memfy drives back response along register write channel
+        - support exclusive access in cache, don't substitute tag, so support single access
+        - support exclusive access in memory, track the ID with a LUT
+    - [ ] Advanced Interrupt controller
+        - [ ] AXI Exception management
     - [ ] Zc extension
     - [ ] https://github.com/eembc/coremark
 
@@ -70,6 +75,9 @@ Any new features should be carefully study to ensure a proper exception and inte
     - [ ] Analogue pocket
     - [C] Cloud
 - [ ] Add registers to configure the core in platform (use custom CSR)
+    - Caches
+    - Interconnect
+    - processing: scheduling, hazard detection
 - [ ] Support CLIC controller
 - [ ] Random peripheral
 - [ ] UART: Support 9/10 bits & parity

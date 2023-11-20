@@ -9,10 +9,9 @@
 #include "pmp.S"
 
 ######################################################################
-# Test 3: PMP permissions
-
-# Configure PMP and check permissions are correctly followed by the
-# mpu and control/memfy units with U-mode
+# Test 3: machine mode access fault
+#
+# Checks MPRV mstatus bit and PMP.LOCK to provoque access fault
 #
 # x31 is the error status register to trigger the testbench status
 # when encounter a problem during the testcase
@@ -29,6 +28,7 @@
 .equ MEIE_ON,   0x00000800
 .equ MEIE_OFF,  0xFFFFF7FF
 
+.equ NOP_INST,  0x00000013
 
 RVTEST_RV64U
 RVTEST_CODE_BEGIN
@@ -63,30 +63,40 @@ ILLEGAL_INSTRUCTION:
 
 
 EXP_SERVICE:
-    // increment error
-    addi s2, s2, 1
     csrr s0, mcause
-    li t0, CAUSE_MISALIGNED_LOAD
-    beq s0, t0, EXP_MRET
-    li t0, CAUSE_MISALIGNED_STORE
-    beq s0, t0, EXP_MRET
-    li t0, CAUSE_MISALIGNED_FETCH
+    li t0, CAUSE_LOAD_ACCESS
+    beq s0, t0, EXP_LOAD_ACCESS
+    li t0, CAUSE_STORE_ACCESS
+    beq s0, t0, EXP_STORE_ACCESS
+    li t0, CAUSE_FETCH_ACCESS
     beq s0, t0, EXP_INST_FAULT
 
-EXP_MRET:
-    mret
+EXP_LOAD_ACCESS:
+    // increment error
+    addi s2, s2, 1
+    li a0, CAUSE_LOAD_ACCESS
+    la t0, TEST1_CHECK
+    csrw mepc, t0
+    j EXP_MRET
+
+EXP_STORE_ACCESS:
+    // increment error
+    addi s2, s2, 1
+    li a0, CAUSE_STORE_ACCESS
+    la t0, TEST2_CHECK
+    csrw mepc, t0
+    j EXP_MRET
 
 EXP_INST_FAULT:
-    // move back to test4
-    li t0, 3
-    bne t0, s2, fail
-EXP_BACK3:
-    // replace mepc with TEST4_CHECK because
-    // it contains the access fault address
+    // increment error
+    addi s2, s2, 1
+    li a0, CAUSE_FETCH_ACCESS
     la t0, TEST3_CHECK
     csrw mepc, t0
     j EXP_MRET
 
+EXP_MRET:
+    mret
 
 
 ##################################################
@@ -111,53 +121,111 @@ TEST_SETUP:
     li s0, 0
 
 
-// Check store access misaligned 
+// Check machine mode experience an read access fault
 TEST1_SETUP:
+    // First set the MPRV bit in MSTATUS
+    li a0, 1
+    li a7, SVC_MPRV
+    ecall
+    // enable a write only region
+    li a0, 1         // pmp number
+    li a1, S256K     // base address
+    li a2, S256K     // size
+    li a3, NAPOT_W   // permissions
+    li a4, NAPOT     // type
+    li a7, SVC_SETUP
+    ecall
 
+// Request a read access
 TEST1:
-    // raise an exception, which will increment s0
-    li t0, 1
-    sw x0, 0(t0)
-    nop
-    nop
-    nop
-    nop
-    nop
+    li a0, S256K
+    li a7, SVC_READ
+    ecall
 
+TEST1_CHECK:
     // Check the exception has been handled correctly
-    li t0, CAUSE_MISALIGNED_STORE
-    bne s0, t0, fail
+    li t0, CAUSE_LOAD_ACCESS
+    bne s0, a0, fail
+    li t0, 1
+    bne s2, t0, fail
 
 TEST1_TEARDOWN:
+    nop
 
-// Check load access misaligned 
+// Check machine mode experience an store access fault
 TEST2_SETUP:
+    // enable a read only region
+    li a0, 1         // pmp number
+    li a1, S256K     // base address
+    li a2, S256K     // size
+    li a3, NAPOT_R   // permissions
+    li a4, NAPOT     // type
+    li a7, SVC_SETUP
+    ecall
 
 TEST2:
-    // raise an exception, which will increment s0
-    li t0, 3
-    lw x0, 0(t0)
+    li a0, S256K
+    li a7, SVC_WRITE
+    ecall
 
+TEST2_CHECK:
     // Check the exception has been handled correctly
-    li t0, CAUSE_MISALIGNED_LOAD
-    bne s0, t0, fail
+    li t0, CAUSE_STORE_ACCESS
+    bne s0, a0, fail
+    li t0, 2
+    bne s2, t0, fail
 
 TEST2_TEARDOWN:
+    nop
 
 // Check execute access misaligned in u-mode
 TEST3_SETUP:
+    // enable a read only region
+    li a0, 1         // pmp number
+    li a1, S256K     // base address
+    li a2, S256K     // size
+    li a3, NAPOT_LRW // permissions
+    li a4, NAPOT     // type
+    li a7, SVC_SETUP
+    ecall
 
 TEST3:
-    // raise an exception, which will increment s0
-    li t0, 2
-    jalr x0, 0(t0)
+    // Store a NOP instruction
+    li t0, NOP_INST
+    li t1, S256K
+    sw t0, 0(t1)
+    // Go jump in locked/read/write only region
+    li a0, S256K
+    li a7, SVC_EXE
+    ecall
+
 TEST3_CHECK:
-    li t0, CAUSE_MISALIGNED_FETCH
-    bne s0, t0, fail
+    // Check the exception has been handled correctly
+    li t0, CAUSE_FETCH_ACCESS
+    bne s0, a0, fail
     li t0, 3
     bne s2, t0, fail
 
 TEST3_TEARDOWN:
+    nop
+
+TEST4_SETUP:
+    // enable a read only region
+    li a0, 1         // pmp number
+    li a1, S256K     // base address
+    li a2, 32        // size
+    li a3, NAPOT_RWX // permissions
+    li a4, NAPOT     // type
+    li a7, SVC_SETUP
+    ecall
+TEST4:
+    li a0, NAPOT_RWX
+    li a7, SVC_CHECK_REGION
+    ecall
+TEST4_CHECK:
+    li t0, 1
+    bne a0, t0, fail
+TEST4_TEARDOWN:
     j pass
 
 TEST_PASSFAIL

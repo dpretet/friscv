@@ -22,6 +22,7 @@
 .equ NA4_RX,    0x15
 .equ NAPOT_RWX, 0x1F
 .equ NAPOT_RW,  0x1B
+.equ NAPOT_LRW, 0x9B
 .equ NAPOT_RX,  0x1D
 .equ NAPOT_R,   0x19
 .equ NAPOT_W,   0x1C

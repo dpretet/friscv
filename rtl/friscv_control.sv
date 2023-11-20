@@ -227,6 +227,7 @@ module friscv_control
     logic                   ecall_umode;
     logic                   ecall_mmode;
     logic [2          -1:0] priv_mode;
+    logic [2          -1:0] mpp;
     logic                   load_access_fault;
     logic                   store_access_fault;
 
@@ -359,6 +360,12 @@ module friscv_control
                       mstatus_wr, mstatus,
                       mepc_wr, mepc};
 
+    generate if (USER_MODE) begin: MPP_UMODE
+        assign mpp = sb_mstatus[11+:2];
+    end else begin: MPP_MMODE
+        assign mpp = `MMODE;
+    end
+    endgenerate
 
     ///////////////////////////////////////////////////////////////////////////
     // Input stage
@@ -501,7 +508,7 @@ module friscv_control
     assign proc_instbus[`INST     +: `INST_W   ] = instruction;
     assign proc_instbus[`PC       +: `PC_W     ] = pc_reg;
     assign proc_instbus[`PRIV     +: `PRIV_W   ] = priv_mode;
-    assign proc_instbus[`MPP      +: `PRIV_W   ] = sb_mstatus[11+:2];
+    assign proc_instbus[`MPP      +: `PRIV_W   ] = mpp;
     assign proc_instbus[`MPRV                  ] = sb_mstatus[17];
 
     assign csr_instbus = proc_instbus;
