@@ -73,7 +73,7 @@ read_config() {
     cen=0 # cache enable
     cw=32 # cache width
 
-    DEFINES="FRISV_SIM=1;USE_SVL=1;"
+    DEFINES="FRISV_SIM=1;USE_SVL=0;"
 
     while IFS=, read -r name value; do
         DEFINES="${DEFINES}${name}=${value};"

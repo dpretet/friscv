@@ -24,7 +24,8 @@
     - [X] if MIE/SIE=0, wait for any intp and move forward
     - [X] Support MSTATUS.TW (timeout platform-dependent)
 - [X] add FIFO for memory exceptions
-- [ ] mcounteren: accessibility to lower privilege modes
+- [X] Drive aprot[0] based on priviledge mode
+- [X] mcounteren: accessibility to lower privilege modes
     - Bit x = 1, lower privilege mode can read the counter
     - Bit x = 0, lower privilege mode access is forbidden and raise an illegal instruction exception
 
@@ -57,6 +58,10 @@ MPU:
     - [X] write data in M-mode with MPRV=1 + MPP=U-mode
     - [X] execute in M-mode without X + locked region
 - [X] locked access to change configuration
+
+MCOUNTER:
+- Bit x = 1, lower privilege mode can read the counter
+- Bit x = 0, lower privilege mode access is forbidden and raise an illegal instruction exception
 
 Final:
 - Pass compliance with U-mode

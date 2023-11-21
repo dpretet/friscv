@@ -12,6 +12,8 @@ set -e
 # Variables and setup
 #------------------------------------------------------------------------------
 
+cfg_file="config.cfg"
+
 # Disable runtime timeout check for this testbench
 TIMEOUT=0
 
@@ -19,7 +21,7 @@ TIMEOUT=0
 MIN_PC=65692
 
 # Don't drop VCD, to avoid storing GB of raw data
-NO_VCD=1
+NO_VCD=0
 
 # Enable UART link to the processor (platform only)
 INTERACTIVE=1
@@ -96,11 +98,11 @@ main() {
 
     # If user specified a testcase, or a testsuite, use it
     if [[ -n $TC ]]; then
-        run_testsuite "$TC"
+        run_testsuite "$TC" "$cfg_file"
     # Else run all the supported testsuite
     else
         # Execute the testsuites
-        run_testsuite "./tests/*.v"
+        run_testsuite "./tests/*.v" "$cfg_file"
     fi
 
     # OK, sounds good, exit gently

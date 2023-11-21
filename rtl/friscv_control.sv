@@ -752,7 +752,9 @@ module friscv_control
                         if (jalr | branching) begin
 
                             if (!cant_jump) begin
+                                `ifdef USE_SVL
                                 print_instruction;
+                                `endif
                                 pc_reg <= pc;
                             end
 
@@ -773,7 +775,9 @@ module friscv_control
                                 log.info("JAL");
                             `endif
 
+                            `ifdef USE_SVL
                             print_instruction;
+                            `endif
                             pc_reg <= pc;
                             flush_pipe <= 1'b1;
 
@@ -844,20 +848,26 @@ module friscv_control
 
                             // CSR instructions
                             end else if (sys[`IS_CSR] && !cant_sys) begin
+                                `ifdef USE_SVL
                                 print_instruction;
+                                `endif
                                 flush_pipe <= 1'b0;
                                 pc_reg <= pc;
 
                             // FENCE instruction (not supported)
                             end else if (!proc_busy && csr_ready) begin
+                                `ifdef USE_SVL
                                 print_instruction;
+                                `endif
                                 flush_pipe <= 1'b0;
                                 pc_reg <= pc;
                             end
 
                         // LUI and AUIPC execution, done in this module
                         end else if (lui_auipc && !cant_lui_auipc) begin
+                            `ifdef USE_SVL
                             print_instruction;
+                            `endif
                             flush_pipe <= 1'b0;
                             pc_reg <= pc;
 
@@ -865,7 +875,9 @@ module friscv_control
                         end else if (processing) begin
 
                             if (!cant_process) begin
+                                `ifdef USE_SVL
                                 print_instruction;
+                                `endif
                                 flush_pipe <= 1'b0;
                                 pc_reg <= pc;
                             end
