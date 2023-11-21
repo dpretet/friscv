@@ -153,6 +153,8 @@ module friscv_memfy
     logic        [`PRIV_W     -1:0] priv;
     logic        [`PRIV_W     -1:0] mpp;
     logic                           mprv;
+    logic                           priv_bit;
+    logic        [3           -1:0] aprot;
 
     // read response channel
     logic                           push_rd_or;
@@ -231,6 +233,8 @@ module friscv_memfy
             awaddr <= {AXI_ADDR_W{1'b0}};
             awcache <= 4'b0;
             awvalid <= 1'b0;
+            awprot <= '0;
+            arprot <= '0;
             wvalid <= 1'b0;
             wdata <= {XLEN{1'b0}};
             wstrb <= {XLEN/8{1'b0}};
@@ -243,6 +247,8 @@ module friscv_memfy
         end else if (srst == 1'b1) begin
             awaddr <= {AXI_ADDR_W{1'b0}};
             awvalid <= 1'b0;
+            awprot <= '0;
+            arprot <= '0;
             wvalid <= 1'b0;
             wdata <= {XLEN{1'b0}};
             wstrb <= {XLEN/8{1'b0}};
@@ -292,6 +298,8 @@ module friscv_memfy
                         araddr <= addr;
                         awcache <= acache;
                         arcache <= acache;
+                        awprot <= aprot;
+                        arprot <= aprot;
 
                         opcode_r <= opcode;
 
@@ -371,8 +379,8 @@ module friscv_memfy
 
                         // Wait until addr and data have been acknowledged
                         if (awready && wready  ||   // addr & data channel acked on same cycle
-                            ~awvalid && wready ||   // addr has been acked before data
-                            awready && ~wvalid      // addr is acked and data has been acked before
+                            !awvalid && wready ||   // addr has been acked before data
+                            awready && !wvalid      // addr is acked and data has been acked before
                         ) begin
                             memfy_ready_fsm <= 1'b1;
                             state <= IDLE;
@@ -687,8 +695,8 @@ module friscv_memfy
     // [0] Unprivileged or privileged
     // [1] Secure or Non-secure
     // [2] Instruction or data
-    assign awprot = 3'b000;
-    assign arprot = 3'b000;
+    assign priv_bit = (priv == `MMODE);
+    assign aprot = {2'b00, priv_bit};
 
     // Completion are always accepted
     assign bready = 1'b1;

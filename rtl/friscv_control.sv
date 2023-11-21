@@ -227,6 +227,7 @@ module friscv_control
     logic                   ecall_umode;
     logic                   ecall_mmode;
     logic [2          -1:0] priv_mode;
+    logic                   priv_bit;
     logic [2          -1:0] mpp;
     logic                   load_access_fault;
     logic                   store_access_fault;
@@ -1057,7 +1058,8 @@ module friscv_control
     // [0] Unprivileged or privileged
     // [1] Secure or Non-secure
     // [2] Instruction or data
-    assign arprot = 3'b100;
+    assign priv_bit = (priv_mode==`MMODE);
+    assign arprot = {2'b10, priv_bit};
 
     // Needs to jump or branch, the request to cache/RAM needs to be restarted
     assign jump_branch = (branching & goto_branch) | jalr;
