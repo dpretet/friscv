@@ -30,7 +30,7 @@ module friscv_div
         input  wire                       aclk,
         input  wire                       aresetn,
         input  wire                       srst,
-		output logic                      div_pending,
+        output logic                      div_pending,
         // Input interface
         input  wire                       i_valid,      // AMBA-like handshake
         output logic                      i_ready,
@@ -86,7 +86,7 @@ module friscv_div
             o_valid <= 1'b0;
             computing <= 1'b0;
             step_cnt <= {CWIDTH{1'b0}};
-			div_pending <= 1'b0;
+            div_pending <= 1'b0;
         end else if (srst) begin
             zero_div <= 1'b0;
             quot_sign <= 1'b0;
@@ -99,7 +99,7 @@ module friscv_div
             o_valid <= 1'b0;
             computing <= 1'b0;
             step_cnt <= {CWIDTH{1'b0}};
-			div_pending <= 1'b0;
+            div_pending <= 1'b0;
         end else begin
 
             /////////////////////////////////
@@ -165,20 +165,20 @@ module friscv_div
                     i_ready <= 1'b1;
                     quot <= {WIDTH{1'b1}};
                     rem <= divd;
-					div_pending <= 1'b0;
+                    div_pending <= 1'b0;
                 // Move to compute the division
                 end else begin
                     zero_div <= 1'b0;
                     o_valid <= 1'b0;
                     i_ready <= 1'b0;
                     computing <= 1'b1;
-					div_pending <= 1'b1;
+                    div_pending <= 1'b1;
                 end
 
             end else begin
                 i_ready <= 1'b1;
                 o_valid <= 1'b0;
-				div_pending <= 1'b0;
+                div_pending <= 1'b0;
             end
         end
     end

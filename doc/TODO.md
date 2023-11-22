@@ -65,6 +65,5 @@ MCOUNTER:
 
 Final:
 - Pass compliance with U-mode
-- Run REPL app
 - Review testcases
 - Parse again the documentation

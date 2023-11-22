@@ -9,7 +9,7 @@
 module friscv_m_ext
 
     #(
-		// Number of integer registers (RV32I = 32, RV32E = 16)
+        // Number of integer registers (RV32I = 32, RV32E = 16)
         parameter NB_INT_REG        = 32,
         // Architecture selection
         parameter XLEN  = 32
@@ -22,8 +22,8 @@ module friscv_m_ext
         input  wire                       m_valid,
         output logic                      m_ready,
         input  wire  [`INST_BUS_W   -1:0] m_instbus,
-		output logic [NB_INT_REG    -1:0] m_regs_sts,
-		output logic                      div_pending,
+        output logic [NB_INT_REG    -1:0] m_regs_sts,
+        output logic                      div_pending,
         // register source 1 query interface
         output logic [5             -1:0] m_rs1_addr,
         input  wire  [XLEN          -1:0] m_rs1_val,
@@ -67,10 +67,10 @@ module friscv_m_ext
     logic                    m_valid_div;
     logic                    signed_div;
 
-	localparam MAX_OR   = 1;
+    localparam MAX_OR   = 1;
     localparam MAX_OR_W = $clog2(MAX_OR) + 1;
 
-	logic [MAX_OR_W    -1:0] regs_or[NB_INT_REG-1:0];
+    logic [MAX_OR_W    -1:0] regs_or[NB_INT_REG-1:0];
 
 
     ///////////////////////////////////////////////////////////////////////////
@@ -86,36 +86,36 @@ module friscv_m_ext
     assign rs2    = m_instbus[`RS2    +: `RS2_W   ];
     assign rd     = m_instbus[`RD     +: `RD_W    ];
 
-	////////////////////////////////////////////////////////////////////////
-	// Track which integer registers is used by an outstanding request
-	////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////
+    // Track which integer registers is used by an outstanding request
+    ////////////////////////////////////////////////////////////////////////
 
     always @ (posedge aclk or negedge aresetn) begin
 
-		if (!aresetn) regs_or[0] <= '0;
-		else          regs_or[0] <= '0;
+        if (!aresetn) regs_or[0] <= '0;
+        else          regs_or[0] <= '0;
 
-		for (int i=1;i<NB_INT_REG;i++) begin
-			if (!aresetn) begin
-				regs_or[i] <= '0;
-			end else begin
-				if ((m_valid && m_ready && rd == i[4:0]) &&
-				   !(m_rd_wr && m_rd_addr==i[4:0]))
-			   begin
-						regs_or[i] <= regs_or[i] + 1;
+        for (int i=1;i<NB_INT_REG;i++) begin
+            if (!aresetn) begin
+                regs_or[i] <= '0;
+            end else begin
+                if ((m_valid && m_ready && rd == i[4:0]) &&
+                   !(m_rd_wr && m_rd_addr==i[4:0]))
+               begin
+                    regs_or[i] <= regs_or[i] + 1;
 
-				end else if (!(m_valid && m_ready && rd == i[4:0]) &&
-							  (m_rd_wr && m_rd_addr==i[4:0]))
-				begin
-						regs_or[i] <= regs_or[i] - 1;
-				end
-			end
-		end
-	end
+                end else if (!(m_valid && m_ready && rd == i[4:0]) &&
+                              (m_rd_wr && m_rd_addr==i[4:0]))
+                begin
+                    regs_or[i] <= regs_or[i] - 1;
+                end
+            end
+        end
+    end
 
-	for (genvar i=0;i<NB_INT_REG;i++) begin
-		assign m_regs_sts[i] = regs_or[i] == '0;
-	end
+    for (genvar i=0;i<NB_INT_REG;i++) begin
+        assign m_regs_sts[i] = regs_or[i] == '0;
+    end
 
 
     ///////////////////////////////////////////////////////////////////////////
@@ -172,26 +172,26 @@ module friscv_m_ext
     assign m_valid_div = m_valid & funct3[2];
     assign signed_div = (funct3==`DIV) | (funct3==`REM);
 
-    friscv_div 
+    friscv_div
     #(
         .WIDTH (XLEN)
     )
     div32
     (
-        .aclk        	(aclk),
-        .aresetn     	(aresetn),
-        .srst        	(srst),
-		.div_pending 	(div_pending), 
-        .i_valid     	(m_valid_div),
-        .i_ready     	(m_ready),
-        .signed_div  	(signed_div),
-        .divd        	(m_rs1_val),
-        .divs        	(m_rs2_val),
-        .o_valid     	(rd_wr_div),
-        .o_ready     	(1'b1),
-        .zero_div    	(),
-        .quot        	(quot),
-        .rem         	(rem)
+        .aclk            (aclk),
+        .aresetn         (aresetn),
+        .srst            (srst),
+        .div_pending     (div_pending),
+        .i_valid         (m_valid_div),
+        .i_ready         (m_ready),
+        .signed_div      (signed_div),
+        .divd            (m_rs1_val),
+        .divs            (m_rs2_val),
+        .o_valid         (rd_wr_div),
+        .o_ready         (1'b1),
+        .zero_div        (),
+        .quot            (quot),
+        .rem             (rem)
     );
 
 
@@ -231,7 +231,7 @@ module friscv_m_ext
             end else begin
                 m_rd_val <= (rd_wr_div && (funct3_r==`DIV || funct3_r==`DIVU)) ? quot :
                             (rd_wr_div && (funct3_r==`REM || funct3_r==`REMU)) ? rem :
-                            (opcode==`MULDIVW)                                 ? mul64 : 
+                            (opcode==`MULDIVW)                                 ? mul64 :
                                                                                  mul32 ;
             end
         end
