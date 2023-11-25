@@ -9,9 +9,9 @@
 #include "pmp.S"
 
 ######################################################################
-# Test 3: machine mode access fault
+# Test 4: machine mode access fault
 #
-# Checks MPRV mstatus bit and PMP.LOCK to provoque access fault
+# Checks machine mode experience access fault on MPRV or locked region
 #
 # x31 is the error status register to trigger the testbench status
 # when encounter a problem during the testcase

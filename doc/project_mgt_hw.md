@@ -4,16 +4,20 @@
     - [X] Supporter des set de config du core en test bench.
     - [X] Support U-mode
     - [X] Support PMP/PMA
+    - [ ] https://github.com/eembc/coremark
+    - [ ] Advanced Interrupt controller
+        - [ ] AXI ERR handling
+        - [ ] AXI EXOKAY handling
     - [ ] Atomic operations
         - stage to execute the instruction, controlling ldst Stages
         - memfy exposes two interfaces for requests.
         - memfy drives back response along register write channel
-        - support exclusive access in cache, don't substitute tag, so support single access
+        - memfy supports two tags, one for regular, one for exclusive
+        - support exclusive access in cache
+            - support in-order for same tag (don't always subsitute)
+            - exclusive can't be cachable
         - support exclusive access in memory, track the ID with a LUT
-    - [ ] Advanced Interrupt controller
-        - [ ] AXI Exception management
     - [ ] Zc extension
-    - [ ] https://github.com/eembc/coremark
 
 
 # BACKLOG

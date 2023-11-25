@@ -12,6 +12,7 @@
 .equ SVC_WRITE,        12
 .equ SVC_EXE,          13
 .equ SVC_CHECK_REGION, 14
+.equ SVC_MCOUNTEREN,   15
 
 .EQU MPRV_ON,  0x00020000
 .EQU MPRV_OFF, 0xFFFDFFFF
@@ -510,6 +511,18 @@ PMP_SERVICE:
     j RET_ECALL
 
 
+// Setup access to IR, TM, CY from U-mode
+SET_MCOUNTEREN:
+    beq zero, a0, 2f
+// Enable all counters
+1:
+    csrw mcounteren, a0
+    j RET_ECALL
+// Disable all counters
+2:
+    csrw mcounteren, 0x0
+    j RET_ECALL
+
 /////////////////////////////////////////////////////
 # Entry point for user-mode system call
 # Redirect to the right service
@@ -549,6 +562,9 @@ ECALL_USER_MODE:
     # Check a region matches a configuration
     li t4, SVC_CHECK_REGION
     beq a7, t4, CHECK_PMP_REGION
+    # Enable / disable MCOUNTER access
+    li t4, SVC_MCOUNTEREN
+    beq a7, t4, SET_MCOUNTEREN
     # Unrecognized service
     j RET_ECALL
 

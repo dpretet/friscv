@@ -59,7 +59,7 @@ MPU:
     - [X] execute in M-mode without X + locked region
 - [X] locked access to change configuration
 
-MCOUNTER:
+MCOUNTEREN:
 - Bit x = 1, lower privilege mode can read the counter
 - Bit x = 0, lower privilege mode access is forbidden and raise an illegal instruction exception
 
