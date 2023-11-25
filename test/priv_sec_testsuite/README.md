@@ -22,3 +22,15 @@ WFI is correctly supported by U-mode.
 ## Test 2: Check PMP Regions
 
 Checks the three memory region types and tries access across the region and out of its boundaries
+
+## Test 3: PMP permissions
+
+Configure PMP and check permissions are correctly followed by the mpu and control/memfy units with U-mode
+
+## Test 4: machine mode access fault
+
+Checks machine mode experience access fault on MPRV or locked region
+
+## Test 5: Counters
+
+Checks user mode can access or not cycle / time / instret counters based on MCOUNTEREN CSR
