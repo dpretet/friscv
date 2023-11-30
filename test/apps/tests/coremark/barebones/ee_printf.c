@@ -27,6 +27,12 @@ limitations under the License.
 
 #define is_digit(c) ((c) >= '0' && (c) <= '9')
 
+#define UART_ADDRESS     0x100008
+#define UART_STATUS      (UART_ADDRESS + 0x0)
+#define UART_CLKDIV      (UART_STATUS  + 0x4)
+#define UART_TX          (UART_STATUS  + 0x8)
+#define UART_RX          (UART_STATUS  + 0xC)
+
 static char *    digits       = "0123456789abcdefghijklmnopqrstuvwxyz";
 static char *    upper_digits = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 static ee_size_t strnlen(const char *s, ee_size_t count);
@@ -662,7 +668,9 @@ ee_vsprintf(char *buf, const char *fmt, va_list args)
 void
 uart_send_char(char c)
 {
-#error "You must implement the method uart_send_char to use this file!\n";
+    *((volatile int*) UART_TX) = c;
+
+// #error "You must implement the method uart_send_char to use this file!\n";
     /*	Output of a char to a UART usually follows the following model:
             Wait until UART is ready
             Write char to UART

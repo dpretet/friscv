@@ -21,7 +21,7 @@ TIMEOUT=0
 MIN_PC=65692
 
 # Don't drop VCD, to avoid storing GB of raw data
-NO_VCD=0
+NO_VCD=1
 
 # Enable UART link to the processor (platform only)
 INTERACTIVE=1
@@ -38,6 +38,7 @@ TRACE_BLOCKS=0
 TRACE_FETCHER=0
 TRACE_PUSHER=0
 TRACE_TB_RAM=0
+TRACE_REGISTERS=0
 
 # Disable external IRQ generation
 GEN_EIRQ=0
@@ -92,7 +93,7 @@ main() {
     for dir in tests/*/; do
         if [ "$dir" != "tests/common/" ]; then
             echo "INFO: Compile $dir"
-            make -C "$dir";
+            make -C "$dir" all;
         fi
     done
 

@@ -349,3 +349,28 @@ Algorithms:
 - Printf execution: 49904 cycles
 - Xoshiro128++ execution: 236723 cycles
 - Pool Arena execution: 1640273 cycles
+
+# 231201
+
+First coremark run!
+
+10 iterations within
+
+2K performance run parameters for coremark.
+CoreMark Size    : 666
+Total ticks      : 22799229
+Total time (secs): 22
+Iterations/Sec   : 0
+Iterations       : 10
+Compiler version : GCC11.1.0
+Compiler flags   : -O0 -g
+Memory location  : STACK
+seedcrc          : 0xe9f5
+[0]crclist       : 0xe714
+[0]crcmatrix     : 0x1fd7
+[0]crcstate      : 0x8e3a
+[0]crcfinal      : 0xfcaf
+
+22799229 * 2 = 45598458 ns = 45 ms pour 10 iterations @ 500 MHz
+
+10 / 0.045ms = 222 => * 1000 = 222000 => / 500MHz = 444 coremarks / MHz

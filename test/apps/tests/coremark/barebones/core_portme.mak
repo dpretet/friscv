@@ -11,8 +11,43 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# 
+#
 # Original Author: Shay Gal-on
+
+##########################################################################
+# RISCV toolchain
+##########################################################################
+
+PROJ_NAME=$(shell basename $(CURDIR))
+
+OPATH = ./
+
+RISCV_NAME    = riscv64-unknown-elf
+RISCV_CC      = $(RISCV_NAME)-gcc
+RISCV_OBJCOPY = $(RISCV_NAME)-objcopy
+RISCV_OBJDUMP = $(RISCV_NAME)-objdump
+RISCV_NM      = $(RISCV_NAME)-nm
+
+RISCV_CLIB="/opt/homebrew/Cellar/riscv-gnu-toolchain/main/riscv64-unknown-elf/include/"
+
+# Select architecure and ABI
+CFLAGS +=	-march=rv32im \
+			-mabi=ilp32 \
+			-O0 \
+			-g \
+			-I./ \
+			-I$(RISCV_CLIB) \
+			-mcmodel=medany \
+			-static \
+			-std=gnu99 \
+
+LDFLAGS +=	-nostartfiles \
+			-e _start \
+			-T linker.ld \
+			-Wl,-Map,$(OPATH)/$(PROJ_NAME).map \
+			-Wl,--print-memory-usage
+
+##########################################################################
 
 #File : core_portme.mak
 
@@ -21,33 +56,34 @@
 OUTFLAG= -o
 # Flag : CC
 #	Use this flag to define compiler to use
-CC 		= gcc
+# CC		= gcc
+CC		= $(RISCV_CC)
 # Flag : LD
 #	Use this flag to define compiler to use
 LD		= gld
 # Flag : AS
 #	Use this flag to define compiler to use
-AS		= gas
+AS		= $(RISCV_CC)
 # Flag : CFLAGS
 #	Use this flag to define compiler options. Note, you can add compiler options from the command line using XCFLAGS="other flags"
 PORT_CFLAGS = -O0 -g
 FLAGS_STR = "$(PORT_CFLAGS) $(XCFLAGS) $(XLFLAGS) $(LFLAGS_END)"
-CFLAGS = $(PORT_CFLAGS) -I$(PORT_DIR) -I. -DFLAGS_STR=\"$(FLAGS_STR)\" 
+CFLAGS = $(PORT_CFLAGS) -I$(PORT_DIR) -I. -DFLAGS_STR=\"$(FLAGS_STR)\"
 #Flag : LFLAGS_END
-#	Define any libraries needed for linking or other flags that should come at the end of the link line (e.g. linker scripts). 
+#	Define any libraries needed for linking or other flags that should come at the end of the link line (e.g. linker scripts).
 #	Note : On certain platforms, the default clock_gettime implementation is supported but requires linking of librt.
-SEPARATE_COMPILE=1
+#SEPARATE_COMPILE=1
 # Flag : SEPARATE_COMPILE
 # You must also define below how to create an object file, and how to link.
-OBJOUT 	= -o
-LFLAGS 	= 
-ASFLAGS =
-OFLAG 	= -o
-COUT 	= -c
+OBJOUT	= -o
+LFLAGS	=
+ASFLAGS = -D__ASSEMBLY__=1
+OFLAG	= -o
+COUT	= -c
 
-LFLAGS_END = 
+LFLAGS_END =
 # Flag : PORT_SRCS
-# 	Port specific source files can be added here
+#	Port specific source files can be added here
 #	You may also need cvt.c if the fcvt functions are not provided as intrinsics by your compiler!
 PORT_SRCS = $(PORT_DIR)/core_portme.c $(PORT_DIR)/ee_printf.c
 vpath %.c $(PORT_DIR)
@@ -63,7 +99,7 @@ LOAD = echo "Please set LOAD to the process of loading the executable to the fla
 RUN = echo "Please set LOAD to the process of running the executable (e.g. via jtag, or board reset)"
 
 OEXT = .o
-EXE = .bin
+EXE = .elf
 
 $(OPATH)$(PORT_DIR)/%$(OEXT) : %.c
 	$(CC) $(CFLAGS) $(XCFLAGS) $(COUT) $< $(OBJOUT) $@
@@ -71,17 +107,16 @@ $(OPATH)$(PORT_DIR)/%$(OEXT) : %.c
 $(OPATH)%$(OEXT) : %.c
 	$(CC) $(CFLAGS) $(XCFLAGS) $(COUT) $< $(OBJOUT) $@
 
-$(OPATH)$(PORT_DIR)/%$(OEXT) : %.s
-	$(AS) $(ASFLAGS) $< $(OBJOUT) $@
+$(OPATH)$(PORT_DIR)/%$(OEXT) : %.S
+	$(RISCV_CC) -c $(CFLAGS) -o $@ $^ -D__ASSEMBLY__=1
 
 # Target : port_pre% and port_post%
 # For the purpose of this simple port, no pre or post steps needed.
 
 .PHONY : port_prebuild port_postbuild port_prerun port_postrun port_preload port_postload
-port_pre% port_post% : 
+port_pre% port_post% :
 
 # FLAG : OPATH
 # Path to the output folder. Default - current folder.
 OPATH = ./
 MKDIR = mkdir -p
-

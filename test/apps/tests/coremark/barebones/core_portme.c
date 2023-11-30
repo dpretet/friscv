@@ -44,8 +44,12 @@ volatile ee_s32 seed5_volatile = 0;
 CORETIMETYPE
 barebones_clock()
 {
-#error \
-    "You must implement a method to measure time in barebones_clock()! This function should return current time.\n"
+    int cycle;
+    asm volatile("csrr %0, 0xC00" : "=r"(cycle));
+    return cycle;
+
+// #error \
+    // "You must implement a method to measure time in barebones_clock()! This function should return current time.\n"
 }
 /* Define : TIMER_RES_DIVIDER
         Divider to trade off timer resolution and total time that can be
@@ -59,6 +63,7 @@ barebones_clock()
 #define MYTIMEDIFF(fin, ini)       ((fin) - (ini))
 #define TIMER_RES_DIVIDER          1
 #define SAMPLE_TIME_IMPLEMENTATION 1
+#define CLOCKS_PER_SEC             1000000000
 #define EE_TICKS_PER_SEC           (CLOCKS_PER_SEC / TIMER_RES_DIVIDER)
 
 /** Define Host specific (POSIX), or target specific global time variables. */
@@ -129,8 +134,8 @@ ee_u32 default_num_contexts = 1;
 void
 portable_init(core_portable *p, int *argc, char *argv[])
 {
-#error \
-    "Call board initialization routines in portable init (if needed), in particular initialize UART!\n"
+// #error \
+    // "Call board initialization routines in portable init (if needed), in particular initialize UART!\n"
 
     (void)argc; // prevent unused warning
     (void)argv; // prevent unused warning

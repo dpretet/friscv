@@ -366,6 +366,8 @@ for (i = 0; i < MULTITHREAD; i++)
 #else
     ee_printf("Total time (secs): %d\n", time_in_secs(total_time));
     if (time_in_secs(total_time) > 0)
+        ee_printf("num_contexts   : %d\n",default_num_contexts);
+        ee_printf("Iterations   : %d\n",results[0].iterations);
         ee_printf("Iterations/Sec   : %d\n",
                   default_num_contexts * results[0].iterations
                       / time_in_secs(total_time));
@@ -438,5 +440,6 @@ for (i = 0; i < MULTITHREAD; i++)
     /* And last call any target specific code for finalizing */
     portable_fini(&(results[0].port));
 
+    asm volatile("ebreak");
     return MAIN_RETURN_VAL;
 }

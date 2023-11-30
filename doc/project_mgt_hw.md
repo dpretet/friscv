@@ -1,6 +1,6 @@
 # DOING
 
-- [ ] v1.6.0: Kernel-capable Hart
+- [ ] Kernel-capable Hart
     - [X] Supporter des set de config du core en test bench.
     - [X] Support U-mode
     - [X] Support PMP/PMA
