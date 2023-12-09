@@ -4,7 +4,7 @@
     - [X] Supporter des set de config du core en test bench.
     - [X] Support U-mode
     - [X] Support PMP/PMA
-    - [ ] https://github.com/eembc/coremark
+    - [X] https://github.com/eembc/coremark
     - [ ] Advanced Interrupt controller
         - [ ] AXI ERR handling
         - [ ] AXI EXOKAY handling

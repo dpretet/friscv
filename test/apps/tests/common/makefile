@@ -84,6 +84,3 @@ clean:
 	rm -f $(OBJDIR)/*.asm
 	rm -f $(OBJDIR)/*.o
 	rm -f $(OBJDIR)/*.su
-
-
-#.SECONDARY: $(OBJS)

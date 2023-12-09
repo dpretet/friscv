@@ -41,7 +41,7 @@ endif
 # Select architecure and ABI
 CFLAGS +=	-march=rv32im \
 			-mabi=ilp32 \
-			-O0 \
+			-O1 \
 			-g \
 			-I./ \
 			-I./barebones \

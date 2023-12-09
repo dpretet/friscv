@@ -808,7 +808,8 @@ module friscv_testbench(
         $sformat(stop_msg, "X31=0x%0x", error_status_reg);
         `INFO(stop_msg);
         `ifdef ERROR_STATUS_X31
-        `ASSERT((error_status_reg==0), "X31 != 0");
+        if (`ERROR_STATUS_X31 > 0)
+            `ASSERT((error_status_reg==0), "X31 != 0");
         `endif
 
         if (status[0]) `INFO("Halt on ECALL");

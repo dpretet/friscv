@@ -15,7 +15,7 @@
         - [ ] https://github.com/OscarSaharoy/ascii-raytrace
         - [ ] https://fabiensanglard.net/another_world_polygons/
     - [ ] Hash table https://github.com/PerformanC/tablec/tree/closed-addressing
-    - [ ] CoreMark https://github.com/eembc/coremark
+    - [ ] Dhrystone https://github.com/Keith-S-Thompson/dhrystone
 
 # BACKLOG
 
@@ -95,6 +95,7 @@ Minimalistic Unix
     - https://popovicu.com/posts/bare-metal-rust-risc-v-with-dynamic-memory/
 DONE:
 
+- [X] CoreMark https://github.com/eembc/coremark
 - [X] Pool arena / malloc-free / integrated in benchmark
 - [X] Support %p dans printf
 - [X] Add Xoshiro++ benchmark
