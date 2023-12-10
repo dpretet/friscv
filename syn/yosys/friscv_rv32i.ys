@@ -1,0 +1,53 @@
+# read design modules
+read -define XLEN=32
+read -incdir ../../rtl
+read -sv2012 ../../rtl/friscv_csr.sv
+read -sv2012 ../../rtl/friscv_registers.sv
+read -sv2012 ../../rtl/friscv_alu.sv
+read -sv2012 ../../rtl/friscv_control.sv
+read -sv2012 ../../rtl/friscv_decoder.sv
+read -sv2012 ../../rtl/friscv_memfy.sv
+read -sv2012 ../../rtl/friscv_processing.sv
+read -sv2012 ../../rtl/friscv_bus_perf.sv
+read -sv2012 ../../rtl/friscv_scfifo.sv
+read -sv2012 ../../rtl/friscv_ram.sv
+read -sv2012 ../../rtl/friscv_rambe.sv
+read -sv2012 ../../rtl/friscv_icache.sv
+read -sv2012 ../../rtl/friscv_dcache.sv
+read -sv2012 ../../rtl/friscv_cache_io_fetcher.sv
+read -sv2012 ../../rtl/friscv_cache_block_fetcher.sv
+read -sv2012 ../../rtl/friscv_cache_ooo_mgt.sv
+read -sv2012 ../../rtl/friscv_cache_pusher.sv
+read -sv2012 ../../rtl/friscv_cache_flusher.sv
+read -sv2012 ../../rtl/friscv_cache_blocks.sv
+read -sv2012 ../../rtl/friscv_cache_memctrl.sv
+read -sv2012 ../../rtl/friscv_bit_sync.sv
+read -sv2012 ../../rtl/friscv_checkers.sv
+read -sv2012 ../../rtl/friscv_div.sv
+read -sv2012 ../../rtl/friscv_m_ext.sv
+read -sv2012 ../../rtl/friscv_pipeline.sv
+read -sv2012 ../../rtl/friscv_rv32i_core.sv
+read -sv2012 ../../rtl/friscv_axi_or_tracker.sv
+read -sv2012 ../../rtl/friscv_mpu.sv
+read -sv2012 ../../rtl/friscv_pmp_region.sv
+read -sv2012 ../../rtl/friscv_pulser.sv
+
+# synthsize the core
+synth -top friscv_rv32i_core
+
+# convert design to (logical) gate-level netlists
+# +/adff2dff.v convert async reset to sync reset, used to mapp FFD correctly
+techmap +/adff2dff.v; opt
+# dffunmap
+
+# map internal register types to the ones from the cell library
+dfflibmap -liberty cmos.lib
+
+# use ABC to map remaining logic to cells from the cell library
+abc -liberty cmos.lib
+
+# cleanup
+clean
+
+# write synthesized design
+write_verilog friscv32i.v

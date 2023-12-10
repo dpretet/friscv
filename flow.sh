@@ -253,10 +253,25 @@ main() {
     fi
 
     if [[ $1 == "syn" ]]; then
+
+        ret=0
+
         printinfo "Start synthesis flow"
-        cd "$FRISCV_DIR/syn"
-        ./syn_asic.sh
-        return $?
+        cd "$FRISCV_DIR/syn/yosys"
+
+        echo "------------------------------------"
+        echo " Run ASIC synthesis"
+        echo "------------------------------------"
+        ./syn_asic.sh | tee "$FRISCV_DIR/syn_asic.log"
+        ret=$((ret+$?))
+
+        echo "------------------------------------"
+        echo " Run Xilinx XC7 synthesis"
+        echo "------------------------------------"
+        ./syn_x7.sh | tee "$FRISCV_DIR/syn_x7.log"
+        ret=$((ret+$?))
+
+        return $ret
     fi
 }
 

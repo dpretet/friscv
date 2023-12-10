@@ -16,6 +16,7 @@
         - [ ] https://fabiensanglard.net/another_world_polygons/
     - [ ] Hash table https://github.com/PerformanC/tablec/tree/closed-addressing
     - [ ] Dhrystone https://github.com/Keith-S-Thompson/dhrystone
+    - [ ] Embench https://github.com/embench/embench-iot
 
 # BACKLOG
 

@@ -81,6 +81,21 @@ The core is verified with several testsuites, present in [test](./test) folder:
 - [RISCV toolchain](https://github.com/riscv-collab/riscv-gnu-toolchain)
 
 
+## Performance
+
+[Coremark](test/apps/coremark) has been performed on the `platform` (core with caches + AXI interconnect and peripherals).
+The IP demonstrates 2.87 coremark / MHz:
+
+```
+CoreMark 1.0 : 1435 / GCC 11.1.1 -O1
+```
+
+## Synthesis & Area
+
+The core is usually synthesized with [Yosys](syn/yosys) during [continuous integration](https://github.com/dpretet/friscv/actions).
+to ensure. Follows area figured out by a synthesis with `Vivado 2021`:
+
+
 ## Validation environment
 
 The core has not been yet tested on hardware, but a synthesis flow based in [Yosys](https://github.com/YosysHQ/yosys)
