@@ -85,7 +85,7 @@ module friscv_csr
         input  wire  [PERF_REG_W*3*PERF_NB_BUS -1:0] perfs,
         // CSR shared bus
         output logic [`CSR_SB_W  -1:0] csr_sb,
-        input  logic [`CTRL_SB_W -1:0] ctrl_sb
+        input  wire  [`CTRL_SB_W -1:0] ctrl_sb
     );
 
     // ------------------------------------------------------------------------

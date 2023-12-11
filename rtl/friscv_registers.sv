@@ -239,7 +239,7 @@ module friscv_registers
                 ctrl_rs1_val <= {XLEN{1'b0}};
                 ctrl_rs2_val <= {XLEN{1'b0}};
                 csr_rs1_val <= {XLEN{1'b0}};
-                for (i=0;i<NB_ALU_UNIT;i=i+1) begin: PROCESING_ARESETN_REG_IFS
+                for (int i=0;i<NB_ALU_UNIT;i=i+1) begin: PROCESING_ARESETN_REG_IFS
                     proc_rs1_val[i*XLEN+:XLEN] <= {XLEN{1'b0}};
                     proc_rs2_val[i*XLEN+:XLEN] <= {XLEN{1'b0}};
                 end
@@ -247,7 +247,7 @@ module friscv_registers
                 ctrl_rs1_val <= {XLEN{1'b0}};
                 ctrl_rs2_val <= {XLEN{1'b0}};
                 csr_rs1_val <= {XLEN{1'b0}};
-                for (i=0;i<NB_ALU_UNIT;i=i+1) begin: PROCESING_SRST_REG_IFS
+                for (int i=0;i<NB_ALU_UNIT;i=i+1) begin: PROCESING_SRST_REG_IFS
                     proc_rs1_val[i*XLEN+:XLEN] <= {XLEN{1'b0}};
                     proc_rs2_val[i*XLEN+:XLEN] <= {XLEN{1'b0}};
                 end
@@ -255,7 +255,7 @@ module friscv_registers
                 ctrl_rs1_val <= regs[ctrl_rs1_addr];
                 ctrl_rs2_val <= regs[ctrl_rs2_addr];
                 csr_rs1_val <= regs[csr_rs1_addr];
-                for (i=0;i<NB_ALU_UNIT;i=i+1) begin: PROCESING_SYNC_REG_IFS
+                for (int i=0;i<NB_ALU_UNIT;i=i+1) begin: PROCESING_SYNC_REG_IFS
                     proc_rs1_val[i*XLEN+:XLEN] <= regs[proc_rs1_addr[i*5+:5]];
                     proc_rs2_val[i*XLEN+:XLEN] <= regs[proc_rs2_addr[i*5+:5]];
                 end

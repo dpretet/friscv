@@ -106,8 +106,8 @@ module friscv_rv32i_core
         // AXI ID width, setup by default to 8 and unused
         parameter AXI_ID_W          = 8,
         // AXI4 data width, for instruction and a data bus
-        parameter AXI_IMEM_W        = XLEN,
-        parameter AXI_DMEM_W        = XLEN,
+        parameter AXI_IMEM_W        = XLEN*4,
+        parameter AXI_DMEM_W        = XLEN*4,
         // ID used by instruction and data buses
         parameter AXI_IMEM_MASK     = 'h10,
         parameter AXI_DMEM_MASK     = 'h20,
@@ -117,7 +117,7 @@ module friscv_rv32i_core
         ////////////////////////////////////////////////////////////////////////
 
         // Enable instruction & data caches
-        parameter CACHE_EN           = 0,
+        parameter CACHE_EN           = 1,
 
         // Enable cache block prefetch
         parameter ICACHE_PREFETCH_EN = 0,

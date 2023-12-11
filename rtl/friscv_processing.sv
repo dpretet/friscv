@@ -108,6 +108,13 @@ module friscv_processing
     //
     ///////////////////////////////////////////////////////////////////////////
 
+
+    // Assignment of M extension on integer registers' interface
+    localparam M_IX = 2;
+
+    // Number of integer registers really used based on RV32E arch
+    localparam NB_INT_REG = (RV32E) ? 16 : 32;
+    
     logic [`OPCODE_W       -1:0] opcode;
     logic [`FUNCT7_W       -1:0] funct7;
     logic [`RS1_W          -1:0] rs1;
@@ -124,7 +131,7 @@ module friscv_processing
     logic                        m_valid;
     logic                        m_ready;
     logic                        m_inst;
-     logic [NB_INT_REG      -1:0] m_regs_sts;
+    logic [NB_INT_REG      -1:0] m_regs_sts;
     logic                        div_pending;
 
     logic                        memfy_valid;
@@ -140,13 +147,6 @@ module friscv_processing
     logic                          proc_busy_r;
 
     logic [`PROC_EXP_W     -1:0] memfy_exceptions;
-
-
-    // Assignment of M extension on integer registers' interface
-    localparam M_IX = 2;
-
-    // Number of integer registers really used based on RV32E arch
-    localparam NB_INT_REG = (RV32E) ? 16 : 32;
 
 
     ///////////////////////////////////////////////////////////////////////////

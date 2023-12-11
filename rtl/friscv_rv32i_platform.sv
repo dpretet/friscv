@@ -109,7 +109,7 @@ module friscv_rv32i_platform
         ////////////////////////////////////////////////////////////////////////
 
         // Enable instruction & data caches
-        parameter CACHE_EN           = 0,
+        parameter CACHE_EN           = 1,
 
         // Enable cache block prefetch
         parameter ICACHE_PREFETCH_EN = 0,

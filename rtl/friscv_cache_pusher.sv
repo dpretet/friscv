@@ -73,7 +73,7 @@ module friscv_cache_pusher
         input  wire                            memctrl_bvalid,
         output logic                           memctrl_bready,
         input  wire  [AXI_ID_W           -1:0] memctrl_bid,
-        input  logic [2                  -1:0] memctrl_bresp, 
+        input  wire  [2                  -1:0] memctrl_bresp, 
 
         // Cache block interface
         output logic                           cache_ren,
