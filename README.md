@@ -93,7 +93,19 @@ CoreMark 1.0 : 1435 / GCC 11.1.1 -O1
 ## Synthesis & Area
 
 The core is usually synthesized with [Yosys](syn/yosys) during [continuous integration](https://github.com/dpretet/friscv/actions).
-to ensure. Follows area figured out by a synthesis with `Vivado 2021`:
+to ensure. Follows area figured out by a synthesis with `Vivado 2021.2`:
+
+Core:
+- Slice LUTs: 13635
+- Slice registers: 2774
+- RAMs: 0
+- DSPs: 0
+
+Platform:
+- Slice LUTs: 16032
+- Slice registers: 4889
+- RAMs: 0
+- DSPs: 0
 
 
 ## Validation environment
