@@ -18,6 +18,7 @@ SRCS="\
 ../../rtl/friscv_rambe.sv \
 ../../rtl/friscv_icache.sv \
 ../../rtl/friscv_dcache.sv \
+../../rtl/friscv_cache_prefetcher.sv \
 ../../rtl/friscv_cache_io_fetcher.sv \
 ../../rtl/friscv_cache_block_fetcher.sv \
 ../../rtl/friscv_cache_ooo_mgt.sv \

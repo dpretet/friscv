@@ -14,6 +14,7 @@ read -sv2012 ../../rtl/friscv_ram.sv
 read -sv2012 ../../rtl/friscv_rambe.sv
 read -sv2012 ../../rtl/friscv_icache.sv
 read -sv2012 ../../rtl/friscv_dcache.sv
+read -sv2012 ../../rtl/friscv_cache_prefetcher.sv
 read -sv2012 ../../rtl/friscv_cache_io_fetcher.sv
 read -sv2012 ../../rtl/friscv_cache_block_fetcher.sv
 read -sv2012 ../../rtl/friscv_cache_ooo_mgt.sv
