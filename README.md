@@ -83,7 +83,7 @@ The core is verified with several testsuites, present in [test](./test) folder:
 
 ## Performance
 
-[Coremark](test/apps/coremark) has been performed on the `platform` (core with caches + AXI interconnect and peripherals).
+[Coremark](test/apps/tests/coremark) has been performed on the `platform` (core with caches + AXI interconnect and peripherals).
 The IP demonstrates 2.87 coremark / MHz:
 
 ```
