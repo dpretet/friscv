@@ -423,6 +423,7 @@ module friscv_testbench(
             .DCACHE_BLOCK_W             (DCACHE_BLOCK_W),
             .DCACHE_PREFETCH_EN         (DCACHE_PREFETCH_EN),
             .DCACHE_DEPTH               (DCACHE_DEPTH),
+            .IO_MAP_NB                  (0),
             .MPU_SUPPORT                (MPU_SUPPORT),
             .PMPCFG0_INIT               (PMPCFG0_INIT),
             .PMPCFG1_INIT               (PMPCFG1_INIT),

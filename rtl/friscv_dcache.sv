@@ -651,6 +651,7 @@ module friscv_dcache
         .aresetn      (aresetn),
         .srst         (srst),
         .ready        (cache_ready),
+        // unconnected while dcache can't be sw-flushed
         .flush_blocks (1'b0),
         .flush_ack    (),
         .flushing     (flushing),

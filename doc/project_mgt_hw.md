@@ -5,9 +5,6 @@
     - [X] Support U-mode
     - [X] Support PMP/PMA
     - [X] https://github.com/eembc/coremark
-    - [ ] Advanced Interrupt controller
-        - [ ] AXI ERR handling
-        - [ ] AXI EXOKAY handling
     - [ ] Atomic operations
         - stage to execute the instruction, controlling ldst Stages
         - memfy exposes two interfaces for requests.
@@ -26,6 +23,12 @@ Any new features should be carefully study to ensure a proper exception and inte
 
 ## Memory
 
+- [ ] Bus fault to route on exceptions https://lists.riscv.org/g/tech-privileged/topic/80351141
+- [ ] Support posted-write
+    - memfy issues write request without waiting BRESP
+    - Manages concurrency with read request
+    - Manages hazard
+    - https://medium.com/@ryoungsunpark/why-axi-has-a-write-response-channel-a0fe26eebf7d
 - [ ] Better manage ACACHE attribute
     - [ ] Correct value driven from memfy
     - [ ] Use it correctly across the cache
@@ -55,6 +58,7 @@ Any new features should be carefully study to ensure a proper exception and inte
 
 ## Cache Stages
 
+- [ ] Add dedicated RAM for cache, not connected thru AXI interconnect
 - [ ] AXI4 + Wrap mode for read
 - [ ] Support datapath adaptation from memory controller
     - [ ] Narrow transfer support?

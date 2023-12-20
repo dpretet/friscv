@@ -86,11 +86,12 @@ module friscv_rv32i_core
         parameter PMPADDR13_INIT = 32'h0,
         parameter PMPADDR14_INIT = 32'h0,
         parameter PMPADDR15_INIT = 32'h0,
+
         // Virtual memory support
         parameter MMU_SUPPORT = 0,
 
-        // IO regions for direct read/write access
-        parameter IO_MAP_NB = 0,
+        // Memory IO regions for device, non-cacheable, read/write access
+        parameter IO_MAP_NB = 1,
         // IO address ranges, organized by memory region as END-ADDR_START-ADDR:
         // > 0xEND-MEM2_START-MEM2_END-MEM1_START-MEM1_END-MEM0_START-MEM0
         // IO mapping can be contiguous or sparse, no restriction on the number,
@@ -204,7 +205,6 @@ module friscv_rv32i_core
     logic [5                   -1:0] ctrl_rd_addr;
     logic [XLEN                -1:0] ctrl_rd_val;
 
-    // ISA registers interface
     logic [NB_ALU_UNIT*5       -1:0] proc_rs1_addr;
     logic [NB_ALU_UNIT*XLEN    -1:0] proc_rs1_val;
     logic [NB_ALU_UNIT*5       -1:0] proc_rs2_addr;
@@ -279,11 +279,10 @@ module friscv_rv32i_core
     logic [`CSR_SB_W           -1:0] csr_sb;
     logic [`CTRL_SB_W          -1:0] ctrl_sb;
 
-
-    logic [AXI_ADDR_W    -1:0] mpu_imem_addr;
-    logic [AXI_ADDR_W    -1:0] mpu_dmem_addr;
-    logic [4             -1:0] mpu_imem_allow;
-    logic [4             -1:0] mpu_dmem_allow;
+    logic [AXI_ADDR_W          -1:0] mpu_imem_addr;
+    logic [AXI_ADDR_W          -1:0] mpu_dmem_addr;
+    logic [4                   -1:0] mpu_imem_allow;
+    logic [4                   -1:0] mpu_dmem_allow;
 
     //////////////////////////////////////////////////////////////////////////
     // Check parameters setup consistency and break up if not supported
