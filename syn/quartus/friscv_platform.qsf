@@ -1,0 +1,115 @@
+# -------------------------------------------------------------------------- #
+#
+# Copyright (C) 2022  Intel Corporation. All rights reserved.
+# Your use of Intel Corporation's design tools, logic functions 
+# and other software and tools, and any partner logic 
+# functions, and any output files from any of the foregoing 
+# (including device programming or simulation files), and any 
+# associated documentation or information are expressly subject 
+# to the terms and conditions of the Intel Program License 
+# Subscription Agreement, the Intel Quartus Prime License Agreement,
+# the Intel FPGA IP License Agreement, or other applicable license
+# agreement, including, without limitation, that your use is for
+# the sole purpose of programming logic devices manufactured by
+# Intel and sold by Intel or its authorized distributors.  Please
+# refer to the applicable agreement for further details, at
+# https://fpgasoftware.intel.com/eula.
+#
+# -------------------------------------------------------------------------- #
+#
+# Quartus Prime
+# Version 21.1.1 Build 850 06/23/2022 SJ Lite Edition
+# Date created = 16:23:24  February 10, 2024
+#
+# -------------------------------------------------------------------------- #
+#
+# Notes:
+#
+# 1) The default values for assignments are stored in the file:
+#		friscv_platform_assignment_defaults.qdf
+#    If this file doesn't exist, see file:
+#		assignment_defaults.qdf
+#
+# 2) Intel recommends that you do not modify this file. This
+#    file is updated automatically by the Quartus Prime software
+#    and any changes you make may be lost or overwritten.
+#
+# -------------------------------------------------------------------------- #
+
+
+set_global_assignment -name FAMILY "Cyclone 10 LP"
+set_global_assignment -name DEVICE 10CL120ZF484I8G
+set_global_assignment -name TOP_LEVEL_ENTITY friscv_rv32i_platform
+set_global_assignment -name ORIGINAL_QUARTUS_VERSION 21.1.1
+set_global_assignment -name PROJECT_CREATION_TIME_DATE "16:23:24  FEBRUARY 10, 2024"
+set_global_assignment -name LAST_QUARTUS_VERSION "21.1.1 Lite Edition"
+set_global_assignment -name PROJECT_OUTPUT_DIRECTORY output_files
+set_global_assignment -name MIN_CORE_JUNCTION_TEMP "-40"
+set_global_assignment -name MAX_CORE_JUNCTION_TEMP 100
+set_global_assignment -name ERROR_CHECK_FREQUENCY_DIVISOR 1
+set_global_assignment -name NOMINAL_CORE_SUPPLY_VOLTAGE 1.0V
+set_global_assignment -name POWER_PRESET_COOLING_SOLUTION "23 MM HEAT SINK WITH 200 LFPM AIRFLOW"
+set_global_assignment -name POWER_BOARD_THERMAL_MODEL "NONE (CONSERVATIVE)"
+set_global_assignment -name VERILOG_INPUT_VERSION SYSTEMVERILOG_2005
+set_global_assignment -name VERILOG_SHOW_LMF_MAPPING_MESSAGES OFF
+set_global_assignment -name VERILOG_MACRO "XLEN=32"
+set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
+set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id Top
+set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
+set_global_assignment -name SYSTEMVERILOG_FILE "../../dep/axi-crossbar/rtl/axicb_switch_top.sv"
+set_global_assignment -name SYSTEMVERILOG_FILE "../../dep/axi-crossbar/rtl/axicb_slv_switch.sv"
+set_global_assignment -name SYSTEMVERILOG_FILE "../../dep/axi-crossbar/rtl/axicb_slv_if.sv"
+set_global_assignment -name SYSTEMVERILOG_FILE "../../dep/axi-crossbar/rtl/axicb_scfifo_ram.sv"
+set_global_assignment -name SYSTEMVERILOG_FILE "../../dep/axi-crossbar/rtl/axicb_scfifo.sv"
+set_global_assignment -name SYSTEMVERILOG_FILE "../../dep/axi-crossbar/rtl/axicb_round_robin_core.sv"
+set_global_assignment -name SYSTEMVERILOG_FILE "../../dep/axi-crossbar/rtl/axicb_round_robin.sv"
+set_global_assignment -name SYSTEMVERILOG_FILE "../../dep/axi-crossbar/rtl/axicb_pipeline.sv"
+set_global_assignment -name SYSTEMVERILOG_FILE "../../dep/axi-crossbar/rtl/axicb_mst_switch.sv"
+set_global_assignment -name SYSTEMVERILOG_FILE "../../dep/axi-crossbar/rtl/axicb_mst_if.sv"
+set_global_assignment -name SYSTEMVERILOG_FILE "../../dep/axi-crossbar/rtl/axicb_crossbar_top.sv"
+set_global_assignment -name SYSTEMVERILOG_FILE "../../dep/axi-crossbar/rtl/axicb_crossbar_lite_top.sv"
+set_global_assignment -name SYSTEMVERILOG_FILE "../../dep/axi-crossbar/rtl/axicb_checker.sv"
+set_global_assignment -name SYSTEMVERILOG_FILE ../../rtl/friscv_uart.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../../rtl/friscv_stats.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../../rtl/friscv_scfifo.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../../rtl/friscv_rv32i_platform.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../../rtl/friscv_rv32i_core.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../../rtl/friscv_registers.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../../rtl/friscv_rambe.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../../rtl/friscv_ram.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../../rtl/friscv_pulser.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../../rtl/friscv_processing.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../../rtl/friscv_pmp_region.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../../rtl/friscv_pipeline.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../../rtl/friscv_mpu.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../../rtl/friscv_memfy.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../../rtl/friscv_mem_router.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../../rtl/friscv_m_ext.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../../rtl/friscv_io_subsystem.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../../rtl/friscv_icache.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../../rtl/friscv_h.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../../rtl/friscv_gpios.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../../rtl/friscv_div.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../../rtl/friscv_decoder.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../../rtl/friscv_debug_h.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../../rtl/friscv_dcache.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../../rtl/friscv_csr.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../../rtl/friscv_control_h.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../../rtl/friscv_control.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../../rtl/friscv_clint.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../../rtl/friscv_checkers.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../../rtl/friscv_cache_pusher.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../../rtl/friscv_cache_prefetcher.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../../rtl/friscv_cache_ooo_mgt.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../../rtl/friscv_cache_memctrl.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../../rtl/friscv_cache_io_fetcher.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../../rtl/friscv_cache_flusher.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../../rtl/friscv_cache_blocks.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../../rtl/friscv_cache_block_fetcher.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../../rtl/friscv_bus_perf.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../../rtl/friscv_bit_sync.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../../rtl/friscv_axi_or_tracker.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../../rtl/friscv_apb_interconnect.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../../rtl/friscv_alu.sv
+set_global_assignment -name SOURCE_FILE db/friscv_platform.cmp.rdb
+set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
