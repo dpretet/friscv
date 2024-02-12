@@ -437,6 +437,7 @@ module friscv_dcache
     ///////////////////////////////////////////////////////////////////////////
 
 
+    generate
     if (IO_MAP_NB > 0) begin: RD_OOO_INSTANCE
 
     friscv_cache_ooo_mgt
@@ -487,6 +488,7 @@ module friscv_dcache
     );
 
     end
+    endgenerate
 
     ///////////////////////////////////////////////////////////////////////////
     // Write block management

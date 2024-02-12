@@ -120,6 +120,8 @@ module friscv_cache_pusher
     logic                       awready;
     logic                       wready;
 
+    genvar i;
+
     // Tracer setup
     `ifdef TRACE_CACHE
     string fname;
@@ -294,7 +296,8 @@ module friscv_cache_pusher
 
     // Track the outstanding request to drive back completion to the application
     // FIXME: can't track a cache miss and an IO req in the same cycle
-    for (genvar i=0; i<OSTDREQ_NUM; i=i+1) begin : ID_TRACKER
+    generate
+    for (i=0; i<OSTDREQ_NUM; i=i+1) begin : ID_TRACKER
 
         always @ (posedge aclk or negedge aresetn) begin
             if (!aresetn) begin
@@ -312,6 +315,7 @@ module friscv_cache_pusher
             end
         end
     end
+    endgenerate
     
     // TODO: manage back-pressure of completion channel readiness
     // Today OoO or memfy are always ready

@@ -26,7 +26,10 @@ module friscv_bus_perf
         output logic [NB_BUS*REG_W*3 -1:0] perfs
     );
 
-    for (genvar i=0;i<NB_BUS;i++) begin
+    genvar i;
+
+    generate
+    for (i=0;i<NB_BUS;i++) begin: PERF_CNTRS
 
         always @ (posedge aclk or negedge aresetn) begin
             if (!aresetn) begin
@@ -46,6 +49,7 @@ module friscv_bus_perf
             end
         end
     end
+    endgenerate
 
 endmodule
 

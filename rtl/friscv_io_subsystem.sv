@@ -78,10 +78,10 @@ module friscv_io_subsystem
 
     // Control fsm
     typedef enum logic[1:0] {
-        IDLE = 0,
-        WAIT_WDATA = 1,
-        WAIT_BRESP = 2,
-        WAIT_RRESP = 3
+        IDLE = 2'h0,
+        WAIT_WDATA = 2'h1,
+        WAIT_BRESP = 2'h2,
+        WAIT_RRESP = 2'h3
     } axi4l_fsm;
 
 

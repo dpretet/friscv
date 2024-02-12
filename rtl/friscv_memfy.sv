@@ -195,12 +195,14 @@ module friscv_memfy
     logic                           stall_bus;
 
     typedef enum logic[1:0] {
-        IDLE = 0,
-        WAIT = 1,
-        SERVE = 2
+        IDLE  = 2'h0,
+        WAIT  = 2'h1,
+        SERVE = 2'h2
     } seq_fsm;
 
     seq_fsm state;
+
+    genvar i;
 
     ///////////////////////////////////////////////////////////////////////////
     //
@@ -396,8 +398,8 @@ module friscv_memfy
                         state <= SERVE;
                         arvalid <= 1'b1;
                     end else if (opcode_r==`STORE && !waiting_rd_cpl) begin
-                        state <= SERVE;
-                        awvalid <= 1'b1;
+                            state <= SERVE;
+                            awvalid <= 1'b1;
                         wvalid <= 1'b1;
                     end
                 end
@@ -470,7 +472,10 @@ module friscv_memfy
         end
     end
 
-    for (genvar i=1;i<NB_INT_REG;i++) begin
+    generate
+
+
+    for (i=1;i<NB_INT_REG;i++) begin : REG_RESERVATION
         always @ (posedge aclk or negedge aresetn) begin
             if (!aresetn) begin
                 regs_or[i] <= '0;
@@ -491,9 +496,11 @@ module friscv_memfy
         end
     end
 
-    for (genvar i=0;i<NB_INT_REG;i++) begin
+    for (i=0;i<NB_INT_REG;i++) begin : NO_RESERVATION
         assign memfy_regs_sts[i] = regs_or[i] == '0;
     end
+
+    endgenerate
 
 
     ////////////////////////////////////////////////////////////////////////
@@ -627,7 +634,7 @@ module friscv_memfy
 
     if (IO_MAP_NB > 0) begin : IO_MAP_DEC
 
-        for (genvar i=0;i<IO_MAP_NB;i=i+1) begin : GEN_IO_HIT
+        for (i=0;i<IO_MAP_NB;i=i+1) begin : GEN_IO_HIT
             assign io_map_hit[i] = (addr>=IO_MAP[i*2*XLEN+:XLEN] && addr<=IO_MAP[i*2*XLEN+XLEN+:XLEN]);
         end
 

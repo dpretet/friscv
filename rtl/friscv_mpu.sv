@@ -59,10 +59,10 @@ module friscv_mpu
 
     // Address matching A field encoding
     typedef enum logic[1:0] {
-        OFF    = 0,
-        TOR    = 1,
-        NA4    = 2,
-        NAPOT  = 3
+        OFF    = 2'h0,
+        TOR    = 2'h1,
+        NA4    = 2'h2,
+        NAPOT  = 2'h3
     } ADDR_MATCH;
 
     // The Sv32 page-based virtual-memory supports 34-bit physical addresses for RV32
@@ -90,7 +90,11 @@ module friscv_mpu
     // PMP / PMA circuits
     /////////////////////////////////////////////////////////////////////////////////////////
 
-    generate if (MPU_SUPPORT==0) begin: MPU_OFF
+    generate 
+
+    genvar i;
+
+    if (MPU_SUPPORT==0) begin: MPU_OFF
 
     assign imem_pmp_matchs = '0;
     assign imem_match = 1'b0;
@@ -105,7 +109,7 @@ module friscv_mpu
     end else begin: MPU_ON
 
         // Region addres decoding from PMPCFG+PMPADDR CSRs
-        for (genvar i=0; i<MAX_PMP_REGION; i++) begin: PMP_REGION_CHECKERS
+        for (i=0; i<MAX_PMP_REGION; i++) begin: PMP_REGION_CHECKERS
 
             if (i<NB_PMP_REGION) begin: REGION_ACTIVE
 
@@ -138,7 +142,7 @@ module friscv_mpu
         // imem / dmem PMP address match
         ////////////////////////////////
 
-        for (genvar i=0; i<MAX_PMP_REGION; i++) begin: PMP_ACCESS_CHECK
+        for (i=0; i<MAX_PMP_REGION; i++) begin: PMP_ACCESS_CHECK
 
             if (i<NB_PMP_REGION) begin: REGION_ACTIVE
 

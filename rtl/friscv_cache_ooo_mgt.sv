@@ -129,6 +129,9 @@ module friscv_cache_ooo_mgt
     logic [AXI_ID_W-1:0] cpl1_id_m;
     logic [AXI_ID_W-1:0] cpl2_id_m;
 
+    genvar i;
+
+
     ////////////////////////////////////////////////////////////////////////////////
     // AXI4-lite completions
     ////////////////////////////////////////////////////////////////////////////////
@@ -154,9 +157,10 @@ module friscv_cache_ooo_mgt
     assign tag_avlb = (tags[2*req_tag_pt+:2] == FREE);
     assign next_tag = req_tag_pt | AXI_ID_MASK;
 
-    for (genvar i=0; i<NB_TAG; i=i+1) begin
+    generate
+    for (i=0; i<NB_TAG; i=i+1) begin : TAGS_META_COMPLETION
 
-        always @ (posedge aclk or negedge aresetn) begin
+        always @ (posedge aclk or negedge aresetn) begin: TAGS
             if (!aresetn) begin
                 tags[2*i+:2] <= FREE;
             end else if (srst) begin
@@ -192,7 +196,7 @@ module friscv_cache_ooo_mgt
         end
 
         // Stores the ID to give back on completion
-        always @ (posedge aclk or negedge aresetn) begin
+        always @ (posedge aclk or negedge aresetn) begin: META
             if (!aresetn) begin
                 meta_ram[i] <= {AXI_ID_W{1'b0}};
             end else if (srst) begin
@@ -207,7 +211,7 @@ module friscv_cache_ooo_mgt
         end
 
         // Stores the completion data/resp to give back on completion
-        always @ (posedge aclk or negedge aresetn) begin
+        always @ (posedge aclk or negedge aresetn) begin: COMPLETION
             if (!aresetn) begin
                 if (CPL_PAYLOAD)
                     cpl_ram[i] <= {2'b0, {XLEN{1'b0}}};
@@ -232,6 +236,7 @@ module friscv_cache_ooo_mgt
             end
         end
     end
+    endgenerate
 
     ////////////////////////////////////////////////////////////////////////////////
     // Pointer management for request and completion
@@ -281,6 +286,7 @@ module friscv_cache_ooo_mgt
         logic [2   -1:0] cpl_resp;
 
         assign to_cpl = tags[2*cpl_tag_pt+CPL];
+
         if (CPL_PAYLOAD) begin
             assign cpl_data = cpl_ram[cpl_tag_pt][0+:XLEN];
             assign cpl_resp = cpl_ram[cpl_tag_pt][XLEN+:2];

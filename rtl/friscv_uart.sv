@@ -40,9 +40,9 @@ module friscv_uart
     ///////////////////////////////////////////////////////////////////////////
 
     typedef enum logic[3:0] {
-        IDLE = 0,
-        XFER = 1,
-        RWFIFO = 2
+        IDLE   = 4'h0,
+        XFER   = 4'h1,
+        RWFIFO = 4'h2
     } xfer_fsm;
 
     xfer_fsm rxfsm;

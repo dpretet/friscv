@@ -80,9 +80,9 @@ module friscv_cache_prefetcher
 
     // Control fsm, the sequencer driving the cache read and the memory controller
     typedef enum logic[1:0] {
-        IDLE = 0,
-        LOAD = 1,
-        FETCH = 2
+        IDLE  = 2'h0,
+        LOAD  = 2'h1,
+        FETCH = 2'h2
     } seq_fsm;
 
     seq_fsm loader;

@@ -138,13 +138,13 @@ module friscv_control
 
     // Control fsm
     typedef enum logic[3:0] {
-        BOOT    = 0,
-        FETCH   = 1,
-        RELOAD  = 2,
-        FENCE   = 3,
-        FENCE_I = 4,
-        WFI     = 5,
-        EBREAK  = 6
+        BOOT    = 4'h0,
+        FETCH   = 4'h1,
+        RELOAD  = 4'h2,
+        FENCE   = 4'h3,
+        FENCE_I = 4'h4,
+        WFI     = 4'h5,
+        EBREAK  = 4'h6
     } pc_fsm;
 
     pc_fsm cfsm;

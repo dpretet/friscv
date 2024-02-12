@@ -59,9 +59,9 @@ module friscv_cache_flusher
     localparam MAX_CACHE_ADDR = CACHE_DEPTH << $clog2(CACHE_BLOCK_W/8);
 
     typedef enum logic[1:0] {
-        IDLE = 0,
-        FLUSH = 1,
-        ACK = 2
+        IDLE  = 2'h0,
+        FLUSH = 2'h1,
+        ACK   = 2'h2
     } ctrl_fsm;
 
     ctrl_fsm cfsm;

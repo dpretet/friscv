@@ -113,9 +113,15 @@ module friscv_m_ext
         end
     end
 
-    for (genvar i=0;i<NB_INT_REG;i++) begin
+    generate
+
+    genvar i;
+
+    for (i=0;i<NB_INT_REG;i++) begin : RESERVATION
         assign m_regs_sts[i] = regs_or[i] == '0;
     end
+
+    endgenerate
 
 
     ///////////////////////////////////////////////////////////////////////////
