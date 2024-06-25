@@ -21,7 +21,6 @@
 # BACKLOG
 
 C Apps
-
 - [ ] Micro kernel
     - [ ] Interrupt
         - [ ] EIP SIP générée depuis le cpp
@@ -44,6 +43,7 @@ C Apps
     - [ ] 2048
 
 Misc.
+- [ ] Support EmbeddedSwift
 - [ ] Comment détecter une erreur venant d’une RAM qui cause une fausse donnée ou une mauvaise
       instruction (sub -> add) et récupérer l’exécution d’un programme ?
 - [ ] Testcase C (Rand access) pour les ORs de memory
@@ -67,7 +67,6 @@ Minimalistic Unix
 # Ideas / Applications
 
 - [ ] Try https://github.com/berry-lang/berry
-- [ ] Try
 - [ ] Support Linux / FreeBSD / NetBSD
     - https://github.com/cnlohr/mini-rv32ima
     - https://popovicu.com/posts/789-kb-linux-without-mmu-riscv/
