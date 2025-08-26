@@ -99,6 +99,7 @@ Any new features should be carefully study to ensure a proper exception and inte
         - shareability
         - io/mem
     - HW isolation by CPU / Thread IDs
+- [ ] Support https://riscof.readthedocs.io/en/latest/intro.html
 
 
 
@@ -124,6 +125,13 @@ Any new features should be carefully study to ensure a proper exception and inte
         - https://tomverbeure.github.io/2021/07/18/VexRiscv-OpenOCD-and-Traps.html
         - https://tomverbeure.github.io/2022/02/20/GDBWave-Post-Simulation-RISCV-SW-Debugging.html
         - https://github.com/BLangOS/VexRiscV_with_HW-GDB_Server
+- [ ] Features for high-end processor:
+    - out-of-order execution
+    - prefetching
+    - superscalar parallelism
+    - speculative execution
+    - branch prediction
+    - multi-core designs
 
 
 ## AXI4 Infrastructure
@@ -151,6 +159,7 @@ Any new features should be carefully study to ensure a proper exception and inte
     - [ ] https://www.youtube.com/watch?app=desktop&v=hl4eiN8ZMJg
     - [ ] https://github.com/tommythorn/yarvi/blob/master/rtl/yarvi.v#L184
     - [ ] https://danluu.com/branch-prediction
+    - jump ease prefetch and branch prediction
 - [ ] Rewind pipeline (L0 local cache)
 - [ ] Pipeline PMP CSR up to MPU setup path and stop the core with csr_ready during few cycles
 

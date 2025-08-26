@@ -773,8 +773,8 @@ module friscv_testbench(
     // Dump VCD, for both Verilator and Icarus
     initial begin
         `INFO("Tracing to friscv_testbench.vcd");
-        $dumpfile("friscv_testbench.vcd");
-        $dumpvars(0, friscv_testbench);
+        // $dumpfile("friscv_testbench.vcd");
+        // $dumpvars(0, friscv_testbench);
         `INFO("Model running...");
     end
     `endif

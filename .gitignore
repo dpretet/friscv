@@ -132,6 +132,7 @@ dmypy.json
 *.out
 build
 *.vcd
+*.fst
 *.hex
 
 syn/vsclib013.lib

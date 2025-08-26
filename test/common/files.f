@@ -50,4 +50,7 @@
 ../../dep/axi-crossbar/rtl/axicb_scfifo_ram.sv
 ../../dep/axi-crossbar/rtl/axicb_slv_if.sv
 ../../dep/axi-crossbar/rtl/axicb_slv_switch.sv
+../../dep/axi-crossbar/rtl/axicb_slv_switch_rd.sv
+../../dep/axi-crossbar/rtl/axicb_slv_switch_wr.sv
+../../dep/axi-crossbar/rtl/axicb_slv_ooo.sv
 ../../dep/axi-crossbar/rtl/axicb_switch_top.sv

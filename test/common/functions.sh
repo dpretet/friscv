@@ -237,6 +237,7 @@ run_tests() {
         svutRun -t ./friscv_testbench.sv \
                 -define "$DEFINES" \
                 -sim "$SIM" \
+                -fst \
                 $run_only \
                 -include ../../dep/svlogger ../../rtl ../../dep/axi-crossbar/rtl \
                 | tee tc.log

@@ -49,7 +49,7 @@ module friscv_rv32i_platform
         parameter USER_MODE         = 0,
         // Insert a pipeline on instruction bus coming from the controller
         parameter PROCESSING_BUS_PIPELINE = 0,
-        // Timeout applied for WFI 
+        // Timeout applied for WFI
         parameter WFI_TW = 100,
 
         ////////////////////////////////////////////////////////////////////////
@@ -281,7 +281,6 @@ module friscv_rv32i_platform
     parameter MST_PIPELINE = 1;
     parameter SLV_PIPELINE = 1;
 
-    parameter STRB_MODE = 1;
     parameter AXI_SIGNALING = 0;
     parameter USER_SUPPORT = 0;
 
@@ -367,7 +366,7 @@ module friscv_rv32i_platform
         .SUPERVISOR_MODE            (SUPERVISOR_MODE),
         .USER_MODE                  (USER_MODE),
         .PROCESSING_BUS_PIPELINE    (PROCESSING_BUS_PIPELINE),
-        .WFI_TW                     (WFI_TW), 
+        .WFI_TW                     (WFI_TW),
         .BOOT_ADDR                  (BOOT_ADDR),
         .INST_OSTDREQ_NUM           (INST_OSTDREQ_NUM),
         .DATA_OSTDREQ_NUM           (DATA_OSTDREQ_NUM),
@@ -465,7 +464,6 @@ module friscv_rv32i_platform
         .SLV_NB              (SLV_NB),
         .MST_PIPELINE        (MST_PIPELINE),
         .SLV_PIPELINE        (SLV_PIPELINE),
-        .STRB_MODE           (STRB_MODE),
         .USER_SUPPORT        (USER_SUPPORT),
         .AXI_AUSER_W         (AXI_AUSER_W),
         .AXI_WUSER_W         (AXI_WUSER_W),

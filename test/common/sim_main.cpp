@@ -6,6 +6,7 @@
 #include <memory>
 // Include common routines
 #include <verilated.h>
+#include "verilated_fst_c.h"
 
 // Legacy function required only so linking works on Cygwin and MSVC++
 double sc_time_stamp() { return 0; }
@@ -13,6 +14,8 @@ double sc_time_stamp() { return 0; }
 int main(int argc, char** argv, char** env) {
 
     int ret = 0;
+
+    VerilatedFstC* tfp = new VerilatedFstC;
 
     // Prevent unused variable warnings
     if (false && argc && argv && env) {}
@@ -40,6 +43,8 @@ int main(int argc, char** argv, char** env) {
     // "TOP" will be the hierarchical name of the module.
     const std::unique_ptr<Vfriscv_testbench> top{new Vfriscv_testbench{contextp.get(), "friscv_testbench"}};
 
+    top->trace(tfp, 99);  // Depth of 99 levels
+    tfp->open("waveform.fst");  // Open FST file
 
     top->aclk = 0;
     top->aresetn = 0;
@@ -74,7 +79,8 @@ int main(int argc, char** argv, char** env) {
         // timestep then instead of eval(), call eval_step() on each, then
         // eval_end_step() on each. See the manual.)
         top->eval();
-
+        // Dump trace signals to FST file
+        // tfp->dump(contextp->time());
     }
 
     if (top->error_status_reg) {
@@ -87,6 +93,7 @@ int main(int argc, char** argv, char** env) {
 
     // Final model cleanup
     top->final();
+    tfp->close();  // Close the FST file
 
     if (!ret) VL_PRINTF("INFO: Verilator executed successfully\n");
 
