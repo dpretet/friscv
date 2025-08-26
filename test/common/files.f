@@ -43,6 +43,8 @@
 ../../dep/axi-crossbar/rtl/axicb_crossbar_top.sv
 ../../dep/axi-crossbar/rtl/axicb_mst_if.sv
 ../../dep/axi-crossbar/rtl/axicb_mst_switch.sv
+../../dep/axi-crossbar/rtl/axicb_mst_switch_wr.sv
+../../dep/axi-crossbar/rtl/axicb_mst_switch_rd.sv
 ../../dep/axi-crossbar/rtl/axicb_pipeline.sv
 ../../dep/axi-crossbar/rtl/axicb_round_robin.sv
 ../../dep/axi-crossbar/rtl/axicb_round_robin_core.sv
