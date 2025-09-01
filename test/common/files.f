@@ -1,6 +1,6 @@
 +incdir+../../rtl+../../dep/svlogger+../../dep/axi-crossbar/rtl
 +define+FRISCV_SIM
-../common/axi4l_ram.sv
+../common/axi4_ram.sv
 ../common/lfsr.sv
 ../../rtl/friscv_rv32i_core.sv
 ../../rtl/friscv_control.sv
@@ -49,6 +49,7 @@
 ../../dep/axi-crossbar/rtl/axicb_round_robin.sv
 ../../dep/axi-crossbar/rtl/axicb_round_robin_core.sv
 ../../dep/axi-crossbar/rtl/axicb_scfifo.sv
+../../dep/axi-crossbar/rtl/axicb_scfifo_regfile.sv
 ../../dep/axi-crossbar/rtl/axicb_scfifo_ram.sv
 ../../dep/axi-crossbar/rtl/axicb_slv_if.sv
 ../../dep/axi-crossbar/rtl/axicb_slv_switch.sv

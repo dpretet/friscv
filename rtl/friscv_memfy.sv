@@ -105,6 +105,7 @@ module friscv_memfy
         output logic [3               -1:0] awprot,
         output logic [4               -1:0] awcache,
         output logic [AXI_ID_W        -1:0] awid,
+        output logic                        awlock,
         output logic                        wvalid,
         input  wire                         wready,
         output logic [AXI_DATA_W      -1:0] wdata,
@@ -119,8 +120,10 @@ module friscv_memfy
         output logic [3               -1:0] arprot,
         output logic [4               -1:0] arcache,
         output logic [AXI_ID_W        -1:0] arid,
+        output logic                        arlock,
         input  wire                         rvalid,
         output logic                        rready,
+        input  wire                         rlast,
         input  wire  [AXI_ID_W        -1:0] rid,
         input  wire  [2               -1:0] rresp,
         input  wire  [AXI_DATA_W      -1:0] rdata
@@ -235,6 +238,8 @@ module friscv_memfy
             awvalid <= 1'b0;
             awprot <= '0;
             arprot <= '0;
+            awlock <= '0;
+            arlock <= '0;
             wvalid <= 1'b0;
             wdata <= {XLEN{1'b0}};
             wstrb <= {XLEN/8{1'b0}};
@@ -249,6 +254,8 @@ module friscv_memfy
             awvalid <= 1'b0;
             awprot <= '0;
             arprot <= '0;
+            awlock <= '0;
+            arlock <= '0;
             wvalid <= 1'b0;
             wdata <= {XLEN{1'b0}};
             wstrb <= {XLEN/8{1'b0}};

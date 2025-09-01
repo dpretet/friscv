@@ -100,7 +100,7 @@ module friscv_cache_memctrl
         output logic [8             -1:0] mem_awlen,
         output logic [3             -1:0] mem_awsize,
         output logic [2             -1:0] mem_awburst,
-        output logic [2             -1:0] mem_awlock,
+        output logic                      mem_awlock,
         output logic [4             -1:0] mem_awcache,
         output logic [3             -1:0] mem_awprot,
         output logic [4             -1:0] mem_awqos,
@@ -122,7 +122,7 @@ module friscv_cache_memctrl
         output logic [8             -1:0] mem_arlen,
         output logic [3             -1:0] mem_arsize,
         output logic [2             -1:0] mem_arburst,
-        output logic [2             -1:0] mem_arlock,
+        output logic                      mem_arlock,
         output logic [4             -1:0] mem_arcache,
         output logic [3             -1:0] mem_arprot,
         output logic [4             -1:0] mem_arqos,
@@ -191,7 +191,7 @@ module friscv_cache_memctrl
     ///////////////////////////////////////////////////////////////////////////
 
     assign mem_arregion = 4'b0;
-    assign mem_arlock = 2'b0;
+    assign mem_arlock = 1'b0;
     assign mem_arcache = 4'b0;
     assign mem_arqos = 4'b0;
 
@@ -331,7 +331,7 @@ module friscv_cache_memctrl
         // Always use INCR mode
         assign mem_awburst = 2'b1;
         // Unused features
-        assign mem_awlock = 2'b0;
+        assign mem_awlock = 1'b0;
         assign mem_awcache = 4'b0;
         assign mem_awprot = mst_awprot;
         assign mem_awqos = 4'b0;

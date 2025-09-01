@@ -152,9 +152,12 @@ module friscv_rv32i_core
         input  wire                       imem_arready,
         output logic [AXI_ADDR_W    -1:0] imem_araddr,
         output logic [3             -1:0] imem_arprot,
+        output logic [2             -1:0] imem_arburst,
         output logic [AXI_ID_W      -1:0] imem_arid,
+        output logic [8             -1:0] imem_arlen,
         input  wire                       imem_rvalid,
         output logic                      imem_rready,
+        input  wire                       imem_rlast,
         input  wire  [AXI_ID_W      -1:0] imem_rid,
         input  wire  [2             -1:0] imem_rresp,
         input  wire  [AXI_IMEM_W    -1:0] imem_rdata,
@@ -163,9 +166,13 @@ module friscv_rv32i_core
         input  wire                       dmem_awready,
         output logic [AXI_ADDR_W    -1:0] dmem_awaddr,
         output logic [3             -1:0] dmem_awprot,
+        output logic [2             -1:0] dmem_awburst,
         output logic [AXI_ID_W      -1:0] dmem_awid,
+        output logic [8             -1:0] dmem_awlen,
+        output logic                      dmem_awlock,
         output logic                      dmem_wvalid,
         input  wire                       dmem_wready,
+        output logic                      dmem_wlast,
         output logic [AXI_DMEM_W    -1:0] dmem_wdata,
         output logic [AXI_DMEM_W/8  -1:0] dmem_wstrb,
         input  wire                       dmem_bvalid,
@@ -176,9 +183,13 @@ module friscv_rv32i_core
         input  wire                       dmem_arready,
         output logic [AXI_ADDR_W    -1:0] dmem_araddr,
         output logic [3             -1:0] dmem_arprot,
+        output logic [2             -1:0] dmem_arburst,
         output logic [AXI_ID_W      -1:0] dmem_arid,
+        output logic [8             -1:0] dmem_arlen,
+        output logic                      dmem_arlock,
         input  wire                       dmem_rvalid,
         output logic                      dmem_rready,
+        input  wire                       dmem_rlast,
         input  wire  [AXI_ID_W      -1:0] dmem_rid,
         input  wire  [2             -1:0] dmem_rresp,
         input  wire  [AXI_DMEM_W    -1:0] dmem_rdata
@@ -238,6 +249,7 @@ module friscv_rv32i_core
     logic [AXI_ID_W            -1:0] inst_arid_s;
     logic                            inst_rvalid_s;
     logic                            inst_rready_s;
+    logic                            inst_rlast_s;
     logic [AXI_ID_W            -1:0] inst_rid_s;
     logic [2                   -1:0] inst_rresp_s;
     logic [ILEN                -1:0] inst_rdata_s;
@@ -248,6 +260,7 @@ module friscv_rv32i_core
     logic [3                   -1:0] memfy_awprot;
     logic [4                   -1:0] memfy_awcache;
     logic [AXI_ID_W            -1:0] memfy_awid;
+    logic                            memfy_awlock;
     logic                            memfy_wvalid;
     logic                            memfy_wready;
     logic [XLEN                -1:0] memfy_wdata;
@@ -262,8 +275,10 @@ module friscv_rv32i_core
     logic [3                   -1:0] memfy_arprot;
     logic [4                   -1:0] memfy_arcache;
     logic [AXI_ID_W            -1:0] memfy_arid;
+    logic                            memfy_arlock;
     logic                            memfy_rvalid;
     logic                            memfy_rready;
+    logic                            memfy_rlast;
     logic [AXI_ID_W            -1:0] memfy_rid;
     logic [2                   -1:0] memfy_rresp;
     logic [XLEN                -1:0] memfy_rdata;
@@ -523,9 +538,9 @@ module friscv_rv32i_core
         .icache_arvalid    (imem_arvalid),
         .icache_arready    (imem_arready),
         .icache_araddr     (imem_araddr),
-        .icache_arlen      (),
+        .icache_arlen      (imem_arlen),
         .icache_arsize     (),
-        .icache_arburst    (),
+        .icache_arburst    (imem_arburst),
         .icache_arlock     (),
         .icache_arcache    (),
         .icache_arqos      (),
@@ -537,7 +552,7 @@ module friscv_rv32i_core
         .icache_rid        (imem_rid),
         .icache_rresp      (imem_rresp),
         .icache_rdata      (imem_rdata),
-        .icache_rlast      (1'b1)
+        .icache_rlast      (imem_rlast)
     );
 
     end else begin : NO_ICACHE
@@ -547,8 +562,11 @@ module friscv_rv32i_core
     assign inst_arready_s = imem_arready;
     assign imem_araddr = inst_araddr_s;
     assign imem_arprot = inst_arprot_s;
+    assign imem_arburst = 'h1;
+    assign imem_arlen = 0;
     assign imem_arid = inst_arid_s;
     assign inst_rvalid_s = imem_rvalid;
+    assign inst_rlast_s = imem_rlast;
     assign imem_rready = inst_rready_s;
     assign inst_rid_s = imem_rid;
     assign inst_rresp_s = imem_rresp;
@@ -728,6 +746,7 @@ module friscv_rv32i_core
         .awprot             (memfy_awprot),
         .awcache            (memfy_awcache),
         .awid               (memfy_awid),
+        .awlock             (memfy_awlock),
         .wvalid             (memfy_wvalid),
         .wready             (memfy_wready),
         .wdata              (memfy_wdata),
@@ -742,8 +761,10 @@ module friscv_rv32i_core
         .arprot             (memfy_arprot),
         .arcache            (memfy_arcache),
         .arid               (memfy_arid),
+        .arlock             (memfy_arlock),
         .rvalid             (memfy_rvalid),
         .rready             (memfy_rready),
+        .rlast              (memfy_rlast),
         .rid                (memfy_rid),
         .rresp              (memfy_rresp),
         .rdata              (memfy_rdata)
@@ -783,6 +804,7 @@ module friscv_rv32i_core
             .memfy_awprot    (memfy_awprot),
             .memfy_awcache   (memfy_awcache),
             .memfy_awid      (memfy_awid),
+            .memfy_awlock    (memfy_awlock),
             .memfy_wvalid    (memfy_wvalid),
             .memfy_wready    (memfy_wready),
             .memfy_wdata     (memfy_wdata),
@@ -797,6 +819,7 @@ module friscv_rv32i_core
             .memfy_arprot    (memfy_arprot),
             .memfy_arcache   (memfy_arcache),
             .memfy_arid      (memfy_arid),
+            .memfy_arlock    (memfy_arlock),
             .memfy_rvalid    (memfy_rvalid),
             .memfy_rready    (memfy_rready),
             .memfy_rid       (memfy_rid),
@@ -805,10 +828,10 @@ module friscv_rv32i_core
             .dcache_awvalid  (dmem_awvalid),
             .dcache_awready  (dmem_awready),
             .dcache_awaddr   (dmem_awaddr),
-            .dcache_awlen    (),
+            .dcache_awlen    (dmem_awlen),
             .dcache_awsize   (),
-            .dcache_awburst  (),
-            .dcache_awlock   (),
+            .dcache_awburst  (dmem_awburst),
+            .dcache_awlock   (dmem_awlock),
             .dcache_awcache  (),
             .dcache_awprot   (dmem_awprot),
             .dcache_awqos    (),
@@ -816,7 +839,7 @@ module friscv_rv32i_core
             .dcache_awid     (dmem_awid),
             .dcache_wvalid   (dmem_wvalid),
             .dcache_wready   (dmem_wready),
-            .dcache_wlast    (),
+            .dcache_wlast    (dmem_wlast),
             .dcache_wdata    (dmem_wdata),
             .dcache_wstrb    (dmem_wstrb),
             .dcache_bvalid   (dmem_bvalid),
@@ -826,10 +849,10 @@ module friscv_rv32i_core
             .dcache_arvalid  (dmem_arvalid),
             .dcache_arready  (dmem_arready),
             .dcache_araddr   (dmem_araddr),
-            .dcache_arlen    (),
+            .dcache_arlen    (dmem_arlen),
             .dcache_arsize   (),
-            .dcache_arburst  (),
-            .dcache_arlock   (),
+            .dcache_arburst  (dmem_arburst),
+            .dcache_arlock   (dmem_arlock),
             .dcache_arcache  (),
             .dcache_arprot   (dmem_arprot),
             .dcache_arqos    (),
@@ -837,10 +860,10 @@ module friscv_rv32i_core
             .dcache_arid     (dmem_arid),
             .dcache_rvalid   (dmem_rvalid),
             .dcache_rready   (dmem_rready),
+            .dcache_rlast    (dmem_rlast),
             .dcache_rid      (dmem_rid),
             .dcache_rresp    (dmem_rresp),
-            .dcache_rdata    (dmem_rdata),
-            .dcache_rlast    (1'b1)
+            .dcache_rdata    (dmem_rdata)
         );
 
     end else begin: DCACHE_OFF
@@ -850,9 +873,13 @@ module friscv_rv32i_core
         assign dmem_awaddr = memfy_awaddr;
         assign dmem_awprot = memfy_awprot;
         assign dmem_awid = memfy_awid;
+        assign dmem_awburst = 'h1;
+        assign dmem_awlen = 'h0;
+        assign dmem_awlock = memfy_awlock;
 
         assign dmem_wvalid = memfy_wvalid;
         assign memfy_wready = dmem_wready;
+        assign dmem_wlast = '0;
         assign dmem_wdata = memfy_wdata;
         assign dmem_wstrb = memfy_wstrb;
 
@@ -866,9 +893,13 @@ module friscv_rv32i_core
         assign dmem_araddr = memfy_araddr;
         assign dmem_arprot = memfy_arprot;
         assign dmem_arid = memfy_arid;
+        assign dmem_arburst = 'h1;
+        assign dmem_arlen = 'h0;
+        assign dmem_arlock = memfy_arlock;
 
         assign memfy_rvalid = dmem_rvalid;
         assign dmem_rready = memfy_rready;
+        assign memfy_rlast = dmem_rlast;
         assign memfy_rid = dmem_rid;
         assign memfy_rresp = dmem_rresp;
         assign memfy_rdata = dmem_rdata;

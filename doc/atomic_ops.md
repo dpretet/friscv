@@ -91,19 +91,19 @@ If only the aq bit is set, the atomic memory operation is treated as an acquire 
 i.e., no following memory operations on this RISC-V hart can be observed to take place before the
 acquire memory operation.
 
-=> All memory instructions must be executed before the AMO.
+=> All memory instructions inside the LD/ST must be executed after the AMO.
 
 If only the rl bit is set, the atomic memory operation is treated as a release access, i.e., the
 release memory operation cannot be observed to take place before any earlier memory operations on
 this RISC-V hart.
 
-=> All memory instructions must be executed after the AMO.
+=> All memory instructions inside the LD/ST must be executed before the AMO.
 
 If both the aq and rl bits are set, the atomic memory operation is sequentially consistent and
 cannot be observed to happen before any earlier memory operations or after any later memory
 operations in the same RISC-V hart and to the same address domain.
 
-=> All memory instructions must be executed before & after the AMO.
+=> All memory instructions inside the LD/ST must be executed before & after the AMO.
 
 
 ## Design Plan
@@ -117,6 +117,14 @@ operations in the same RISC-V hart and to the same address domain.
 
 - Add ALOCK among the core & the platorm
 - Resize ALOCK to 1 bit in interconnect
+
+### Decoder
+
+- Add support for A extension
+
+### Control
+
+- Upgrade shared bus with A extension flag
 
 ### Processing Unit
 
@@ -135,10 +143,13 @@ When `memfy` unit receives an atomic operation:
     - a write request to update the memory register
     - a read request to release the memory register
 
+- memory load / store will still be in-order and so as fence wasn't usefull and treated
+  as a NOP, aq & rl flags will be ignored and atomic load / store will be executed in-order
+
 ### dCache Unit
 
 Needs to support exclusive access
-- Exclusive access is a `device` access (`non-cachable` and `non-bufferable`), read/write trough
+- Exclusive access is a `device` access (`non-cachable` and `non-bufferable`), read/write-trough
   policy
 - Don't replace ID for exclusive access
 - Invalidate cache line if exclusive access occurs on a cache hit. Even if memory map should ensure
@@ -172,6 +183,7 @@ Needs to support exclusive access
 - Used an unaligned address to raise an exception
 - Read-exclusive followed by a write non-exclusive to check exclusivity in RAM
 - Concurrent excusive accesses to check exclusivity in RAM
+- Develop a basic kernel, only doing scheduling
 - Write applications
     - https://begriffs.com/posts/2020-03-23-concurrent-programming.html
     - voir les livres / pdf sur le sujet OS et semaphores

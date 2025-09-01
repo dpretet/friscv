@@ -81,6 +81,7 @@ module friscv_processing
         output logic [3               -1:0] awprot,
         output logic [4               -1:0] awcache,
         output logic [AXI_ID_W        -1:0] awid,
+        output logic                        awlock,
         output logic                        wvalid,
         input  wire                         wready,
         output logic [AXI_DATA_W      -1:0] wdata,
@@ -95,8 +96,10 @@ module friscv_processing
         output logic [3               -1:0] arprot,
         output logic [4               -1:0] arcache,
         output logic [AXI_ID_W        -1:0] arid,
+        output logic                        arlock,
         input  wire                         rvalid,
         output logic                        rready,
+        input  wire                         rlast,
         input  wire  [AXI_ID_W        -1:0] rid,
         input  wire  [2               -1:0] rresp,
         input  wire  [AXI_DATA_W      -1:0] rdata
@@ -144,7 +147,7 @@ module friscv_processing
     logic                        proc_valid_p;
     logic                        proc_ready_p;
     logic [`INST_BUS_W     -1:0] proc_instbus_p;
-    logic                          proc_busy_r;
+    logic                        proc_busy_r;
 
     logic [`PROC_EXP_W     -1:0] memfy_exceptions;
 
@@ -360,6 +363,7 @@ module friscv_processing
         .awprot              (awprot),
         .awcache             (awcache),
         .awid                (awid),
+        .awlock              (awlock),
         .wvalid              (wvalid),
         .wready              (wready),
         .wdata               (wdata),
@@ -374,8 +378,10 @@ module friscv_processing
         .arprot              (arprot),
         .arcache             (arcache),
         .arid                (arid),
+        .arlock              (arlock),
         .rvalid              (rvalid),
         .rready              (rready),
+        .rlast               (rlast),
         .rid                 (rid),
         .rresp               (rresp),
         .rdata               (rdata)

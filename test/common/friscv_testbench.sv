@@ -245,9 +245,13 @@ module friscv_testbench(
     logic                      imem_awready;
     logic [AXI_ADDR_W    -1:0] imem_awaddr;
     logic [3             -1:0] imem_awprot;
+    logic [2             -1:0] imem_awburst;
     logic [AXI_ID_W      -1:0] imem_awid;
+    logic [8             -1:0] imem_awlen;
+    logic                      imem_awlock;
     logic                      imem_wvalid;
     logic                      imem_wready;
+    logic                      imem_wlast;
     logic [AXI_IMEM_W    -1:0] imem_wdata;
     logic [AXI_IMEM_W/8  -1:0] imem_wstrb;
     logic                      imem_bvalid;
@@ -258,9 +262,12 @@ module friscv_testbench(
     logic                      imem_arready;
     logic [AXI_ADDR_W    -1:0] imem_araddr;
     logic [3             -1:0] imem_arprot;
+    logic [2             -1:0] imem_arburst;
     logic [AXI_ID_W      -1:0] imem_arid;
+    logic [8             -1:0] imem_arlen;
     logic                      imem_rvalid;
     logic                      imem_rready;
+    logic                      imem_rlast;
     logic [AXI_ID_W      -1:0] imem_rid;
     logic [2             -1:0] imem_rresp;
     logic [AXI_IMEM_W    -1:0] imem_rdata;
@@ -268,9 +275,13 @@ module friscv_testbench(
     logic                      dmem_awready;
     logic [AXI_ADDR_W    -1:0] dmem_awaddr;
     logic [3             -1:0] dmem_awprot;
+    logic [2             -1:0] dmem_awburst;
     logic [AXI_ID_W      -1:0] dmem_awid;
+    logic [8             -1:0] dmem_awlen;
+    logic                      dmem_awlock;
     logic                      dmem_wvalid;
     logic                      dmem_wready;
+    logic                      dmem_wlast;
     logic [AXI_DMEM_W    -1:0] dmem_wdata;
     logic [AXI_DMEM_W/8  -1:0] dmem_wstrb;
     logic                      dmem_bvalid;
@@ -281,9 +292,13 @@ module friscv_testbench(
     logic                      dmem_arready;
     logic [AXI_ADDR_W    -1:0] dmem_araddr;
     logic [3             -1:0] dmem_arprot;
+    logic [2             -1:0] dmem_arburst;
     logic [AXI_ID_W      -1:0] dmem_arid;
+    logic [8             -1:0] dmem_arlen;
+    logic                      dmem_arlock;
     logic                      dmem_rvalid;
     logic                      dmem_rready;
+    logic                      dmem_rlast;
     logic [AXI_ID_W      -1:0] dmem_rid;
     logic [2             -1:0] dmem_rresp;
     logic [AXI_DMEM_W    -1:0] dmem_rdata;
@@ -292,9 +307,13 @@ module friscv_testbench(
     logic                      mem_awready;
     logic [AXI_ADDR_W    -1:0] mem_awaddr;
     logic [3             -1:0] mem_awprot;
+    logic [2             -1:0] mem_awburst;
     logic [AXI_ID_W      -1:0] mem_awid;
+    logic [8             -1:0] mem_awlen;
+    logic                      mem_awlock;
     logic                      mem_wvalid;
     logic                      mem_wready;
+    logic                      mem_wlast;
     logic [AXI_DATA_W    -1:0] mem_wdata;
     logic [AXI_DATA_W/8  -1:0] mem_wstrb;
     logic                      mem_bvalid;
@@ -305,9 +324,13 @@ module friscv_testbench(
     logic                      mem_arready;
     logic [AXI_ADDR_W    -1:0] mem_araddr;
     logic [3             -1:0] mem_arprot;
+    logic [2             -1:0] mem_arburst;
     logic [AXI_ID_W      -1:0] mem_arid;
+    logic [8             -1:0] mem_arlen;
+    logic                      mem_arlock;
     logic                      mem_rvalid;
     logic                      mem_rready;
+    logic                      mem_rlast;
     logic [AXI_ID_W      -1:0] mem_rid;
     logic [2             -1:0] mem_rresp;
     logic [AXI_DATA_W    -1:0] mem_rdata;
@@ -460,9 +483,12 @@ module friscv_testbench(
             .imem_arready (imem_arready),
             .imem_araddr  (imem_araddr),
             .imem_arprot  (imem_arprot),
+            .imem_arburst (imem_arburst),
             .imem_arid    (imem_arid),
+            .imem_arlen   (imem_arlen),
             .imem_rvalid  (imem_rvalid),
             .imem_rready  (imem_rready),
+            .imem_rlast   (imem_rlast),
             .imem_rid     (imem_rid),
             .imem_rresp   (imem_rresp),
             .imem_rdata   (imem_rdata),
@@ -470,9 +496,13 @@ module friscv_testbench(
             .dmem_awready (dmem_awready),
             .dmem_awaddr  (dmem_awaddr),
             .dmem_awprot  (dmem_awprot),
+            .dmem_awburst (dmem_awburst),
             .dmem_awid    (dmem_awid),
+            .dmem_awlen   (dmem_awlen),
+            .dmem_awlock  (dmem_awlock),
             .dmem_wvalid  (dmem_wvalid),
             .dmem_wready  (dmem_wready),
+            .dmem_wlast   (dmem_wlast),
             .dmem_wdata   (dmem_wdata),
             .dmem_wstrb   (dmem_wstrb),
             .dmem_bvalid  (dmem_bvalid),
@@ -483,16 +513,20 @@ module friscv_testbench(
             .dmem_arready (dmem_arready),
             .dmem_araddr  (dmem_araddr),
             .dmem_arprot  (dmem_arprot),
+            .dmem_arburst (dmem_arburst),
             .dmem_arid    (dmem_arid),
+            .dmem_arlen   (dmem_arlen),
+            .dmem_arlock  (dmem_arlock),
             .dmem_rvalid  (dmem_rvalid),
             .dmem_rready  (dmem_rready),
+            .dmem_rlast   (dmem_rlast),
             .dmem_rid     (dmem_rid),
             .dmem_rresp   (dmem_rresp),
             .dmem_rdata   (dmem_rdata)
         );
 
 
-        axi4l_ram
+        axi4_ram
         #(
             `ifdef RAM_MODE_PERF
              .MODE ("performance"),
@@ -506,57 +540,89 @@ module friscv_testbench(
             .AXI2_DATA_W      (AXI_DMEM_W),
             .OSTDREQ_NUM      (INST_OSTDREQ_NUM)
         )
-        axi4l_ram
+        axi4_ram
         (
-            .aclk       (aclk        ),
-            .aresetn    (aresetn     ),
-            .srst       (srst        ),
-            .p1_awvalid (imem_awvalid),
-            .p1_awready (imem_awready),
-            .p1_awaddr  (imem_awaddr ),
-            .p1_awprot  (imem_awprot ),
-            .p1_awid    (imem_awid   ),
-            .p1_wvalid  (imem_wvalid ),
-            .p1_wready  (imem_wready ),
-            .p1_wdata   (imem_wdata  ),
-            .p1_wstrb   (imem_wstrb  ),
-            .p1_bid     (imem_bid    ),
-            .p1_bresp   (imem_bresp  ),
-            .p1_bvalid  (imem_bvalid ),
-            .p1_bready  (imem_bready ),
-            .p1_arvalid (imem_arvalid),
-            .p1_arready (imem_arready),
-            .p1_araddr  (imem_araddr ),
-            .p1_arprot  (imem_arprot ),
-            .p1_arid    (imem_arid   ),
-            .p1_rvalid  (imem_rvalid ),
-            .p1_rready  (imem_rready ),
-            .p1_rid     (imem_rid    ),
-            .p1_rresp   (imem_rresp  ),
-            .p1_rdata   (imem_rdata  ),
-            .p2_awvalid (dmem_awvalid),
-            .p2_awready (dmem_awready),
-            .p2_awaddr  (dmem_awaddr ),
-            .p2_awprot  (dmem_awprot ),
-            .p2_awid    (dmem_awid   ),
-            .p2_wvalid  (dmem_wvalid ),
-            .p2_wready  (dmem_wready ),
-            .p2_wdata   (dmem_wdata  ),
-            .p2_wstrb   (dmem_wstrb  ),
-            .p2_bid     (dmem_bid    ),
-            .p2_bresp   (dmem_bresp  ),
-            .p2_bvalid  (dmem_bvalid ),
-            .p2_bready  (dmem_bready ),
-            .p2_arvalid (dmem_arvalid),
-            .p2_arready (dmem_arready),
-            .p2_araddr  (dmem_araddr ),
-            .p2_arprot  (dmem_arprot ),
-            .p2_arid    (dmem_arid   ),
-            .p2_rvalid  (dmem_rvalid ),
-            .p2_rready  (dmem_rready ),
-            .p2_rid     (dmem_rid    ),
-            .p2_rresp   (dmem_rresp  ),
-            .p2_rdata   (dmem_rdata  )
+            .aclk           (aclk        ),
+            .aresetn        (aresetn     ),
+            .srst           (srst        ),
+            .p1_awvalid     (imem_awvalid),
+            .p1_awready     (imem_awready),
+            .p1_awaddr      (imem_awaddr ),
+            .p1_awprot      (imem_awprot ),
+            .p1_awcache     ('0),
+            .p1_awsize      ('0),
+            .p1_awregion    ('0),
+            .p1_awqos       ('0),
+            .p1_awburst     (imem_awburst),
+            .p1_awid        (imem_awid   ),
+            .p1_awlen       (imem_awlen  ),
+            .p1_awlock      (imem_awlock ),
+            .p1_wvalid      (imem_wvalid ),
+            .p1_wlast       (imem_wlast  ),
+            .p1_wready      (imem_wready ),
+            .p1_wdata       (imem_wdata  ),
+            .p1_wstrb       (imem_wstrb  ),
+            .p1_bid         (imem_bid    ),
+            .p1_bresp       (imem_bresp  ),
+            .p1_bvalid      (imem_bvalid ),
+            .p1_bready      (imem_bready ),
+            .p1_arvalid     (imem_arvalid),
+            .p1_arready     (imem_arready),
+            .p1_araddr      (imem_araddr ),
+            .p1_arprot      (imem_arprot ),
+            .p1_arcache     ('0),
+            .p1_arsize      ('0),
+            .p1_arregion    ('0),
+            .p1_arqos       ('0),
+            .p1_arburst     (imem_arburst),
+            .p1_arid        (imem_arid   ),
+            .p1_arlen       (imem_arlen  ),
+            .p1_arlock      ('0          ),
+            .p1_rvalid      (imem_rvalid ),
+            .p1_rready      (imem_rready ),
+            .p1_rlast       (imem_rlast  ),
+            .p1_rid         (imem_rid    ),
+            .p1_rresp       (imem_rresp  ),
+            .p1_rdata       (imem_rdata  ),
+            .p2_awvalid     (dmem_awvalid),
+            .p2_awready     (dmem_awready),
+            .p2_awaddr      (dmem_awaddr ),
+            .p2_awprot      (dmem_awprot ),
+            .p2_awcache     ('0),
+            .p2_awsize      ('0),
+            .p2_awregion    ('0),
+            .p2_awqos       ('0),
+            .p2_awburst     (dmem_awburst),
+            .p2_awid        (dmem_awid   ),
+            .p2_awlen       (dmem_awlen  ),
+            .p2_awlock      (dmem_awlock ),
+            .p2_wvalid      (dmem_wvalid ),
+            .p2_wlast       (dmem_wlast  ),
+            .p2_wready      (dmem_wready ),
+            .p2_wdata       (dmem_wdata  ),
+            .p2_wstrb       (dmem_wstrb  ),
+            .p2_bid         (dmem_bid    ),
+            .p2_bresp       (dmem_bresp  ),
+            .p2_bvalid      (dmem_bvalid ),
+            .p2_bready      (dmem_bready ),
+            .p2_arvalid     (dmem_arvalid),
+            .p2_arready     (dmem_arready),
+            .p2_araddr      (dmem_araddr ),
+            .p2_arprot      (dmem_arprot ),
+            .p2_arcache     ('0),
+            .p2_arsize      ('0),
+            .p2_arregion    ('0),
+            .p2_arqos       ('0),
+            .p2_arburst     (dmem_arburst),
+            .p2_arid        (dmem_arid   ),
+            .p2_arlen       (dmem_arlen  ),
+            .p2_arlock      (dmem_arlock ),
+            .p2_rvalid      (dmem_rvalid ),
+            .p2_rready      (dmem_rready ),
+            .p2_rlast       (dmem_rlast  ),
+            .p2_rid         (dmem_rid    ),
+            .p2_rresp       (dmem_rresp  ),
+            .p2_rdata       (dmem_rdata  )
         );
 
     end else if (TB_CHOICE=="PLATFORM") begin
@@ -669,6 +735,9 @@ module friscv_testbench(
             .mem_awaddr  (mem_awaddr),
             .mem_awprot  (mem_awprot),
             .mem_awid    (mem_awid),
+            .mem_awburst (mem_awburst),
+            .mem_awlen   (mem_awlen),
+            .mem_awlock  (mem_awlock),
             .mem_wvalid  (mem_wvalid),
             .mem_wready  (mem_wready),
             .mem_wdata   (mem_wdata),
@@ -681,9 +750,13 @@ module friscv_testbench(
             .mem_arready (mem_arready),
             .mem_araddr  (mem_araddr),
             .mem_arprot  (mem_arprot),
+            .mem_arburst (mem_arburst),
             .mem_arid    (mem_arid),
+            .mem_arlen   (mem_arlen),
+            .mem_arlock  (mem_arlock),
             .mem_rvalid  (mem_rvalid),
             .mem_rready  (mem_rready),
+            .mem_rlast   (mem_rlast),
             .mem_rid     (mem_rid),
             .mem_rresp   (mem_rresp),
             .mem_rdata   (mem_rdata),
@@ -695,7 +768,7 @@ module friscv_testbench(
             .uart_cts    (uart_cts)
         );
 
-        axi4l_ram
+        axi4_ram
         #(
             `ifdef RAM_MODE_PERF
             .MODE ("performance"),
@@ -709,57 +782,89 @@ module friscv_testbench(
             .AXI2_DATA_W      (AXI_DATA_W),
             .OSTDREQ_NUM      (INST_OSTDREQ_NUM)
         )
-        axi4l_ram
+        axi4_ram
         (
-            .aclk       (aclk       ),
-            .aresetn    (aresetn    ),
-            .srst       (srst       ),
-            .p1_awvalid (mem_awvalid),
-            .p1_awready (mem_awready),
-            .p1_awaddr  (mem_awaddr ),
-            .p1_awprot  (mem_awprot ),
-            .p1_awid    (mem_awid   ),
-            .p1_wvalid  (mem_wvalid ),
-            .p1_wready  (mem_wready ),
-            .p1_wdata   (mem_wdata  ),
-            .p1_wstrb   (mem_wstrb  ),
-            .p1_bid     (mem_bid    ),
-            .p1_bresp   (mem_bresp  ),
-            .p1_bvalid  (mem_bvalid ),
-            .p1_bready  (mem_bready ),
-            .p1_arvalid (mem_arvalid),
-            .p1_arready (mem_arready),
-            .p1_araddr  (mem_araddr ),
-            .p1_arprot  (mem_arprot ),
-            .p1_arid    (mem_arid   ),
-            .p1_rvalid  (mem_rvalid ),
-            .p1_rready  (mem_rready ),
-            .p1_rid     (mem_rid    ),
-            .p1_rresp   (mem_rresp  ),
-            .p1_rdata   (mem_rdata  ),
-            .p2_awvalid (1'b0),
-            .p2_awready (),
-            .p2_awaddr  ({AXI_ADDR_W{1'b0}}),
-            .p2_awprot  (3'h0),
-            .p2_awid    ({AXI_ID_W{1'b0}}),
-            .p2_wvalid  (1'b0),
-            .p2_wready  (),
-            .p2_wdata   ({AXI_DATA_W{1'b0}}),
-            .p2_wstrb   ({AXI_DATA_W/8{1'b0}}),
-            .p2_bid     (),
-            .p2_bresp   (),
-            .p2_bvalid  (),
-            .p2_bready  (1'h0),
-            .p2_arvalid (1'b0),
-            .p2_arready (),
-            .p2_araddr  ({AXI_ADDR_W{1'b0}}),
-            .p2_arprot  (3'h0),
-            .p2_arid    ({AXI_ID_W{1'b0}}),
-            .p2_rvalid  (),
-            .p2_rready  (1'h0),
-            .p2_rid     (),
-            .p2_rresp   (),
-            .p2_rdata   ()
+            .aclk           (aclk       ),
+            .aresetn        (aresetn    ),
+            .srst           (srst       ),
+            .p1_awvalid     (mem_awvalid),
+            .p1_awready     (mem_awready),
+            .p1_awaddr      (mem_awaddr ),
+            .p1_awprot      (mem_awprot ),
+            .p1_awcache     ('0),
+            .p1_awsize      ('0),
+            .p1_awregion    ('0),
+            .p1_awqos       ('0),
+            .p1_awburst     (mem_awburst),
+            .p1_awid        (mem_awid   ),
+            .p1_awlen       (mem_awlen  ),
+            .p1_awlock      (mem_awlock ),
+            .p1_wvalid      (mem_wvalid ),
+            .p1_wready      (mem_wready ),
+            .p1_wlast       (mem_wlast  ),
+            .p1_wdata       (mem_wdata  ),
+            .p1_wstrb       (mem_wstrb  ),
+            .p1_bid         (mem_bid    ),
+            .p1_bresp       (mem_bresp  ),
+            .p1_bvalid      (mem_bvalid ),
+            .p1_bready      (mem_bready ),
+            .p1_arvalid     (mem_arvalid),
+            .p1_arready     (mem_arready),
+            .p1_araddr      (mem_araddr ),
+            .p1_arprot      (mem_arprot ),
+            .p1_arcache     ('0),
+            .p1_arsize      ('0),
+            .p1_arregion    ('0),
+            .p1_arqos       ('0),
+            .p1_arburst     (mem_arburst),
+            .p1_arlen       (mem_arlen  ),
+            .p1_arlock      (mem_arlock ),
+            .p1_arid        (mem_arid   ),
+            .p1_rvalid      (mem_rvalid ),
+            .p1_rready      (mem_rready ),
+            .p1_rlast       (mem_rlast ),
+            .p1_rid         (mem_rid    ),
+            .p1_rresp       (mem_rresp  ),
+            .p1_rdata       (mem_rdata  ),
+            .p2_awvalid     (1'b0),
+            .p2_awready     (),
+            .p2_awaddr      ({AXI_ADDR_W{1'b0}}),
+            .p2_awprot      (3'h0),
+            .p2_awcache     ('0),
+            .p2_awsize      ('0),
+            .p2_awregion    ('0),
+            .p2_awqos       ('0),
+            .p2_awburst     ('0),
+            .p2_awid        ({AXI_ID_W{1'b0}}),
+            .p2_awlen       ('0),
+            .p2_awlock      ('0),
+            .p2_wvalid      (1'b0),
+            .p2_wready      (),
+            .p2_wlast       ('0),
+            .p2_wdata       ({AXI_DATA_W{1'b0}}),
+            .p2_wstrb       ({AXI_DATA_W/8{1'b0}}),
+            .p2_bid         (),
+            .p2_bresp       (),
+            .p2_bvalid      (),
+            .p2_bready      (1'h0),
+            .p2_arvalid     (1'b0),
+            .p2_arready     (),
+            .p2_araddr      ({AXI_ADDR_W{1'b0}}),
+            .p2_arprot      (3'h0),
+            .p2_arcache     ('0),
+            .p2_arsize      ('0),
+            .p2_arregion    ('0),
+            .p2_arqos       ('0),
+            .p2_arburst     ('0),
+            .p2_arlen       ('0),
+            .p2_arlock      ('0),
+            .p2_arid        ({AXI_ID_W{1'b0}}),
+            .p2_rvalid      (),
+            .p2_rready      (1'h0),
+            .p2_rlast       (),
+            .p2_rid         (),
+            .p2_rresp       (),
+            .p2_rdata       ()
         );
     end
     endgenerate

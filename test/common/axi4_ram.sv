@@ -5,7 +5,7 @@
 `default_nettype none
 
 ///////////////////////////////////////////////////////////////////////////////
-// A simple AXI4-lite RAM model, simulation only. Dual port which can be with
+// A simple AXI4 RAM model, simulation only. Dual port which can be with
 // different widths.
 //
 // TODO: Manage independant write address and data channel in compliance mode
@@ -56,6 +56,9 @@ module axi4_ram
         input  wire  [8             -1:0] p1_awlen,
         input  wire  [3             -1:0] p1_awsize,
         input  wire  [2             -1:0] p1_awburst,
+        input  wire  [4             -1:0] p1_awregion,
+        input  wire  [4             -1:0] p1_awqos,
+        input  logic                      p1_awlock,
         input  logic                      p1_wvalid,
         output logic                      p1_wready,
         input  logic                      p1_wlast,
@@ -73,8 +76,11 @@ module axi4_ram
         input  wire  [4             -1:0] p1_arcache,
         input  logic [AXI_ID_W      -1:0] p1_arid,
         input  wire  [8             -1:0] p1_arlen,
+        input  wire  [4             -1:0] p1_arregion,
+        input  wire  [4             -1:0] p1_arqos,
         input  wire  [3             -1:0] p1_arsize,
         input  wire  [2             -1:0] p1_arburst,
+        input  logic                      p1_arlock,
         output logic                      p1_rvalid,
         input  logic                      p1_rready,
         output logic                      p1_rlast,
@@ -89,8 +95,11 @@ module axi4_ram
         input  wire  [4             -1:0] p2_awcache,
         input  logic [AXI_ID_W      -1:0] p2_awid,
         input  wire  [8             -1:0] p2_awlen,
+        input  wire  [4             -1:0] p2_awregion,
+        input  wire  [4             -1:0] p2_awqos,
         input  wire  [3             -1:0] p2_awsize,
         input  wire  [2             -1:0] p2_awburst,
+        input  logic                      p2_awlock,
         input  logic                      p2_wvalid,
         output logic                      p2_wready,
         input  logic                      p2_wlast,
@@ -108,8 +117,11 @@ module axi4_ram
         input  wire  [4             -1:0] p2_arcache,
         input  logic [AXI_ID_W      -1:0] p2_arid,
         input  wire  [8             -1:0] p2_arlen,
+        input  wire  [4             -1:0] p2_arregion,
+        input  wire  [4             -1:0] p2_arqos,
         input  wire  [3             -1:0] p2_arsize,
         input  wire  [2             -1:0] p2_arburst,
+        input  logic                      p2_arlock,
         output logic                      p2_rvalid,
         input  logic                      p2_rready,
         output logic                      p2_rlast,
@@ -141,8 +153,9 @@ module axi4_ram
     logic [8            -1:0] p1_wr_position;
     logic [8            -1:0] p1_rd_position;
     logic [AXI_ADDR_W   -1:0] p1_araddr_s;
-    logic [AXI_ID_W     -1:0] p1_awid_s;
     logic [AXI_ID_W     -1:0] p1_arid_s;
+    logic [8            -1:0] p1_arlen_s;
+    logic                     p1_arlock_s;
 
     logic                     p1_raddr_full;
     logic                     p1_raddr_pull;
@@ -154,8 +167,14 @@ module axi4_ram
     logic [8            -1:0] p2_wr_position;
     logic [8            -1:0] p2_rd_position;
     logic [AXI_ADDR_W   -1:0] p2_araddr_s;
-    logic [AXI_ID_W  -1:0   ] p2_awid_s;
     logic [AXI_ID_W     -1:0] p2_arid_s;
+    logic [8            -1:0] p2_arlen_s;
+    logic                     p2_arlock_s;
+
+    logic [8            -1:0] p1_wlen;
+    logic [8            -1:0] p1_rlen;
+    logic [8            -1:0] p2_wlen;
+    logic [8            -1:0] p2_rlen;
 
     logic                     p2_raddr_full;
     logic                     p2_raddr_pull;
@@ -166,16 +185,27 @@ module axi4_ram
     logic                     p1_wdata_full;
     logic                     p1_wdata_empty;
     logic                     p1_wpull;
-    logic [AXI_ADDR_W-1:0   ] p1_awaddr_s;
-    logic [AXI1_DATA_W-1:0  ] p1_wdata_s;
+
+    logic [AXI_ADDR_W   -1:0] p1_awaddr_s;
+    logic [8            -1:0] p1_awlen_s;
+    logic [AXI_ID_W     -1:0] p1_awid_s;
+    logic                     p1_awlock_s;
+
+    logic [AXI1_DATA_W  -1:0] p1_wdata_s;
     logic [AXI1_DATA_W/8-1:0] p1_wstrb_s;
+
     logic                     p2_awaddr_full;
     logic                     p2_awaddr_empty;
     logic                     p2_wdata_full;
     logic                     p2_wdata_empty;
     logic                     p2_wpull;
-    logic [AXI_ADDR_W-1:0   ] p2_awaddr_s;
-    logic [AXI2_DATA_W-1:0  ] p2_wdata_s;
+
+    logic [AXI_ADDR_W   -1:0] p2_awaddr_s;
+    logic [8            -1:0] p2_awlen_s;
+    logic [AXI_ID_W  -1:0   ] p2_awid_s;
+    logic                     p2_awlock_s;
+
+    logic [AXI2_DATA_W  -1:0] p2_wdata_s;
     logic [AXI2_DATA_W/8-1:0] p2_wstrb_s;
 
     logic [32           -1:0] p1_awready_lfsr;
@@ -199,7 +229,7 @@ module axi4_ram
     friscv_scfifo
     #(
         .ADDR_WIDTH ($clog2(OSTDREQ_NUM)),
-        .DATA_WIDTH (AXI_ID_W+AXI_ADDR_W)
+        .DATA_WIDTH (AXI_ID_W+AXI_ADDR_W+8+1)
     )
     p1_archannel_fifo
     (
@@ -207,10 +237,10 @@ module axi4_ram
         .aresetn  (aresetn),
         .srst     (srst),
         .flush    (1'b0),
-        .data_in  ({p1_arid, p1_araddr}),
+        .data_in  ({p1_arid, p1_araddr, p1_arlen, p1_arlock}),
         .push     (p1_arvalid & p1_arready),
         .full     (p1_raddr_full),
-        .data_out ({p1_arid_s, p1_araddr_s}),
+        .data_out ({p1_arid_s, p1_araddr_s, p1_arlen_s, p1_arlock_s}),
         .pull     (p1_raddr_pull),
         .empty    (p1_raddr_empty)
     );
@@ -266,7 +296,7 @@ module axi4_ram
     friscv_scfifo
     #(
         .ADDR_WIDTH ($clog2(OSTDREQ_NUM)),
-        .DATA_WIDTH (AXI_ID_W+AXI_ADDR_W)
+        .DATA_WIDTH (AXI_ID_W+AXI_ADDR_W+8+1)
     )
     p2_archannel_fifo
     (
@@ -274,10 +304,10 @@ module axi4_ram
         .aresetn  (aresetn),
         .srst     (srst),
         .flush    (1'b0),
-        .data_in  ({p2_arid, p2_araddr}),
+        .data_in  ({p2_arid, p2_araddr, p2_arlen, p2_arlock}),
         .push     (p2_arvalid & p2_arready),
         .full     (p2_raddr_full),
-        .data_out ({p2_arid_s, p2_araddr_s}),
+        .data_out ({p2_arid_s, p2_araddr_s, p2_arlen_s, p2_arlock_s}),
         .pull     (p2_raddr_pull),
         .empty    (p2_raddr_empty)
     );
@@ -331,7 +361,7 @@ module axi4_ram
     // Read data channels Port 1
     ///////////////////////////////////////////////////////////////////////////
 
-    assign p1_raddr_pull = p1_rvalid & p1_rready;
+    assign p1_raddr_pull = p1_rvalid & p1_rready & p1_rlast;
 
     always @ (posedge aclk or negedge aresetn) begin
 
@@ -396,13 +426,14 @@ module axi4_ram
 
     assign p1_rid = p1_arid_s;
     assign p1_rresp = 2'b0;
+    assign p1_rlast = '1;
 
 
     ///////////////////////////////////////////////////////////////////////////
     // Read data channels Port 2
     ///////////////////////////////////////////////////////////////////////////
 
-    assign p2_raddr_pull = p2_rvalid & p2_rready;
+    assign p2_raddr_pull = p2_rvalid & p2_rready & p2_rlast;
 
     always @ (posedge aclk or negedge aresetn) begin
 
@@ -468,6 +499,7 @@ module axi4_ram
 
     assign p2_rid = p2_arid_s;
     assign p2_rresp = 2'b0;
+    assign p2_rlast = '1;
 
 
     ///////////////////////////////////////////////////////////////////////////
@@ -477,7 +509,7 @@ module axi4_ram
     friscv_scfifo
     #(
         .ADDR_WIDTH ($clog2(OSTDREQ_NUM)),
-        .DATA_WIDTH (AXI_ADDR_W+AXI_ID_W)
+        .DATA_WIDTH (AXI_ADDR_W+AXI_ID_W+8+1)
     )
     p1_awchannel_fifo
     (
@@ -485,10 +517,10 @@ module axi4_ram
         .aresetn  (aresetn),
         .srst     (srst),
         .flush    (1'b0),
-        .data_in  ({p1_awid, p1_awaddr}),
+        .data_in  ({p1_awid, p1_awaddr, p1_awlen, p1_awlock}),
         .push     (p1_awvalid & p1_awready),
         .full     (p1_awaddr_full),
-        .data_out ({p1_awid_s, p1_awaddr_s}),
+        .data_out ({p1_awid_s, p1_awaddr_s, p1_awlen_s, p1_awlock_s}),
         .pull     (p1_wpull),
         .empty    (p1_awaddr_empty)
     );
@@ -545,7 +577,7 @@ module axi4_ram
     friscv_scfifo
     #(
         .ADDR_WIDTH ($clog2(OSTDREQ_NUM)),
-        .DATA_WIDTH (AXI_ADDR_W+AXI_ID_W)
+        .DATA_WIDTH (AXI_ADDR_W+AXI_ID_W+8+1)
     )
     p2_awchannel_fifo
     (
@@ -553,10 +585,10 @@ module axi4_ram
         .aresetn  (aresetn),
         .srst     (srst),
         .flush    (1'b0),
-        .data_in  ({p2_awid, p2_awaddr}),
+        .data_in  ({p2_awid, p2_awaddr, p2_awlen, p2_awlock}),
         .push     (p2_awvalid & p2_awready),
         .full     (p2_awaddr_full),
-        .data_out ({p2_awid_s, p2_awaddr_s}),
+        .data_out ({p2_awid_s, p2_awaddr_s, p2_awlen_s, p2_awlock_s}),
         .pull     (p2_wpull),
         .empty    (p2_awaddr_empty)
     );

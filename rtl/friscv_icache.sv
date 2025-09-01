@@ -89,7 +89,7 @@ module friscv_icache
         output logic [8             -1:0] icache_arlen,
         output logic [3             -1:0] icache_arsize,
         output logic [2             -1:0] icache_arburst,
-        output logic [2             -1:0] icache_arlock,
+        output logic                      icache_arlock,
         output logic [4             -1:0] icache_arcache,
         output logic [3             -1:0] icache_arprot,
         output logic [4             -1:0] icache_arqos,
