@@ -99,7 +99,6 @@ module friscv_processing
         output logic                        arlock,
         input  wire                         rvalid,
         output logic                        rready,
-        input  wire                         rlast,
         input  wire  [AXI_ID_W        -1:0] rid,
         input  wire  [2               -1:0] rresp,
         input  wire  [AXI_DATA_W      -1:0] rdata
@@ -381,7 +380,6 @@ module friscv_processing
         .arlock              (arlock),
         .rvalid              (rvalid),
         .rready              (rready),
-        .rlast               (rlast),
         .rid                 (rid),
         .rresp               (rresp),
         .rdata               (rdata)

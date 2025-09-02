@@ -123,7 +123,6 @@ module friscv_memfy
         output logic                        arlock,
         input  wire                         rvalid,
         output logic                        rready,
-        input  wire                         rlast,
         input  wire  [AXI_ID_W        -1:0] rid,
         input  wire  [2               -1:0] rresp,
         input  wire  [AXI_DATA_W      -1:0] rdata

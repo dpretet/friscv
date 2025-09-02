@@ -278,7 +278,6 @@ module friscv_rv32i_core
     logic                            memfy_arlock;
     logic                            memfy_rvalid;
     logic                            memfy_rready;
-    logic                            memfy_rlast;
     logic [AXI_ID_W            -1:0] memfy_rid;
     logic [2                   -1:0] memfy_rresp;
     logic [XLEN                -1:0] memfy_rdata;
@@ -764,7 +763,6 @@ module friscv_rv32i_core
         .arlock             (memfy_arlock),
         .rvalid             (memfy_rvalid),
         .rready             (memfy_rready),
-        .rlast              (memfy_rlast),
         .rid                (memfy_rid),
         .rresp              (memfy_rresp),
         .rdata              (memfy_rdata)
@@ -899,7 +897,6 @@ module friscv_rv32i_core
 
         assign memfy_rvalid = dmem_rvalid;
         assign dmem_rready = memfy_rready;
-        assign memfy_rlast = dmem_rlast;
         assign memfy_rid = dmem_rid;
         assign memfy_rresp = dmem_rresp;
         assign memfy_rdata = dmem_rdata;

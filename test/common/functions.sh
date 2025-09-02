@@ -253,8 +253,8 @@ run_tests() {
         rm -f tc.log
 
         # Copy the VCD generated for further debug
-        if [ -f "./friscv_testbench.vcd" ]; then
-            cp ./friscv_testbench.vcd "./tests/$test_name.vcd"
+        if [ -f "./friscv_testbench.fst" ]; then
+            cp ./friscv_testbench.fst "./tests/$test_name.fst"
         fi
 
         # Create the trace of the C execution (function jumps)

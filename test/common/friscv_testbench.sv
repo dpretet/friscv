@@ -877,9 +877,9 @@ module friscv_testbench(
     `else
     // Dump VCD, for both Verilator and Icarus
     initial begin
-        `INFO("Tracing to friscv_testbench.vcd");
-        // $dumpfile("friscv_testbench.vcd");
-        // $dumpvars(0, friscv_testbench);
+        `INFO("Tracing to friscv_testbench.fst");
+        $dumpfile("friscv_testbench.fst");
+        $dumpvars(0, friscv_testbench);
         `INFO("Model running...");
     end
     `endif

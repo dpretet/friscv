@@ -165,14 +165,17 @@ module friscv_cache_block_fetcher
     // later in cache miss
     always @ (posedge aclk or negedge aresetn) begin
         if (!aresetn) begin
-            araddr_ffd <= {AXI_ADDR_W{1'b0}};
-            arid_ffd <= {AXI_ID_W{1'b0}};
+            araddr_ffd <= '0;
+            arid_ffd <= '0;
+            arprot_ffd <= '0;
         end else if (srst) begin
-            araddr_ffd <= {AXI_ADDR_W{1'b0}};
-            arid_ffd <= {AXI_ID_W{1'b0}};
+            araddr_ffd <= '0;
+            arid_ffd <= '0;
+            arprot_ffd <= '0;
         end else begin
             araddr_ffd <= cache_raddr;
             arid_ffd <= cache_rid;
+            arprot_ffd <= cache_rprot;
         end
     end
 
@@ -181,7 +184,6 @@ module friscv_cache_block_fetcher
 
     // Cache read interface
     assign cache_ren = arvalid & arready | sel_mf | (flush & arvalid);
-    // assign cache_ren = arvalid & arready | (loader != IDLE && (!(flush & !arvalid) || !(rac_empty & !arvalid)));
     assign cache_raddr = sel_mf ? araddr_ffd : araddr;
     assign cache_rid =   sel_mf ? arid_ffd   : arid;
     assign cache_rprot = sel_mf ? arprot_ffd : arprot;
