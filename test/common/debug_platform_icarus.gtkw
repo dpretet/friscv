@@ -1,26 +1,31 @@
 [*]
 [*] GTKWave Analyzer v3.3.121 (w)1999-2024 BSI
-[*] Tue Sep  2 08:55:21 2025
+[*] Tue Sep  2 19:01:23 2025
 [*]
 [dumpfile] "/Users/damien/workspace/hdl/friscv/test/riscv-tests/friscv_testbench.fst"
-[dumpfile_mtime] "Tue Sep  2 08:55:16 2025"
-[dumpfile_size] 330
+[dumpfile_mtime] "Tue Sep  2 09:27:04 2025"
+[dumpfile_size] 253110
 [savefile] "/Users/damien/workspace/hdl/friscv/test/common/debug_platform_icarus.gtkw"
-[timestart] 0
+[timestart] 1700590
 [size] 1440 793
 [pos] -1 -1
-*-19.383368 1569000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-13.383368 1714370 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] friscv_testbench.
 [treeopen] friscv_testbench.genblk2.
 [treeopen] friscv_testbench.genblk2.dut.
 [treeopen] friscv_testbench.genblk2.dut.axi4_crossbar.
-[treeopen] friscv_testbench.genblk2.dut.axi4_crossbar.mst0_if.
-[treeopen] friscv_testbench.genblk2.dut.axi4_crossbar.mst1_if.
+[treeopen] friscv_testbench.genblk2.dut.axi4_crossbar.switchs.
+[treeopen] friscv_testbench.genblk2.dut.axi4_crossbar.switchs.MST_SWITCHS_GEN[0].
+[treeopen] friscv_testbench.genblk2.dut.axi4_crossbar.switchs.MST_SWITCHS_GEN[0].mst_switch.
+[treeopen] friscv_testbench.genblk2.dut.axi4_crossbar.switchs.MST_SWITCHS_GEN[0].mst_switch.mst_switch_wr.
+[treeopen] friscv_testbench.genblk2.dut.axi4_crossbar.switchs.SLV_SWITCHS_GEN[0].
+[treeopen] friscv_testbench.genblk2.dut.axi4_crossbar.switchs.SLV_SWITCHS_GEN[0].slv_switch.
+[treeopen] friscv_testbench.genblk2.dut.axi4_crossbar.switchs.SLV_SWITCHS_GEN[0].slv_switch.slv_switch_wr.
 [treeopen] friscv_testbench.genblk2.dut.axi4_crossbar.switchs.SLV_SWITCHS_GEN[1].
 [treeopen] friscv_testbench.genblk2.dut.axi4_crossbar.switchs.SLV_SWITCHS_GEN[1].slv_switch.
 [treeopen] friscv_testbench.genblk2.dut.cpu0.USE_ICACHE.
 [sst_width] 364
-[signals_width] 243
+[signals_width] 324
 [sst_expanded] 1
 [sst_vpaned_height] 299
 @c00200
@@ -91,7 +96,7 @@ friscv_testbench.genblk2.axi4_ram.p1_bready
 -AXI4 RAM
 @200
 -
-@800200
+@c00200
 -Core0 Top Level
 @200
 -
@@ -228,7 +233,7 @@ friscv_testbench.genblk2.dut.cpu0.dmem_bready
 -Cache Interfaces
 @200
 -
-@1000200
+@1401200
 -Core0 Top Level
 @200
 -
@@ -286,14 +291,14 @@ friscv_testbench.genblk2.dut.mem_wvalid
 @22
 friscv_testbench.genblk2.dut.mem_bid[7:0]
 @28
-friscv_testbench.genblk2.dut.mem_bready
 friscv_testbench.genblk2.dut.mem_bresp[1:0]
 friscv_testbench.genblk2.dut.mem_bvalid
+friscv_testbench.genblk2.dut.mem_bready
 @1401200
 -Mem Interface
 @200
 -
-@c00200
+@800200
 -Interfaces
 @28
 friscv_testbench.genblk2.dut.axi4_crossbar.slv0_aclk
@@ -427,6 +432,7 @@ friscv_testbench.genblk2.dut.axi4_crossbar.slv1_awid[7:0]
 friscv_testbench.genblk2.dut.axi4_crossbar.slv1_awlen[7:0]
 @28
 friscv_testbench.genblk2.dut.axi4_crossbar.slv1_awlock
+@29
 friscv_testbench.genblk2.dut.axi4_crossbar.slv1_awprot[2:0]
 @22
 friscv_testbench.genblk2.dut.axi4_crossbar.slv1_awqos[3:0]
@@ -500,6 +506,11 @@ friscv_testbench.genblk2.dut.axi4_crossbar.mst0_ruser
 friscv_testbench.genblk2.dut.axi4_crossbar.mst0_rvalid
 @200
 -
+@28
+friscv_testbench.genblk2.dut.axi4_crossbar.aclk
+friscv_testbench.genblk2.dut.axi4_crossbar.aresetn
+@200
+-
 @22
 friscv_testbench.genblk2.dut.axi4_crossbar.mst0_awaddr[31:0]
 @28
@@ -538,113 +549,56 @@ friscv_testbench.genblk2.dut.axi4_crossbar.mst0_wvalid
 @22
 friscv_testbench.genblk2.dut.axi4_crossbar.mst0_bid[7:0]
 @28
-friscv_testbench.genblk2.dut.axi4_crossbar.mst0_bready
 friscv_testbench.genblk2.dut.axi4_crossbar.mst0_bresp[1:0]
 friscv_testbench.genblk2.dut.axi4_crossbar.mst0_buser
 friscv_testbench.genblk2.dut.axi4_crossbar.mst0_bvalid
-@1401200
+friscv_testbench.genblk2.dut.axi4_crossbar.mst0_bready
+@1000200
 -Interfaces
 @200
 -
+@28
+friscv_testbench.genblk2.dut.axi4_crossbar.switchs.MST_SWITCHS_GEN[0].bch_mst_pipe.aclk
+friscv_testbench.genblk2.dut.axi4_crossbar.switchs.MST_SWITCHS_GEN[0].bch_mst_pipe.aresetn
+@200
+-
+-mst_switch_wr
 @22
-friscv_testbench.genblk2.dut.axi4_crossbar.switchs.SLV_SWITCHS_GEN[1].slv_switch.slv_switch_wr.o_awch[42:0]
-friscv_testbench.genblk2.dut.axi4_crossbar.switchs.SLV_SWITCHS_GEN[1].slv_switch.slv_switch_wr.o_awready[3:0]
-friscv_testbench.genblk2.dut.axi4_crossbar.switchs.SLV_SWITCHS_GEN[1].slv_switch.slv_switch_wr.o_awvalid[3:0]
+friscv_testbench.genblk2.dut.axi4_crossbar.switchs.MST_SWITCHS_GEN[0].mst_switch.mst_switch_wr.i_bch[9:0]
+friscv_testbench.genblk2.dut.axi4_crossbar.switchs.MST_SWITCHS_GEN[0].mst_switch.mst_switch_wr.i_bready[3:0]
+friscv_testbench.genblk2.dut.axi4_crossbar.switchs.MST_SWITCHS_GEN[0].mst_switch.mst_switch_wr.i_bvalid[3:0]
 @200
 -
 @22
-friscv_testbench.genblk2.dut.axi4_crossbar.switchs.SLV_SWITCHS_GEN[1].slv_switch.slv_switch_wr.o_wch[143:0]
-friscv_testbench.genblk2.dut.axi4_crossbar.switchs.SLV_SWITCHS_GEN[1].slv_switch.slv_switch_wr.o_wlast[3:0]
-friscv_testbench.genblk2.dut.axi4_crossbar.switchs.SLV_SWITCHS_GEN[1].slv_switch.slv_switch_wr.o_wready[3:0]
-friscv_testbench.genblk2.dut.axi4_crossbar.switchs.SLV_SWITCHS_GEN[1].slv_switch.slv_switch_wr.o_wvalid[3:0]
+friscv_testbench.genblk2.dut.axi4_crossbar.switchs.MST_SWITCHS_GEN[0].mst_switch.mst_switch_wr.o_bch[9:0]
+@28
+friscv_testbench.genblk2.dut.axi4_crossbar.switchs.MST_SWITCHS_GEN[0].mst_switch.mst_switch_wr.o_bready
+friscv_testbench.genblk2.dut.axi4_crossbar.switchs.MST_SWITCHS_GEN[0].mst_switch.mst_switch_wr.o_bvalid
 @200
+-
+-
+-BCHo pipeline
+@28
+friscv_testbench.genblk2.dut.axi4_crossbar.switchs.MST_SWITCHS_GEN[0].bch_mst_pipe.i_ready
+@22
+friscv_testbench.genblk2.dut.axi4_crossbar.switchs.MST_SWITCHS_GEN[0].bch_mst_pipe.i_data[9:0]
+@28
+friscv_testbench.genblk2.dut.axi4_crossbar.switchs.MST_SWITCHS_GEN[0].bch_mst_pipe.i_valid
+friscv_testbench.genblk2.dut.axi4_crossbar.switchs.MST_SWITCHS_GEN[0].bch_mst_pipe.o_ready
+friscv_testbench.genblk2.dut.axi4_crossbar.switchs.MST_SWITCHS_GEN[0].bch_mst_pipe.o_valid
+@22
+friscv_testbench.genblk2.dut.axi4_crossbar.switchs.MST_SWITCHS_GEN[0].bch_mst_pipe.o_data[9:0]
+@200
+-
 -
 @22
-friscv_testbench.genblk2.dut.axi4_crossbar.switchs.SLV_SWITCHS_GEN[1].slv_switch.slv_switch_wr.o_bch[39:0]
-friscv_testbench.genblk2.dut.axi4_crossbar.switchs.SLV_SWITCHS_GEN[1].slv_switch.slv_switch_wr.o_bready[3:0]
-friscv_testbench.genblk2.dut.axi4_crossbar.switchs.SLV_SWITCHS_GEN[1].slv_switch.slv_switch_wr.o_bvalid[3:0]
+friscv_testbench.genblk2.dut.axi4_crossbar.switchs.i_bvalid[3:0]
+friscv_testbench.genblk2.dut.axi4_crossbar.switchs.slv_bvalid[15:0]
+friscv_testbench.genblk2.dut.axi4_crossbar.switchs.mst_bvalid[15:0]
+friscv_testbench.genblk2.dut.axi4_crossbar.switchs.o_bvalid[3:0]
+friscv_testbench.genblk2.dut.axi4_crossbar.switchs.o_bready[3:0]
+friscv_testbench.genblk2.dut.axi4_crossbar.switchs.o_bch[39:0]
 @200
 -
-@420
-friscv_testbench.genblk2.dut.axi4_crossbar.ARCH_W
-friscv_testbench.genblk2.dut.axi4_crossbar.AUSER_W
-friscv_testbench.genblk2.dut.axi4_crossbar.AWCH_W
-friscv_testbench.genblk2.dut.axi4_crossbar.AXI_ADDR_W
-friscv_testbench.genblk2.dut.axi4_crossbar.AXI_AUSER_W
-friscv_testbench.genblk2.dut.axi4_crossbar.AXI_BUSER_W
-friscv_testbench.genblk2.dut.axi4_crossbar.AXI_DATA_W
-friscv_testbench.genblk2.dut.axi4_crossbar.AXI_ID_W
-friscv_testbench.genblk2.dut.axi4_crossbar.AXI_RUSER_W
-@421
-friscv_testbench.genblk2.dut.axi4_crossbar.AXI_SIGNALING
-@420
-friscv_testbench.genblk2.dut.axi4_crossbar.AXI_WUSER_W
-friscv_testbench.genblk2.dut.axi4_crossbar.BCH_W
-friscv_testbench.genblk2.dut.axi4_crossbar.BUSER_W
-friscv_testbench.genblk2.dut.axi4_crossbar.MST0_CDC
-friscv_testbench.genblk2.dut.axi4_crossbar.MST0_ID_MASK
-friscv_testbench.genblk2.dut.axi4_crossbar.MST0_OSTDREQ_NUM
-friscv_testbench.genblk2.dut.axi4_crossbar.MST0_OSTDREQ_SIZE
-friscv_testbench.genblk2.dut.axi4_crossbar.MST0_PRIORITY
-friscv_testbench.genblk2.dut.axi4_crossbar.MST0_ROUTES
-friscv_testbench.genblk2.dut.axi4_crossbar.MST0_RW
-friscv_testbench.genblk2.dut.axi4_crossbar.MST1_CDC
-friscv_testbench.genblk2.dut.axi4_crossbar.MST1_ID_MASK
-friscv_testbench.genblk2.dut.axi4_crossbar.MST1_OSTDREQ_NUM
-friscv_testbench.genblk2.dut.axi4_crossbar.MST1_OSTDREQ_SIZE
-friscv_testbench.genblk2.dut.axi4_crossbar.MST1_PRIORITY
-friscv_testbench.genblk2.dut.axi4_crossbar.MST1_ROUTES
-friscv_testbench.genblk2.dut.axi4_crossbar.MST1_RW
-friscv_testbench.genblk2.dut.axi4_crossbar.MST2_CDC
-friscv_testbench.genblk2.dut.axi4_crossbar.MST2_ID_MASK
-friscv_testbench.genblk2.dut.axi4_crossbar.MST2_OSTDREQ_NUM
-friscv_testbench.genblk2.dut.axi4_crossbar.MST2_OSTDREQ_SIZE
-friscv_testbench.genblk2.dut.axi4_crossbar.MST2_PRIORITY
-friscv_testbench.genblk2.dut.axi4_crossbar.MST2_ROUTES
-friscv_testbench.genblk2.dut.axi4_crossbar.MST2_RW
-friscv_testbench.genblk2.dut.axi4_crossbar.MST3_CDC
-friscv_testbench.genblk2.dut.axi4_crossbar.MST3_ID_MASK
-friscv_testbench.genblk2.dut.axi4_crossbar.MST3_OSTDREQ_NUM
-friscv_testbench.genblk2.dut.axi4_crossbar.MST3_OSTDREQ_SIZE
-friscv_testbench.genblk2.dut.axi4_crossbar.MST3_PRIORITY
-friscv_testbench.genblk2.dut.axi4_crossbar.MST3_ROUTES
-friscv_testbench.genblk2.dut.axi4_crossbar.MST3_RW
-friscv_testbench.genblk2.dut.axi4_crossbar.MST_NB
-friscv_testbench.genblk2.dut.axi4_crossbar.MST_OSTDREQ_NUM
-friscv_testbench.genblk2.dut.axi4_crossbar.MST_PIPELINE
-friscv_testbench.genblk2.dut.axi4_crossbar.MST_ROUTES
-friscv_testbench.genblk2.dut.axi4_crossbar.RCH_W
-friscv_testbench.genblk2.dut.axi4_crossbar.RUSER_W
-friscv_testbench.genblk2.dut.axi4_crossbar.SLV0_CDC
-friscv_testbench.genblk2.dut.axi4_crossbar.SLV0_END_ADDR
-friscv_testbench.genblk2.dut.axi4_crossbar.SLV0_KEEP_BASE_ADDR
-friscv_testbench.genblk2.dut.axi4_crossbar.SLV0_OSTDREQ_NUM
-friscv_testbench.genblk2.dut.axi4_crossbar.SLV0_OSTDREQ_SIZE
-friscv_testbench.genblk2.dut.axi4_crossbar.SLV0_START_ADDR
-friscv_testbench.genblk2.dut.axi4_crossbar.SLV1_CDC
-friscv_testbench.genblk2.dut.axi4_crossbar.SLV1_END_ADDR
-friscv_testbench.genblk2.dut.axi4_crossbar.SLV1_KEEP_BASE_ADDR
-friscv_testbench.genblk2.dut.axi4_crossbar.SLV1_OSTDREQ_NUM
-friscv_testbench.genblk2.dut.axi4_crossbar.SLV1_OSTDREQ_SIZE
-friscv_testbench.genblk2.dut.axi4_crossbar.SLV1_START_ADDR
-friscv_testbench.genblk2.dut.axi4_crossbar.SLV2_CDC
-friscv_testbench.genblk2.dut.axi4_crossbar.SLV2_END_ADDR
-friscv_testbench.genblk2.dut.axi4_crossbar.SLV2_KEEP_BASE_ADDR
-friscv_testbench.genblk2.dut.axi4_crossbar.SLV2_OSTDREQ_NUM
-friscv_testbench.genblk2.dut.axi4_crossbar.SLV2_OSTDREQ_SIZE
-friscv_testbench.genblk2.dut.axi4_crossbar.SLV2_START_ADDR
-friscv_testbench.genblk2.dut.axi4_crossbar.SLV3_CDC
-friscv_testbench.genblk2.dut.axi4_crossbar.SLV3_END_ADDR
-friscv_testbench.genblk2.dut.axi4_crossbar.SLV3_KEEP_BASE_ADDR
-friscv_testbench.genblk2.dut.axi4_crossbar.SLV3_OSTDREQ_NUM
-friscv_testbench.genblk2.dut.axi4_crossbar.SLV3_OSTDREQ_SIZE
-friscv_testbench.genblk2.dut.axi4_crossbar.SLV3_START_ADDR
-friscv_testbench.genblk2.dut.axi4_crossbar.SLV_NB
-friscv_testbench.genblk2.dut.axi4_crossbar.SLV_PIPELINE
-friscv_testbench.genblk2.dut.axi4_crossbar.TIMEOUT_ENABLE
-friscv_testbench.genblk2.dut.axi4_crossbar.TIMEOUT_VALUE
-friscv_testbench.genblk2.dut.axi4_crossbar.USER_SUPPORT
-friscv_testbench.genblk2.dut.axi4_crossbar.WCH_W
-friscv_testbench.genblk2.dut.axi4_crossbar.WUSER_W
 [pattern_trace] 1
 [pattern_trace] 0

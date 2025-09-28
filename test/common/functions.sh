@@ -174,7 +174,7 @@ gather_result() {
 code_changed() {
 
     echo "INFO: Check design changes"
-    md5sum ../../rtl/* ./friscv_testbench.sv > rtl.md5.new
+    md5sum ../../rtl/* ../common/*.sv ./friscv_testbench.sv > rtl.md5.new
 
     if [ ! -e rtl.md5 ]; then
         echo "No precompiled RTL found"

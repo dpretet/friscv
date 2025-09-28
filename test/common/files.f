@@ -1,9 +1,11 @@
 +incdir+../../rtl+../../dep/svlogger+../../dep/axi-crossbar/rtl
 +define+FRISCV_SIM
 ../common/axi4_ram.sv
+../common/axi4_ram_port.sv
+../common/amba_rnd_valid.sv
+../common/amba_rnd_ready.sv
 ../common/lfsr.sv
 ../../rtl/friscv_rv32i_core.sv
-../../rtl/friscv_control.sv
 ../../rtl/friscv_decoder.sv
 ../../rtl/friscv_alu.sv
 ../../rtl/friscv_processing.sv
@@ -16,6 +18,7 @@
 ../../rtl/friscv_rambe.sv
 ../../rtl/friscv_dcache.sv
 ../../rtl/friscv_icache.sv
+../../rtl/friscv_control.sv
 ../../rtl/friscv_cache_block_fetcher.sv
 ../../rtl/friscv_cache_prefetcher.sv
 ../../rtl/friscv_cache_io_fetcher.sv

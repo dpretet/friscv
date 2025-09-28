@@ -4,23 +4,6 @@
 `ifndef FRISCV_CONTROL_H
 `define FRISCV_CONTROL_H
 
-//////////////////////////////////////////////////////////////////
-// Logger setup
-//////////////////////////////////////////////////////////////////
-
-`ifdef USE_SVL
-
-`include "svlogger.sv"
-
-`ifndef LOGGER
-`define LOGGER
-
-    `ifndef CONTROL_VERBOSITY
-        `define CONTROL_VERBOSITY `SVL_VERBOSE_DEBUG
-        `define CONTROL_ROUTE `SVL_ROUTE_ALL
-    `endif
-
-`endif
 
 
 //////////////////////////////////////////////////////////////////
@@ -171,5 +154,4 @@ function automatic string get_inst_desc(
 
 endfunction
 
-`endif
 `endif

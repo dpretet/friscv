@@ -6,6 +6,7 @@
 
 `include "friscv_h.sv"
 `include "friscv_control_h.sv"
+`include "svlogger.sv"
 
 ///////////////////////////////////////////////////////////////////////////////
 // Central controller of the processor, fetching instruction and driving
@@ -243,19 +244,31 @@ module friscv_control
     logic                       pull_proc_exp;
     logic                       proc_exp_empty;
 
-    // Logger setup
-    `ifdef USE_SVL
-    `include "svlogger.sv"
-    svlogger log;
-    initial log = new("ControlUnit",
-                      `CONTROL_VERBOSITY,
-                      `CONTROL_ROUTE);
-    `endif
 
     `ifdef TRACE_CONTROL
     integer f;
     initial f = $fopen("trace_control.csv","w");
     `endif
+
+    //////////////////////////////////////////////////////////////////
+    // Logger setup
+    //////////////////////////////////////////////////////////////////
+
+
+    svlogger log;
+
+    `ifdef USE_SVL
+
+    `ifndef CONTROL_VERBOSITY
+        `define CONTROL_VERBOSITY `SVL_VERBOSE_DEBUG
+        `define CONTROL_ROUTE `SVL_ROUTE_ALL
+    `endif
+
+    initial log = new("ControlUnit",
+                      `CONTROL_VERBOSITY,
+                      `CONTROL_ROUTE);
+    `endif
+
 
     /////////////////////////////////////////////////////////////////
     // Used to print instruction during execution, relies on SVLogger

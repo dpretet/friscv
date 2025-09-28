@@ -4,17 +4,22 @@
 `timescale 1 ns / 1 ps
 `default_nettype none
 
+`include "svlogger.sv"
+
 ///////////////////////////////////////////////////////////////////////////////
 // A simple AXI4 RAM model, simulation only. Dual port which can be with
 // different widths.
 //
 // TODO: Manage independant write address and data channel in compliance mode
 // TODO: Write response should use LSFR and support compliance vs speed mode
+// TODO: Support burst mode
+// TODO: Log r/w collision for debug
 ///////////////////////////////////////////////////////////////////////////////
 
 module axi4_ram
 
     #(
+        // File name used to initalize the RAM content
         parameter INIT  = "init.v",
 
         // Performance or Compliance mode
@@ -23,14 +28,16 @@ module axi4_ram
         parameter MODE = "compliance",
 
         // Seeds used in LSFR, per channel and port
-        parameter P1_RD_ADDR_SEED = 32'hCCCCCCCC,
+        parameter P1_RD_ADDR_SEED = 32'h215F0617,
         parameter P1_RD_DATA_SEED = 32'h986A23CC,
+        parameter P1_WR_ADDR_SEED = 32'h8711CBAA,
+        parameter P1_WR_DATA_SEED = 32'hBC2387AA,
+        parameter P1_WR_RESP_SEED = 32'hAC3145BD,
         parameter P2_RD_ADDR_SEED = 32'h1C6CDCC5,
         parameter P2_RD_DATA_SEED = 32'h4567CCA0,
-        parameter P1_WR_ADDR_SEED = 32'h8711CBAA,
-        parameter P1_WR_DATA_SEED = 32'h0,
         parameter P2_WR_ADDR_SEED = 32'h12349876,
-        parameter P2_WR_DATA_SEED = 32'h0,
+        parameter P2_WR_DATA_SEED = 32'h567B2433,
+        parameter P2_WR_RESP_SEED = 32'h8900AC11,
 
         // Address bus width defined for both control and AXI4 address signals
         parameter AXI_ADDR_W = 8,
@@ -130,677 +137,368 @@ module axi4_ram
         output logic [AXI2_DATA_W   -1:0] p2_rdata
     );
 
-    ///////////////////////////////////////////////////////////////////////////
-    // Parameters and signals declarations
-    ///////////////////////////////////////////////////////////////////////////
-
-    parameter AXI_DATA_W = (AXI1_DATA_W>AXI2_DATA_W) ? AXI1_DATA_W : AXI2_DATA_W;
-    parameter ADDR_LSB_W = $clog2(AXI_DATA_W/8);
-    parameter ADDRW = AXI_ADDR_W-ADDR_LSB_W;
-
-    logic [AXI_DATA_W-1:0] mem [2**ADDRW-1:0];
-    integer f;
-
-    initial $readmemh(INIT, mem, 0, 2**ADDRW-1);
-
     `ifdef TRACE_TB_RAM
     initial f = $fopen("trace_tb_ram.txt","w");
     `endif
 
-    integer                   p1_random;
-    integer                   p1_rcounter;
+    // Logger setup
+    `ifdef USE_SVL
 
-    logic [8            -1:0] p1_wr_position;
-    logic [8            -1:0] p1_rd_position;
-    logic [AXI_ADDR_W   -1:0] p1_araddr_s;
-    logic [AXI_ID_W     -1:0] p1_arid_s;
-    logic [8            -1:0] p1_arlen_s;
-    logic                     p1_arlock_s;
+    `ifndef AXI4_RAM_VERBOSITY
+        `define AXI4_RAM_VERBOSITY `SVL_VERBOSE_DEBUG
+        `define AXI4_RAM_ROUTE `SVL_ROUTE_ALL
+    `endif
 
-    logic                     p1_raddr_full;
-    logic                     p1_raddr_pull;
-    logic                     p1_raddr_empty;
+    svlogger log;
+    initial log = new("AXI4_RAM",
+                      `AXI4_RAM_VERBOSITY,
+                      `AXI4_RAM_ROUTE);
 
-    integer                   p2_random;
-    integer                   p2_rcounter;
+    `endif
 
-    logic [8            -1:0] p2_wr_position;
-    logic [8            -1:0] p2_rd_position;
-    logic [AXI_ADDR_W   -1:0] p2_araddr_s;
-    logic [AXI_ID_W     -1:0] p2_arid_s;
-    logic [8            -1:0] p2_arlen_s;
-    logic                     p2_arlock_s;
+    ///////////////////////////////////////////////////////////////////////////
+    // Parameters and signals declarations
+    ///////////////////////////////////////////////////////////////////////////
 
-    logic [8            -1:0] p1_wlen;
-    logic [8            -1:0] p1_rlen;
-    logic [8            -1:0] p2_wlen;
-    logic [8            -1:0] p2_rlen;
+    parameter RAM_DATA_W = (AXI1_DATA_W>AXI2_DATA_W) ? AXI1_DATA_W : AXI2_DATA_W;
+    parameter ADDR_LSB_W = $clog2(RAM_DATA_W/8);
+    parameter ADDRW = AXI_ADDR_W-ADDR_LSB_W;
 
-    logic                     p2_raddr_full;
-    logic                     p2_raddr_pull;
-    logic                     p2_raddr_empty;
+    logic                      p1_ram_wen;
+    logic [AXI_ADDR_W    -1:0] p1_ram_awaddr;
+    logic [AXI_ID_W      -1:0] p1_ram_awid;
+    logic [8             -1:0] p1_ram_awlen;
+    logic                      p1_ram_awlock;
+    logic [RAM_DATA_W    -1:0] p1_ram_wdata;
+    logic [RAM_DATA_W/8  -1:0] p1_ram_strb;
+    logic                      p1_ram_block;
+    logic                      p1_ram_ren;
+    logic [AXI_ADDR_W    -1:0] p1_ram_araddr;
+    logic [AXI_ID_W      -1:0] p1_ram_arid;
+    logic [8             -1:0] p1_ram_arlen;
+    logic                      p1_ram_arlock;
+    logic [RAM_DATA_W    -1:0] p1_ram_rdata;
+    logic                      p1_ram_rlock;
 
-    logic                     p1_awaddr_full;
-    logic                     p1_awaddr_empty;
-    logic                     p1_wdata_full;
-    logic                     p1_wdata_empty;
-    logic                     p1_wpull;
+    logic                      p2_ram_wen;
+    logic [AXI_ADDR_W    -1:0] p2_ram_awaddr;
+    logic [AXI_ID_W      -1:0] p2_ram_awid;
+    logic [8             -1:0] p2_ram_awlen;
+    logic                      p2_ram_awlock;
+    logic [RAM_DATA_W    -1:0] p2_ram_wdata;
+    logic [RAM_DATA_W/8  -1:0] p2_ram_strb;
+    logic                      p2_ram_block;
+    logic                      p2_ram_ren;
+    logic [AXI_ADDR_W    -1:0] p2_ram_araddr;
+    logic [AXI_ID_W      -1:0] p2_ram_arid;
+    logic [8             -1:0] p2_ram_arlen;
+    logic                      p2_ram_arlock;
+    logic [RAM_DATA_W    -1:0] p2_ram_rdata;
+    logic                      p2_ram_rlock;
 
-    logic [AXI_ADDR_W   -1:0] p1_awaddr_s;
-    logic [8            -1:0] p1_awlen_s;
-    logic [AXI_ID_W     -1:0] p1_awid_s;
-    logic                     p1_awlock_s;
+    // the memory array
+    logic [RAM_DATA_W-1:0] mem [2**ADDRW-1:0];
+    // the lock array to track exclusive access
+    logic                  lock_token [2**ADDRW-1:0];
+    logic [AXI_ID_W  -1:0] lock_id [2**ADDRW-1:0];
 
-    logic [AXI1_DATA_W  -1:0] p1_wdata_s;
-    logic [AXI1_DATA_W/8-1:0] p1_wstrb_s;
+    integer f;
+    string msg;
 
-    logic                     p2_awaddr_full;
-    logic                     p2_awaddr_empty;
-    logic                     p2_wdata_full;
-    logic                     p2_wdata_empty;
-    logic                     p2_wpull;
+    initial $readmemh(INIT, mem, 0, 2**ADDRW-1);
 
-    logic [AXI_ADDR_W   -1:0] p2_awaddr_s;
-    logic [8            -1:0] p2_awlen_s;
-    logic [AXI_ID_W  -1:0   ] p2_awid_s;
-    logic                     p2_awlock_s;
-
-    logic [AXI2_DATA_W  -1:0] p2_wdata_s;
-    logic [AXI2_DATA_W/8-1:0] p2_wstrb_s;
-
-    logic [32           -1:0] p1_awready_lfsr;
-    logic [32           -1:0] p2_awready_lfsr;
-    logic [32           -1:0] p1_aw_lfsr;
-    logic [32           -1:0] p2_aw_lfsr;
-    logic [32           -1:0] p1_arready_lfsr;
-    logic [32           -1:0] p2_arready_lfsr;
-    logic [32           -1:0] p1_ar_lfsr;
-    logic [32           -1:0] p2_ar_lfsr;
-    logic [32           -1:0] p1_r_lfsr;
-    logic [32           -1:0] p1_rvalid_lfsr;
-    logic [32           -1:0] p2_r_lfsr;
-    logic [32           -1:0] p2_rvalid_lfsr;
+    // init lock array to unreserved
+    initial begin
+        for (int i=0; i<2**ADDRW; i++) begin
+            lock_token[i] = '0;
+            lock_id[i] = '0;
+        end
+    end
 
 
-    ///////////////////////////////////////////////////////////////
-    // Read Address Channel Port 1
-    ///////////////////////////////////////////////////////////////
+    axi4_ram_port
 
-    friscv_scfifo
     #(
-        .ADDR_WIDTH ($clog2(OSTDREQ_NUM)),
-        .DATA_WIDTH (AXI_ID_W+AXI_ADDR_W+8+1)
-    )
-    p1_archannel_fifo
-    (
-        .aclk     (aclk),
-        .aresetn  (aresetn),
-        .srst     (srst),
-        .flush    (1'b0),
-        .data_in  ({p1_arid, p1_araddr, p1_arlen, p1_arlock}),
-        .push     (p1_arvalid & p1_arready),
-        .full     (p1_raddr_full),
-        .data_out ({p1_arid_s, p1_araddr_s, p1_arlen_s, p1_arlock_s}),
-        .pull     (p1_raddr_pull),
-        .empty    (p1_raddr_empty)
+        .MODE         (MODE),
+        .RD_ADDR_SEED (P1_RD_ADDR_SEED),
+        .RD_DATA_SEED (P1_RD_DATA_SEED),
+        .WR_ADDR_SEED (P1_WR_ADDR_SEED),
+        .WR_DATA_SEED (P1_WR_DATA_SEED),
+        .WR_RESP_SEED (P1_WR_RESP_SEED),
+        .AXI_ADDR_W   (AXI_ADDR_W),
+        .AXI_ID_W     (AXI_ID_W),
+        .AXI_DATA_W   (AXI1_DATA_W),
+        .RAM_DATA_W   (RAM_DATA_W),
+        .OSTDREQ_NUM  (OSTDREQ_NUM)
+    ) p1_rd_inst (
+
+      .aclk        (aclk),
+      .aresetn     (aresetn),
+      .srst        (srst),
+      .awvalid     (p1_awvalid),
+      .awready     (p1_awready),
+      .awaddr      (p1_awaddr),
+      .awprot      (p1_awprot),
+      .awcache     (p1_awcache),
+      .awid        (p1_awid),
+      .awlen       (p1_awlen),
+      .awsize      (p1_awsize),
+      .awburst     (p1_awburst),
+      .awregion    (p1_awregion),
+      .awqos       (p1_awqos),
+      .awlock      (p1_awlock),
+      .wvalid      (p1_wvalid),
+      .wready      (p1_wready),
+      .wlast       (p1_wlast),
+      .wdata       (p1_wdata),
+      .wstrb       (p1_wstrb),
+      .bid         (p1_bid),
+      .bresp       (p1_bresp),
+      .bvalid      (p1_bvalid),
+      .bready      (p1_bready),
+      .arvalid     (p1_arvalid),
+      .arready     (p1_arready),
+      .araddr      (p1_araddr),
+      .arprot      (p1_arprot),
+      .arcache     (p1_arcache),
+      .arid        (p1_arid),
+      .arlen       (p1_arlen),
+      .arregion    (p1_arregion),
+      .arqos       (p1_arqos),
+      .arsize      (p1_arsize),
+      .arburst     (p1_arburst),
+      .arlock      (p1_arlock),
+      .rvalid      (p1_rvalid),
+      .rready      (p1_rready),
+      .rlast       (p1_rlast),
+      .rid         (p1_rid),
+      .rresp       (p1_rresp),
+      .rdata       (p1_rdata),
+      .ram_wen     (p1_ram_wen),
+      .ram_awaddr  (p1_ram_awaddr),
+      .ram_awid    (p1_ram_awid),
+      .ram_awlock  (p1_ram_awlock),
+      .ram_wdata   (p1_ram_wdata),
+      .ram_strb    (p1_ram_strb),
+      .ram_block   (p1_ram_block),
+      .ram_ren     (p1_ram_ren),
+      .ram_araddr  (p1_ram_araddr),
+      .ram_arid    (p1_ram_arid),
+      .ram_arlock  (p1_ram_arlock),
+      .ram_rdata   (p1_ram_rdata),
+      .ram_rlock   (p1_ram_rlock)
     );
 
-    generate if (MODE=="compliance") begin : P1_READ_COMPLIANCE
+    axi4_ram_port
 
-        always @ (posedge aclk or negedge aresetn) begin
-
-            if (~aresetn) begin
-                p1_arready_lfsr <= 32'b0;
-            end else if (srst) begin
-                p1_arready_lfsr <= 32'b0;
-            end else begin
-                // At startup init with LFSR default value
-                if (p1_arready_lfsr==32'b0) begin
-                    p1_arready_lfsr <= p1_ar_lfsr;
-                // Use to randomly assert arready
-                end else if (~p1_arready) begin
-                    p1_arready_lfsr <= p1_arready_lfsr >> 1;
-                end else if (p1_arvalid) begin
-                    p1_arready_lfsr <= p1_ar_lfsr;
-                end
-            end
-        end
-
-        lfsr32
-        #(
-            .KEY (P1_RD_ADDR_SEED)
-        )
-        p1_arch_lfsr
-        (
-            .aclk    (aclk),
-            .aresetn (aresetn),
-            .srst    (srst),
-            .en      (p1_arvalid & p1_arready),
-            .lfsr    (p1_ar_lfsr)
-        );
-
-        assign p1_arready = p1_arready_lfsr[0] & ~p1_raddr_full;
-
-    // Performance mode
-    end else begin : P1_READ_PERF_MODE
-
-        assign p1_arready = ~p1_raddr_full;
-
-    end
-    endgenerate
-
-    ///////////////////////////////////////////////////////////////
-    // Read Address Channel Port 2
-    ///////////////////////////////////////////////////////////////
-
-    friscv_scfifo
     #(
-        .ADDR_WIDTH ($clog2(OSTDREQ_NUM)),
-        .DATA_WIDTH (AXI_ID_W+AXI_ADDR_W+8+1)
-    )
-    p2_archannel_fifo
-    (
-        .aclk     (aclk),
-        .aresetn  (aresetn),
-        .srst     (srst),
-        .flush    (1'b0),
-        .data_in  ({p2_arid, p2_araddr, p2_arlen, p2_arlock}),
-        .push     (p2_arvalid & p2_arready),
-        .full     (p2_raddr_full),
-        .data_out ({p2_arid_s, p2_araddr_s, p2_arlen_s, p2_arlock_s}),
-        .pull     (p2_raddr_pull),
-        .empty    (p2_raddr_empty)
+        .MODE         (MODE),
+        .RD_ADDR_SEED (P2_RD_ADDR_SEED),
+        .RD_DATA_SEED (P2_RD_DATA_SEED),
+        .WR_ADDR_SEED (P2_WR_ADDR_SEED),
+        .WR_DATA_SEED (P2_WR_DATA_SEED),
+        .WR_RESP_SEED (P2_WR_RESP_SEED),
+        .AXI_ADDR_W   (AXI_ADDR_W),
+        .AXI_ID_W     (AXI_ID_W),
+        .AXI_DATA_W   (AXI1_DATA_W),
+        .RAM_DATA_W   (RAM_DATA_W),
+        .OSTDREQ_NUM  (OSTDREQ_NUM)
+    ) p2_rd_inst (
+
+      .aclk        (aclk),
+      .aresetn     (aresetn),
+      .srst        (srst),
+      .awvalid     (p2_awvalid),
+      .awready     (p2_awready),
+      .awaddr      (p2_awaddr),
+      .awprot      (p2_awprot),
+      .awcache     (p2_awcache),
+      .awid        (p2_awid),
+      .awlen       (p2_awlen),
+      .awsize      (p2_awsize),
+      .awburst     (p2_awburst),
+      .awregion    (p2_awregion),
+      .awqos       (p2_awqos),
+      .awlock      (p2_awlock),
+      .wvalid      (p2_wvalid),
+      .wready      (p2_wready),
+      .wlast       (p2_wlast),
+      .wdata       (p2_wdata),
+      .wstrb       (p2_wstrb),
+      .bid         (p2_bid),
+      .bresp       (p2_bresp),
+      .bvalid      (p2_bvalid),
+      .bready      (p2_bready),
+      .arvalid     (p2_arvalid),
+      .arready     (p2_arready),
+      .araddr      (p2_araddr),
+      .arprot      (p2_arprot),
+      .arcache     (p2_arcache),
+      .arid        (p2_arid),
+      .arlen       (p2_arlen),
+      .arregion    (p2_arregion),
+      .arqos       (p2_arqos),
+      .arsize      (p2_arsize),
+      .arburst     (p2_arburst),
+      .arlock      (p2_arlock),
+      .rvalid      (p2_rvalid),
+      .rready      (p2_rready),
+      .rlast       (p2_rlast),
+      .rid         (p2_rid),
+      .rresp       (p2_rresp),
+      .rdata       (p2_rdata),
+      .ram_wen     (p2_ram_wen),
+      .ram_awaddr  (p2_ram_awaddr),
+      .ram_awid    (p2_ram_awid),
+      .ram_awlock  (p2_ram_awlock),
+      .ram_wdata   (p2_ram_wdata),
+      .ram_strb    (p2_ram_strb),
+      .ram_block   (p2_ram_block),
+      .ram_ren     (p2_ram_ren),
+      .ram_araddr  (p2_ram_araddr),
+      .ram_arid    (p2_ram_arid),
+      .ram_arlock  (p2_ram_arlock),
+      .ram_rdata   (p2_ram_rdata),
+      .ram_rlock   (p2_ram_rlock)
     );
 
-    generate if (MODE=="compliance") begin : P2_READ_COMPLIANCE
+    /*
 
-        always @ (posedge aclk or negedge aresetn) begin
+    `ifdef TRACE_TB_RAM
 
-            if (~aresetn) begin
-                p2_arready_lfsr <= 32'b0;
-            end else if (srst) begin
-                p2_arready_lfsr <= 32'b0;
-            end else begin
-                // At startup init with LFSR default value
-                if (p2_arready_lfsr==32'b0) begin
-                    p2_arready_lfsr <= p2_ar_lfsr;
-                // Use to randomly assert arready
-                end else if (~p2_arready) begin
-                    p2_arready_lfsr <= p2_arready_lfsr >> 1;
-                end else if (p2_arvalid) begin
-                    p2_arready_lfsr <= p2_ar_lfsr;
-                end
+    always @ (posedge aclk) begin
+
+        if (p1_ram_ren) begin
+
+            $sformat(msg, "Read Port1: Addr=%x, ID=%x, Len=%x, Lock=%x\n",
+                p1_ram_araddr, p1_ram_arid, p1_ram_arlen, p1_ram_arlock
+            );
+            log.info(msg);
+
+            if (p1_ram_arlock) begin
+                log.info("Read Port1: Exclusive access granted");
             end
         end
 
-        lfsr32
-        #(
-            .KEY (P2_RD_ADDR_SEED)
-        )
-        p2_arch_lfsr
-        (
-            .aclk    (aclk),
-            .aresetn (aresetn),
-            .srst    (srst),
-            .en      (p2_arvalid & p2_arready),
-            .lfsr    (p2_ar_lfsr)
-        );
+        if (p2_ram_ren) begin
 
-        assign p2_arready = p2_arready_lfsr[0] & ~p2_raddr_full;
+            $sformat(msg, "Read Port2: Addr=%x, ID=%x, Len=%x, Lock=%x\n",
+                p2_ram_araddr, p2_ram_arid, p2_ram_arlen, p2_ram_arlock
+            );
 
-    // Performance mode
-    end else begin : P2_READ_PERF_MODE
+            log.info(msg);
 
-        assign p2_arready = ~p2_raddr_full;
+            if (p2_ram_arlock) begin
+                log.info("Read Port2: Exclusive access granted");
+            end
 
-    end
-    endgenerate
+        end
 
+        if (p1_ram_wen) begin
 
-    ///////////////////////////////////////////////////////////////////////////
-    // Read data channels Port 1
-    ///////////////////////////////////////////////////////////////////////////
+            $sformat(msg, "Write Port1: Addr=%x, ID=%x, Len=%x, Lock=%x\n",
+                p1_ram_awaddr, p1_ram_awid, p1_ram_awlen, p1_ram_awlock
+            );
+            log.info(msg);
 
-    assign p1_raddr_pull = p1_rvalid & p1_rready & p1_rlast;
+            if (p1_ram_awlock && lock_token[p1_ram_awaddr] && p1_ram_awid == lock_id[p1_ram_awaddr]) begin
+                log.info("Write Port1: complete the exclusive access");
+            end
 
-    always @ (posedge aclk or negedge aresetn) begin
+            if (p1_ram_awlock && lock_token[p1_ram_awaddr] && lock_id[p1_ram_awaddr] != p1_ram_awid) begin
+                log.error("Write Port1: try to complete an exclusive access with the wrong ID");
+            end
 
-        if (~aresetn) begin
-            p1_rvalid_lfsr <= 32'b0;
-        end else if (srst) begin
-            p1_rvalid_lfsr <= 32'b0;
-        end else begin
-            // At startup init with LFSR default value
-            if (p1_rvalid_lfsr==32'b0) begin
-                p1_rvalid_lfsr <= p1_r_lfsr;
-            // Use to randomly assert bvalid/wready
-            end else if (~p1_rvalid) begin
-                p1_rvalid_lfsr <= p1_rvalid_lfsr >> 1;
-            end else if (p1_rready) begin
-                p1_rvalid_lfsr <= p1_r_lfsr;
-                `ifdef TRACE_TB_RAM
-                $fwrite(f, "(@ %0t) Port 1 - Read  Addr=%x Data=%x\n", $realtime, p1_araddr_s, p1_rdata);
-                `endif
+            if (p1_ram_awlock && !lock_token[p1_ram_awaddr]) begin
+                log.error("Write Port1: try to complete an exclusive access on unreserved register");
+            end
+
+            if (!p1_ram_awlock && lock_token[p1_ram_awaddr]) begin
+                log.error("Write Port1: Exclusive access reservation broken a non-exclusive write access");
             end
         end
-    end
 
-    generate if (MODE=="compliance") begin : P1_READ_COMPLETION_COMPLIANCE
+        if (p2_ram_wen) begin
 
-        lfsr32
-        #(
-            .KEY (P1_RD_DATA_SEED)
-        )
-        p1_rch_lfsr
-        (
-            .aclk    (aclk),
-            .aresetn (aresetn),
-            .srst    (srst),
-            .en      (p1_rvalid & p1_rready),
-            .lfsr    (p1_r_lfsr)
-        );
+            $sformat(msg, "Write Port2: Addr=%x, ID=%x, Len=%x, Lock=%x\n",
+                p2_ram_awaddr, p2_ram_awid, p2_ram_awlen, p2_ram_awlock
+            );
+            log.info(msg);
 
-        assign p1_rvalid = p1_rvalid_lfsr[0] & ~p1_raddr_empty;
+            if (p2_ram_awlock && lock_token[p2_ram_awaddr] && p2_ram_awid == lock_id[p2_ram_awaddr]) begin
+                log.info("Write Port2: complete the exclusive access");
+            end
 
-    // Performance Mode
-    end else begin : P1_READ_COMPLETION_PERFORMANCE
+            if (p2_ram_awlock && lock_token[p2_ram_awaddr] && lock_id[p2_ram_awaddr] != p2_ram_awid) begin
+                log.error("Write Port2: try to complete an exclusive access with the wrong ID");
+            end
 
-        assign p1_rvalid = ~p1_raddr_empty;
+            if (p2_ram_awlock && !lock_token[p2_ram_awaddr]) begin
+                log.error("Write Port2: try to complete an exclusive access on unreserved register");
+            end
 
-    end
-    endgenerate
-
-    // Get the position in the RAM line in bits:
-    //  - p1_araddr_s[0+:ADDR_LSB_W] : get the start address in byte
-    //  - /4 : convert it in instruction index (if 4 instructions per line, can be 0-1-2-3)
-    //         divide by 4 because XLEN = 32 bits = 4 bytes
-    //  - *32 : convert the instruction index in bits
-    assign p1_rd_position = (p1_araddr_s[0+:ADDR_LSB_W]/4)*32;
-
-    generate if (AXI1_DATA_W<AXI_DATA_W) begin: P1_RD_DOWSIZE
-        assign p1_rdata = mem[p1_araddr_s[ADDR_LSB_W+:ADDRW]][p1_rd_position+:AXI1_DATA_W];
-    end else begin: P1_RD_NO_CONVERSION
-        assign p1_rdata = mem[p1_araddr_s[ADDR_LSB_W+:ADDRW]][0+:AXI1_DATA_W];
-    end
-    endgenerate
-
-    assign p1_rid = p1_arid_s;
-    assign p1_rresp = 2'b0;
-    assign p1_rlast = '1;
-
-
-    ///////////////////////////////////////////////////////////////////////////
-    // Read data channels Port 2
-    ///////////////////////////////////////////////////////////////////////////
-
-    assign p2_raddr_pull = p2_rvalid & p2_rready & p2_rlast;
-
-    always @ (posedge aclk or negedge aresetn) begin
-
-        if (~aresetn) begin
-            p2_rvalid_lfsr <= 32'b0;
-        end else if (srst) begin
-            p2_rvalid_lfsr <= 32'b0;
-        end else begin
-            // At startup init with LFSR default value
-            if (p2_rvalid_lfsr==32'b0) begin
-                p2_rvalid_lfsr <= p2_r_lfsr;
-            // Use to randomly assert bvalid/wready
-            end else if (~p2_rvalid) begin
-                p2_rvalid_lfsr <= p2_rvalid_lfsr >> 1;
-            end else if (p2_rready) begin
-                p2_rvalid_lfsr <= p2_r_lfsr;
-                `ifdef TRACE_TB_RAM
-                $fwrite(f, "(@ %0t) Port 2 - Read  Addr=%x Data=%x\n", $realtime, p2_araddr_s, p2_rdata);
-                `endif
+            if (!p2_ram_awlock && lock_token[p2_ram_awaddr]) begin
+                log.error("Write Port2: Exclusive access reservation broken a non-exclusive write access");
             end
         end
     end
 
-    generate if (MODE=="compliance") begin : P2_READ_COMPLETION_COMPLIANCE
+    `endif
+    */
 
-        lfsr32
-        #(
-            .KEY (P2_RD_DATA_SEED)
-        )
-        p2_rch_lfsr
-        (
-            .aclk    (aclk),
-            .aresetn (aresetn),
-            .srst    (srst),
-            .en      (p2_rvalid & p2_rready),
-            .lfsr    (p2_r_lfsr)
-        );
+    always @ (posedge aclk) begin
 
-        assign p2_rvalid = p2_rvalid_lfsr[0] & ~p2_raddr_empty;
-
-    // Performance Mode
-    end else begin : P2_READ_COMPLETION_PERFORMANCE
-
-        assign p2_rvalid = ~p2_raddr_empty;
-
-    end
-    endgenerate
-
-
-    // Get the position in the RAM line in bits:
-    //  - p2_araddr_s[0+:ADDR_LSB_W] : get the start address in byte
-    //  - /4 : convert it in instruction index (if 4 instructions per line, can be 0-1-2-3)
-    //         divide by 4 because XLEN = 32 bits = 4 bytes
-    //  - *32 : convert the instruction index in bits
-    assign p2_rd_position = (p2_araddr_s[0+:ADDR_LSB_W]/4)*32;
-
-    generate if (AXI2_DATA_W<AXI_DATA_W) begin: P2_RD_DOWSIZE
-        assign p2_rdata = mem[p2_araddr_s[ADDR_LSB_W+:ADDRW]][p2_rd_position+:AXI2_DATA_W];
-    end else begin: P2_RD_NO_CONVERSION
-        assign p2_rdata = mem[p2_araddr_s[ADDR_LSB_W+:ADDRW]][0+:AXI2_DATA_W];
-    end
-    endgenerate
-
-    assign p2_rid = p2_arid_s;
-    assign p2_rresp = 2'b0;
-    assign p2_rlast = '1;
-
-
-    ///////////////////////////////////////////////////////////////////////////
-    // Write address channel Port 1
-    ///////////////////////////////////////////////////////////////////////////
-
-    friscv_scfifo
-    #(
-        .ADDR_WIDTH ($clog2(OSTDREQ_NUM)),
-        .DATA_WIDTH (AXI_ADDR_W+AXI_ID_W+8+1)
-    )
-    p1_awchannel_fifo
-    (
-        .aclk     (aclk),
-        .aresetn  (aresetn),
-        .srst     (srst),
-        .flush    (1'b0),
-        .data_in  ({p1_awid, p1_awaddr, p1_awlen, p1_awlock}),
-        .push     (p1_awvalid & p1_awready),
-        .full     (p1_awaddr_full),
-        .data_out ({p1_awid_s, p1_awaddr_s, p1_awlen_s, p1_awlock_s}),
-        .pull     (p1_wpull),
-        .empty    (p1_awaddr_empty)
-    );
-
-    generate if (MODE=="compliance") begin
-
-        always @ (posedge aclk or negedge aresetn) begin
-
-            if (~aresetn) begin
-                p1_awready_lfsr <= 32'b0;
-            end else if (srst) begin
-                p1_awready_lfsr <= 32'b0;
-            end else begin
-                // At startup init with LFSR default value
-                if (p1_awready_lfsr==32'b0) begin
-                    p1_awready_lfsr <= p1_aw_lfsr;
-                // Use to randomly assert awready/wready
-                end else if (~p1_awready) begin
-                    p1_awready_lfsr <= p1_awready_lfsr >> 1;
-                end else if (p1_awvalid) begin
-                    p1_awready_lfsr <= p1_aw_lfsr;
-                end
+        if (p1_ram_ren) begin
+            if (p1_ram_arlock) begin
+                lock_token[p1_ram_araddr] <= '1;
+                lock_id[p1_ram_araddr] <= p1_ram_arid;
             end
         end
 
-        lfsr32
-        #(
-            .KEY (P1_WR_ADDR_SEED)
-        )
-        p1_awch_lfsr
-        (
-            .aclk    (aclk),
-            .aresetn (aresetn),
-            .srst    (srst),
-            .en      (p1_awvalid & p1_awready),
-            .lfsr    (p1_aw_lfsr)
-        );
+        if (p1_ram_wen) begin
 
-        assign p1_awready = p1_awready_lfsr[0] & ~p1_wdata_full & ~p1_awaddr_full;
+            lock_token[p1_ram_awaddr] <= '0;
+            lock_id[p1_ram_awaddr] <= p1_ram_awid;
 
-    // Performance Mode
-    end else begin
+            if (lock_token[p1_ram_awaddr] && lock_id[p1_ram_awaddr] == p1_ram_awid ||
+                !lock_token[p1_ram_awaddr]
+               )
+                for (int i=0; i<RAM_DATA_W/8; i++)
+                    if (p1_ram_strb[i])
+                        mem[p1_ram_awaddr][8*i+:8] <= p1_ram_wdata[8*i+:8];;
 
-        assign p1_awready = ~p1_wdata_full & ~p1_awaddr_full;
+        end
 
-    end
-    endgenerate
-
-
-    ///////////////////////////////////////////////////////////////////////////
-    // Write address channel Port 2
-    ///////////////////////////////////////////////////////////////////////////
-
-    friscv_scfifo
-    #(
-        .ADDR_WIDTH ($clog2(OSTDREQ_NUM)),
-        .DATA_WIDTH (AXI_ADDR_W+AXI_ID_W+8+1)
-    )
-    p2_awchannel_fifo
-    (
-        .aclk     (aclk),
-        .aresetn  (aresetn),
-        .srst     (srst),
-        .flush    (1'b0),
-        .data_in  ({p2_awid, p2_awaddr, p2_awlen, p2_awlock}),
-        .push     (p2_awvalid & p2_awready),
-        .full     (p2_awaddr_full),
-        .data_out ({p2_awid_s, p2_awaddr_s, p2_awlen_s, p2_awlock_s}),
-        .pull     (p2_wpull),
-        .empty    (p2_awaddr_empty)
-    );
-
-    generate if (MODE=="compliance") begin
-
-        always @ (posedge aclk or negedge aresetn) begin
-
-            if (~aresetn) begin
-                p2_awready_lfsr <= 32'b0;
-            end else if (srst) begin
-                p2_awready_lfsr <= 32'b0;
-            end else begin
-                // At startup init with LFSR default value
-                if (p2_awready_lfsr==32'b0) begin
-                    p2_awready_lfsr <= p2_aw_lfsr;
-                // Use to randomly assert awready/wready
-                end else if (~p2_awready) begin
-                    p2_awready_lfsr <= p2_awready_lfsr >> 1;
-                end else if (p2_awvalid) begin
-                    p2_awready_lfsr <= p2_aw_lfsr;
-                end
+        if (p2_ram_ren) begin
+            if (p2_ram_arlock) begin
+                lock_token[p2_ram_araddr] <= '1;
+                lock_id[p2_ram_araddr] <= p2_ram_arid;
             end
         end
 
-        lfsr32
-        #(
-            .KEY (P2_WR_ADDR_SEED)
-        )
-        p2_awch_lfsr
-        (
-            .aclk    (aclk),
-            .aresetn (aresetn),
-            .srst    (srst),
-            .en      (p2_awvalid & p2_awready),
-            .lfsr    (p2_aw_lfsr)
-        );
+        if (p2_ram_wen) begin
 
-        assign p2_awready = p2_awready_lfsr[0] & ~p2_wdata_full & ~p2_awaddr_full;
+            lock_token[p2_ram_awaddr] <= '0;
+            lock_id[p2_ram_awaddr] <= p1_ram_awid;
 
-    // Performance Mode
-    end else begin
-
-        assign p2_awready = ~p2_wdata_full & ~p2_awaddr_full;
-
-    end
-    endgenerate
-
-
-    ///////////////////////////////////////////////////////////////////////////
-    // Write data & response channels Port 1
-    ///////////////////////////////////////////////////////////////////////////
-
-    friscv_scfifo
-    #(
-        .ADDR_WIDTH ($clog2(OSTDREQ_NUM)),
-        .DATA_WIDTH (AXI1_DATA_W+AXI1_DATA_W/8)
-    )
-    p1_wdata_fifo
-    (
-        .aclk     (aclk),
-        .aresetn  (aresetn),
-        .srst     (srst),
-        .flush    (1'b0),
-        .data_in  ({p1_wstrb,p1_wdata}),
-        .push     (p1_wvalid & p1_wready),
-        .full     (p1_wdata_full),
-        .data_out ({p1_wstrb_s,p1_wdata_s}),
-        .pull     (p1_wpull),
-        .empty    (p1_wdata_empty)
-    );
-
-    assign p1_wready = p1_awready;
-
-    // Get the position in the RAM line in bits:
-    //  - p1_awaddr_s[0+:ADDR_LSB_W] : get the start address in byte
-    //  - /4 : convert it in instruction index (if 4 instructions per line, can be 0-1-2-3)
-    //         divide by 4 because XLEN = 32 bits = 4 bytes
-    //  - *32 : convert the instruction index in bits
-    assign p1_wr_position = (p1_awaddr_s[0+:ADDR_LSB_W]/4)*32;
-
-    always @ (posedge aclk or negedge aresetn) begin
-
-        if (~aresetn) begin
-            p1_wpull <= 1'b0;
-            p1_bvalid <= 1'b0;
-            p1_bid <= {AXI_ID_W{1'b0}};
-        end else if (srst) begin
-            p1_wpull <= 1'b0;
-            p1_bvalid <= 1'b0;
-            p1_bid <= {AXI_ID_W{1'b0}};
-        end else begin
-
-            if (p1_bvalid) begin
-
-                p1_wpull <= 1'b0;
-                if (p1_bready) p1_bvalid <= 1'b0;
-
-            end else if (~p1_awaddr_empty && ~p1_wdata_empty) begin
-
-                p1_wpull <= 1'b1;
-                p1_bvalid <= 1'b1;
-                p1_bid <= p1_awid_s;
-
-                `ifdef TRACE_TB_RAM
-                $fwrite(f, "(@ %0t) Port 1 - Write Addr=%x Data=%x Strb=%x\n", $realtime, p1_awaddr_s, p1_wdata_s, p1_wstrb_s);
-                `endif
-
-                if (AXI1_DATA_W<AXI_DATA_W) begin
-                    for (int i=0;i<AXI1_DATA_W/8;i++) begin
-                        if (p1_wstrb_s[i]) begin
-                            mem[p1_awaddr_s[ADDR_LSB_W+:ADDRW]][(p1_wr_position+i*8)+:8] <= p1_wdata_s[8*i+:8];
-                        end
-                    end
-                end else begin
-                    for (int i=0;i<AXI_DATA_W/8;i++) begin
-                        if (p1_wstrb_s[i]) begin
-                            mem[p1_awaddr_s[ADDR_LSB_W+:ADDRW]][8*i+:8] <= p1_wdata_s[8*i+:8];
-                        end
-                    end
-                end
-            end else begin
-                p1_wpull <= 1'b0;
-                p1_bvalid <= 1'b0;
-            end
+            if (lock_token[p2_ram_awaddr] && lock_id[p2_ram_awaddr] == p2_ram_awid ||
+                !lock_token[p2_ram_awaddr]
+               )
+                for (int i=0; i<RAM_DATA_W/8; i++)
+                    if (p2_ram_strb[i])
+                        mem[p2_ram_awaddr][8*i+:8] <= p2_ram_wdata[8*i+:8];;
         end
+
     end
 
-    assign p1_bresp = 2'b0;
+    assign p1_ram_rdata = mem[p1_ram_araddr];
+    assign p1_ram_rlock = p1_ram_arlock;
 
+    assign p2_ram_rdata = mem[p2_ram_araddr];
+    assign p2_ram_rlock = p2_ram_arlock;
 
-    ///////////////////////////////////////////////////////////////////////////
-    // Write data& response channels Port 2
-    ///////////////////////////////////////////////////////////////////////////
-
-
-    friscv_scfifo
-    #(
-        .ADDR_WIDTH ($clog2(OSTDREQ_NUM)),
-        .DATA_WIDTH (AXI2_DATA_W+AXI2_DATA_W/8)
-    )
-    p2_wdata_fifo
-    (
-        .aclk     (aclk),
-        .aresetn  (aresetn),
-        .srst     (srst),
-        .flush    (1'b0),
-        .data_in  ({p2_wstrb,p2_wdata}),
-        .push     (p2_wvalid & p2_wready),
-        .full     (p2_wdata_full),
-        .data_out ({p2_wstrb_s,p2_wdata_s}),
-        .pull     (p2_wpull),
-        .empty    (p2_wdata_empty)
-    );
-
-    assign p2_wready = p2_awready;
-
-    // Get the position in the RAM line in bits:
-    //  - p2_awaddr_s[0+:ADDR_LSB_W] : get the start address in byte
-    //  - /4 : convert it in instruction index (if 4 instructions per line, can be 0-1-2-3)
-    //         divide by 4 because XLEN = 32 bits = 4 bytes
-    //  - *32 : convert the instruction index in bits
-    assign p2_wr_position = (p2_awaddr_s[0+:ADDR_LSB_W]/4)*32;
-
-    always @ (posedge aclk or negedge aresetn) begin
-
-        if (~aresetn) begin
-            p2_wpull <= 1'b0;
-            p2_bvalid <= 1'b0;
-            p2_bid <= {AXI_ID_W{1'b0}};
-        end else if (srst) begin
-            p2_wpull <= 1'b0;
-            p2_bvalid <= 1'b0;
-            p2_bid <= {AXI_ID_W{1'b0}};
-        end else begin
-
-            if (p2_bvalid) begin
-
-                p2_wpull <= 1'b0;
-                if (p2_bready) p2_bvalid <= 1'b0;
-
-            end else if (~p2_awaddr_empty && ~p2_wdata_empty) begin
-
-                p2_wpull <= 1'b1;
-                p2_bvalid <= 1'b1;
-                p2_bid <= p2_awid_s;
-
-                `ifdef TRACE_TB_RAM
-                $fwrite(f, "(@ %0t) Port 2 - Write Addr=%x Data=%x Strb=%x\n", $realtime, p2_awaddr_s, p2_wdata_s, p2_wstrb_s);
-                `endif
-
-                if (AXI2_DATA_W<AXI_DATA_W) begin
-                    for (int i=0;i<AXI2_DATA_W/8;i++) begin
-                        if (p2_wstrb_s[i]) begin
-                            mem[p2_awaddr_s[ADDR_LSB_W+:ADDRW]][(p2_wr_position+i*8)+:8] <= p2_wdata_s[8*i+:8];
-                        end
-                    end
-                end else begin
-                    for (int i=0;i<AXI_DATA_W/8;i++) begin
-                        if (p2_wstrb_s[i]) begin
-                            mem[p2_awaddr_s[ADDR_LSB_W+:ADDRW]][8*i+:8] <= p2_wdata_s[8*i+:8];
-                        end
-                    end
-                end
-            end else begin
-                p2_wpull <= 1'b0;
-                p2_bvalid <= 1'b0;
-            end
-        end
-    end
-
-    assign p2_bresp = 2'b0;
+    assign p1_ram_block = (lock_token[p1_ram_awaddr] && lock_id[p1_ram_awaddr] == p1_ram_awid);
+    assign p2_ram_block = (lock_token[p2_ram_awaddr] && lock_id[p2_ram_awaddr] == p2_ram_awid);
 
 endmodule
 
