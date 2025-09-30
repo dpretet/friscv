@@ -137,22 +137,18 @@ module axi4_ram
         output logic [AXI2_DATA_W   -1:0] p2_rdata
     );
 
+    // Logger setup
     `ifdef TRACE_TB_RAM
     initial f = $fopen("trace_tb_ram.txt","w");
-    `endif
-
-    // Logger setup
-    `ifdef USE_SVL
-
-    `ifndef AXI4_RAM_VERBOSITY
-        `define AXI4_RAM_VERBOSITY `SVL_VERBOSE_DEBUG
-        `define AXI4_RAM_ROUTE `SVL_ROUTE_ALL
-    `endif
 
     svlogger log;
-    initial log = new("AXI4_RAM",
-                      `AXI4_RAM_VERBOSITY,
-                      `AXI4_RAM_ROUTE);
+    initial begin
+        log = new("AXI4_RAM",
+                  `SVL_VERBOSE_DEBUG,
+                  `SVL_ROUTE_FILE);
+        log.set_filename("trace_axi4_ram.txt");
+
+    end
 
     `endif
 
@@ -362,15 +358,14 @@ module axi4_ram
       .ram_rlock   (p2_ram_rlock)
     );
 
-    /*
-
     `ifdef TRACE_TB_RAM
 
-    always @ (posedge aclk) begin
+    always @ (posedge aclk)
+    begin
 
         if (p1_ram_ren) begin
 
-            $sformat(msg, "Read Port1: Addr=%x, ID=%x, Len=%x, Lock=%x\n",
+            $sformat(msg, "Read Port1: Addr=%x, ID=%x, Len=%x, Lock=%x",
                 p1_ram_araddr, p1_ram_arid, p1_ram_arlen, p1_ram_arlock
             );
             log.info(msg);
@@ -382,7 +377,7 @@ module axi4_ram
 
         if (p2_ram_ren) begin
 
-            $sformat(msg, "Read Port2: Addr=%x, ID=%x, Len=%x, Lock=%x\n",
+            $sformat(msg, "Read Port2: Addr=%x, ID=%x, Len=%x, Lock=%x",
                 p2_ram_araddr, p2_ram_arid, p2_ram_arlen, p2_ram_arlock
             );
 
@@ -396,7 +391,7 @@ module axi4_ram
 
         if (p1_ram_wen) begin
 
-            $sformat(msg, "Write Port1: Addr=%x, ID=%x, Len=%x, Lock=%x\n",
+            $sformat(msg, "Write Port1: Addr=%x, ID=%x, Len=%x, Lock=%x",
                 p1_ram_awaddr, p1_ram_awid, p1_ram_awlen, p1_ram_awlock
             );
             log.info(msg);
@@ -420,7 +415,7 @@ module axi4_ram
 
         if (p2_ram_wen) begin
 
-            $sformat(msg, "Write Port2: Addr=%x, ID=%x, Len=%x, Lock=%x\n",
+            $sformat(msg, "Write Port2: Addr=%x, ID=%x, Len=%x, Lock=%x",
                 p2_ram_awaddr, p2_ram_awid, p2_ram_awlen, p2_ram_awlock
             );
             log.info(msg);
@@ -444,7 +439,7 @@ module axi4_ram
     end
 
     `endif
-    */
+
 
     always @ (posedge aclk) begin
 

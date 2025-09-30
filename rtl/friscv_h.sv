@@ -9,7 +9,7 @@
 `endif
 
 //////////////////////////////////////////////////////////////////
-// Opcodes' define
+// Opcodes
 //////////////////////////////////////////////////////////////////
 
 `define LUI     7'b0110111
@@ -25,10 +25,11 @@
 `define FENCEX  7'b0001111
 `define MULDIV  7'b0110011
 `define MULDIVW 7'b0111011
+`define AMO     7'b0101111
 
 
 //////////////////////////////////////////////////////////////////
-// funct3 opcodes for instruction decoding
+// funct3 opcodes
 //////////////////////////////////////////////////////////////////
 
 `define BEQ     3'b000
@@ -98,8 +99,27 @@
 `define REMW    3'b110
 `define REMUW   3'b111
 
+`define A32     3'b010
+`define A64     3'b011
+
+//////////////////////////////////////////////////////////////////
+// funct5 opcodes
+//////////////////////////////////////////////////////////////////
+
+`define LR_W       5'b00010
+`define SC_W       5'b00011
+`define AMOSWAP_W  5'b00001
+`define AMOADD_W   5'b00000
+`define AMOXOR_W   5'b00100
+`define AMOAND_W   5'b01100
+`define AMOOR_W    5'b01000
+`define AMOMIN_W   5'b10000
+`define AMOMAX_W   5'b10100
+`define AMOMINU_W  5'b11000
+`define AMOMAXU_W  5'b11100
+
 ///////////////////////////////////////////////////////////////////
-// env signal driven by decoder to indicate environment instruction
+// Env signal driven by decoder to indicate environment instruction
 ///////////////////////////////////////////////////////////////////
 
 `define ECALL   3'b001
@@ -137,9 +157,10 @@
 // Instruction bus feeding ALUs
 //////////////////////////////////////////////////////////////////
 
-// instruction bus fields's width
+// Instruction bus fields's width
 `define OPCODE_W    7
 `define FUNCT3_W    3
+`define FUNCT5_W    5
 `define FUNCT7_W    7
 `define RS1_W       5
 `define RS2_W       5
@@ -151,14 +172,17 @@
 `define SHAMT_W     5
 `define PRED_W      4
 `define SUCC_W      4
+`define AQ_W        1
+`define RL_W        1
 `define PC_W       `XLEN
 `define INST_W     `XLEN
 `define PRIV_W     2
 
-// instruction bus fields's index
+// Instruction bus fields's index
 `define OPCODE      0
 `define FUNCT3      `OPCODE + `OPCODE_W
-`define FUNCT7      `FUNCT3 + `FUNCT3_W
+`define FUNCT5      `FUNCT3 + `FUNCT3_W
+`define FUNCT7      `FUNCT5 + `FUNCT5_W
 `define RS1         `FUNCT7 + `FUNCT7_W
 `define RS2         `RS1 +    `RS1_W
 `define RD          `RS2 +    `RS2_W
@@ -167,19 +191,21 @@
 `define IMM20       `IMM12 +  `IMM12_W
 `define CSR         `IMM20 +  `IMM20_W
 `define SHAMT       `CSR +    `CSR_W
-`define PC          `SHAMT +  `SHAMT_W
+`define AQ          `SHAMT +  `SHAMT_W
+`define RL          `AQ +     `AQ_W
+`define PC          `RL +     `RL_W
 `define INST        `PC +     `PC_W 
 `define PRIV        `INST +   `INST_W
 `define MPP         `PRIV +   `PRIV_W
 `define MPRV        `MPP +    `PRIV_W
 
-// total length of ALU instruction bus
-`define INST_BUS_W `OPCODE_W + `FUNCT3_W + `FUNCT7_W + `RS1_W + `RS2_W + \
+// Total length of ALU instruction bus
+`define INST_BUS_W `OPCODE_W + `FUNCT3_W + `FUNCT5_W + `FUNCT7_W + `RS1_W + `RS2_W + \
                    `RD_W + `ZIMM_W + `IMM12_W + `IMM20_W + `CSR_W + `SHAMT_W + \
-                   `PC_W + `INST_W + 2*`PRIV_W + 1
+                   `RL_W + `AQ_W + `PC_W + `INST_W + 2*`PRIV_W + 1
 
 //////////////////////////////////////////////////////////////////
-// Excpetion bus fron Memfy to Control unit
+// Exception bus from Memfy to Control unit
 //////////////////////////////////////////////////////////////////
 
 `define EXP_PC_W       `XLEN
@@ -200,6 +226,7 @@
 // Store access fault
 `define SAF         `LAF + 1
 
+// Total width of exception bus
 `define PROC_EXP_W  `SAF + 1
 
 //////////////////////////////////////////////////////////////////
@@ -256,7 +283,7 @@
 `define CTRL_SB_W `CTRL_INSTRET + `XLEN*2
 
 //////////////////////////////////////////////////////////////////
-// execution mode
+// Execution mode
 //////////////////////////////////////////////////////////////////
 
 `define MMODE 2'b11

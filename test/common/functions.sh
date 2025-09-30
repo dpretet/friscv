@@ -38,11 +38,11 @@ NO_COMPILE=0
 # Specific testcase(s) to run
 TC=
 # Use Icarus Verilog simulator
-[[ -z $SIM ]] && SIM="icarus"
+[[ -z $SIM ]] && SIM="verilator"
 # Minimum program counter value a test needs to reach, in bytes
 [[ -z $MIN_PC ]] && MIN_PC=65908
-# Don't dump VCD during simulation, dump by default
-[[ -z $NO_VCD ]] && NO_VCD=0
+# Don't dump waveform during simulation, dumped by default
+[[ -z $NO_WAVE ]] && NO_WAVE=0
 # INTERACTIVE enable a UART to read/write from Verilator
 [[ -z $INTERACTIVE ]] && INTERACTIVE=0
 # RAM is by default in compliance mode
@@ -73,7 +73,7 @@ read_config() {
     cen=0 # cache enable
     cw=32 # cache width
 
-    DEFINES="FRISV_SIM=1;USE_SVL=0;"
+    DEFINES="FRISV_SIM=1;"
 
     while IFS=, read -r name value; do
         DEFINES="${DEFINES}${name}=${value};"
@@ -119,7 +119,7 @@ get_defines() {
     echo "  - TB_CHOICE:        $TB_CHOICE (0=CORE, 1=PLATFORM)"
     echo "  - TCNAME:           $test_name"
     echo "  - SIMULATOR:        $SIM"
-    echo "  - NO_VCD:           $NO_VCD"
+    echo "  - NO_WAVE:          $NO_WAVE"
     echo "  - INTERACTIVE:      $INTERACTIVE"
     echo "  - RAM_MODE:         $RAM_MODE"
 
@@ -140,7 +140,7 @@ get_defines() {
     [[ $TRACE_REGISTERS -eq 1 ]] && DEFINES="${DEFINES}TRACE_REGISTERS=$TRACE_REGISTERS;"
     [[ $TRACE_TB_RAM    -eq 1 ]] && DEFINES="${DEFINES}TRACE_TB_RAM=$TRACE_TB_RAM;"
 
-    [[ $NO_VCD -eq 1 ]] && DEFINES="${DEFINES}NO_VCD=1;"
+    [[ $NO_WAVE -eq 1 ]] && DEFINES="${DEFINES}NO_WAVE=1;"
 
     return 0
 }
@@ -174,16 +174,16 @@ gather_result() {
 code_changed() {
 
     echo "INFO: Check design changes"
-    md5sum ../../rtl/* ../common/*.sv ./friscv_testbench.sv > rtl.md5.new
+    md5sum ../../rtl/* ../common/*.*v ./friscv_testbench.sv ../common/*.cpp > rtl.md5.new
 
     if [ ! -e rtl.md5 ]; then
-        echo "No precompiled RTL found"
+        echo "INFO: No precompiled RTL found"
         mv rtl.md5.new rtl.md5
         to_compile=1
     else
         if ! cmp "./rtl.md5" "./rtl.md5.new" > /dev/null 2>&1
         then
-            echo "RTL changed. Will recompile it"
+            echo "INFO: RTL changed. Will recompile it"
             mv rtl.md5.new rtl.md5
             to_compile=1
         fi
@@ -252,7 +252,7 @@ run_tests() {
         cat tc.log >> simulation.log
         rm -f tc.log
 
-        # Copy the VCD generated for further debug
+        # Copy the waveform generated for further debug
         if [ -f "./friscv_testbench.fst" ]; then
             cp ./friscv_testbench.fst "./tests/$test_name.fst"
         fi
@@ -278,7 +278,7 @@ run_tests() {
 
 run_testsuite() {
 
-    echo "Start testsuite execution"
+    echo "INFO: Start testsuite execution"
 
     # Erase first the temporary files
     rm -f ./test*.v
@@ -303,7 +303,7 @@ run_testsuite() {
 #------------------------------------------------------------------------------
 check_status() {
 
-    echo "Check status:"
+    echo "Execution result:"
 
     # Exit if execution failed.
     # Double check the execution status within the log
@@ -362,9 +362,9 @@ get_args() {
                 shift
                 cfg_file=$1
             ;;
-            --novcd )
+            --nowave )
                 shift
-                NO_VCD=1
+                NO_WAVE=1
             ;;
             --nocompile )
                 shift

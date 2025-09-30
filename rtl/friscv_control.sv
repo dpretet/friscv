@@ -5,8 +5,9 @@
 `default_nettype none
 
 `include "friscv_h.sv"
-`include "friscv_control_h.sv"
+`ifdef TRACE_CONTROL
 `include "svlogger.sv"
+`endif
 
 ///////////////////////////////////////////////////////////////////////////////
 // Central controller of the processor, fetching instruction and driving
@@ -101,6 +102,235 @@ module friscv_control
     );
 
 
+    `ifdef TRACE_CONTROL
+
+    /////////////////////////////////////////////////////////////////
+    // Used to print instruction during execution, relies on SVLogger
+    /////////////////////////////////////////////////////////////////
+
+    task print_instruction;
+        string inst_str;
+        string pc_str;
+        $sformat(inst_str, "%x", instruction);
+        $sformat(pc_str, "%x", pc_reg);
+        log.debug(get_inst_desc(
+                    inst_str,
+                    pc_str,
+                    opcode,
+                    funct3,
+                    funct7,
+                    rs1,
+                    rs2,
+                    rd,
+                    imm12,
+                    imm20,
+                    csr));
+    endtask
+
+
+    /////////////////////////////////////////////////////////////////////
+    // Get a description of a synchronous exception when handling a trap
+    /////////////////////////////////////////////////////////////////////
+    function automatic string get_mcause_desc(input integer cause);
+        // Synchronous Trap
+             if (cause=='h1)  get_mcause_desc = "Read-only CSR write access";
+        else if (cause=='h0)  get_mcause_desc = "Instruction address misaligned";
+        else if (cause=='h4)  get_mcause_desc = "LOAD address misaligned";
+        else if (cause=='h6)  get_mcause_desc = "STORE address misaligned";
+        else if (cause=='h10) get_mcause_desc = "Instruction decoding error";
+        else if (cause=='h8)  get_mcause_desc = "Environment call (U-mode)";
+        else if (cause=='hB)  get_mcause_desc = "Environment call (M-mode)";
+        else if (cause=='h2)  get_mcause_desc = "Illegal instruction";
+        // Asynchronous Trap
+        else if (cause=='h80000003) get_mcause_desc = "Machine Software Interrupt";
+        else if (cause=='h80000007) get_mcause_desc = "Machine Timer Interrupt";
+        else if (cause=='h8000000B) get_mcause_desc = "Machine External Interrupt";
+        // All other unknown interrupts
+        else get_mcause_desc = "Unknown Trap Cause";
+    endfunction
+
+
+    /////////////////////////////////////////////////////////////////////
+    // Print function used when the FSM is handling a trap
+    /////////////////////////////////////////////////////////////////////
+
+    task print_mcause(
+        input string           msg,
+        input logic [XLEN-1:0] cause
+    );
+        string cause_str;
+        $sformat(cause_str, "%x", cause);
+        log.warning({msg,
+                     cause_str,
+                     " (",
+                     get_mcause_desc(cause),
+                     ")"
+                   });
+    endtask
+
+
+    //////////////////////////////////////////////////////////////////////
+    // Get a readable instruction description for logging
+    //////////////////////////////////////////////////////////////////////
+    function automatic string get_inst_desc(
+        input string            instruction,
+        input string            pc,
+        input logic [7    -1:0] opcode,
+        input logic [3    -1:0] funct3,
+        input logic [7    -1:0] funct7,
+        input logic [5    -1:0] rs1,
+        input logic [5    -1:0] rs2,
+        input logic [5    -1:0] rd,
+        input logic [12   -1:0] imm12,
+        input logic [20   -1:0] imm20,
+        input logic [12   -1:0] csr
+    );
+
+        string text = "UNKNOWN";
+        string temp;
+
+        if (opcode==`LUI) begin
+            text = "LUI / U-type";
+            $sformat(temp, "Rd: %x", rd);
+            text = {temp, " / ", text};
+            $sformat(temp, "Imm20: %x", imm20);
+            text = {temp, " / ", text};
+        end
+        if (opcode==`AUIPC) begin
+            text = "AUIPC / U-type";
+            $sformat(temp, "Rd: %x", rd);
+            text = {temp, " / ", text};
+            $sformat(temp, "Imm20: %x", imm20);
+            text = {temp, " / ", text};
+        end
+        if (opcode==`JALR) begin
+            text = "JALR / I-type";
+            $sformat(temp, "Rd: %x", rd);
+            text = {temp, " / ", text};
+            $sformat(temp, "Funct3: %x", funct3);
+            text = {temp, " / ", text};
+            $sformat(temp, "Rs1: %x", rs1);
+            text = {temp, " / ", text};
+            $sformat(temp, "Imm12: %x", imm12);
+            text = {temp, " / ", text};
+        end
+        if (opcode==`LOAD) begin
+            text = "LOAD / I-type";
+            $sformat(temp, "rd: %x", rd);
+            text = {temp, " / ", text};
+            $sformat(temp, "Funct3: %x", funct3);
+            text = {temp, " / ", text};
+            $sformat(temp, "Rs1: %x", rs1);
+            text = {temp, " / ", text};
+            $sformat(temp, "Imm12: %x", imm12);
+            text = {temp, " / ", text};
+        end
+        if (opcode==`I_ARITH) begin
+            text = "ARITH / I-type";
+            $sformat(temp, "Rd: %x", rd);
+            text = {temp, " / ", text};
+            $sformat(temp, "Funct3: %x", funct3);
+            text = {temp, " / ", text};
+            $sformat(temp, "Rs1: %x", rs1);
+            text = {temp, " / ", text};
+            $sformat(temp, "Imm12: %x", imm12);
+            text = {temp, " / ", text};
+        end
+        if (opcode==`FENCEX) begin
+            if (funct3==`FENCE) text = "FENCE / I-type";
+            else text = "FENCE.i / I-type";
+            $sformat(temp, "Rd: %x", rd);
+            text = {temp, " / ", text};
+            $sformat(temp, "Funct3: %x", funct3);
+            text = {temp, " / ", text};
+            $sformat(temp, "Rs1: %x", rs1);
+            text = {temp, " / ", text};
+            $sformat(temp, "Imm12: %x", imm12);
+            text = {temp, " / ", text};
+        end
+        if (opcode==`SYS) begin
+            if (csr==12'h0 && funct3==3'b0) text = "ECALL - I-type";
+            else if (csr==12'h1 && funct3==3'b0) text = "EBREAK - I-type";
+            else if (funct3==3'b000 && csr==12'h105) text = "WFI - I-type";
+            else if (funct3==3'b000 && csr==12'h102) text = "SRET - I-type";
+            else if (funct3==3'b000 && csr==12'h302) text = "MRET - I-type";
+            else text = "CSR / I-type";
+            $sformat(temp, "Rd: %x", rd);
+            text = {temp, " / ", text};
+            $sformat(temp, "Funct3: %x", funct3);
+            text = {temp, " / ", text};
+            $sformat(temp, "Rs1: %x", rs1);
+            text = {temp, " / ", text};
+            if (funct3==3'b0 && (csr==12'h0 || csr==12'h1)) begin
+                $sformat(temp, "Imm12: %x", csr);
+            end else begin
+                $sformat(temp, "Csr: %x", csr);
+            end
+            text = {temp, " / ", text};
+        end
+        if (opcode==`JAL) begin
+            text = "JAL / J-type";
+            $sformat(temp, "rd: %x ", rd);
+            text = {temp, " / ", text};
+            $sformat(temp, "Imm20: %x", imm20);
+            text = {temp, " / ", text};
+        end
+        if (opcode==`BRANCH) begin
+            text = "BRANCH / B-type";
+            $sformat(temp, "Funct3: %x", funct3);
+            text = {temp, " / ", text};
+            $sformat(temp, "Rs1: %x", rs1);
+            text = {temp, " / ", text};
+            $sformat(temp, "Rs2: %x", rs2);
+            text = {temp, " / ", text};
+            $sformat(temp, "Imm12: %x", imm12);
+            text = {temp, " / ", text};
+        end
+        if (opcode==`STORE) begin
+            text = "STORE / S-type";
+            $sformat(temp, "Funct3: %x", funct3);
+            text = {temp, " / ", text};
+            $sformat(temp, "Rs1: %x", rs1);
+            text = {temp, " / ", text};
+            $sformat(temp, "Rs2: %x", rs2);
+            text = {temp, " / ", text};
+            $sformat(temp, "Imm12: %x", imm12);
+            text = {temp, " / ", text};
+        end
+        if (opcode==`R_ARITH) begin
+            if (funct7==7'b0000001) text = "MULDIV / R-type";
+            else text = "ARITH / R-type";
+            $sformat(temp, "Rd: %x", rd);
+            text = {temp, " / ", text};
+            $sformat(temp, "Funct3: %x", funct3);
+            text = {temp, " / ", text};
+            $sformat(temp, "Rs1: %x", rs1);
+            text = {temp, " / ", text};
+            $sformat(temp, "Rs2: %x", rs2);
+            text = {temp, " / ", text};
+            $sformat(temp, "Funct7: %x", funct7);
+            text = {temp, " / ", text};
+        end
+
+        get_inst_desc = {"PC=", pc, " - ", instruction, " / ", text};
+
+    endfunction
+
+    `endif
+
+
+    //////////////////////////////////////////////////////////////////////
+    // Return next ID for program counter increment during address jump
+    //////////////////////////////////////////////////////////////////////
+    function automatic logic [AXI_ID_W-1:0] next_id(
+        input logic  [AXI_ID_W-1:0] id,
+        input logic  [AXI_ID_W-1:0] max_id,
+        input logic  [AXI_ID_W-1:0] init_id
+    );
+        if (id==max_id) next_id = init_id;
+        else next_id = id + 1'b1;
+    endfunction
+
     ///////////////////////////////////////////////////////////////////////////
     //
     // Parameters and variables declarations
@@ -112,6 +342,7 @@ module friscv_control
     // Decoded instructions
     logic [`OPCODE_W   -1:0] opcode;
     logic [`FUNCT3_W   -1:0] funct3;
+    logic [`FUNCT5_W   -1:0] funct5;
     logic [`FUNCT7_W   -1:0] funct7;
     logic [`RS1_W      -1:0] rs1;
     logic [`RS2_W      -1:0] rs2;
@@ -123,6 +354,8 @@ module friscv_control
     logic [`SHAMT_W    -1:0] shamt;
     logic [`PRED_W     -1:0] pred;
     logic [`SUCC_W     -1:0] succ;
+    logic                    aq;
+    logic                    rl;
 
     // Flags of the instruction decoder to drive the control unit
     logic             lui;
@@ -245,111 +478,22 @@ module friscv_control
     logic                       proc_exp_empty;
 
 
-    `ifdef TRACE_CONTROL
-    integer f;
-    initial f = $fopen("trace_control.csv","w");
-    `endif
-
     //////////////////////////////////////////////////////////////////
     // Logger setup
     //////////////////////////////////////////////////////////////////
 
 
+    `ifdef TRACE_CONTROL
+
+    integer f;
+    initial f = $fopen("trace_control.csv","w");
+
     svlogger log;
 
-    `ifdef USE_SVL
-
-    `ifndef CONTROL_VERBOSITY
-        `define CONTROL_VERBOSITY `SVL_VERBOSE_DEBUG
-        `define CONTROL_ROUTE `SVL_ROUTE_ALL
-    `endif
-
     initial log = new("ControlUnit",
-                      `CONTROL_VERBOSITY,
-                      `CONTROL_ROUTE);
+                      `SVL_VERBOSE_DEBUG,
+                      `SVL_ROUTE_FILE);
     `endif
-
-
-    /////////////////////////////////////////////////////////////////
-    // Used to print instruction during execution, relies on SVLogger
-    /////////////////////////////////////////////////////////////////
-
-    task print_instruction;
-        `ifdef USE_SVL
-        string inst_str;
-        string pc_str;
-        $sformat(inst_str, "%x", instruction);
-        $sformat(pc_str, "%x", pc_reg);
-        log.debug(get_inst_desc(
-                    inst_str,
-                    pc_str,
-                    opcode,
-                    funct3,
-                    funct7,
-                    rs1,
-                    rs2,
-                    rd,
-                    imm12,
-                    imm20,
-                    csr));
-        `endif
-    endtask
-
-    /////////////////////////////////////////////////////////////////////
-    // Get a description of a synchronous exception when handling a trap
-    /////////////////////////////////////////////////////////////////////
-    `ifdef USE_SVL
-    function automatic string get_mcause_desc(input integer cause);
-        // Synchronous Trap
-             if (cause=='h1)  get_mcause_desc = "Read-only CSR write access";
-        else if (cause=='h0)  get_mcause_desc = "Instruction address misaligned";
-        else if (cause=='h4)  get_mcause_desc = "LOAD address misaligned";
-        else if (cause=='h6)  get_mcause_desc = "STORE address misaligned";
-        else if (cause=='h10) get_mcause_desc = "Instruction decoding error";
-        else if (cause=='h8)  get_mcause_desc = "Environment call (U-mode)";
-        else if (cause=='hB)  get_mcause_desc = "Environment call (M-mode)";
-        else if (cause=='h2)  get_mcause_desc = "Illegal instruction";
-        // Asynchronous Trap
-        else if (cause=='h80000003) get_mcause_desc = "Machine Software Interrupt";
-        else if (cause=='h80000007) get_mcause_desc = "Machine Timer Interrupt";
-        else if (cause=='h8000000B) get_mcause_desc = "Machine External Interrupt";
-        // All other unknown interrupts
-        else get_mcause_desc = "Unknown Trap Cause";
-    endfunction
-    `endif
-
-
-    /////////////////////////////////////////////////////////////////////
-    // Print function used when the FSM is handling a trap
-    /////////////////////////////////////////////////////////////////////
-    `ifdef USE_SVL
-    task print_mcause(
-        input string           msg,
-        input logic [XLEN-1:0] cause
-    );
-        string cause_str;
-        $sformat(cause_str, "%x", cause);
-        log.warning({msg,
-                     cause_str,
-                     " (",
-                     get_mcause_desc(cause),
-                     ")"
-                   });
-    endtask
-    `endif
-
-
-    //////////////////////////////////////////////////////////////////////
-    // Return next ID for program counter increment during address jump
-    //////////////////////////////////////////////////////////////////////
-    function automatic logic [AXI_ID_W-1:0] next_id(
-        input logic  [AXI_ID_W-1:0] id,
-        input logic  [AXI_ID_W-1:0] max_id,
-        input logic  [AXI_ID_W-1:0] init_id
-    );
-        if (id==max_id) next_id = init_id;
-        else next_id = id + 1'b1;
-    endfunction
 
 
     ///////////////////////////////////////////////////////////////////////////
@@ -474,6 +618,7 @@ module friscv_control
         .instruction (instruction),
         .opcode      (opcode),
         .funct3      (funct3),
+        .funct5      (funct5),
         .funct7      (funct7),
         .rs1         (rs1),
         .rs2         (rs2),
@@ -493,7 +638,9 @@ module friscv_control
         .processing  (processing),
         .dec_error   (dec_error),
         .pred        (pred),
-        .succ        (succ)
+        .succ        (succ),
+        .aq          (aq),
+        .rl          (rl)
     );
 
 
@@ -510,6 +657,7 @@ module friscv_control
 
     assign proc_instbus[`OPCODE   +: `OPCODE_W ] = opcode;
     assign proc_instbus[`FUNCT3   +: `FUNCT3_W ] = funct3;
+    assign proc_instbus[`FUNCT5   +: `FUNCT5_W ] = funct5;
     assign proc_instbus[`FUNCT7   +: `FUNCT7_W ] = funct7;
     assign proc_instbus[`RS1      +: `RS1_W    ] = rs1   ;
     assign proc_instbus[`RS2      +: `RS2_W    ] = rs2   ;
@@ -519,6 +667,8 @@ module friscv_control
     assign proc_instbus[`IMM20    +: `IMM20_W  ] = imm20 ;
     assign proc_instbus[`CSR      +: `CSR_W    ] = csr   ;
     assign proc_instbus[`SHAMT    +: `SHAMT_W  ] = shamt ;
+    assign proc_instbus[`AQ       +: `AQ_W     ] = aq ;
+    assign proc_instbus[`RL       +: `RL_W     ] = rl ;
     assign proc_instbus[`INST     +: `INST_W   ] = instruction;
     assign proc_instbus[`PC       +: `PC_W     ] = pc_reg;
     assign proc_instbus[`PRIV     +: `PRIV_W   ] = priv_mode;
@@ -660,10 +810,8 @@ module friscv_control
                     if (cache_ready) begin
                         arvalid <= 1'b1;
                         `ifdef TRACE_CONTROL
-                        $fwrite(f, "@ %0t,%x\n", $realtime, BOOT_ADDR);
-                        `endif
-                        `ifdef USE_SVL
-                        log.info("IDLE -> Boot the processor");
+                        // $fwrite(f, "@ %0t,%x\n", $realtime, BOOT_ADDR);
+                        // log.info("IDLE -> Boot the processor");
                         `endif
                         cfsm <= FETCH;
                     end
@@ -742,9 +890,9 @@ module friscv_control
                     if (trap_occuring) begin
 
                         if (!cant_trap) begin
-                            `ifdef USE_SVL
-                            print_mcause("Handling a trap -> MCAUSE=0x", mcause_code);
-                            print_instruction;
+                            `ifdef TRACE_CONTROL
+                            // print_mcause("Handling a trap -> MCAUSE=0x", mcause_code);
+                            // print_instruction;
                             `endif
                             status[3] <= 1'b1;
                             flush_pipe <= 1'b1;
@@ -765,16 +913,16 @@ module friscv_control
                         if (jalr | branching) begin
 
                             if (!cant_jump) begin
-                                `ifdef USE_SVL
-                                print_instruction;
+                                `ifdef TRACE_CONTROL
+                                // print_instruction;
                                 `endif
                                 pc_reg <= pc;
                             end
 
                             if (jump_branch && !cant_jump) begin
-                                `ifdef USE_SVL
-                                if (jalr) log.info("JALR");
-                                else      log.info("Branching");
+                                `ifdef TRACE_CONTROL
+                                // if (jalr) log.info("JALR");
+                                // else      log.info("Branching");
                                 `endif
                             end
 
@@ -784,12 +932,9 @@ module friscv_control
 
                         end else if (jal) begin
 
-                            `ifdef USE_SVL
-                                log.info("JAL");
-                            `endif
-
-                            `ifdef USE_SVL
-                            print_instruction;
+                            `ifdef TRACE_CONTROL
+                            // log.info("JAL");
+                            // print_instruction;
                             `endif
                             pc_reg <= pc;
                             flush_pipe <= 1'b1;
@@ -800,9 +945,9 @@ module friscv_control
 
                             // Reach an ECALL instruction, jump to trap handler
                             if (sys[`IS_ECALL] && !proc_busy && csr_ready) begin
-                                `ifdef USE_SVL
-                                print_instruction;
-                                log.info("ECALL -> Jump to trap handler");
+                                `ifdef TRACE_CONTROL
+                                // print_instruction;
+                                // log.info("ECALL -> Jump to trap handler");
                                 `endif
                                 status[0] <= 1'b1;
                                 flush_pipe <= 1'b1;
@@ -811,9 +956,9 @@ module friscv_control
 
                             // Reach an EBREAK instruction, need to stall the core
                             end else if (sys[`IS_EBREAK]) begin
-                                `ifdef USE_SVL
-                                print_instruction;
-                                log.info("EBREAK -> Stop the processor");
+                                `ifdef TRACE_CONTROL
+                                // print_instruction;
+                                // log.info("EBREAK -> Stop the processor");
                                 `endif
                                 status[1] <= 1'b1;
                                 arvalid <= 1'b0;
@@ -821,9 +966,9 @@ module friscv_control
 
                             // Reach a MRET instruction, jump to exception return
                             end else if (sys[`IS_MRET] && !proc_busy && csr_ready) begin
-                                `ifdef USE_SVL
-                                print_instruction;
-                                log.info("MRET -> Machine Return");
+                                `ifdef TRACE_CONTROL
+                                // print_instruction;
+                                // log.info("MRET -> Machine Return");
                                 `endif
                                 status[2] <= 1'b1;
                                 flush_pipe <= 1'b1;
@@ -833,9 +978,9 @@ module friscv_control
                             // Reach a FENCE.i instruction, need to flush the cache
                             // the instruction pipeline
                             end else if (fence[`IS_FENCEI]) begin
-                                `ifdef USE_SVL
-                                print_instruction;
-                                log.info("FENCE.i -> Start iCache flushing");
+                                `ifdef TRACE_CONTROL
+                                // print_instruction;
+                                // log.info("FENCE.i -> Start iCache flushing");
                                 `endif
                                 arvalid <= 1'b0;
                                 pc_reg <= pc;
@@ -845,9 +990,9 @@ module friscv_control
                             end else if (sys[`IS_WFI] && !proc_busy && csr_ready) begin
 
                                 if ({sb_msie,sb_mtie,sb_meie} != 3'b0) begin
-                                    `ifdef USE_SVL
-                                    print_instruction;
-                                    log.info("WFI -> Stall and wait for interrupt");
+                                    `ifdef TRACE_CONTROL
+                                    // print_instruction;
+                                    // log.info("WFI -> Stall and wait for interrupt");
                                     `endif
                                     status[4] <= 1'b1;
                                     flush_pipe <= 1'b1;
@@ -861,16 +1006,16 @@ module friscv_control
 
                             // CSR instructions
                             end else if (sys[`IS_CSR] && !cant_sys) begin
-                                `ifdef USE_SVL
-                                print_instruction;
+                                `ifdef TRACE_CONTROL
+                                // print_instruction;
                                 `endif
                                 flush_pipe <= 1'b0;
                                 pc_reg <= pc;
 
                             // FENCE instruction (not supported)
                             end else if (!proc_busy && csr_ready) begin
-                                `ifdef USE_SVL
-                                print_instruction;
+                                `ifdef TRACE_CONTROL
+                                // print_instruction;
                                 `endif
                                 flush_pipe <= 1'b0;
                                 pc_reg <= pc;
@@ -878,8 +1023,8 @@ module friscv_control
 
                         // LUI and AUIPC execution, done in this module
                         end else if (lui_auipc && !cant_lui_auipc) begin
-                            `ifdef USE_SVL
-                            print_instruction;
+                            `ifdef TRACE_CONTROL
+                            // print_instruction;
                             `endif
                             flush_pipe <= 1'b0;
                             pc_reg <= pc;
@@ -888,8 +1033,8 @@ module friscv_control
                         end else if (processing) begin
 
                             if (!cant_process) begin
-                                `ifdef USE_SVL
-                                print_instruction;
+                                `ifdef TRACE_CONTROL
+                                // print_instruction;
                                 `endif
                                 flush_pipe <= 1'b0;
                                 pc_reg <= pc;
@@ -907,8 +1052,8 @@ module friscv_control
                 FENCE_I: begin
                     flush_blocks <= 1'b1;
                     if (flush_ack) begin
-                        `ifdef USE_SVL
-                        log.info("FENCE.i execution done");
+                        `ifdef TRACE_CONTROL
+                        // log.info("FENCE.i execution done");
                         `endif
                         flush_blocks <= 1'b0;
                         flush_pipe <= 1'b0;
@@ -923,8 +1068,8 @@ module friscv_control
                 ///////////////////////////////////////////////////////////////
                 WFI: begin
                     if (sb_msip&sb_msie || sb_mtip&sb_mtie || sb_meip&sb_meie) begin
-                        `ifdef USE_SVL
-                        print_mcause("WFI -> MCAUSE=0x", mcause_code);
+                        `ifdef TRACE_CONTROL
+                        // print_mcause("WFI -> MCAUSE=0x", mcause_code);
                         `endif
                         status <= 5'b0;
                         flush_pipe <= 1'b1;
@@ -961,7 +1106,7 @@ module friscv_control
     always @ (posedge aclk) begin
         if (flush_pipe || (cfsm==WFI && (sb_msip&sb_msie || sb_mtip&sb_mtie || sb_meip&sb_meie))) begin
             `ifdef TRACE_CONTROL
-            $fwrite(f, "@ %0t,%x\n", $realtime, sb_mepc);
+            // $fwrite(f, "@ %0t,%x\n", $realtime, sb_mepc);
             `endif
         end
     end
@@ -1268,7 +1413,7 @@ module friscv_control
                                    priv_mode == `MMODE & mpu_allow[`ALW_L]);
 
     //////////////////////////////////////////////////////////////////////
-    // Stores the incoming excpetions from processing. Can't handle
+    // Stores the incoming exceptions from processing. Can't handle
     // multiple exceptions on the same cycle but should not arrive
     //////////////////////////////////////////////////////////////////////
     friscv_scfifo

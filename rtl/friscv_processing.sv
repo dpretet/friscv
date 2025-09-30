@@ -215,7 +215,7 @@ module friscv_processing
     assign rd     = proc_instbus_p[`RD     +: `RD_W    ];
 
 
-    // Hazard free flags: ensure the memfy and m extension are not 
+    // Hazard free flags: ensure the memfy and M extension are not 
     // processing instruction which the rd outputs are not sources for
     // the next instruction. If not, an outstanding instruction can 
     // be issued and processed in parallel. 
@@ -241,7 +241,7 @@ module friscv_processing
     assign i_inst = ((opcode==`R_ARITH & (funct7==7'b0000000 | funct7==7'b0100000)) |
                       opcode==`I_ARITH);
 
-    assign ls_inst = opcode==`LOAD | opcode==`STORE;
+    assign ls_inst = opcode==`LOAD | opcode==`STORE | opcode==`AMO;
 
     assign m_inst = opcode==`MULDIV & funct7==7'b0000001;
 

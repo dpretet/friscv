@@ -33,7 +33,7 @@ main() {
     # Compile appplication if necessary
     if [ "$NO_COMPILE" -eq 0 ]; then
         if [ -n "$(find tests/ -maxdepth 1 -name \*.v -print -quit)" ] ; then
-            echo "INFO: Found compiled programs, execute ./run -C to rebuild from scratch"
+            echo "INFO: Found compiled programs, execute ./run.sh -c to rebuild from scratch"
         else
             set -e
             make -C ./tests

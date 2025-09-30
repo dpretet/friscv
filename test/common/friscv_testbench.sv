@@ -363,15 +363,15 @@ module friscv_testbench(
 
         lfsr32
         #(
-        .KEY ('1)
+            .KEY ('1)
         )
         irq_lsfr
         (
-        .aclk    (aclk),
-        .aresetn (aresetn),
-        .srst    (srst),
-        .en      (1'b1),
-        .lfsr    (xirq_lfsr)
+            .aclk    (aclk),
+            .aresetn (aresetn),
+            .srst    (srst),
+            .en      (1'b1),
+            .lfsr    (xirq_lfsr)
         );
 
         always @ (posedge aclk or negedge aresetn) begin
@@ -642,27 +642,27 @@ module friscv_testbench(
 
         friscv_uart
         #(
-        .ADDRW           (8),
-        .XLEN            (XLEN),
-        .RXTX_FIFO_DEPTH (128),
-        .CLK_DIVIDER     (4)
+            .ADDRW           (8),
+            .XLEN            (XLEN),
+            .RXTX_FIFO_DEPTH (128),
+            .CLK_DIVIDER     (4)
         )
         uartlink
         (
-        .aclk      (aclk),
-        .aresetn   (aresetn),
-        .srst      (srst),
-        .slv_en    (slv_en),
-        .slv_wr    (slv_wr),
-        .slv_addr  (slv_addr),
-        .slv_wdata (slv_wdata),
-        .slv_strb  (slv_strb),
-        .slv_rdata (slv_rdata),
-        .slv_ready (slv_ready),
-        .uart_rx   (uart_tx),
-        .uart_tx   (uart_rx),
-        .uart_rts  (uart_cts),
-        .uart_cts  (uart_rts)
+            .aclk      (aclk),
+            .aresetn   (aresetn),
+            .srst      (srst),
+            .slv_en    (slv_en),
+            .slv_wr    (slv_wr),
+            .slv_addr  (slv_addr),
+            .slv_wdata (slv_wdata),
+            .slv_strb  (slv_strb),
+            .slv_rdata (slv_rdata),
+            .slv_ready (slv_ready),
+            .uart_rx   (uart_tx),
+            .uart_tx   (uart_rx),
+            .uart_rts  (uart_cts),
+            .uart_cts  (uart_rts)
         );
 
         `else
@@ -870,12 +870,12 @@ module friscv_testbench(
     endgenerate
 
 
-    `ifdef NO_VCD
+    `ifdef NO_WAVE
     initial begin
-        `INFO("No VCD trace will be created");
+        `INFO("No waveform will be dumped");
     end
     `else
-    // Dump VCD, for both Verilator and Icarus
+    // Dump waveform, for both Verilator and Icarus
     initial begin
         `INFO("Tracing to friscv_testbench.fst");
         $dumpfile("friscv_testbench.fst");

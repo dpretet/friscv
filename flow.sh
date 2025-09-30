@@ -19,7 +19,7 @@ Blue='\033[0;34m'
 NC='\033[0m'
 
 TB="all"
-SIMULATOR="all"
+SIMULATOR="verilator"
 
 function printerror {
     echo -e "${Red}ERROR: ${1}${NC}"
@@ -123,10 +123,10 @@ check_setup() {
 
     source script/setup.sh
 
-    if [[ ! $(type iverilog) ]]; then
-        printerror "Icarus-Verilog is not installed"
-        exit 1
-    fi
+    # if [[ ! $(type iverilog) ]]; then
+    #     printerror "Icarus-Verilog is not installed"
+    #     exit 1
+    # fi
     if [[ ! $(type verilator) ]]; then
         printerror "Verilator is not installed"
         exit 1

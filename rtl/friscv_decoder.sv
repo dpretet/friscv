@@ -12,6 +12,7 @@ module friscv_decoder
         input  wire  [XLEN -1:0] instruction,
         output logic [7    -1:0] opcode,
         output logic [3    -1:0] funct3,
+        output logic [5    -1:0] funct5,
         output logic [7    -1:0] funct7,
         output logic [5    -1:0] rs1,
         output logic [5    -1:0] rs2,
@@ -31,7 +32,9 @@ module friscv_decoder
         output logic             processing,
         output logic             dec_error,
         output logic [4    -1:0] pred,
-        output logic [4    -1:0] succ
+        output logic [4    -1:0] succ,
+        output logic             aq,
+        output logic             rl
     );
 
     always @ (*) begin
@@ -127,7 +130,6 @@ module friscv_decoder
             // - mret   : sys[3]
             // - sret   : sys[4]
             // - wfi    : sys[5]
-            // TODO: possibly an issue in decoding, RD/RS1/FUNCT3 may be to check
             7'b1110011: begin
                 lui = 1'b0;
                 auipc = 1'b0;
@@ -213,6 +215,21 @@ module friscv_decoder
                 imm20 = 20'b0;
             end
 
+            // Atomic operations
+            7'b0101111: begin
+                lui = 1'b0;
+                auipc = 1'b0;
+                jal = 1'b0;
+                jalr = 1'b0;
+                branching = 1'b0;
+                sys = 6'b0;
+                fence = 2'b0;
+                processing = 1'b1;
+                dec_error = 1'b0;
+                imm12 = 12'b0;
+                imm20 = 20'b0;
+            end
+
             // Arithmetic
             7'b0010011: begin
                 lui = 1'b0;
@@ -262,6 +279,7 @@ module friscv_decoder
 
         opcode = instruction[6:0];
         funct3 = instruction[14:12];
+        funct5 = instruction[31:27];
         funct7 = instruction[31:25];
         rs1 = instruction[19:15];
         rs2 = instruction[24:20];
@@ -271,6 +289,8 @@ module friscv_decoder
         shamt = instruction[24:20];
         pred = instruction[23:20];
         succ = instruction[27:24];
+        aq = instruction[25];
+        rl = instruction[24];
 
     end
 

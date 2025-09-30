@@ -8,7 +8,7 @@
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 //
-// Memory controller handling data transfer for LOAD / STORE instructions.
+// Memory controller handling data transfer for LOAD / STORE instructions and atomic operations.
 //
 // The module transforms ISA LOAD/STORE instructions in AXI4-lite Read/Write requests. The module
 // handles outstanding requests as the AMBA protocol permits it and apply AMBA ordering rules being
@@ -26,7 +26,7 @@
 //
 // '''
 //
-// The module uses a single AXI4-lite ID, setup with AXI_ID_MASK. The FSM handles outstanding
+// The module uses a single AXI4 ID, setup with AXI_ID_MASK. The FSM handles outstanding
 // requests in both directions, read and write, and wait for a direction received all its
 // completions to serve requests in another direction. The module provides flags indicating
 // pending read/write requests to sequence instructions into the processing module.
@@ -143,6 +143,7 @@ module friscv_memfy
     logic signed [XLEN        -1:0] addr;
     logic        [`OPCODE_W   -1:0] opcode;
     logic        [`FUNCT3_W   -1:0] funct3;
+    logic        [`FUNCT5_W   -1:0] funct5;
     logic        [`RS1_W      -1:0] rs1;
     logic        [`RS2_W      -1:0] rs2;
     logic        [`RD_W       -1:0] rd;
@@ -155,6 +156,8 @@ module friscv_memfy
     logic        [`PRIV_W     -1:0] priv;
     logic        [`PRIV_W     -1:0] mpp;
     logic                           mprv;
+    logic                           aq;
+    logic                           rl;
     logic                           priv_bit;
     logic        [3           -1:0] aprot;
 
@@ -210,17 +213,20 @@ module friscv_memfy
     //
     ///////////////////////////////////////////////////////////////////////////
 
-    assign opcode = memfy_instbus[`OPCODE   +: `OPCODE_W  ];
-    assign funct3 = memfy_instbus[`FUNCT3   +: `FUNCT3_W  ];
-    assign rs1    = memfy_instbus[`RS1      +: `RS1_W     ];
-    assign rs2    = memfy_instbus[`RS2      +: `RS2_W     ];
-    assign rd     = memfy_instbus[`RD       +: `RD_W      ];
-    assign imm12  = memfy_instbus[`IMM12    +: `IMM12_W   ];
-    assign pc     = memfy_instbus[`PC       +: `PC_W      ];
-    assign inst   = memfy_instbus[`INST     +: `INST_W    ];
-    assign priv   = memfy_instbus[`PRIV     +: `PRIV_W    ];
-    assign mpp    = memfy_instbus[`MPP      +: `PRIV_W    ];
-    assign mprv   = memfy_instbus[`MPRV                   ];
+    assign opcode = memfy_instbus[`OPCODE +: `OPCODE_W];
+    assign funct3 = memfy_instbus[`FUNCT3 +: `FUNCT3_W];
+    assign funct5 = memfy_instbus[`FUNCT5 +: `FUNCT5_W];
+    assign rs1    = memfy_instbus[`RS1    +: `RS1_W   ];
+    assign rs2    = memfy_instbus[`RS2    +: `RS2_W   ];
+    assign rd     = memfy_instbus[`RD     +: `RD_W    ];
+    assign imm12  = memfy_instbus[`IMM12  +: `IMM12_W ];
+    assign pc     = memfy_instbus[`PC     +: `PC_W    ];
+    assign inst   = memfy_instbus[`INST   +: `INST_W  ];
+    assign priv   = memfy_instbus[`PRIV   +: `PRIV_W  ];
+    assign mpp    = memfy_instbus[`MPP    +: `PRIV_W  ];
+    assign mprv   = memfy_instbus[`MPRV               ];
+    assign aq     = memfy_instbus[`AQ                 ];
+    assign rl     = memfy_instbus[`RL                 ];
 
 
     ///////////////////////////////////////////////////////////////////////////

@@ -43,8 +43,8 @@ int main(int argc, char** argv, char** env) {
     // "TOP" will be the hierarchical name of the module.
     const std::unique_ptr<Vfriscv_testbench> top{new Vfriscv_testbench{contextp.get(), "friscv_testbench"}};
 
-    top->trace(tfp, 99);  // Depth of 99 levels
-    tfp->open("waveform.fst");  // Open FST file
+    // top->trace(tfp, 99);  // Depth of 99 levels
+    // tfp->open("waveform.fst");  // Open FST file
 
     top->aclk = 0;
     top->aresetn = 0;
