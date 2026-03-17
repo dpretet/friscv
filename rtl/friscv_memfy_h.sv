@@ -4,6 +4,13 @@
 `ifndef MEMFY_H
 `define MEMFY_H
 
+
+    // AXI4 return code
+    `define OKAY   2'b00
+    `define EXOKAY 2'b01
+    `define SLVERR 2'b10
+    `define DECERR 2'b11
+
     ///////////////////////////////////////////////////////////////////////////
     //
     // AXI Alignment Functions

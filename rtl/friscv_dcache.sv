@@ -274,7 +274,9 @@ module friscv_dcache
 
     end else begin: BLK_FETCHER_ONLY
 
+        assign memfy_arvalid_io = '0;
         assign memfy_arvalid_blk = memfy_arvalid;
+        assign memfy_arready_w = '0;
         assign memfy_arready = memfy_arready_blk;
         assign memfy_arid_w = memfy_arid;
 

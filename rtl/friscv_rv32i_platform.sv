@@ -41,6 +41,8 @@ module friscv_rv32i_platform
         parameter F_EXTENSION       = 0,
         // Multiply/Divide extension support
         parameter M_EXTENSION       = 0,
+        // Support Atomic Operation Extension
+        parameter A_EXTENSION       = 0,
         // Support hypervisor mode
         parameter HYPERVISOR_MODE   = 0,
         // Support supervisor mode
@@ -389,6 +391,7 @@ module friscv_rv32i_platform
         .XLEN                       (XLEN),
         .M_EXTENSION                (M_EXTENSION),
         .F_EXTENSION                (F_EXTENSION),
+        .A_EXTENSION                (A_EXTENSION),
         .HYPERVISOR_MODE            (HYPERVISOR_MODE),
         .SUPERVISOR_MODE            (SUPERVISOR_MODE),
         .USER_MODE                  (USER_MODE),

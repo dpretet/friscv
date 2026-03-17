@@ -24,7 +24,7 @@
 module friscv_div
 
     #(
-        parameter WIDTH  = 32
+        parameter WIDTH = 32
     )(
         // clock & reset
         input  wire                       aclk,

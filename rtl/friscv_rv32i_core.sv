@@ -40,6 +40,8 @@ module friscv_rv32i_core
         parameter F_EXTENSION       = 0,
         // Multiply/Divide extension support
         parameter M_EXTENSION       = 0,
+        // Support Atomic Operation Extension
+        parameter A_EXTENSION       = 0,
         // Support hypervisor mode
         parameter HYPERVISOR_MODE   = 0,
         // Support supervisor mode
@@ -48,7 +50,7 @@ module friscv_rv32i_core
         parameter USER_MODE         = 0,
         // Insert a pipeline on instruction bus coming from the controller
         parameter PROCESSING_BUS_PIPELINE = 0,
-        // Timeout applied for WFI 
+        // Timeout applied for WFI
         parameter WFI_TW = 100,
 
         ////////////////////////////////////////////////////////////////////////
@@ -200,7 +202,7 @@ module friscv_rv32i_core
     // Parameters and signals
     //////////////////////////////////////////////////////////////////////////
 
-    localparam NB_ALU_UNIT = 2 + M_EXTENSION + F_EXTENSION;
+    localparam NB_ALU_UNIT = 2; // + M_EXTENSION + F_EXTENSION;
     localparam MAX_ALU_UNIT = 4;
 
     parameter PERF_REG_W  = 32;
@@ -667,7 +669,7 @@ module friscv_rv32i_core
     // MPU, PMP + PMA CSRs
     ///////////////////////////////////////
 
-    friscv_mpu 
+    friscv_mpu
     #(
         .ILEN           (ILEN),
         .XLEN           (XLEN),
@@ -677,7 +679,7 @@ module friscv_rv32i_core
         .MMU_SUPPORT    (MMU_SUPPORT),
         .AXI_ADDR_W     (AXI_ADDR_W)
     )
-    mpu 
+    mpu
     (
         .aclk       (aclk),
         .aresetn    (aresetn),
@@ -702,6 +704,7 @@ module friscv_rv32i_core
         .XLEN              (XLEN),
         .F_EXTENSION       (F_EXTENSION),
         .M_EXTENSION       (M_EXTENSION),
+        .A_EXTENSION       (A_EXTENSION),
         .RV32E             (RV32E),
         .AXI_ADDR_W        (AXI_ADDR_W),
         .AXI_ID_W          (AXI_ID_W),

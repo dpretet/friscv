@@ -10,26 +10,16 @@
 //
 // Memory controller handling data transfer for LOAD / STORE instructions and atomic operations.
 //
-// The module transforms ISA LOAD/STORE instructions in AXI4-lite Read/Write requests. The module
-// handles outstanding requests as the AMBA protocol permits it and apply AMBA ordering rules being
-// for a master using a single ID. Follow AMBA specification about ordering model:
+// The module transforms ISA LOAD/STORE instructions in AXI4-lite Read/Write requests.
 //
-// '''
-//   - Transactions to any single peripheral device, must arrive at the peripheral in the order in
-//     which they are issued, regardless of the addresses of the transactions.
-//   - Memory transactions that use the same, or overlapping, addresses must arrive at the memory in
-//     the order in which they are issued.
-//   - Read and write address channels are independent and in this specification, are defined to be
-//     in different directions. If an ordering relationship is required between two transactions with
-//     the same ID that are in different directions, then a master must wait to receive a response
-//     to the first transaction before issuing the second transaction.
+// The module uses a single AXI4 ID, setup with AXI_ID_MASK, to ensure in-order load/store.
+// It uses AXI_ID_MASK + 1 for atomic operation access.
 //
-// '''
+// The FSM handles outstanding requests in both directions, read and write, and wait for a direction
+// received all its completions to serve requests in another direction.
 //
-// The module uses a single AXI4 ID, setup with AXI_ID_MASK. The FSM handles outstanding
-// requests in both directions, read and write, and wait for a direction received all its
-// completions to serve requests in another direction. The module provides flags indicating
-// pending read/write requests to sequence instructions into the processing module.
+// The module provides flags indicating pending read/write requests to sequence instructions
+// into the processing module.
 //
 // This module doesn't handle unaligned transfer, it will serve them anyway but will forward an
 // exception to the central controller thru a dedicated bus.
@@ -40,17 +30,17 @@ module friscv_memfy
 
     #(
         // Architecture selection
-        parameter XLEN              = 32,
+        parameter XLEN = 32,
         // Number of integer registers (RV32I = 32, RV32E = 16)
-        parameter NB_INT_REG        = 32,
+        parameter NB_INT_REG = 32,
         // Address bus width defined for both control and AXI4 address signals
-        parameter AXI_ADDR_W        = XLEN,
+        parameter AXI_ADDR_W = XLEN,
         // AXI ID width, setup by default to 8 and unused
-        parameter AXI_ID_W          = 8,
+        parameter AXI_ID_W = 8,
         // AXI4 data width, for instruction and a data bus
-        parameter AXI_DATA_W        = XLEN,
-        // ID used to identify the dta abus in the infrastructure
-        parameter AXI_ID_MASK       = 'h20,
+        parameter AXI_DATA_W = XLEN,
+        // ID used to identify the data abus in the fabric
+        parameter AXI_ID_MASK = 'h20,
         // Maximum outstanding request supported
         parameter MAX_OR = 8,
         // Add pipeline on Rd write stage
@@ -63,6 +53,8 @@ module friscv_memfy
         parameter USER_MODE = 0,
         // PMP / PMA supported
         parameter MPU_SUPPORT = 0,
+        // Support Atomic Operation Extension
+        parameter A_EXTENSION = 0,
         // IO regions for direct read/write access
         parameter IO_MAP_NB = 1,
         // IO address ranges, organized by memory region as END-ADDR_START-ADDR:
@@ -142,14 +134,15 @@ module friscv_memfy
     // instruction bus
     logic signed [XLEN        -1:0] addr;
     logic        [`OPCODE_W   -1:0] opcode;
+    logic        [`OPCODE_W   -1:0] opcode_r;
     logic        [`FUNCT3_W   -1:0] funct3;
+    logic        [`FUNCT3_W   -1:0] funct3_r;
     logic        [`FUNCT5_W   -1:0] funct5;
+    logic        [`FUNCT5_W   -1:0] funct5_r;
     logic        [`RS1_W      -1:0] rs1;
     logic        [`RS2_W      -1:0] rs2;
     logic        [`RD_W       -1:0] rd;
     logic        [`IMM12_W    -1:0] imm12;
-    logic        [`OPCODE_W   -1:0] opcode_r;
-    logic        [`FUNCT3_W   -1:0] funct3_r;
     logic        [`RD_W       -1:0] rd_r;
     logic        [`INST_W     -1:0] inst;
     logic        [`PC_W       -1:0] pc;
@@ -171,6 +164,7 @@ module friscv_memfy
     logic        [IO_MAP_NB   -1:0] io_map_hit;
     logic                           is_io_req;
     logic        [4           -1:0] acache;
+    logic                           alock;
 
     // Outstanding request counters
     logic        [MAX_OR_W    -1:0] wr_or_cnt;
@@ -196,11 +190,23 @@ module friscv_memfy
     logic                           store_access_fault;
 
     // Central FSM
-    logic                           memfy_ready_fsm;
-    logic                           stall_bus;
+    logic                           fsm_ready;
+    logic                           stalled_bus;
+    logic                           is_amo;
+    logic                           is_amo_r;
+    logic                           amo_cpl;
+
+    // AMO
+    logic        [5           -1:0] amo_rd;
+    logic        [XLEN        -1:0] amo_reg;
+    logic        [XLEN        -1:0] amo_reg_r;
+    logic        [XLEN        -1:0] amo_mem;
+
+    logic                           is_st, is_st_r;
+    logic                           is_ld, is_ld_r;
 
     typedef enum logic[1:0] {
-        IDLE = 0,
+        XFER = 0,
         WAIT = 1,
         SERVE = 2
     } seq_fsm;
@@ -230,65 +236,117 @@ module friscv_memfy
 
 
     ///////////////////////////////////////////////////////////////////////////
+    // Opcode decoder
+    ///////////////////////////////////////////////////////////////////////////
+    always_comb begin
+
+        // Regular store
+        if (opcode == `STORE)                       is_st = '1;
+        // Atomic op, store conditional
+        else if (opcode == `AMO && funct5 == `SC_W) is_st = '1;
+        else                                        is_st = '0;
+
+        // Regular load
+        if (opcode == `LOAD)                                           is_ld = '1;
+        // Atomic op, load reserved
+        else if (opcode == `AMO && funct5 == `LR_W)                    is_ld = '1;
+        // Any other atomic op, read-modify-write
+        else if (opcode == `AMO && funct5 != `LR_W && funct5 != `SC_W) is_ld = '1;
+        else                                                           is_ld = '0;
+
+    end
+
+
+    ///////////////////////////////////////////////////////////////////////////
     //
-    // Control circuit managing memory and register accesses
+    // Control circuit managing memory accesses. This FSM is separated in
+    // three stages:
+    //
+    // - XFER: acknowledges the instruction bus and drives the AXI bus
+    // - WAIT: acknowledged the instruction bus, drove the bus but READY wasn't
+    //         asserted so wait for it
+    //         Come from from XFER state
+    // - SERVE: manages the AXI bus READY handshake and VALID assertions
+    //         Come from from XFER or WAIT states
+    //
+    // This FSM is useful to put in place a FFD stage between the instruction
+    // bus and the AXI bus to close the timing.
     //
     ///////////////////////////////////////////////////////////////////////////
 
     always @ (posedge aclk or negedge aresetn) begin
 
         if (aresetn == 1'b0) begin
-            awaddr <= {AXI_ADDR_W{1'b0}};
-            awcache <= 4'b0;
-            awvalid <= 1'b0;
+            state <= XFER;
+            fsm_ready <= '0;
+            awaddr <= '0;
+            awcache <= '0;
+            awvalid <= '0;
             awprot <= '0;
             arprot <= '0;
             awlock <= '0;
             arlock <= '0;
-            wvalid <= 1'b0;
-            wdata <= {XLEN{1'b0}};
-            wstrb <= {XLEN/8{1'b0}};
-            araddr <= {AXI_ADDR_W{1'b0}};
-            arvalid <= 1'b0;
-            arcache <= 4'b0;
-            opcode_r <= 7'b0;
-            state <= IDLE;
-            memfy_ready_fsm <= 1'b0;
+            wvalid <= '0;
+            wdata <= '0;
+            wstrb <= '0;
+            araddr <= '0;
+            arvalid <= '0;
+            arcache <= '0;
+            opcode_r <= '0;
+            funct5_r <= '0;
+            amo_cpl <= '0;
+            amo_rd <= '0;
+            is_amo_r <= '0;
+            is_ld_r <= '0;
+            is_st_r <= '0;
         end else if (srst == 1'b1) begin
-            awaddr <= {AXI_ADDR_W{1'b0}};
-            awvalid <= 1'b0;
+            state <= XFER;
+            fsm_ready <= '0;
+            awaddr <= '0;
+            awcache <= '0;
+            awvalid <= '0;
             awprot <= '0;
             arprot <= '0;
             awlock <= '0;
             arlock <= '0;
-            wvalid <= 1'b0;
-            wdata <= {XLEN{1'b0}};
-            wstrb <= {XLEN/8{1'b0}};
-            araddr <= {AXI_ADDR_W{1'b0}};
-            arvalid <= 1'b0;
-            arcache <= 4'b0;
-            opcode_r <= 7'b0;
-            state <= IDLE;
-            memfy_ready_fsm <= 1'b0;
+            wvalid <= '0;
+            wdata <= '0;
+            wstrb <= '0;
+            araddr <= '0;
+            arvalid <= '0;
+            arcache <= '0;
+            opcode_r <= '0;
+            funct5_r <= '0;
+            amo_cpl <= '0;
+            amo_rd <= '0;
+            is_amo_r <= '0;
+            is_ld_r <= '0;
+            is_st_r <= '0;
         end else begin
 
             case (state)
 
-                // IDLE: Manages LOAD or STORE instruction issue to instruction controller
+                // XFER: Manages LOAD or STORE instruction issued to instruction controller
+                //
+                // The FSM mainly lives in XFER state because the AXI bus most of the time
+                // always asserts its READY signal.
+                //
                 // The state is composed by two sub-states:
                 //    - STALL: FSM is stopped because last command issued has
-                //             not been acknowledged by the slave.
+                //             not been acknowledged yet by the slave.
                 //    - READY: FSM will send the request if the instruction bus
                 //             is loaded
                 default: begin
 
-                    // IDLE.STALL state:
+                    // XFER.STALL state:
                     // -----------------
                     // Handles a situation during which the address or data
                     // channel is not ready to accept a transaction.
-                    // For write, we stop handshaking a channel which acknowledged
-                    // For read, only the address channel could have fail, we
-                    // do nothing. FSM is not ready anymore and we move to SERVE
+                    // Arrives here once:
+                    // - we were in XFER.READY
+                    // - we issued a request (either read or write)
+                    // - AXI interface READY was asserted
+                    // - but AXI interface is no more ready when AVALID is raised 1 cycle later
                     if ((arvalid && !arready) ||
                         (awvalid && !awready) || (wvalid && !wready))
                     begin
@@ -299,64 +357,92 @@ module friscv_memfy
                         if (wready) wvalid <= 1'b0;
 
                         state <= SERVE;
-                        memfy_ready_fsm <= 1'b0;
+                        fsm_ready <= 1'b0;
 
-                    // IDLE.READY state:
+                    // XFER.READY state:
                     // -----------------
-                    // Will forward a R/W transaction if the instruction is loaded
-                    end else if (memfy_valid) begin
+                    // Will forward a R/W transaction if the instruction bus is loaded
+                    // or will continue to execute an AMO if in the STORE phase
+                    end else if (memfy_valid || amo_cpl) begin
 
-                        awaddr <= addr;
-                        araddr <= addr;
-                        awcache <= acache;
-                        arcache <= acache;
-                        awprot <= aprot;
-                        arprot <= aprot;
+                        if (!amo_cpl) begin
+                            awaddr <= addr;
+                            araddr <= addr;
+                            awcache <= acache;
+                            arcache <= acache;
+                            awprot <= aprot;
+                            arprot <= aprot;
+                            awlock <= alock;
+                            arlock <= alock;
+                            opcode_r <= opcode;
+                            funct5_r <= funct5;
+                            is_amo_r <= is_amo;
+                            is_st_r <= is_st;
+                            is_ld_r <= is_ld;
+                            amo_rd <= rd;
+                        end
 
-                        opcode_r <= opcode;
+                        // STORE instruction or the second phase of an AMO
+                        if ((is_st || amo_cpl) && write_allowed) begin
 
-                        // STORE
-                        if (opcode==`STORE && write_allowed) begin
+                            // If executing an AMO read-modify-write,
+                            // erase this flag to restart from scratch next instruction
+                            amo_cpl <= '0;
 
                             if (waiting_rd_cpl || arvalid) begin
                                 state <= WAIT;
                                 awvalid <= 1'b0;
                                 wvalid <= 1'b0;
-                                memfy_ready_fsm <= 1'b0;
+                                fsm_ready <= 1'b0;
 
                             end else if (!awready || !wready) begin
                                 state <= SERVE;
                                 awvalid <= 1'b1;
                                 wvalid <= 1'b1;
-                                memfy_ready_fsm <= 1'b0;
+                                fsm_ready <= 1'b0;
 
                             end else begin
                                 awvalid <= 1'b1;
                                 wvalid <= 1'b1;
                             end
 
-                            wdata <= get_axi_data(memfy_rs2_val, addr[1:0]);
-                            wstrb <= get_axi_strb(funct3, addr[1:0]);
+                            // TODO: check of AMO manipulates only Word or Double-Word
+                            if (amo_cpl) begin
+                                wdata <= amo_mem;
+                                wstrb <= '1;
+                            end else begin
+                                wdata <= get_axi_data(memfy_rs2_val, addr[1:0]);
+                                wstrb <= get_axi_strb(funct3, addr[1:0]);
+                            end
 
                             arvalid <= 1'b0;
 
                         // LOAD
-                        end else if (opcode==`LOAD && read_allowed) begin
+                        end else if (is_ld && read_allowed) begin
+
+                            if (!is_amo)
+                                amo_cpl <= '0;
+                            else if (funct5 == `LR_W || funct5 == `SC_W)
+                                amo_cpl <= '0;
+                            else
+                                amo_cpl <= '1;
+
                             if (waiting_wr_cpl || awvalid) begin
                                 state <= WAIT;
                                 arvalid <= 1'b0;
-                                memfy_ready_fsm <= 1'b0;
+                                fsm_ready <= 1'b0;
                             end else begin
                                 arvalid <= 1'b1;
-                                memfy_ready_fsm <= 1'b1;
+                                fsm_ready <= 1'b1;
                             end
+
                             awvalid <= 1'b0;
                             wvalid <= 1'b0;
-                            wstrb <= {XLEN/8{1'b0}};
+                            wstrb <= '0;
 
                         // LOAD / STORE misaligned or not allowed
                         end else begin
-                            memfy_ready_fsm <= 1'b1;
+                            fsm_ready <= 1'b1;
                             awvalid <= 1'b0;
                             wvalid <= 1'b0;
                             wstrb <= {XLEN/8{1'b0}};
@@ -365,7 +451,7 @@ module friscv_memfy
 
                     // Wait for an instruction
                     end else begin
-                        memfy_ready_fsm <= 1'b1;
+                        fsm_ready <= 1'b1;
                         awvalid <= 1'b0;
                         wvalid <= 1'b0;
                         wstrb <= {XLEN/8{1'b0}};
@@ -373,16 +459,18 @@ module friscv_memfy
                     end
                 end
 
-                // SERVE: LOAD or STORE instructions
+                // SERVE: LOAD or STORE finalization over the AXI bus. We arrived here
+                //        because the AXI bus wan't completly ready when we handshaked
+                //        with the instruction bus
                 SERVE: begin
 
-                    //LOAD
-                    if (opcode_r==`LOAD) begin
+                    // Any load
+                    if (is_ld_r) begin
                         // Stop the request once accepted
                         if (arready) arvalid <= 1'b0;
-                        state <= IDLE;
-                        memfy_ready_fsm <= 1'b1;
-                    // STORE
+                        state <= XFER;
+                        fsm_ready <= 1'b1;
+                    // Any store
                     end else begin
 
                         // Stop the request once accepted
@@ -394,8 +482,8 @@ module friscv_memfy
                             !awvalid && wready ||   // addr has been acked before data
                             awready && !wvalid      // addr is acked and data has been acked before
                         ) begin
-                            memfy_ready_fsm <= 1'b1;
-                            state <= IDLE;
+                            fsm_ready <= 1'b1;
+                            state <= XFER;
                         end
                     end
 
@@ -404,10 +492,10 @@ module friscv_memfy
                 // WAIT: Wait for all write completion have been received before moving to LOAD
                 WAIT: begin
 
-                    if (opcode_r==`LOAD && !waiting_wr_cpl) begin
+                    if (is_ld_r && !waiting_wr_cpl) begin
                         state <= SERVE;
                         arvalid <= 1'b1;
-                    end else if (opcode_r==`STORE && !waiting_rd_cpl) begin
+                    end else if ((is_st_r || amo_cpl) && !waiting_rd_cpl) begin
                         state <= SERVE;
                         awvalid <= 1'b1;
                         wvalid <= 1'b1;
@@ -418,13 +506,13 @@ module friscv_memfy
         end
     end
 
-    // Block any further requests if IDLE is IDLE.STALL, last request issued
+    // Block any further requests if XFER is XFER.STALL, last request issued
     // has not been yet acknowledged
-    assign stall_bus = (state==IDLE) & ((arvalid & !arready) | (awvalid & !awready) | (wvalid & !wready));
+    assign stalled_bus = (state==XFER) & ((arvalid & !arready) | (awvalid & !awready) | (wvalid & !wready));
 
-    // Continue to accept if IDLE.READY and didn't reach yet maximum of
+    // Continue to accept if XFER.READY and didn't reach yet maximum of
     // outstanding requests available
-    assign memfy_ready = memfy_ready_fsm & !rd_or_full & !stall_bus;
+    assign memfy_ready = fsm_ready & !rd_or_full & !stalled_bus;
 
 
     ///////////////////////////////////////////////////////////////////////////
@@ -433,7 +521,7 @@ module friscv_memfy
     //
     ///////////////////////////////////////////////////////////////////////////
 
-    assign push_rd_or = memfy_valid & memfy_ready & (opcode==`LOAD) & !load_misaligned;
+    assign push_rd_or = memfy_valid & memfy_ready & is_ld & !load_misaligned;
 
     friscv_scfifo
     #(
@@ -464,6 +552,44 @@ module friscv_memfy
         `endif
     end
 
+    ////////////////////////////////////////////////////////////////////////////
+    //
+    // Atomic Operation Support
+    //
+    ////////////////////////////////////////////////////////////////////////////
+
+    generate if (A_EXTENSION) begin: A_SUPPORT
+
+        friscv_amo_op amo_op_inst (
+            .aclk       (aclk),
+            .aresetn    (aresetn),
+            .srst       (srst),
+            .opcode     (funct5_r),
+            .op1        (rdata),
+            .op2        (memfy_rs2_val),
+            .rd         (amo_reg),
+            .mem        (amo_mem)
+        );
+
+        assign is_amo = (opcode == `AMO) ? '1 : '0;
+
+        // Store AMO register value for later use if write receives
+        // EXOKAY to update the processor register
+        always @ (posedge aclk or negedge aresetn) begin
+            if (!aresetn) amo_reg_r <= '0;
+            else if (srst) amo_reg_r <= '0;
+            else if (rvalid & rready) amo_reg_r <= amo_reg;
+        end
+
+    end else begin : NO_A_SUPPORT
+        assign amo_reg = '0;
+        assign amo_reg_r = '0;
+        assign amo_mem = '0;
+        assign is_amo = '0;
+    end
+    endgenerate
+
+
 
     ////////////////////////////////////////////////////////////////////////
     //
@@ -482,19 +608,19 @@ module friscv_memfy
         end
     end
 
-    for (genvar i=1;i<NB_INT_REG;i++) begin
+    for (genvar i=1;i<NB_INT_REG;i++) begin: REGISTERS_OR_TRACKING
         always @ (posedge aclk or negedge aresetn) begin
             if (!aresetn) begin
                 regs_or[i] <= '0;
             end else if (srst) begin
                 regs_or[i] <= '0;
             end else begin
-                if ((memfy_valid && memfy_ready && opcode==`LOAD && !max_rd_or && rd == i[4:0] && mpu_allow[`ALW_R] && !load_misaligned) &&
+                if ((memfy_valid && memfy_ready && is_ld && !max_rd_or && rd == i[4:0] && mpu_allow[`ALW_R] && !load_misaligned) &&
                    !(rvalid & rready && rd_r==i[4:0]))
                begin
                     regs_or[i] <= regs_or[i] + 1;
 
-                end else if (!(memfy_valid && memfy_ready && opcode==`LOAD && !max_rd_or && rd == i[4:0]) &&
+                end else if (!(memfy_valid && memfy_ready && is_ld && !max_rd_or && rd == i[4:0]) &&
                               (rvalid & rready && rd_r==i[4:0]))
                 begin
                     regs_or[i] <= regs_or[i] - 1;
@@ -503,7 +629,7 @@ module friscv_memfy
         end
     end
 
-    for (genvar i=0;i<NB_INT_REG;i++) begin
+    for (genvar i=0;i<NB_INT_REG;i++) begin: REGISTERS_USAGE
         assign memfy_regs_sts[i] = regs_or[i] == '0;
     end
 
@@ -527,31 +653,31 @@ module friscv_memfy
         end else begin
 
             // Write xfers tracker
-            if (memfy_valid && memfy_ready && opcode==`STORE && !bvalid && !max_wr_or && write_allowed) begin
+            if (memfy_valid && memfy_ready && is_st && !bvalid && !max_wr_or && write_allowed) begin
                 wr_or_cnt <= wr_or_cnt + 1'b1;
-            end else if (!(memfy_valid && memfy_ready && opcode==`STORE) && bvalid && bready && wr_or_cnt!={MAX_OR_W{1'b0}}) begin
+            end else if (!(memfy_valid && memfy_ready && is_st) && bvalid && bready && wr_or_cnt!={MAX_OR_W{1'b0}}) begin
                 wr_or_cnt <= wr_or_cnt - 1'b1;
             end
 
             // Read xfers tracker
-            if (memfy_valid && memfy_ready && opcode==`LOAD && !memfy_rd_wr && !max_rd_or && read_allowed) begin
+            if (memfy_valid && memfy_ready && is_ld && !memfy_rd_wr && !max_rd_or && read_allowed) begin
                 rd_or_cnt <= rd_or_cnt + 1'b1;
-            end else if (!(memfy_valid && memfy_ready && opcode==`LOAD) && memfy_rd_wr && rd_or_cnt!={MAX_OR_W{1'b0}}) begin
+            end else if (!(memfy_valid && memfy_ready && is_ld) && memfy_rd_wr && rd_or_cnt!={MAX_OR_W{1'b0}}) begin
                 rd_or_cnt <= rd_or_cnt - 1'b1;
             end
 
             `ifdef TRACE_MEMFY
             //synthesis translate_off
             //synopsys translate_off
-            if ((memfy_valid && memfy_ready && opcode==`STORE && !bvalid && max_wr_or) begin
+            if ((memfy_valid && memfy_ready && is_st && !bvalid && max_wr_or) begin
                 $display("ERROR: (@%0t) %s: Reached maximum write OR number but continue to issue requests", $realtime, "MEMFY");
-            end else if (!(memfy_valid && memfy_ready && opcode==`STORE) && bvalid && bready && wr_or_cnt=={MAX_OR_W{1'b0}}) begin
+            end else if (!(memfy_valid && memfy_ready && is_st) && bvalid && bready && wr_or_cnt=={MAX_OR_W{1'b0}}) begin
                 $display("ERROR: (@%0t) %s: Freeing a write OR but counter is already 0", $realtime, "MEMFY");
             end
 
-            if (memfy_valid && memfy_ready && opcode==`LOAD && !memfy_rd_wr && && max_rd_or) begin
+            if (memfy_valid && memfy_ready && is_ld && !memfy_rd_wr && && max_rd_or) begin
                 $display("ERROR: (@%0t) %s: Reached maximum read OR number but continue to issue requests", $realtime, "MEMFY");
-            end else if (!(memfy_valid && memfy_ready && opcode==`LOAD) && memfy_rd_wr && rd_or_cnt=={MAX_OR_W{1'b0}}) begin
+            end else if (!(memfy_valid && memfy_ready && is_ld) && memfy_rd_wr && rd_or_cnt=={MAX_OR_W{1'b0}}) begin
                 $display("ERROR: (@%0t) %s: Freeing a read OR but counter is already 0", $realtime, "MEMFY");
             end
             //synopsys translate_on
@@ -566,7 +692,7 @@ module friscv_memfy
     assign waiting_wr_cpl = (wr_or_cnt!={MAX_OR_W{1'b0}} && !(wr_or_cnt=={{(MAX_OR_W-1){1'b0}}, 1'b1} & bvalid)) ? 1'b1 : 1'b0;
     assign waiting_rd_cpl = (rd_or_cnt!={MAX_OR_W{1'b0}} && !(rd_or_cnt=={{(MAX_OR_W-1){1'b0}}, 1'b1} & rvalid)) ? 1'b1 : 1'b0;
 
-    // Flags for externals
+    // Flags for outside modules
     assign memfy_pending_read = waiting_rd_cpl;
     assign memfy_pending_write = waiting_wr_cpl;
 
@@ -591,20 +717,39 @@ module friscv_memfy
             memfy_rd_strb <= {XLEN/8{1'b0}};
             memfy_rd_val <= {XLEN{1'b0}};
         end else begin
+            // Write into RD once the write channel handshakes with exclusive ack
+            if (amo_cpl) begin
+                memfy_rd_wr <= bvalid & bready & (bresp == `EXOKAY);
+                memfy_rd_addr <= amo_rd;
+                memfy_rd_strb <= '1;
+                memfy_rd_val <= amo_reg_r;
             // Write into RD once the read data channel handshakes
-            memfy_rd_wr <= rvalid & rready;
-            memfy_rd_addr <= rd_r;
-            memfy_rd_strb <= get_rd_strb(funct3_r, offset);
-            memfy_rd_val <= get_rd_val(funct3_r, rdata, offset);
+            end else begin
+                memfy_rd_wr <= rvalid & rready;
+                memfy_rd_addr <= rd_r;
+                memfy_rd_strb <= get_rd_strb(funct3_r, offset);
+                memfy_rd_val <= get_rd_val(funct3_r, rdata, offset);
+            end
         end
     end
 
     end else begin : RD_WR_COMB
 
-        assign memfy_rd_wr = rvalid & rready;
-        assign memfy_rd_addr = rd_r;
-        assign memfy_rd_strb = get_rd_strb(funct3_r, offset);
-        assign memfy_rd_val = get_rd_val(funct3_r, rdata, offset);
+        always @ (*) begin
+            // Write into RD once the write channel handshakes with exclusive ack
+            if (amo_cpl) begin
+                memfy_rd_wr = bvalid & bready & (bresp == `EXOKAY);
+                memfy_rd_addr = amo_rd;
+                memfy_rd_strb = '1;
+                memfy_rd_val = amo_reg_r;
+            // Write into RD once the read data channel handshakes
+            end else begin
+                memfy_rd_wr = rvalid & rready;
+                memfy_rd_addr = rd_r;
+                memfy_rd_strb = get_rd_strb(funct3_r, offset);
+                memfy_rd_val = get_rd_val(funct3_r, rdata, offset);
+            end
+        end
 
     end
     endgenerate
@@ -630,11 +775,11 @@ module friscv_memfy
     assign memfy_fenceinfo = 4'b0;
 
 
-    ////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////
     //
-    // Device/IO vs normal memory detection to ensure IO maps will not be cached
+    // Device/IO vs normal memory detection to ensure the access will not be cached
     //
-    ////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////
     generate
 
     if (IO_MAP_NB > 0) begin : IO_MAP_DEC
@@ -651,7 +796,6 @@ module friscv_memfy
 
     end
     endgenerate
-
 
     /*
 
@@ -693,24 +837,61 @@ module friscv_memfy
 
     */
 
-    assign acache = {2'b00, is_io_req, 1'b1};
+    generate if (A_EXTENSION) begin: A_SUPPORT_ACACHE
+        assign acache = {2'b00, (is_io_req | is_amo), 1'b1};
+    end else begin: NO_A_SUPPORT_ACACHE
+        assign acache = {2'b00, is_io_req, 1'b1};
+    end
+    endgenerate
+
 
     //////////////////////////////////////////////////////////////////////////
-    // Constant AXI4-lite signals
+    // ALOCK, driven high if an atomic op needs to be exectuted
     //////////////////////////////////////////////////////////////////////////
 
-    // Always use the same IDs to ensure in-order execution / completion
-    assign awid = AXI_ID_MASK;
-    assign arid = AXI_ID_MASK;
+    generate if (A_EXTENSION) begin: A_SUPPORT_ALOCK
+        assign alock = is_amo_r;
+    end else begin: NO_ALOCK
+        assign alock = '0;
+    end
+    endgenerate
 
-    // Access permissions
-    // [0] Unprivileged or privileged
-    // [1] Secure or Non-secure
-    // [2] Instruction or data
-    assign priv_bit = (priv == `MMODE);
-    assign aprot = {2'b00, priv_bit};
+    //////////////////////////////////////////////////////////////////////////
+    // IDs on used for regular accesses, another for atomic ops
+    // No out-of-order supported here, atomic ops are blocking the FSM
+    // until completly executed
+    //////////////////////////////////////////////////////////////////////////
 
-    // Completion are always accepted
+    generate if (A_EXTENSION) begin: A_SUPPORT_AID
+        assign awid = (is_amo) ? (AXI_ID_MASK | 'b1) : AXI_ID_MASK;
+        assign arid = (is_amo) ? (AXI_ID_MASK | 'b1) : AXI_ID_MASK;
+    end else begin : CONST_AID
+        assign awid = AXI_ID_MASK;
+        assign arid = AXI_ID_MASK;
+    end
+    endgenerate
+
+    //////////////////////////////////////////////////////////////////////////
+    // Privilege mode, only applicable if user mode is activated
+    //////////////////////////////////////////////////////////////////////////
+
+    generate if (USER_MODE) begin: UMODE_SUPPORT_APROT
+        // Access permissions
+        // [0] Unprivileged or privileged
+        // [1] Secure or Non-secure
+        // [2] Instruction or data
+        assign priv_bit = (priv == `MMODE);
+        assign aprot = {2'b00, priv_bit};
+    end else begin: NO_APROT
+        assign priv_bit = '0;
+        assign aprot = '0;
+    end
+    endgenerate
+
+    //////////////////////////////////////////////////////////////////////////
+    // Completion are always accepted, no back-pressure on memory / cache
+    //////////////////////////////////////////////////////////////////////////
+
     assign bready = 1'b1;
     assign rready = 1'b1;
 
@@ -724,9 +905,9 @@ module friscv_memfy
 
     generate if (USER_MODE) begin: UMODE_SUPPORT
 
-    // Check access fault if u-mode or m-mode setup with u-mode rights
-    assign check_access = (priv==`UMODE) || (priv==`MMODE && mpp==`UMODE && mprv) ||
-                                            (priv==`MMODE && mpu_allow[`ALW_L]);
+        // Check access fault if u-mode or m-mode setup with u-mode rights
+        assign check_access = (priv==`UMODE) || (priv==`MMODE && mpp==`UMODE && mprv) ||
+                                                (priv==`MMODE && mpu_allow[`ALW_L]);
 
     end else begin: NO_UMODE_SUPPORT
         assign check_access = 1'b1;
@@ -749,22 +930,22 @@ module friscv_memfy
     assign active_access = memfy_valid & memfy_ready;
 
     // LOAD is not XLEN-boundary aligned
-    assign load_misaligned = (opcode==`LOAD && (funct3==`LH || funct3==`LHU) &&
-                                (addr[1:0]==2'h3 || addr[1:0]==2'h1))           ? active_access :
-                             (opcode==`LOAD && funct3==`LW  && addr[1:0]!=2'b0) ? active_access :
-                                                                                  1'b0 ;
+    assign load_misaligned = (is_ld && (funct3==`LH || funct3==`LHU) &&
+                                (addr[1:0]==2'h3 || addr[1:0]==2'h1))   ? active_access :
+                             (is_ld && funct3==`LW  && addr[1:0]!=2'b0) ? active_access :
+                                                                          1'b0 ;
 
     // STORE is not XLEN-boundary aligned
-    assign store_misaligned = (opcode==`STORE && funct3==`SH &&
-                                (addr[1:0]==2'h3 || addr[1:0]==2'h1))            ? active_access :
-                              (opcode==`STORE && funct3==`SW && addr[1:0]!=2'b0) ? active_access :
-                                                                                   1'b0 ;
+    assign store_misaligned = (is_st && funct3==`SH &&
+                                (addr[1:0]==2'h3 || addr[1:0]==2'h1))   ? active_access :
+                              (is_st && funct3==`SW && addr[1:0]!=2'b0) ? active_access :
+                                                                          1'b0 ;
 
     // Load access outside an allowed region
-    assign load_access_fault = (opcode==`LOAD) & !mpu_allow[`ALW_R] & check_access & active_access;
+    assign load_access_fault = (is_ld) & !mpu_allow[`ALW_R] & check_access & active_access;
 
     // Store access outside an allowed region
-    assign store_access_fault = (opcode==`STORE) & !mpu_allow[`ALW_W] & check_access & active_access;
+    assign store_access_fault = (is_st) & !mpu_allow[`ALW_W] & check_access & active_access;
 
 
     // Shared bus routing back to control unit

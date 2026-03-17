@@ -16,6 +16,8 @@ module friscv_processing
         parameter F_EXTENSION       = 0,
         // Multiply/Divide extension support
         parameter M_EXTENSION       = 0,
+        // Support Atomic Operation Extension
+        parameter A_EXTENSION       = 0,
         // Reduced RV32 arch
         parameter RV32E             = 0,
         // Address bus width defined for both control and AXI4 address signals
@@ -319,6 +321,7 @@ module friscv_processing
     friscv_memfy
     #(
         .XLEN              (XLEN),
+        .A_EXTENSION       (A_EXTENSION),
         .NB_INT_REG        (NB_INT_REG),
         .MAX_OR            (DATA_OSTDREQ_NUM),
         .AXI_ADDR_W        (AXI_ADDR_W),
