@@ -1,5 +1,9 @@
 name: FRISCV
-on: [push]
+on:
+  push:
+    paths:
+      - 'rtl/**'
+      - 'test/**'
 jobs:
   Lint:
     runs-on: macos-latest
