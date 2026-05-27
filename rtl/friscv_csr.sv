@@ -62,30 +62,30 @@ module friscv_csr
         parameter MMU_SUPPORT = 0
     )(
         // Clock/reset interface
-        input  wire                    aclk,
-        input  wire                    aresetn,
-        input  wire                    srst,
+        input  wire                                  aclk,
+        input  wire                                  aresetn,
+        input  wire                                  srst,
         // Interrupts
-        input  wire                    ext_irq,
-        input  wire                    sw_irq,
-        input  wire                    timer_irq,
+        input  wire                                  ext_irq,
+        input  wire                                  sw_irq,
+        input  wire                                  timer_irq,
         // privilege bus, encoding current mode
-        input  wire  [4          -1:0] priv,
+        input  wire  [4                        -1:0] priv,
         // Instruction bus
-        input  wire                    valid,
-        output logic                   ready,
-        input  wire  [`INST_BUS_W-1:0] instbus,
+        input  wire                                  valid,
+        output logic                                 ready,
+        input  wire  [`INST_BUS_W              -1:0] instbus,
         // Register source 1 query interface
-        output logic [5          -1:0] rs1_addr,
-        input  wire  [XLEN       -1:0] rs1_val,
-        output logic                   rd_wr_en,
-        output logic [5          -1:0] rd_wr_addr,
-        output logic [XLEN       -1:0] rd_wr_val,
+        output logic [5                        -1:0] rs1_addr,
+        input  wire  [XLEN                     -1:0] rs1_val,
+        output logic                                 rd_wr_en,
+        output logic [5                        -1:0] rd_wr_addr,
+        output logic [XLEN                     -1:0] rd_wr_val,
         // Performance registers bus
         input  wire  [PERF_REG_W*3*PERF_NB_BUS -1:0] perfs,
         // CSR shared bus
-        output logic [`CSR_SB_W  -1:0] csr_sb,
-        input  wire  [`CTRL_SB_W -1:0] ctrl_sb
+        output logic [`CSR_SB_W                -1:0] csr_sb,
+        input  wire  [`CTRL_SB_W               -1:0] ctrl_sb
     );
 
     // ------------------------------------------------------------------------
@@ -140,7 +140,7 @@ module friscv_csr
 
 
     ///////////////////////////////////////////////////////////////////////////
-    // Build mstatus content 
+    // Build mstatus content
     // @data: the new value to write into the CSR
     // @returns the formatted register based on spec and extension supported
     ///////////////////////////////////////////////////////////////////////////
@@ -454,7 +454,7 @@ module friscv_csr
         .bit_o   (sw_irq_sync)
     );
 
-    friscv_pulser eirq_pulse 
+    friscv_pulser eirq_pulse
     (
     .aclk    (aclk),
     .aresetn (aresetn),
@@ -463,7 +463,7 @@ module friscv_csr
     .pulse   (ext_irq_pulse)
     );
 
-    friscv_pulser tirq_pulse 
+    friscv_pulser tirq_pulse
     (
     .aclk    (aclk),
     .aresetn (aresetn),
@@ -472,7 +472,7 @@ module friscv_csr
     .pulse   (timer_irq_pulse)
     );
 
-    friscv_pulser sirq_pulse 
+    friscv_pulser sirq_pulse
     (
     .aclk    (aclk),
     .aresetn (aresetn),
@@ -679,10 +679,10 @@ module friscv_csr
     //              = 0, this operation is permitted in S-mode.
     // [21]      TW, Timeout Wait
     //              = 0, WFI instruction may execute in lower privilege modes
-    //              = 1, if WFI is executed in any less-privileged mode, 
+    //              = 1, if WFI is executed in any less-privileged mode,
     //                   instruction causes an illegal instruction exception
     // [20]      TVM, Trap Virtual Memory
-    //              = 1, attempts to read or write the satp or exec SFENCE.VMA or 
+    //              = 1, attempts to read or write the satp or exec SFENCE.VMA or
     //                   SINVAL.VMA will raise an exception
     //              = 0, these operations are permitted in S-mode
     // [19]      MXR, Make eXecutable Readable
@@ -1070,7 +1070,7 @@ module friscv_csr
     assign csr_sb[`CSR_SB_PMPADDR14+:XLEN] = pmpaddr14;
     assign csr_sb[`CSR_SB_PMPADDR15+:XLEN] = pmpaddr15;
 
-    assign {ctrl_rdinstret, ctrl_clr_meip, 
+    assign {ctrl_rdinstret, ctrl_clr_meip,
             ctrl_mtval_wr, ctrl_mtval,
             ctrl_mcause_wr, ctrl_mcause,
             ctrl_mstatus_wr, ctrl_mstatus,
