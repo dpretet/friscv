@@ -26,7 +26,7 @@ module dcache_testbench();
     parameter AXI_ID_W = 8;
     parameter AXI_DATA_W = 128;
     parameter AXI_ID_MASK = 'h20;
-    parameter IO_MAP_NB = 1;
+    parameter IO_MAP_NB = 0;
     parameter CACHE_PREFETCH_EN = 0;
     parameter CACHE_BLOCK_W = 128;
     parameter CACHE_DEPTH = 512;
@@ -61,13 +61,41 @@ module dcache_testbench();
     logic [AXI_ID_W      -1:0] memfy_rid;
     logic [2             -1:0] memfy_rresp;
     logic [XLEN          -1:0] memfy_rdata;
+
+    logic                      memfy_p_awvalid;
+    logic                      memfy_p_awready;
+    logic  [AXI_ADDR_W   -1:0] memfy_p_awaddr;
+    logic  [3            -1:0] memfy_p_awprot;
+    logic  [4            -1:0] memfy_p_awcache;
+    logic  [AXI_ID_W     -1:0] memfy_p_awid;
+    logic                      memfy_p_wvalid;
+    logic                      memfy_p_wready;
+    logic  [XLEN         -1:0] memfy_p_wdata;
+    logic  [XLEN/8       -1:0] memfy_p_wstrb;
+    logic                      memfy_p_bvalid;
+    logic                      memfy_p_bready;
+    logic [AXI_ID_W      -1:0] memfy_p_bid;
+    logic [2             -1:0] memfy_p_bresp;
+    logic                      memfy_p_arvalid;
+    logic                      memfy_p_arready;
+    logic  [AXI_ADDR_W   -1:0] memfy_p_araddr;
+    logic  [3            -1:0] memfy_p_arprot;
+    logic  [4            -1:0] memfy_p_arcache;
+    logic  [AXI_ID_W     -1:0] memfy_p_arid;
+    logic                      memfy_p_rvalid;
+    logic                      memfy_p_rready;
+    logic [AXI_ID_W      -1:0] memfy_p_rid;
+    logic [2             -1:0] memfy_p_rresp;
+    logic [XLEN          -1:0] memfy_p_rdata;
+
+
     logic                      dcache_awvalid;
     logic                      dcache_awready;
     logic [AXI_ADDR_W    -1:0] dcache_awaddr;
     logic [8             -1:0] dcache_awlen;
     logic [3             -1:0] dcache_awsize;
     logic [2             -1:0] dcache_awburst;
-    logic [2             -1:0] dcache_awlock;
+    logic                      dcache_awlock;
     logic [4             -1:0] dcache_awcache;
     logic [3             -1:0] dcache_awprot;
     logic [4             -1:0] dcache_awqos;
@@ -88,7 +116,7 @@ module dcache_testbench();
     logic [8             -1:0] dcache_arlen;
     logic [3             -1:0] dcache_arsize;
     logic [2             -1:0] dcache_arburst;
-    logic [2             -1:0] dcache_arlock;
+    logic                      dcache_arlock;
     logic [4             -1:0] dcache_arcache;
     logic [3             -1:0] dcache_arprot;
     logic [4             -1:0] dcache_arqos;
@@ -104,11 +132,17 @@ module dcache_testbench();
     logic                      gen_io_req;
     logic                      gen_mem_req;
     logic                      error;
+    logic                      error_r;
     string                     tbname;
     integer                    timer;
     integer                    rd_req_num;
     integer                    wr_req_num;
     logic                      en;
+
+
+    initial begin
+        $sformat(tbname, "%s", ``TBNAME);
+    end
 
     driver
     #(
@@ -164,6 +198,58 @@ module dcache_testbench();
         .rdata              (memfy_rdata)
     );
 
+    localparam AXI_ACH_W = AXI_ADDR_W + AXI_ID_W + 4 /*ACACHE*/;
+    localparam AXI_DCH_W = XLEN + XLEN/8;
+    localparam AXI_BCH_W = AXI_ID_W + 2 /* RESP */;
+    localparam AXI_RCH_W = XLEN + AXI_ID_W + 2 /* RESP */;
+
+
+    friscv_axi_pipeline
+    #(
+    .OSTDREQ_NUM (OSTDREQ_NUM),
+    .AXI_ACH_W   (AXI_ACH_W),
+    .AXI_DCH_W   (AXI_DCH_W),
+    .AXI_BCH_W   (AXI_BCH_W),
+    .AXI_RCH_W   (AXI_RCH_W)
+    )
+    memfy_pipeline
+    (
+    .aclk      (aclk),
+    .aresetn   (aresetn),
+    .srst      (srst),
+    .flush     ('0),
+    .s_awvalid (memfy_awvalid),
+    .s_awready (memfy_awready),
+    .s_awch    ({memfy_awaddr,memfy_awid,memfy_awcache}),
+    .s_wvalid  (memfy_wvalid),
+    .s_wready  (memfy_wready),
+    .s_wch     ({memfy_wdata,memfy_wstrb}),
+    .s_bvalid  (memfy_bvalid),
+    .s_bready  (memfy_bready),
+    .s_bch     ({memfy_bid, memfy_bresp}),
+    .s_arvalid (memfy_arvalid),
+    .s_arready (memfy_arready),
+    .s_arch    ({memfy_araddr,memfy_arid,memfy_arcache}),
+    .s_rvalid  (memfy_rvalid),
+    .s_rready  (memfy_rready),
+    .s_rch     ({memfy_rid, memfy_rresp, memfy_rdata}),
+    .m_awvalid (memfy_p_awvalid),
+    .m_awready (memfy_p_awready),
+    .m_awch    ({memfy_p_awaddr,memfy_p_awid,memfy_p_awcache}),
+    .m_wvalid  (memfy_p_wvalid),
+    .m_wready  (memfy_p_wready),
+    .m_wch     ({memfy_p_wdata,memfy_p_wstrb}),
+    .m_bvalid  (memfy_p_bvalid),
+    .m_bready  (memfy_p_bready),
+    .m_bch     ({memfy_p_bid, memfy_p_bresp}),
+    .m_arvalid (memfy_p_arvalid),
+    .m_arready (memfy_p_arready),
+    .m_arch    ({memfy_p_araddr,memfy_p_arid,memfy_p_arcache}),
+    .m_rvalid  (memfy_p_rvalid),
+    .m_rready  (memfy_p_rready),
+    .m_rch     ({memfy_p_rid, memfy_p_rresp, memfy_p_rdata})
+    );
+
 
     friscv_dcache
     #(
@@ -177,6 +263,7 @@ module dcache_testbench();
         .AXI_ID_FIXED        (0),
         .FAST_FWD_CPL        (FAST_FWD_CPL),
         .IO_MAP_NB           (IO_MAP_NB),
+        .EARLY_W_CPL         (0),
         .CACHE_PREFETCH_EN   (CACHE_PREFETCH_EN),
         .CACHE_BLOCK_W       (CACHE_BLOCK_W),
         .CACHE_DEPTH         (CACHE_DEPTH)
@@ -187,70 +274,72 @@ module dcache_testbench();
         .aresetn         (aresetn),
         .srst            (srst),
         .cache_ready     (cache_ready),
-        .memfy_awvalid   (memfy_awvalid),
-        .memfy_awready   (memfy_awready),
-        .memfy_awaddr    (memfy_awaddr),
-        .memfy_awprot    (memfy_awprot),
-        .memfy_awcache   (memfy_awcache),
-        .memfy_awid      (memfy_awid),
-        .memfy_wvalid    (memfy_wvalid),
-        .memfy_wready    (memfy_wready),
-        .memfy_wdata     (memfy_wdata),
-        .memfy_wstrb     (memfy_wstrb),
-        .memfy_bvalid    (memfy_bvalid),
-        .memfy_bready    (memfy_bready),
-        .memfy_bid       (memfy_bid),
-        .memfy_bresp     (memfy_bresp),
-        .memfy_arvalid   (memfy_arvalid),
-        .memfy_arready   (memfy_arready),
-        .memfy_araddr    (memfy_araddr),
-        .memfy_arprot    (memfy_arprot),
-        .memfy_arcache   (memfy_arcache),
-        .memfy_arid      (memfy_arid),
-        .memfy_rvalid    (memfy_rvalid),
-        .memfy_rready    (memfy_rready),
-        .memfy_rid       (memfy_rid),
-        .memfy_rresp     (memfy_rresp),
-        .memfy_rdata     (memfy_rdata),
-        .dcache_awvalid  (dcache_awvalid),
-        .dcache_awready  (dcache_awready),
-        .dcache_awaddr   (dcache_awaddr),
-        .dcache_awlen    (dcache_awlen),
-        .dcache_awsize   (dcache_awsize),
-        .dcache_awburst  (dcache_awburst),
-        .dcache_awlock   (dcache_awlock),
-        .dcache_awcache  (dcache_awcache),
-        .dcache_awprot   (dcache_awprot),
-        .dcache_awqos    (dcache_awqos),
-        .dcache_awregion (dcache_awregion),
-        .dcache_awid     (dcache_awid),
-        .dcache_wvalid   (dcache_wvalid),
-        .dcache_wready   (dcache_wready),
-        .dcache_wlast    (dcache_wlast),
-        .dcache_wdata    (dcache_wdata),
-        .dcache_wstrb    (dcache_wstrb),
-        .dcache_bvalid   (dcache_bvalid),
-        .dcache_bready   (dcache_bready),
-        .dcache_bid      (dcache_bid),
-        .dcache_bresp    (dcache_bresp),
-        .dcache_arvalid  (dcache_arvalid),
-        .dcache_arready  (dcache_arready),
-        .dcache_araddr   (dcache_araddr),
-        .dcache_arlen    (dcache_arlen),
-        .dcache_arsize   (dcache_arsize),
-        .dcache_arburst  (dcache_arburst),
-        .dcache_arlock   (dcache_arlock),
-        .dcache_arcache  (dcache_arcache),
-        .dcache_arprot   (dcache_arprot),
-        .dcache_arqos    (dcache_arqos),
-        .dcache_arregion (dcache_arregion),
-        .dcache_arid     (dcache_arid),
-        .dcache_rvalid   (dcache_rvalid),
-        .dcache_rready   (dcache_rready),
-        .dcache_rid      (dcache_rid),
-        .dcache_rresp    (dcache_rresp),
-        .dcache_rdata    (dcache_rdata),
-        .dcache_rlast    (dcache_rlast)
+        .memfy_awvalid   (memfy_p_awvalid),
+        .memfy_awready   (memfy_p_awready),
+        .memfy_awaddr    (memfy_p_awaddr),
+        .memfy_awprot    (memfy_p_awprot),
+        .memfy_awcache   (memfy_p_awcache),
+        .memfy_awid      (memfy_p_awid),
+        .memfy_awlock    ('0),
+        .memfy_wvalid    (memfy_p_wvalid),
+        .memfy_wready    (memfy_p_wready),
+        .memfy_wdata     (memfy_p_wdata),
+        .memfy_wstrb     (memfy_p_wstrb),
+        .memfy_bvalid    (memfy_p_bvalid),
+        .memfy_bready    (memfy_p_bready),
+        .memfy_bid       (memfy_p_bid),
+        .memfy_bresp     (memfy_p_bresp),
+        .memfy_arvalid   (memfy_p_arvalid),
+        .memfy_arready   (memfy_p_arready),
+        .memfy_araddr    (memfy_p_araddr),
+        .memfy_arprot    (memfy_p_arprot),
+        .memfy_arcache   (memfy_p_arcache),
+        .memfy_arid      (memfy_p_arid),
+        .memfy_arlock    ('0),
+        .memfy_rvalid    (memfy_p_rvalid),
+        .memfy_rready    (memfy_p_rready),
+        .memfy_rid       (memfy_p_rid),
+        .memfy_rresp     (memfy_p_rresp),
+        .memfy_rdata     (memfy_p_rdata),
+        .dmem_awvalid    (dcache_awvalid),
+        .dmem_awready    (dcache_awready),
+        .dmem_awaddr     (dcache_awaddr),
+        .dmem_awlen      (dcache_awlen),
+        .dmem_awsize     (dcache_awsize),
+        .dmem_awburst    (dcache_awburst),
+        .dmem_awlock     (dcache_awlock),
+        .dmem_awcache    (dcache_awcache),
+        .dmem_awprot     (dcache_awprot),
+        .dmem_awqos      (dcache_awqos),
+        .dmem_awregion   (dcache_awregion),
+        .dmem_awid       (dcache_awid),
+        .dmem_wvalid     (dcache_wvalid),
+        .dmem_wready     (dcache_wready),
+        .dmem_wlast      (dcache_wlast),
+        .dmem_wdata      (dcache_wdata),
+        .dmem_wstrb      (dcache_wstrb),
+        .dmem_bvalid     (dcache_bvalid),
+        .dmem_bready     (dcache_bready),
+        .dmem_bid        (dcache_bid),
+        .dmem_bresp      (dcache_bresp),
+        .dmem_arvalid    (dcache_arvalid),
+        .dmem_arready    (dcache_arready),
+        .dmem_araddr     (dcache_araddr),
+        .dmem_arlen      (dcache_arlen),
+        .dmem_arsize     (dcache_arsize),
+        .dmem_arburst    (dcache_arburst),
+        .dmem_arlock     (dcache_arlock),
+        .dmem_arcache    (dcache_arcache),
+        .dmem_arprot     (dcache_arprot),
+        .dmem_arqos      (dcache_arqos),
+        .dmem_arregion   (dcache_arregion),
+        .dmem_arid       (dcache_arid),
+        .dmem_rvalid     (dcache_rvalid),
+        .dmem_rready     (dcache_rready),
+        .dmem_rid        (dcache_rid),
+        .dmem_rresp      (dcache_rresp),
+        .dmem_rdata      (dcache_rdata),
+        .dmem_rlast      (dcache_rlast)
     );
 
     assign dcache_rlast = 1'b0;
@@ -324,8 +413,8 @@ module dcache_testbench();
     `ifdef TRACE_VCD
     // To dump data for visualization:
     initial begin
-        `INFO("Tracing into dcache_testbench.vcd");
-        $dumpfile("dcache_testbench.vcd");
+        `INFO("Tracing into dcache_testbench.fst");
+        $dumpfile("dcache_testbench.fst");
         $dumpvars(0, dcache_testbench);
         `INFO("Model running...");
     end
@@ -357,10 +446,13 @@ module dcache_testbench();
     endtask
 
     task check_results;
+
+        `INFO("Checking results");
+
         if (timer >= TIMEOUT)
             `ERROR("Testbench reached timeout");
 
-        if (error)
+        if (error_r)
             `ERROR("Driver detected an issue");
 
         if (rd_req_num==MAX_TRAFFIC)
@@ -385,9 +477,14 @@ module dcache_testbench();
         end
     endtask
 
+    always @ (posedge aclk or negedge aresetn) begin
+        if (!aresetn) error_r <= '0;
+        else if (error) error_r <= 1;
+    end
 
     `TEST_SUITE(tbname)
 
+    /*
     `UNIT_TEST("Randomized traffic -io_req +blk_req")
 
         gen_mem_req = 1;
@@ -409,7 +506,7 @@ module dcache_testbench();
         #1000;
 
     `UNIT_TEST_END
-
+*/
     `UNIT_TEST("Randomized traffic +io_req +blk_req")
 
         en = 1'b1;

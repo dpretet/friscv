@@ -152,6 +152,7 @@ module driver
     integer                                  wreq_or_cnt;
     logic [MAX_OR                      -1:0] wr_orreq;
     logic [MAX_OR*AXI_ID_W             -1:0] wr_orreq_id;
+    logic [4     *AXI_ID_W             -1:0] wr_orreq_cache;
     integer                                  wr_orreq_timer[MAX_OR-1:0];
     integer                                  wcpl_or_cnt;
     logic [MAX_OR                      -1:0] bid_error;
@@ -724,6 +725,7 @@ module driver
             if (!aresetn) begin
                 wr_orreq <= {MAX_OR{1'b0}};
                 wr_orreq_id <= {MAX_OR*AXI_ID_W{1'b0}};
+                wr_orreq_cache <= {MAX_OR*4{1'b0}};
                 for (int i=0;i<MAX_OR;i++) begin
                     wr_orreq_timer[i] <= 0;
                 end
@@ -733,6 +735,7 @@ module driver
             end else if (srst) begin
                 wr_orreq <= {MAX_OR{1'b0}};
                 wr_orreq_id <= {MAX_OR*AXI_ID_W{1'b0}};
+                wr_orreq_cache <= {MAX_OR*4{1'b0}};
                 for (int i=0;i<MAX_OR;i++) begin
                     wr_orreq_timer[i] <= 0;
                 end
@@ -753,6 +756,7 @@ module driver
                     if (awvalid && awready && i==wreq_or_cnt) begin
                         wr_orreq[i] <= 1'b1;
                         wr_orreq_id[i*AXI_ID_W+:AXI_ID_W] <= awid;
+                        wr_orreq_cache[i*4+:4] <= awcache;
                     end
 
                     if (bvalid && bready && wcpl_or_cnt==i) begin
@@ -762,13 +766,15 @@ module driver
                         if (wr_orreq_id[wcpl_or_cnt*AXI_ID_W+:AXI_ID_W]!==bid) begin
                             bid_error <= 1'b1;
                             `ifndef NODEBUG
-                            $sformat(msg, "Write ID is wrong:");
+                            $sformat(msg, "Write Completion ID is wrong:");
                             log.error(msg);
-                            $sformat(msg, "  - completion nb: %0d",  wcpl_or_cnt);
+                            $sformat(msg, "  - Completion nb: %0d",  wcpl_or_cnt);
                             log.error(msg);
-                            $sformat(msg, "  - bid: %x",  bid);
+                            $sformat(msg, "  - ACACHE: %x",  wr_orreq_cache[wcpl_or_cnt*4+:4]);
                             log.error(msg);
-                            $sformat(msg, "  - expected: %x", wr_orreq_id[wcpl_or_cnt*AXI_ID_W+:AXI_ID_W]);
+                            $sformat(msg, "  - BID: %x",  bid);
+                            log.error(msg);
+                            $sformat(msg, "  - Expected BID: %x", wr_orreq_id[wcpl_or_cnt*AXI_ID_W+:AXI_ID_W]);
                             log.error(msg);
                             `endif
                         end

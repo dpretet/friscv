@@ -31,6 +31,9 @@ module friscv_cache_pusher
         // ID Mask to apply to identify the instruction cache in the AXI4
         // infrastructure
         parameter AXI_ID_MASK = 'h20,
+        // Early Write Completion in pusher if cache hit, the write response
+        // channel is handshaked as soon cache block is updated
+        parameter EARLY_W_CPL = 0,
 
         ///////////////////////////////////////////////////////////////////////
         // Cache Setup
@@ -135,6 +138,8 @@ module friscv_cache_pusher
     //
     // Write request pipeline checking if a new write request needs to update
     // the cache blocks
+    //
+    // TODO: Properly support independence of AW & W channels
     //
     ///////////////////////////////////////////////////////////////////////////
 
@@ -251,11 +256,19 @@ module friscv_cache_pusher
     assign mst_awready = awready & wready;
     assign mst_wready = awready & wready;
 
+    generate 
+    if (EARLY_W_CPL) begin : EARLY_W_CPL_SUPPORT
+
     /////////////////////////////////////////////////////////////////////////////////
     //
     // Write response channel management, complete from the cache block if 
     // the request hitted a block, or from the write response channel if the xfer
-    // experienced a cache miss
+    // experienced a cache miss.
+    //
+    // CAUTION: This may introduce problems in a system with to masters / caches
+    // which would like to exchange data cached in a dcache stage. A memory cell
+    // may be not yet written by pusher stage when a master informs the other
+    // data can be fetched.
     //
     /////////////////////////////////////////////////////////////////////////////////
 
@@ -329,6 +342,17 @@ module friscv_cache_pusher
         end
     end
 
+    //////////////////////////////////////////////////////////////////
+    // When no early completion support is activated, the destination
+    // forwards the write response, driven back to the master.
+    //////////////////////////////////////////////////////////////////
+    end else begin: NO_EARLY_W_CPL
+        assign mst_bvalid = memctrl_bvalid;
+        assign mst_bresp = memctrl_bresp;
+        assign mst_bid = memctrl_bid;
+        assign memctrl_bready = mst_bready;
+    end
+    endgenerate
 endmodule
 
 `resetall

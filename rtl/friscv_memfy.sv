@@ -857,19 +857,13 @@ module friscv_memfy
     endgenerate
 
     //////////////////////////////////////////////////////////////////////////
-    // IDs on used for regular accesses, another for atomic ops
+    // IDs on used for regular accesses, another for atomic ops and IO reqs
     // No out-of-order supported here, atomic ops are blocking the FSM
     // until completly executed
     //////////////////////////////////////////////////////////////////////////
 
-    generate if (A_EXTENSION) begin: A_SUPPORT_AID
-        assign awid = (is_amo) ? (AXI_ID_MASK | 'b1) : AXI_ID_MASK;
-        assign arid = (is_amo) ? (AXI_ID_MASK | 'b1) : AXI_ID_MASK;
-    end else begin : CONST_AID
-        assign awid = AXI_ID_MASK;
-        assign arid = AXI_ID_MASK;
-    end
-    endgenerate
+    assign awid = (acache[1]) ? (AXI_ID_MASK | 'b1) : AXI_ID_MASK;
+    assign arid = (acache[1]) ? (AXI_ID_MASK | 'b1) : AXI_ID_MASK;
 
     //////////////////////////////////////////////////////////////////////////
     // Privilege mode, only applicable if user mode is activated

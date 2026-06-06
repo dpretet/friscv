@@ -142,7 +142,7 @@ module friscv_processing
     logic                        memfy_ready;
     logic                        memfy_pending_read;
     logic                        memfy_pending_write;
-     logic [NB_INT_REG      -1:0] memfy_regs_sts;
+     logic [NB_INT_REG     -1:0] memfy_regs_sts;
     logic                        ls_inst;
 
     logic                        proc_valid_p;

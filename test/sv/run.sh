@@ -104,6 +104,7 @@ run_tests() {
     svutRun -t "$TB" \
             -define "$DEFINES" \
             -sim "$SIM" \
+            -fst \
             -include ../../dep/svlogger ../../rtl \
             | tee -a simulation.log
 

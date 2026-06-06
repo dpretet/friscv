@@ -17,6 +17,7 @@
 ../../rtl/friscv_ram.sv
 ../../rtl/friscv_rambe.sv
 ../../rtl/friscv_dcache.sv
+../../rtl/friscv_dcache_core.sv
 ../../rtl/friscv_icache.sv
 ../../rtl/friscv_control.sv
 ../../rtl/friscv_cache_block_fetcher.sv

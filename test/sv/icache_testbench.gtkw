@@ -2,7 +2,7 @@
 [*] GTKWave Analyzer v3.3.107 (w)1999-2020 BSI
 [*] Thu Jun 15 19:01:09 2023
 [*]
-[dumpfile] "/Users/damien/workspace/hdl/friscv/test/sv/icache_testbench.vcd"
+[dumpfile] "/Users/damien/workspace/hdl/friscv/test/sv/icache_testbench.fst"
 [dumpfile_mtime] "Thu Jun 15 15:00:11 2023"
 [dumpfile_size] 181419488
 [savefile] "/Users/damien/workspace/hdl/friscv/test/sv/icache_testbench.gtkw"

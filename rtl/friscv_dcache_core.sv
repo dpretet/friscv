@@ -50,6 +50,10 @@ module friscv_dcache_core
         parameter AXI_ID_MASK = 'h40,
         // AXI ID issued on slave interface is fixed, save some logic
         parameter AXI_ID_FIXED = 1,
+        // Early Write Completion in pusher if cache hit, the write response
+        // channel is handshaked as soon cache block is updated. To turn OFF
+        // when IO_MAP_NB = 0
+        parameter EARLY_W_CPL = 0,
 
         ///////////////////////////////////////////////////////////////////////
         // Cache Setup
@@ -294,7 +298,7 @@ module friscv_dcache_core
         .ILEN                (ILEN),
         .XLEN                (XLEN),
         .OSTDREQ_NUM         (OSTDREQ_NUM),
-        .NO_CPL_BACKPRESSURE (1),
+        .NO_CPL_BACKPRESSURE ((IO_MAP_NB>1) ? 1 : 0),
         .AXI_ADDR_W          (AXI_ADDR_W),
         .AXI_ID_W            (AXI_ID_W),
         .AXI_DATA_W          (AXI_DATA_W)
@@ -505,6 +509,7 @@ module friscv_dcache_core
         .AXI_ID_W        (AXI_ID_W),
         .AXI_DATA_W      (AXI_DATA_W),
         .AXI_ID_MASK     (AXI_ID_MASK),
+        .EARLY_W_CPL     (EARLY_W_CPL),
         .CACHE_BLOCK_W   (CACHE_BLOCK_W)
     )
     pusher
@@ -552,56 +557,75 @@ module friscv_dcache_core
         .cache_wdata     (pusher_cache_wdata)
     );
 
-    assign memfy_awready = wtag_avlb & memfy_awready_w;
-    assign memfy_awid_w = memfy_awid_next;
+    generate
+    if (IO_MAP_NB > 0) begin: W_IO_SUPPORT
 
-    friscv_cache_ooo_mgt
-    #(
-        .XLEN                (XLEN),
-        .OSTDREQ_NUM         (OSTDREQ_NUM),
-        .NAME                ("dCache-OoO-WrMgt"),
-        .AXI_ADDR_W          (AXI_ADDR_W),
-        .AXI_ID_W            (AXI_ID_W),
-        .AXI_DATA_W          (AXI_DATA_W),
-        .AXI_ID_MASK         (AXI_ID_MASK),
-        .AXI_ID_FIXED        (AXI_ID_FIXED),
-        .CPL_PAYLOAD         (0),
-        .FAST_FWD_CPL        (FAST_FWD_CPL)
-    )
-    wr_ooo_mgt
-    (
-        .aclk               (aclk),
-        .aresetn            (aresetn),
-        .srst               (srst),
-        // Tag to use for read address channel in both fetchers
-        .next_tag           (memfy_awid_next),
-        // Next tag is available
-        .tag_avlb           (wtag_avlb),
-        // read address channel from the application
-        .slv_avalid         (memfy_awvalid),
-        .slv_aready         (memfy_awready),
-        .slv_addr           (memfy_awaddr),
-        .slv_acache         (memfy_awcache),
-        .slv_aid            (memfy_awid),
-        // read data completion from cache block
-        .cpl1_valid         (pusher_bvalid),
-        .cpl1_ready         (pusher_bready),
-        .cpl1_id            (pusher_bid),
-        .cpl1_resp          (pusher_bresp),
-        .cpl1_data          ('0),
-        // read data completion from memory controller for IO R/W
-        .cpl2_valid         ('0),
-        .cpl2_ready         (),
-        .cpl2_id            ('0),
-        .cpl2_resp          ('0),
-        .cpl2_data          ('0),
-        // read data completion back to the application
-        .slv_valid          (memfy_bvalid),
-        .slv_ready          (memfy_bready),
-        .slv_id             (memfy_bid),
-        .slv_resp           (memfy_bresp),
-        .slv_data           ()
-    );
+        assign memfy_awready = wtag_avlb & memfy_awready_w;
+        assign memfy_awid_w = memfy_awid_next;
+
+        friscv_cache_ooo_mgt
+        #(
+            .XLEN                (XLEN),
+            .OSTDREQ_NUM         (OSTDREQ_NUM),
+            .NAME                ("dCache-OoO-WrMgt"),
+            .AXI_ADDR_W          (AXI_ADDR_W),
+            .AXI_ID_W            (AXI_ID_W),
+            .AXI_DATA_W          (AXI_DATA_W),
+            .AXI_ID_MASK         (AXI_ID_MASK),
+            .AXI_ID_FIXED        (AXI_ID_FIXED),
+            .CPL_PAYLOAD         (0),
+            .FAST_FWD_CPL        (FAST_FWD_CPL)
+        )
+        wr_ooo_mgt
+        (
+            .aclk               (aclk),
+            .aresetn            (aresetn),
+            .srst               (srst),
+            // Tag to use for write address channel
+            .next_tag           (memfy_awid_next),
+            // Next tag is available
+            .tag_avlb           (wtag_avlb),
+            // write address channel from the application
+            .slv_avalid         (memfy_awvalid),
+            .slv_aready         (memfy_awready),
+            .slv_addr           (memfy_awaddr),
+            .slv_acache         (memfy_awcache),
+            .slv_aid            (memfy_awid),
+            // write response completion from pusher
+            .cpl1_valid         (pusher_bvalid),
+            .cpl1_ready         (pusher_bready),
+            .cpl1_id            (pusher_bid),
+            .cpl1_resp          (pusher_bresp),
+            .cpl1_data          ('0),
+            // write response completion from memory controller for IO R/W
+            .cpl2_valid         ('0),
+            .cpl2_ready         (),
+            .cpl2_id            ('0),
+            .cpl2_resp          ('0),
+            .cpl2_data          ('0),
+            // write response completion back to the application
+            .slv_valid          (memfy_bvalid),
+            .slv_ready          (memfy_bready),
+            .slv_id             (memfy_bid),
+            .slv_resp           (memfy_bresp),
+            .slv_data           ()
+        );
+
+    end else begin: NO_W_IO_SUPPORT
+
+        // Direct connection between Write address channel and pusher
+        assign memfy_awready = memfy_awready_w;
+        assign memfy_awid_w = memfy_awid;
+
+        // Pusher does the write response completion management
+        assign memfy_bvalid = pusher_bvalid;
+        assign memfy_bresp = pusher_bresp;
+        assign memfy_bid = pusher_bid;
+        assign pusher_bready = memfy_bready;
+
+    end
+    endgenerate
+
 
     ///////////////////////////////////////////////////////////////////////////
     // Cache Blocks Storage and Eraser

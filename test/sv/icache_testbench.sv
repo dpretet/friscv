@@ -38,7 +38,7 @@ module icache_testbench();
     logic                       aclk;
     logic                       aresetn;
     logic                       srst;
-    logic                       error;
+    logic                       error, error_r;
     logic                       en;
     logic                       cache_ready;
     logic                       check_flush_reqs;
@@ -168,24 +168,24 @@ module icache_testbench();
         .ctrl_rid        (ctrl_rid),
         .ctrl_rresp      (ctrl_rresp),
         .ctrl_rdata      (ctrl_rdata),
-        .icache_arvalid  (icache_arvalid),
-        .icache_arready  (icache_arready),
-        .icache_araddr   (icache_araddr),
-        .icache_arlen    (icache_arlen),
-        .icache_arsize   (icache_arsize),
-        .icache_arburst  (icache_arburst),
-        .icache_arlock   (icache_arlock),
-        .icache_arcache  (icache_arcache),
-        .icache_arprot   (icache_arprot),
-        .icache_arqos    (icache_arqos),
-        .icache_arregion (icache_arregion),
-        .icache_arid     (icache_arid),
-        .icache_rvalid   (icache_rvalid),
-        .icache_rready   (icache_rready),
-        .icache_rid      (icache_rid),
-        .icache_rresp    (icache_rresp),
-        .icache_rdata    (icache_rdata),
-        .icache_rlast    (icache_rlast)
+        .imem_arvalid    (icache_arvalid),
+        .imem_arready    (icache_arready),
+        .imem_araddr     (icache_araddr),
+        .imem_arlen      (icache_arlen),
+        .imem_arsize     (icache_arsize),
+        .imem_arburst    (icache_arburst),
+        .imem_arlock     (icache_arlock),
+        .imem_arcache    (icache_arcache),
+        .imem_arprot     (icache_arprot),
+        .imem_arqos      (icache_arqos),
+        .imem_arregion   (icache_arregion),
+        .imem_arid       (icache_arid),
+        .imem_rvalid     (icache_rvalid),
+        .imem_rready     (icache_rready),
+        .imem_rid        (icache_rid),
+        .imem_rresp      (icache_rresp),
+        .imem_rdata      (icache_rdata),
+        .imem_rlast      (icache_rlast)
     );
 
     axi4l_ram
@@ -311,12 +311,16 @@ module icache_testbench();
         end
     endtask
 
+    always @ (posedge aclk or negedge aresetn) begin
+        if (!aresetn) error_r <= '0;
+        else if (error) error_r <= 1;
+    end
 
     task check_results;
         if (timer >= TIMEOUT)
             `ERROR("Testbench reached timeout");
 
-        if (error)
+        if (error_r)
             `ERROR("Driver detected problem(s)");
 
         if (req_num==MAX_TRAFFIC)
