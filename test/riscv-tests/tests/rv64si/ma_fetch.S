@@ -17,7 +17,7 @@ RVTEST_CODE_BEGIN
   #define sscratch mscratch
   #define sstatus mstatus
   #define scause mcause
-  #define sbadaddr mbadaddr
+  #define stval mtval
   #define sepc mepc
   #define sret mret
   #define stvec_handler mtvec_handler
@@ -113,7 +113,7 @@ RVTEST_CODE_BEGIN
   li TESTNUM, 8
   csrr t2, misa
   andi t2, t2, 1 << ('c' - 'a')
-  beqz t2, 2f
+  beqz t2, pass
 
   .option rvc
   c.nop
@@ -126,18 +126,13 @@ RVTEST_CODE_BEGIN
   andi t2, t2, 1 << ('c' - 'a')
   beqz t2, fail
 
-  # When RVC is disabled, mret to a misaligned mepc should succeed,
+  # IALIGN=32, mret to a misaligned mepc should succeed,
   # masking off mepc[1].
   la t0, 1f
   addi t0, t0, -2
   csrw mepc, t0
 
-  # Try to disable RVC; if it can't be disabled, skip the test.
   csrci misa, 1 << ('c' - 'a')
-  csrr t2, misa
-  andi t2, t2, 1 << ('c' - 'a')
-  bnez t2, 2f
-
   li t2, MSTATUS_MPP
   csrs mstatus, t2
   mret
@@ -148,7 +143,6 @@ RVTEST_CODE_BEGIN
   beqz x0, 1f
 1:
   csrsi misa, 1 << ('c' - 'a')
-2:
 #endif
 
   j pass
@@ -183,14 +177,14 @@ stvec_handler:
   addi a1, a1, 4
   bne t0, a1, fail
 
-  # verify that badaddr == 0 or badaddr == t0+2.
-  csrr a0, sbadaddr
+  # verify that tval == 0 or tval == t0+2.
+  csrr a0, stval
   beqz a0, 1f
   addi a0, a0, -2
   bne a0, t0, fail
 1:
 
-  addi a1, a1, 12
+  addi a1, a1, 8
   csrw sepc, a1
   sret
 

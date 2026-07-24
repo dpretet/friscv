@@ -9,12 +9,10 @@ env_dir := ./env
 
 ifeq ($(XLEN),64)
 include $(src_dir)/rv64ui/Makefrag
-include $(src_dir)/rv64si/Makefrag
 include $(src_dir)/rv64mi/Makefrag
 include $(src_dir)/rv64um/Makefrag
 endif
 include $(src_dir)/rv32ui/Makefrag
-include $(src_dir)/rv32si/Makefrag
 include $(src_dir)/rv32mi/Makefrag
 include $(src_dir)/rv32um/Makefrag
 
@@ -52,10 +50,6 @@ $$($(1)_p_tests): $(1)-p-%: $(1)/%.S
 	$$(RISCV_GCC) $(2) $$(RISCV_GCC_OPTS) -I$(env_dir)/p -I$(src_dir)/macros/scalar -T$(env_dir)/p/link.ld $$< -o $$@.elf
 $(1)_tests += $$($(1)_p_tests)
 
-$$($(1)_v_tests): $(1)-v-%: $(1)/%.S
-	$$(RISCV_GCC) $(2) $$(RISCV_GCC_OPTS) -DENTROPY=0x$$(shell echo \$$@ | md5sum | cut -c 1-7) -std=gnu99 -O2 -I$(env_dir)/v -I$(src_dir)/macros/scalar -T$(env_dir)/v/link.ld $(env_dir)/v/entry.S $(env_dir)/v/*.c $$< -o $$@.elf
-$(1)_tests += $$($(1)_v_tests)
-
 $(1)_tests_dump = $$(addsuffix .asm, $$($(1)_tests))
 
 $(1): $$($(1)_tests_dump)
@@ -71,12 +65,10 @@ endif
 endef
 
 $(eval $(call compile_template,rv32ui,-march=rv32g -mabi=ilp32))
-$(eval $(call compile_template,rv32si,-march=rv32g -mabi=ilp32))
 $(eval $(call compile_template,rv32mi,-march=rv32g -mabi=ilp32))
 $(eval $(call compile_template,rv32um,-march=rv32g -mabi=ilp32))
 ifeq ($(XLEN),64)
 $(eval $(call compile_template,rv64ui,-march=rv64g -mabi=lp64))
-$(eval $(call compile_template,rv64si,-march=rv64g -mabi=lp64))
 $(eval $(call compile_template,rv64mi,-march=rv64g -mabi=lp64))
 $(eval $(call compile_template,rv64um,-march=rv64g -mabi=lp64))
 
@@ -106,3 +98,4 @@ clean:
 	rm -fr *.dump
 	rm -fr *.gtkw
 	rm -fr *.vcd
+	rm -fr *.fst

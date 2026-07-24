@@ -92,12 +92,15 @@ read_config() {
 clean() {
     make -C ./tests clean
     rm -fr build
-    rm -f ./rv*.*v
-    rm -f ./*.vcd
-    rm -f ./*.txt
-    rm -f ./*.csv
-    rm -f ./*.out
-    rm -f ./rtl.md5*
+    rm -f "./rv*.*v"
+    rm -f "./*.vcd"
+    rm -f "./*.fst"
+    rm -f "./*.txt"
+    rm -f "./*.log"
+    rm -f "./*.csv"
+    rm -f "./*.out"
+    rm -f "./rtl.md5*"
+    rm -f "./test.v"
     exit 0
 }
 #------------------------------------------------------------------------------

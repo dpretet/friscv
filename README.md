@@ -27,16 +27,16 @@ FRISCV is a SystemVerilog implementation of the [RISCV ISA](https://riscv.org):
 - Physical memory protection (PMP) & Physical Memory Attribute (PMA), up to 16 regions
 - External, software and timer interrupts
 - Support multiple (optional) extensions:
-    - RV32I & RV32E architecture
     - Zifencei
     - Zicsr
     - Zicntr
     - Zihpm
     - M extension (multiply/divide)
-    - Clint extension
+    - A extension (atomic operation)
+- RV32I & RV32E architecture
+- Clint interrupt controller
 
-The core is [compliant](./test/riscv-tests/README.md) with the official RISCV
-testsuite.
+The core is [compliant](./test/riscv-tests/README.md) with the official RISCV testsuite.
 
 
 # [Architecture](./doc/architecture.md)

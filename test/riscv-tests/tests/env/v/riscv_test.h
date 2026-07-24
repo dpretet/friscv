@@ -17,12 +17,26 @@
   csrwi fcsr, 0;                                                        \
   csrwi vcsr, 0;
 
+#undef RVTEST_ZVE32X_ENABLE
+#define RVTEST_ZVE32X_ENABLE                                            \
+  csrwi vcsr, 0;
+
 #undef RVTEST_CODE_BEGIN
 #define RVTEST_CODE_BEGIN                                               \
         .text;                                                          \
         .global extra_boot;                                             \
 extra_boot:                                                             \
         EXTRA_INIT                                                      \
+        ret;                                                            \
+.global trap_filter;                                                    \
+trap_filter:                                                            \
+        FILTER_TRAP                                                     \
+        li a0, 0;                                                       \
+        ret;                                                            \
+.global pf_filter;                                                      \
+pf_filter:                                                              \
+        FILTER_PAGE_FAULT                                               \
+        li a0, 0;                                                       \
         ret;                                                            \
         .global userstart;                                              \
 userstart:                                                              \
@@ -49,8 +63,12 @@ userstart:                                                              \
 // Supervisor mode definitions and macros
 //-----------------------------------------------------------------------
 
-#define MAX_TEST_PAGES 63 // this must be the period of the LFSR below
-#define LFSR_NEXT(x) (((((x)^((x)>>1)) & 1) << 5) | ((x) >> 1))
+#ifndef LFSR_BITS
+#define LFSR_BITS 6
+#endif
+
+#define MAX_TEST_PAGES ((1 << LFSR_BITS)-1) // this must be the period of the LFSR below
+#define LFSR_NEXT(x) (((((x)^((x)>>1)) & 1) << (LFSR_BITS-1)) | ((x) >> 1))
 
 #define PGSHIFT 12
 #define PGSIZE (1UL << PGSHIFT)

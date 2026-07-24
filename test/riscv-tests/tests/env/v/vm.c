@@ -6,6 +6,8 @@
 
 #include "riscv_test.h"
 
+#define SYS_write 64
+
 #if __riscv_xlen == 32
 # define SATP_MODE_CHOICE SATP_MODE_SV32
 #elif defined(Sv48)
@@ -40,7 +42,20 @@ static uint64_t lfsr63(uint64_t x)
 
 static void cputchar(int x)
 {
+#if __riscv_xlen == 32
+  // HTIF devices are not supported on RV32, so proxy a write system call
+  volatile uint64_t syscall_struct[8];
+  volatile int buff = x;
+  syscall_struct[0] = SYS_write;
+  syscall_struct[1] = 1;
+  syscall_struct[2] = (uintptr_t)&buff;
+  syscall_struct[3] = 1;
+  do_tohost((uintptr_t)&syscall_struct);
+  // Wait for response as struct has to be read by HTIF
+  while(!fromhost);
+#else
   do_tohost(0x0101000000000000 | (unsigned char)x);
+#endif
 }
 
 static void cputstring(const char* s)
@@ -120,7 +135,7 @@ static void evict(unsigned long addr)
     uintptr_t sstatus = set_csr(sstatus, SSTATUS_SUM);
     if (memcmp((void*)addr, uva2kva(addr), PGSIZE)) {
       assert(user_llpt[addr/PGSIZE] & PTE_D);
-      memcpy((void*)addr, uva2kva(addr), PGSIZE);
+      memcpy(uva2kva(addr), (void*)addr, PGSIZE);
     }
     write_csr(sstatus, sstatus);
 
@@ -136,8 +151,14 @@ static void evict(unsigned long addr)
   }
 }
 
+extern int pf_filter(uintptr_t addr, uintptr_t *pte, int *copy);
+extern int trap_filter(trapframe_t *tf);
+
 void handle_fault(uintptr_t addr, uintptr_t cause)
 {
+  uintptr_t filter_encodings = 0;
+  int copy_page = 1;
+
   assert(addr >= PGSIZE && addr < MAX_TEST_PAGES * PGSIZE);
   addr = addr/PGSIZE*PGSIZE;
 
@@ -159,6 +180,11 @@ void handle_fault(uintptr_t addr, uintptr_t cause)
     freelist_tail = 0;
 
   uintptr_t new_pte = (node->addr >> PGSHIFT << PTE_PPN_SHIFT) | PTE_V | PTE_U | PTE_R | PTE_W | PTE_X;
+
+  if (pf_filter(addr, &filter_encodings, &copy_page)) {
+      new_pte = (node->addr >> PGSHIFT << PTE_PPN_SHIFT) | filter_encodings;
+  }
+
   user_llpt[addr/PGSIZE] = new_pte | PTE_A | PTE_D;
   flush_page(addr);
 
@@ -177,6 +203,10 @@ void handle_fault(uintptr_t addr, uintptr_t cause)
 
 void handle_trap(trapframe_t* tf)
 {
+  if (trap_filter(tf)) {
+    pop_tf(tf);
+  }
+
   if (tf->cause == CAUSE_USER_ECALL)
   {
     int n = tf->gpr[10];
@@ -258,6 +288,7 @@ void vm_boot(uintptr_t test_addr)
   write_csr(satp, satp_value);
   if (read_csr(satp) != satp_value)
     assert(!"unsupported satp mode");
+  flush_page(DRAM_BASE);
 
   // Set up PMPs if present, ignoring illegal instruction trap if not.
   uintptr_t pmpc = PMP_NAPOT | PMP_R | PMP_W | PMP_X;

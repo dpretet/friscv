@@ -137,21 +137,6 @@ module axi4_ram
         output logic [AXI2_DATA_W   -1:0] p2_rdata
     );
 
-    // Logger setup
-    `ifdef TRACE_TB_RAM
-    initial f = $fopen("trace_tb_ram.txt","w");
-
-    svlogger log;
-    initial begin
-        log = new("AXI4_RAM",
-                  `SVL_VERBOSE_DEBUG,
-                  `SVL_ROUTE_FILE);
-        log.set_filename("trace_axi4_ram.txt");
-
-    end
-
-    `endif
-
     ///////////////////////////////////////////////////////////////////////////
     // Parameters and signals declarations
     ///////////////////////////////////////////////////////////////////////////
@@ -201,6 +186,21 @@ module axi4_ram
     integer f;
     string msg;
 
+
+    // Logger setup
+    `ifdef TRACE_TB_RAM
+    initial f = $fopen("trace_tb_ram.txt","w");
+
+    svlogger log;
+    initial begin
+        log = new("AXI4_RAM",
+                  `SVL_VERBOSE_DEBUG,
+                  `SVL_ROUTE_FILE);
+        log.set_filename("trace_axi4_ram.txt");
+
+    end
+
+    `endif
     initial $readmemh(INIT, mem, 0, 2**ADDRW-1);
 
     // init lock array to unreserved
