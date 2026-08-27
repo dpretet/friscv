@@ -4,9 +4,6 @@
 `timescale 1 ns / 1 ps
 `default_nettype none
 
-// TODO: Support read burst
-// TODO: Support write burst
-
 module axi4_ram_port
 
     #(
@@ -29,7 +26,7 @@ module axi4_ram_port
         parameter AXI_ID_W = 8,
         // AXI4 data width, independant of control unit width
         parameter AXI_DATA_W = 8,
-        parameter RAM_DATA_W = 8,
+        parameter RAM_DATA_W = 16,
         // Number of outstanding requests supported
         parameter OSTDREQ_NUM = 4
     )(
@@ -83,24 +80,28 @@ module axi4_ram_port
         output logic [AXI_ADDR_W    -1:0] ram_awaddr,
         output logic [AXI_ID_W      -1:0] ram_awid,
         output logic                      ram_awlock,
+        output logic [8             -1:0] ram_awlen,
         output logic [RAM_DATA_W    -1:0] ram_wdata,
         output logic [RAM_DATA_W/8  -1:0] ram_strb,
         input  wire                       ram_block,
         output logic                      ram_ren,
         output logic [AXI_ADDR_W    -1:0] ram_araddr,
         output logic [AXI_ID_W      -1:0] ram_arid,
+        output logic [8             -1:0] ram_arlen,
         output logic                      ram_arlock,
         input  wire  [RAM_DATA_W    -1:0] ram_rdata,
         input  wire                       ram_rlock
     );
 
 
+    localparam BUS_RATIO = (RAM_DATA_W == AXI_DATA_W) ? 1 : 
+                           (RAM_DATA_W <  AXI_DATA_W) ? (AXI_DATA_W / RAM_DATA_W) :
+                           (RAM_DATA_W >  AXI_DATA_W) ? (RAM_DATA_W / AXI_DATA_W) : 0 ;
 
-    parameter ADDR_LSB_W = $clog2(RAM_DATA_W/8);
+    parameter ADDR_LSB_W = $clog2(BUS_RATIO);
     parameter ADDRW = AXI_ADDR_W-ADDR_LSB_W;
 
-    logic [8            -1:0] wr_position;
-    logic [8            -1:0] rd_position;
+    logic [ADDR_LSB_W   -1:0] rd_position;
     logic [AXI_ADDR_W   -1:0] araddr_s;
     logic [AXI_ID_W     -1:0] arid_s;
     logic [8            -1:0] arlen_s;
@@ -115,6 +116,8 @@ module axi4_ram_port
     logic                     wdata_full;
     logic                     wdata_empty;
     logic                     awpull, wpull;
+
+    logic [ADDR_LSB_W   -1:0] wr_position;
 
     logic [AXI_ADDR_W   -1:0] awaddr_s;
     logic [8            -1:0] awlen_s;
@@ -197,17 +200,20 @@ module axi4_ram_port
     // Performance Mode
     end else begin : READ_COMPLETION_PERFORMANCE
 
-        assign rvalid = ~araddr_empty;
+        assign rvalid = !araddr_empty;
 
     end
     endgenerate
 
-    assign ram_ren = !araddr_empty & rvalid & rready;
-    assign ram_araddr = araddr_s[ADDR_LSB_W+:ADDRW];
-    assign ram_arid = arid_s;
-    assign ram_arlock = arlock_s;
+
 
     generate if (AXI_DATA_W<RAM_DATA_W) begin: RDATA_DOWNSIZE
+
+        assign ram_ren = !araddr_empty & rvalid & rready;
+        assign ram_araddr = araddr_s[ADDR_LSB_W+:ADDRW];
+        assign ram_arid = arid_s;
+        assign ram_arlen = arlen_s;
+        assign ram_arlock = arlock_s;
 
         // Get the position in the RAM line in bits:
         //  - araddr_s[0+:ADDR_LSB_W] : get the start address in byte
@@ -219,6 +225,12 @@ module axi4_ram_port
 
     end else begin: RDATA_NO_CONVERSION
 
+        assign ram_ren = !araddr_empty & rvalid & rready;
+        assign ram_araddr = araddr_s[ADDR_LSB_W+:ADDRW];
+        assign ram_arid = arid_s;
+        assign ram_arlen = arlen_s;
+        assign ram_arlock = arlock_s;
+
         assign rd_position = '0;
         assign rdata = ram_rdata[0+:AXI_DATA_W];
 
@@ -227,7 +239,8 @@ module axi4_ram_port
 
     assign rid = arid_s;
 
-    assign rresp = (ram_rlock) ? 2'h1 : 2'h0;
+    assign rresp = (ram_rlock & arlock_s) ? 2'h1 : // EXOKAY
+                                            2'h0 ; // OKAY
 
     assign rlast = '1;
 
@@ -296,7 +309,7 @@ module axi4_ram_port
         .aresetn  (aresetn),
         .srst     (srst),
         .flush    (1'b0),
-        .data_in  ({wlast, wstrb,wdata}),
+        .data_in  ({wlast,wstrb,wdata}),
         .push     (wvalid & wready),
         .full     (wdata_full),
         .data_out ({wlast_s,wstrb_s,wdata_s}),
@@ -305,40 +318,55 @@ module axi4_ram_port
     );
 
     assign wready = awready;
+    assign ram_wen = !awaddr_empty & !wdata_empty & !bvalid;
 
-    // Get the position in the RAM line in bits:
-    //  - awaddr_s[0+:ADDR_LSB_W] : get the start address in byte
-    //  - /4 : convert it in instruction index (if 4 instructions per line, can be 0-1-2-3)
-    //         divide by 4 because XLEN = 32 bits = 4 bytes
-    //  - *32 : convert the instruction index in bits
-    assign wr_position = (awaddr_s[0+:ADDR_LSB_W]/4)*32;
+    generate 
 
-    assign ram_wen = !awaddr_empty & !wdata_empty;
-    assign ram_awaddr = awaddr_s[ADDR_LSB_W+:ADDRW];
-    assign ram_awid = awid_s;
-    assign ram_awlock = awlock_s;
+    // FIXME: bugged code, not tested
+    if (AXI_DATA_W<RAM_DATA_W) begin: WDATA_UPSIZE
 
-    always @ (*) begin
+        // Get the position in the RAM line in bits
+        assign wr_position = awaddr_s[0+:ADDR_LSB_W];
 
-        ram_wdata = '0;
-        ram_strb = '0;
+        assign ram_awaddr = awaddr_s[ADDR_LSB_W+:ADDRW];
+        assign ram_awid = awid_s;
+        assign ram_awlock = awlock_s;
+        assign ram_awlen = awlen_s;
 
-        if (AXI_DATA_W<RAM_DATA_W) begin
-            for (int i=0;i<AXI_DATA_W/8;i++) begin
-                if (wstrb_s[i]) begin
-                    ram_wdata[(wr_position+i*8)+:8] = wdata_s[8*i+:8];
-                    ram_strb[wr_position + i] = 1'b1;
+        always @ (*) begin
+
+            ram_wdata = '0;
+            ram_strb = '0;
+
+            if (AXI_DATA_W<RAM_DATA_W) begin
+                for (int i=0;i<AXI_DATA_W/8;i++) begin
+                    if (wstrb_s[i]) begin
+                        ram_wdata[(wr_position*AXI_DATA_W + i*8)+:8] = wdata_s[8*i+:8];
+                        ram_strb[wr_position*AXI_DATA_W/8 + i] = 1'b1;
+                    end
                 end
-            end
-        end else begin
-            for (int i=0;i<AXI_DATA_W/8;i++) begin
-                if (wstrb_s[i]) begin
-                    ram_wdata[8*i+:8] = wdata_s[8*i+:8];
-                    ram_strb[wr_position + i] = 1'b1;
+            end else begin
+                for (int i=0;i<AXI_DATA_W/8;i++) begin
+                    if (wstrb_s[i]) begin
+                        ram_wdata[8*i+:8] = wdata_s[8*i+:8];
+                        ram_strb[wr_position + i] = 1'b1;
+                    end
                 end
             end
         end
+    end else begin : NO_WDATA_CONVERSION
+
+        assign wr_position = '0;
+
+        assign ram_awaddr = awaddr_s;
+        assign ram_awid = awid_s;
+        assign ram_awlock = awlock_s;
+        assign ram_awlen = awlen_s;
+        assign ram_wdata = wdata_s;
+        assign ram_strb = wstrb_s;
+
     end
+    endgenerate
 
     ///////////////////////////////////////////////////////////////////////////
     // Write response channel
@@ -346,7 +374,7 @@ module axi4_ram_port
 
     always @ (posedge aclk or negedge aresetn) begin
 
-        if (~aresetn) begin
+        if (!aresetn) begin
             awpull <= 1'b0;
             wpull <= 1'b0;
             bvalid <= 1'b0;
@@ -379,7 +407,10 @@ module axi4_ram_port
 
                 bvalid <= !wdata_empty & wlast;
                 bid <= awid_s;
-                bresp <= (ram_block) ? 2'h1 : 2'h0;
+
+                if (awlock_s)
+                    if (ram_block) bresp <= 2'h1; // EXOKAY 
+                    else           bresp <= 2'h0; // OKAY
 
             end else begin
                 awpull <= 1'b0;

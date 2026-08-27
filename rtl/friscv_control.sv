@@ -596,8 +596,8 @@ module friscv_control
                     if (cache_ready) begin
                         arvalid <= 1'b1;
                         `ifdef TRACE_CONTROL
-                        // $fwrite(f, "@ %0t,%x\n", $realtime, BOOT_ADDR);
-                        // log.info("IDLE -> Boot the processor");
+                        $fwrite(f, "@ %0t,%x\n", $realtime, BOOT_ADDR);
+                        log.info("IDLE -> Boot the processor");
                         `endif
                         cfsm <= FETCH;
                     end
@@ -677,8 +677,8 @@ module friscv_control
 
                         if (!cant_trap) begin
                             `ifdef TRACE_CONTROL
-                            // print_mcause("Handling a trap -> MCAUSE=0x", mcause_code);
-                            // print_instruction;
+                            print_mcause("Handling a trap -> MCAUSE=0x", mcause_code);
+                            print_instruction;
                             `endif
                             status[3] <= 1'b1;
                             flush_pipe <= 1'b1;
@@ -700,15 +700,15 @@ module friscv_control
 
                             if (!cant_jump) begin
                                 `ifdef TRACE_CONTROL
-                                // print_instruction;
+                                print_instruction;
                                 `endif
                                 pc_reg <= pc;
                             end
 
                             if (jump_branch && !cant_jump) begin
                                 `ifdef TRACE_CONTROL
-                                // if (jalr) log.info("JALR");
-                                // else      log.info("Branching");
+                                if (jalr) log.info("JALR");
+                                else      log.info("Branching");
                                 `endif
                             end
 
@@ -719,8 +719,8 @@ module friscv_control
                         end else if (jal) begin
 
                             `ifdef TRACE_CONTROL
-                            // log.info("JAL");
-                            // print_instruction;
+                            log.info("JAL");
+                            print_instruction;
                             `endif
                             pc_reg <= pc;
                             flush_pipe <= 1'b1;
@@ -732,8 +732,8 @@ module friscv_control
                             // Reach an ECALL instruction, jump to trap handler
                             if (sys[`IS_ECALL] && !proc_busy && csr_ready) begin
                                 `ifdef TRACE_CONTROL
-                                // print_instruction;
-                                // log.info("ECALL -> Jump to trap handler");
+                                print_instruction;
+                                log.info("ECALL -> Jump to trap handler");
                                 `endif
                                 status[0] <= 1'b1;
                                 flush_pipe <= 1'b1;
@@ -743,8 +743,8 @@ module friscv_control
                             // Reach an EBREAK instruction, need to stall the core
                             end else if (sys[`IS_EBREAK]) begin
                                 `ifdef TRACE_CONTROL
-                                // print_instruction;
-                                // log.info("EBREAK -> Stop the processor");
+                                print_instruction;
+                                log.info("EBREAK -> Stop the processor");
                                 `endif
                                 status[1] <= 1'b1;
                                 arvalid <= 1'b0;
@@ -753,8 +753,8 @@ module friscv_control
                             // Reach a MRET instruction, jump to exception return
                             end else if (sys[`IS_MRET] && !proc_busy && csr_ready) begin
                                 `ifdef TRACE_CONTROL
-                                // print_instruction;
-                                // log.info("MRET -> Machine Return");
+                                print_instruction;
+                                log.info("MRET -> Machine Return");
                                 `endif
                                 status[2] <= 1'b1;
                                 flush_pipe <= 1'b1;
@@ -765,8 +765,8 @@ module friscv_control
                             // the instruction pipeline
                             end else if (fence[`IS_FENCEI]) begin
                                 `ifdef TRACE_CONTROL
-                                // print_instruction;
-                                // log.info("FENCE.i -> Start iCache flushing");
+                                print_instruction;
+                                log.info("FENCE.i -> Start iCache flushing");
                                 `endif
                                 arvalid <= 1'b0;
                                 pc_reg <= pc;
@@ -777,8 +777,8 @@ module friscv_control
 
                                 if ({sb_msie,sb_mtie,sb_meie} != 3'b0) begin
                                     `ifdef TRACE_CONTROL
-                                    // print_instruction;
-                                    // log.info("WFI -> Stall and wait for interrupt");
+                                    print_instruction;
+                                    log.info("WFI -> Stall and wait for interrupt");
                                     `endif
                                     status[4] <= 1'b1;
                                     flush_pipe <= 1'b1;
@@ -793,7 +793,7 @@ module friscv_control
                             // CSR instructions
                             end else if (sys[`IS_CSR] && !cant_sys) begin
                                 `ifdef TRACE_CONTROL
-                                // print_instruction;
+                                print_instruction;
                                 `endif
                                 flush_pipe <= 1'b0;
                                 pc_reg <= pc;
@@ -801,7 +801,7 @@ module friscv_control
                             // FENCE instruction (not supported)
                             end else if (!proc_busy && csr_ready) begin
                                 `ifdef TRACE_CONTROL
-                                // print_instruction;
+                                print_instruction;
                                 `endif
                                 flush_pipe <= 1'b0;
                                 pc_reg <= pc;
@@ -810,7 +810,7 @@ module friscv_control
                         // LUI and AUIPC execution, done in this module
                         end else if (lui_auipc && !cant_lui_auipc) begin
                             `ifdef TRACE_CONTROL
-                            // print_instruction;
+                            print_instruction;
                             `endif
                             flush_pipe <= 1'b0;
                             pc_reg <= pc;
@@ -820,7 +820,7 @@ module friscv_control
 
                             if (!cant_process) begin
                                 `ifdef TRACE_CONTROL
-                                // print_instruction;
+                                print_instruction;
                                 `endif
                                 flush_pipe <= 1'b0;
                                 pc_reg <= pc;
@@ -839,7 +839,7 @@ module friscv_control
                     flush_blocks <= 1'b1;
                     if (flush_ack) begin
                         `ifdef TRACE_CONTROL
-                        // log.info("FENCE.i execution done");
+                        log.info("FENCE.i execution done");
                         `endif
                         flush_blocks <= 1'b0;
                         flush_pipe <= 1'b0;
@@ -855,7 +855,7 @@ module friscv_control
                 WFI: begin
                     if (sb_msip&sb_msie || sb_mtip&sb_mtie || sb_meip&sb_meie) begin
                         `ifdef TRACE_CONTROL
-                        // print_mcause("WFI -> MCAUSE=0x", mcause_code);
+                        print_mcause("WFI -> MCAUSE=0x", mcause_code);
                         `endif
                         status <= 5'b0;
                         flush_pipe <= 1'b1;
@@ -892,7 +892,7 @@ module friscv_control
     always @ (posedge aclk) begin
         if (flush_pipe || (cfsm==WFI && (sb_msip&sb_msie || sb_mtip&sb_mtie || sb_meip&sb_meie))) begin
             `ifdef TRACE_CONTROL
-            // $fwrite(f, "@ %0t,%x\n", $realtime, sb_mepc);
+            $fwrite(f, "@ %0t,%x\n", $realtime, sb_mepc);
             `endif
         end
     end

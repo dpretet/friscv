@@ -255,6 +255,10 @@ run_tests() {
         cat tc.log >> simulation.log
         rm -f tc.log
 
+        # Gather all reports together sorted by timestamp
+        python3 ../../dep/svlogger/svlogger.py *.log *.txt
+        cp ./svlogger.txt "./tests/$test_name.log"
+
         # Copy the waveform generated for further debug
         if [ -f "./friscv_testbench.fst" ]; then
             cp ./friscv_testbench.fst "./tests/$test_name.fst"
