@@ -335,6 +335,15 @@ check_status() {
 # Grab arguments and values
 #------------------------------------------------------------------------------
 
+setup_simulator_env() {
+    # Verilator 5.050 uses the Homebrew LZ4 library for FST support on macOS.
+    if [[ "$(uname -s)" == "Darwin" ]] && command -v brew >/dev/null 2>&1; then
+        brew_prefix=$(brew --prefix)
+        export CXXFLAGS="${CXXFLAGS:-} -I${brew_prefix}/include"
+        export LDFLAGS="${LDFLAGS:-} -L${brew_prefix}/lib -llz4"
+    fi
+}
+
 get_args() {
 
     while [ "$1" != "" ]; do
@@ -388,6 +397,8 @@ get_args() {
         esac
         shift
     done
+
+    setup_simulator_env
 }
 #------------------------------------------------------------------------------
 
