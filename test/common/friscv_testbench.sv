@@ -66,11 +66,6 @@ module friscv_testbench(
     `define XLEN 32
     `endif
 
-    // Testcase name to print before execution
-    `ifndef TCNAME
-    `define TCNAME "program"
-    `endif
-
     // Top level selection: 0="CORE", 1="PLATFORM"
     `ifndef TB_CHOICE
     `define TB_CHOICE 0
@@ -344,6 +339,20 @@ module friscv_testbench(
     string                     stop_msg;
     integer                    timer;
     string                     tcname;
+    integer                    testcase_file;
+
+    // Read the testcase name at runtime so run-only executions do not retain
+    // the name used when the testbench was compiled.
+    initial begin
+        tcname = "program";
+        testcase_file = $fopen("testcase.name", "r");
+        if (testcase_file != 0) begin
+            if ($fscanf(testcase_file, "%s", tcname) != 1)
+                tcname = "program";
+            $fclose(testcase_file);
+        end
+        $display("Starting %s testcase", tcname);
+    end
 
 
     // iCache write channels driven to 0 while unused
@@ -973,10 +982,6 @@ module friscv_testbench(
 
         initial aclk = 0;
         always #1 aclk = ~aclk;
-
-        initial begin
-            $sformat(tcname, "%s", ``TCNAME);
-        end
 
         task setup(msg="");
         begin

@@ -100,6 +100,7 @@ clean() {
     rm -f "./*.csv"
     rm -f "./*.out"
     rm -f "./rtl.md5*"
+    rm -f "./testcase.name"
     rm -f "./test.v"
     exit 0
 }
@@ -130,7 +131,6 @@ get_defines() {
     DEFINES="${DEFINES}TIMEOUT=$TIMEOUT;"
     DEFINES="${DEFINES}MIN_PC=$MIN_PC;"
     DEFINES="${DEFINES}TB_CHOICE=$TB_CHOICE;"
-    DEFINES="${DEFINES}TCNAME=$test_name;"
     DEFINES="${DEFINES}INTERACTIVE=$INTERACTIVE;"
 
     [[ $RAM_MODE == "performance" ]] && DEFINES="${DEFINES}RAM_MODE_PERF=1;"
@@ -232,6 +232,10 @@ run_tests() {
         # Get test name by removing the extension
         test_file=$(basename "$test")
         test_name=${test_file%%.*}
+
+        # The testbench executable may be reused by a testsuite. Pass the
+        # testcase name at runtime instead of recompiling it into the binary.
+        printf '%s\n' "$test_name" > testcase.name
 
         # Grab all defines necessary for testbench & flow setup
         get_defines "$2"
