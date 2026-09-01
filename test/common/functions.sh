@@ -90,19 +90,18 @@ read_config() {
 # Clean compiled programs
 #------------------------------------------------------------------------------
 clean() {
-    make -C ./tests clean
-    rm -fr build
-    rm -f "./rv*.*v"
-    rm -f "./*.vcd"
-    rm -f "./*.fst"
-    rm -f "./*.txt"
-    rm -f "./*.log"
-    rm -f "./*.csv"
-    rm -f "./*.out"
-    rm -f "./rtl.md5*"
-    rm -f "./testcase.name"
-    rm -f "./test.v"
-    exit 0
+    echo "Clean-up existing artifacts"
+    rm -fr ./build
+    rm -f ./rv*.*v
+    rm -f ./*.vcd
+    rm -f ./*.fst
+    rm -f ./*.txt
+    rm -f ./*.log
+    rm -f ./*.csv
+    rm -f ./*.out
+    rm -f ./rtl.md5*
+    rm -f ./testcase.name
+    rm -f ./test.v
 }
 #------------------------------------------------------------------------------
 
@@ -159,7 +158,7 @@ gather_result() {
     msg=$(grep -ni "ERROR:" tc.log)
 
     if [ "$2" -eq 1 ] || [ "$ec" != 0 ]; then
-        ts_res="${ts_res}  ❌ $1\n"
+        ts_res="${ts_res}  ⛔️ $1\n"
         ts_res="${ts_res}$msg\n"
     else
         ts_res="${ts_res}  ✅ $1\n"
