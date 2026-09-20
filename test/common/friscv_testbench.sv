@@ -92,6 +92,8 @@ module friscv_testbench(
     // MHART ID CSR register
     parameter HART_ID = 0;
 
+    // Atomic Operation extension support
+    parameter A_EXTENSION = 1;
     // Floating-point extension support
     parameter F_EXTENSION = 0;
     // Multiply/Divide extension support
@@ -364,7 +366,7 @@ module friscv_testbench(
 
     generate if (`GEN_EIRQ>0) begin
 
-        integer cnt;
+        integer      cnt;
         logic [31:0] xirq_lfsr;
         logic [7 :0] irq_reset;
         logic [3 :0] next_eirq;
@@ -435,6 +437,7 @@ module friscv_testbench(
             .DATA_OSTDREQ_NUM           (DATA_OSTDREQ_NUM),
             .HART_ID                    (HART_ID),
             .RV32E                      (RV32E),
+            .A_EXTENSION                (A_EXTENSION),
             .M_EXTENSION                (M_EXTENSION),
             .F_EXTENSION                (F_EXTENSION),
             .HYPERVISOR_MODE            (HYPERVISOR_MODE),
@@ -689,6 +692,7 @@ module friscv_testbench(
             .DATA_OSTDREQ_NUM           (DATA_OSTDREQ_NUM),
             .HART_ID                    (HART_ID),
             .RV32E                      (RV32E),
+            .A_EXTENSION                (A_EXTENSION),
             .M_EXTENSION                (M_EXTENSION),
             .F_EXTENSION                (F_EXTENSION),
             .HYPERVISOR_MODE            (HYPERVISOR_MODE),

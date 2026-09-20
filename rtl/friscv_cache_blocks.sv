@@ -31,10 +31,17 @@ module friscv_cache_blocks
         // Number of blocks in the cache
         parameter CACHE_DEPTH = 512
     )(
+        // General Interface
         input  wire                           aclk,
         input  wire                           aresetn,
         input  wire                           srst,
+        // Flush control, asserted in FENCE.i instruction
         input  wire                           flush,
+        // Invalidation interface. Used by a transaction if targeting a "device" 
+        // or "IO" region to ensure the cache block doesn't keep an outdated copy
+        input  wire                           invalid_en,
+        input  wire  [ADDR_W            -1:0] invalid_addr,
+        // Port 1 interface
         input  wire                           p1_wen,
         input  wire  [ADDR_W            -1:0] p1_waddr,
         input  wire  [CACHE_BLOCK_W     -1:0] p1_wdata,
@@ -44,6 +51,7 @@ module friscv_cache_blocks
         output logic [WLEN              -1:0] p1_rdata,
         output logic                          p1_hit,
         output logic                          p1_miss,
+        // Port 2 interface
         input  wire                           p2_wen,
         input  wire  [ADDR_W            -1:0] p2_waddr,
         input  wire  [CACHE_BLOCK_W     -1:0] p2_wdata,
@@ -84,12 +92,16 @@ module friscv_cache_blocks
     //////////////////////////////////////////////////////////////////////////
 
     // signals used to parse the RAM/regfiles
+    logic                          used;
     logic                          wen;
     logic [INDEX_W           -1:0] windex;
     logic [CACHE_BLOCK_W     -1:0] wdata;
     logic [CACHE_BLOCK_W/8   -1:0] wstrb;
     logic [TAG_W             -1:0] wtag;
     logic [INDEX_W           -1:0] rindex;
+
+    logic [INDEX_W           -1:0] inv_index;
+    logic [TAG_W             -1:0] inv_tag;
 
     // extracted from the write interface
     logic [INDEX_W        -1:0] p1_windex;
@@ -154,19 +166,29 @@ module friscv_cache_blocks
     // index is used to parse the cache blocks
     assign p1_windex = p1_waddr[INDEX_IX+:INDEX_W];
     assign p2_windex = p2_waddr[INDEX_IX+:INDEX_W];
+    assign inv_index = invalid_addr[INDEX_IX+:INDEX_W];
 
     // address's MSB to identify the memory address source
     assign p1_wtag = p1_waddr[TAG_IX+:TAG_W];
     assign p2_wtag = p2_waddr[TAG_IX+:TAG_W];
+    assign inv_tag = invalid_addr[TAG_IX+:TAG_W];
 
-    assign wen = p1_wen | p2_wen;
-    assign windex = (p1_wen) ? p1_windex : p2_windex;
-    assign wtag = (p1_wen) ? p1_wtag : p2_wtag;
+    // Indicate a cache line is under used
+    assign used = !flush & !invalid_en;
+
+    assign wen = p1_wen | p2_wen | invalid_en;
+    assign windex = (invalid_en) ? inv_index : (p1_wen) ? p1_windex : p2_windex;
+    assign wtag = (invalid_en) ? inv_tag : (p1_wen) ? p1_wtag : p2_wtag;
     assign wstrb = (p1_wen) ? p1_wstrb : p2_wstrb;
     assign wdata = (p1_wen) ? p1_wdata : p2_wdata;
 
     `ifdef TRACE_BLOCKS
     always @ (posedge aclk) begin
+        if (invalid_en) begin
+            $fwrite(f, "@ %0t: Invalidation @ 0x%x\n", $realtime, invalid_addr);
+            $fwrite(f, "  - index 0x%x\n", inv_index);
+            $fwrite(f, "  - tag 0x%x\n", inv_tag);
+        end
         if (wen) begin
             if (p1_wen) $fwrite(f, "@ %0t: Port 1 write @ 0x%x\n", $realtime, p1_waddr);
             else        $fwrite(f, "@ %0t: Port 2 write @ 0x%x\n", $realtime, p2_waddr);
@@ -217,11 +239,10 @@ module friscv_cache_blocks
         .aclk     (aclk),
         .wr_en    (wen),
         .addr_in  (windex),
-        .data_in  ({~flush, wtag}),
+        .data_in  ({used, wtag}),
         .addr_out (rindex),
         .data_out ({rblock_set, rblock_tag})
     );
-
 
     //////////////////////////////////////////////////////////////////////////
     // Follow the block fetch, the data selection and the hit/miss generation.

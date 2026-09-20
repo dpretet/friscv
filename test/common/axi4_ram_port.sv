@@ -192,7 +192,7 @@ module axi4_ram_port
         )
         rvalid_inst
         (
-            aclk,aresetn,srst, rvalid,rready,rvalid_rnd
+            aclk, aresetn, srst, rvalid, rready, rvalid_rnd
         );
 
         assign rvalid = rvalid_rnd & ~araddr_empty;

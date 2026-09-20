@@ -212,6 +212,9 @@ module friscv_dcache
     logic [AXI_DATA_W    -1:0] cache_m_rdata;
     logic                      cache_m_rlast;
 
+    logic                      invalid_en;
+    logic [AXI_ADDR_W    -1:0] invalid_addr;
+
     localparam OR_NUM_W = $clog2(OSTDREQ_NUM);
     localparam SCALE = AXI_DATA_W / XLEN;
     localparam SCALE_W = $clog2(SCALE);
@@ -315,6 +318,8 @@ module friscv_dcache
         .aresetn           (aresetn),
         .srst              (srst),
         .cache_ready       (dcache_ready),
+        .invalid_en        (invalid_en),
+        .invalid_addr      (invalid_addr),
         .memfy_awvalid     (cache_s_awvalid),
         .memfy_awready     (cache_s_awready),
         .memfy_awaddr      (memfy_awaddr),
@@ -470,6 +475,11 @@ module friscv_dcache
     assign rd_bypass = rd_bypass_nxt | (rd_bypass_state == ACTIVE);
 
     ///////////////////////////////////////////////////////////////////////////
+
+    // Invalidation interface active when an atomic operation is under execution
+    // to be sure the memory region is no more allocated in the cache block
+    assign invalid_en = (wr_bypass) ? (memfy_awvalid & memfy_awready) : '0;
+    assign invalid_addr = memfy_awaddr;
 
     ///////////////////////////////////////////////////////////////////////////
     // Demux AXI4: Cache vs Bypass

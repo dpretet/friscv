@@ -114,6 +114,17 @@
             $sformat(temp, "Imm12: %x", imm12);
             text = {temp, " / ", text};
         end
+        if (opcode==`AMO) begin
+            text = "AMO / I-type";
+            $sformat(temp, "rd: %x", rd);
+            text = {temp, " / ", text};
+            $sformat(temp, "Funct3: %x", funct3);
+            text = {temp, " / ", text};
+            $sformat(temp, "Rs1: %x", rs1);
+            text = {temp, " / ", text};
+            $sformat(temp, "Imm12: %x", imm12);
+            text = {temp, " / ", text};
+        end
         if (opcode==`LOAD) begin
             text = "LOAD / I-type";
             $sformat(temp, "rd: %x", rd);

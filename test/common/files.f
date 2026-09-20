@@ -10,6 +10,7 @@
 ../../rtl/friscv_alu.sv
 ../../rtl/friscv_processing.sv
 ../../rtl/friscv_memfy.sv
+../../rtl/friscv_amo_op.sv
 ../../rtl/friscv_registers.sv
 ../../rtl/friscv_csr.sv
 ../../rtl/friscv_pulser.sv

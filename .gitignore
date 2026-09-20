@@ -147,3 +147,4 @@ test/*/*.txt
 *.csv
 *.symbols
 rtl.md5*
+testcase.name

@@ -77,6 +77,11 @@ module friscv_dcache_core
         input  wire                       srst,
         output logic                      cache_ready,
 
+        // Invalidation interface. Used by a transaction if targeting a "device" 
+        // or "IO" region to ensure the cache block doesn't keep an outdated copy
+        input  wire                       invalid_en,
+        input  wire  [AXI_ADDR_W    -1:0] invalid_addr,
+
         // memfy memory interface
         input  wire                       memfy_awvalid,
         output logic                      memfy_awready,
@@ -641,28 +646,30 @@ module friscv_dcache_core
     )
     cache_blocks
     (
-        .aclk       (aclk),
-        .aresetn    (aresetn),
-        .srst       (srst),
-        .flush      (flushing),
-        .p1_wen     (memctrl_rvalid & !memctrl_rcache | cache_wren),
-        .p1_wstrb   ({CACHE_BLOCK_W/8{1'b1}}),
-        .p1_waddr   ((cache_wren) ? cache_waddr : memctrl_raddr),
-        .p1_wdata   ((cache_wren) ? cache_wdata : memctrl_rdata_blk),
-        .p1_ren     (fetcher_cache_ren),
-        .p1_raddr   (fetcher_cache_raddr),
-        .p1_rdata   (fetcher_cache_rdata),
-        .p1_hit     (fetcher_cache_hit),
-        .p1_miss    (fetcher_cache_miss),
-        .p2_wen     (pusher_cache_wen),
-        .p2_wstrb   (pusher_cache_wstrb),
-        .p2_waddr   (pusher_cache_waddr),
-        .p2_wdata   (pusher_cache_wdata),
-        .p2_ren     (pusher_cache_ren),
-        .p2_raddr   (pusher_cache_raddr),
-        .p2_rdata   (),
-        .p2_hit     (pusher_cache_hit),
-        .p2_miss    (pusher_cache_miss)
+        .aclk         (aclk),
+        .aresetn      (aresetn),
+        .srst         (srst),
+        .invalid_en   (invalid_en),
+        .invalid_addr (invalid_addr),
+        .flush        (flushing),
+        .p1_wen       (memctrl_rvalid & !memctrl_rcache | cache_wren),
+        .p1_wstrb     ({CACHE_BLOCK_W/8{1'b1}}),
+        .p1_waddr     ((cache_wren) ? cache_waddr : memctrl_raddr),
+        .p1_wdata     ((cache_wren) ? cache_wdata : memctrl_rdata_blk),
+        .p1_ren       (fetcher_cache_ren),
+        .p1_raddr     (fetcher_cache_raddr),
+        .p1_rdata     (fetcher_cache_rdata),
+        .p1_hit       (fetcher_cache_hit),
+        .p1_miss      (fetcher_cache_miss),
+        .p2_wen       (pusher_cache_wen),
+        .p2_wstrb     (pusher_cache_wstrb),
+        .p2_waddr     (pusher_cache_waddr),
+        .p2_wdata     (pusher_cache_wdata),
+        .p2_ren       (pusher_cache_ren),
+        .p2_raddr     (pusher_cache_raddr),
+        .p2_rdata     (),
+        .p2_hit       (pusher_cache_hit),
+        .p2_miss      (pusher_cache_miss)
     );
 
 
