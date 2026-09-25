@@ -70,8 +70,7 @@ module friscv_memfy
         // ALU instruction bus
         input  wire                         memfy_valid,
         output logic                        memfy_ready,
-        output logic                        memfy_pending_read,
-        output logic                        memfy_pending_write,
+        output logic                        memfy_pending_op,
         output logic [NB_INT_REG      -1:0] memfy_regs_sts,
         output logic [4               -1:0] memfy_fenceinfo,
         input  wire  [`INST_BUS_W     -1:0] memfy_instbus,
@@ -196,6 +195,10 @@ module friscv_memfy
     logic                           is_amo;
     logic                           is_amo_r;
     logic                           amo_cpl;
+    logic                           is_lr;
+    logic                           is_sc;
+    logic                           is_sc_r;
+    logic                           is_valid_sc;
 
     // AMO
     logic        [XLEN        -1:0] amo_rs2_val;
@@ -206,6 +209,10 @@ module friscv_memfy
 
     logic                           is_st, is_st_r;
     logic                           is_ld, is_ld_r;
+
+    logic                           lrsc_resv_en;
+    logic                           lrsc_resv_valid;
+    logic [AXI_ADDR_W         -1:0] lrsc_resv_addr;
 
     typedef enum logic[1:0] {
         XFER = 0,
@@ -236,27 +243,6 @@ module friscv_memfy
     assign aq     = memfy_instbus[`AQ                 ];
     assign rl     = memfy_instbus[`RL                 ];
 
-
-    ///////////////////////////////////////////////////////////////////////////
-    // Opcode decoder
-    ///////////////////////////////////////////////////////////////////////////
-    always_comb begin
-
-        // Regular store
-        if (opcode == `STORE)                       is_st = '1;
-        // Atomic op, store conditional
-        else if (opcode == `AMO && funct5 == `SC_W) is_st = '1;
-        else                                        is_st = '0;
-
-        // Regular load
-        if (opcode == `LOAD)                                           is_ld = '1;
-        // Atomic op, load reserved
-        else if (opcode == `AMO && funct5 == `LR_W)                    is_ld = '1;
-        // Any other atomic op, read-modify-write
-        else if (opcode == `AMO && funct5 != `LR_W && funct5 != `SC_W) is_ld = '1;
-        else                                                           is_ld = '0;
-
-    end
 
 
     ///////////////////////////////////////////////////////////////////////////
@@ -305,6 +291,9 @@ module friscv_memfy
             is_amo_r <= '0;
             is_ld_r <= '0;
             is_st_r <= '0;
+            is_sc_r <= '0;
+            lrsc_resv_en <= '0;
+            lrsc_resv_addr <= '0;
         end else if (srst == 1'b1) begin
             state <= XFER;
             fsm_ready <= '0;
@@ -330,6 +319,9 @@ module friscv_memfy
             is_amo_r <= '0;
             is_ld_r <= '0;
             is_st_r <= '0;
+            is_sc_r <= '0;
+            lrsc_resv_en <= '0;
+            lrsc_resv_addr <= '0;
         end else begin
 
             case (state)
@@ -342,8 +334,7 @@ module friscv_memfy
                 // The state is composed by two sub-states:
                 //    - STALL: FSM is stopped because last command issued has
                 //             not been acknowledged yet by the slave.
-                //    - READY: FSM will send the request if the instruction bus
-                //             is loaded
+                //    - READY: FSM will send the request if the instruction bus is loaded
                 default: begin
 
                     // XFER.STALL state:
@@ -351,10 +342,9 @@ module friscv_memfy
                     // Handles a situation during which the address or data
                     // channel is not ready to accept a transaction.
                     // Arrives here once:
-                    // - we were in XFER.READY
-                    // - we issued a request (either read or write)
-                    // - AXI interface READY was asserted
-                    // - but AXI interface is no more ready when AVALID is raised 1 cycle later
+                    // 1. we were in XFER.READY
+                    // 2. we issued a request, either read or write and AREADY = 1
+                    // 3. AXI interface is no more ready when AVALID is raised 1 cycle later
                     if ((arvalid && !arready) ||
                         (awvalid && !awready) || (wvalid && !wready))
                     begin
@@ -373,7 +363,8 @@ module friscv_memfy
                     // or will continue to execute an AMO if in the STORE phase
                     end else if (memfy_valid || amo_cpl) begin
 
-                        if (!amo_cpl) begin
+                        // Not under read-modify-write operation
+                        if (!amo_cpl && !(is_sc && !is_valid_sc)) begin
                             awaddr <= addr;
                             araddr <= addr;
                             awcache <= acache;
@@ -389,6 +380,7 @@ module friscv_memfy
                             is_amo_r <= is_amo;
                             is_st_r <= is_st;
                             is_ld_r <= is_ld;
+                            is_sc_r <= is_sc;
                             amo_rd <= rd;
                         end
 
@@ -400,7 +392,12 @@ module friscv_memfy
                                 is_st_r <= '1; // start the store phase
                             end
 
-                            if (waiting_rd_cpl || arvalid) begin
+                            if (is_sc && !is_valid_sc) begin
+                                awvalid <= 1'b0;
+                                wvalid <= 1'b0;
+                                fsm_ready <= 1'b1;
+
+                            end else if (waiting_rd_cpl || arvalid) begin
                                 state <= WAIT;
                                 awvalid <= 1'b0;
                                 wvalid <= 1'b0;
@@ -432,9 +429,11 @@ module friscv_memfy
 
                             if (!is_amo)
                                 amo_cpl <= '0;
-                            else if (funct5 == `LR_W || funct5 == `SC_W)
+                            else if (funct5 == `LR_W) begin
                                 amo_cpl <= '0;
-                            else begin
+                                lrsc_resv_en <= '1;
+                                lrsc_resv_addr <= addr;
+                            end else begin
                                 amo_rs2_val <= memfy_rs2_val;
                                 amo_cpl <= '1;
                             end
@@ -511,13 +510,20 @@ module friscv_memfy
                         // Wait until addr and data have been acknowledged
                         if (awready && wready  ||   // addr & data channel acked on same cycle
                             !awvalid && wready ||   // addr has been acked before data
-                            awready && !wvalid      // addr is acked and data has been acked before
+                            !wvalid && awready      // data has been acked before addr
                         ) begin
-                            state <= XFER;
-                            fsm_ready <= 1'b1;
-                            is_st_r <= '0;
-                            amo_cpl <= '0; // Reset the amo completion flag when writing
-                            is_amo_r <= '0;
+                            if (amo_cpl && bvalid || 
+                                is_sc_r && bvalid ||
+                                !amo_cpl && !is_sc_r) 
+                            begin
+                                state <= XFER;
+                                fsm_ready <= 1'b1;
+                                is_st_r <= '0;
+                                amo_cpl <= '0;
+                                is_amo_r <= '0;
+                                is_sc_r <= '0;
+                                lrsc_resv_en <= '0;
+                            end
                         end
                     end
 
@@ -569,46 +575,10 @@ module friscv_memfy
     always @ (posedge aclk) begin
         `ifdef FRISCV_SIM
         if (aresetn && rvalid && rready && rd_or_empty)
-            $error("ERROR: (@ %0t) - %s: Receive a read completion but doesn't expect it", $realtime, "Memfy");
+            $error("ERROR: (@ %0t) - %s: Receive a read completion but none expected", $realtime, "Memfy");
         `endif
     end
 
-    ////////////////////////////////////////////////////////////////////////////
-    //
-    // Atomic Operation Support
-    //
-    ////////////////////////////////////////////////////////////////////////////
-
-    generate if (A_EXTENSION) begin: A_SUPPORT
-
-        friscv_amo_op amo_op_inst (
-            .aclk       (aclk),
-            .aresetn    (aresetn),
-            .srst       (srst),
-            .opcode     (funct5_r),
-            .op1        (rdata),
-            .op2        (amo_rs2_val),
-            .rd         (amo_reg),
-            .mem        (amo_mem)
-        );
-
-        assign is_amo = (opcode == `AMO) ? '1 : '0;
-
-        // Store AMO register value for later use if write receives
-        // EXOKAY to update the processor register
-        always @ (posedge aclk or negedge aresetn) begin
-            if (!aresetn) amo_reg_r <= '0;
-            else if (srst) amo_reg_r <= '0;
-            else if (rvalid & rready) amo_reg_r <= amo_reg;
-        end
-
-    end else begin : NO_A_SUPPORT
-        assign amo_reg = '0;
-        assign amo_reg_r = '0;
-        assign amo_mem = '0;
-        assign is_amo = '0;
-    end
-    endgenerate
 
 
 
@@ -674,9 +644,9 @@ module friscv_memfy
         end else begin
 
             // Write xfers tracker
-            if (memfy_valid && memfy_ready && is_st && !bvalid && !max_wr_or && write_allowed) begin
+            if (memfy_valid && memfy_ready && ((is_st && !is_sc) || (is_sc && is_valid_sc)) && !bvalid && !max_wr_or && write_allowed) begin
                 wr_or_cnt <= wr_or_cnt + 1'b1;
-            end else if (!(memfy_valid && memfy_ready && is_st) && bvalid && wr_or_cnt!={MAX_OR_W{1'b0}}) begin
+            end else if (!(memfy_valid && memfy_ready && ((is_st && !is_sc) || (is_sc && is_valid_sc))) && bvalid && wr_or_cnt!={MAX_OR_W{1'b0}}) begin
                 wr_or_cnt <= wr_or_cnt - 1'b1;
             end
 
@@ -713,9 +683,10 @@ module friscv_memfy
     assign waiting_wr_cpl = (wr_or_cnt!={MAX_OR_W{1'b0}} && !(wr_or_cnt=={{(MAX_OR_W-1){1'b0}}, 1'b1} & bvalid)) ? 1'b1 : 1'b0;
     assign waiting_rd_cpl = (rd_or_cnt!={MAX_OR_W{1'b0}} && !(rd_or_cnt=={{(MAX_OR_W-1){1'b0}}, 1'b1} & rvalid)) ? 1'b1 : 1'b0;
 
-    // Flags for outside modules
-    assign memfy_pending_read = waiting_rd_cpl;
-    assign memfy_pending_write = waiting_wr_cpl;
+    // Pending operation flags for front-end stage
+    assign memfy_pending_op = waiting_rd_cpl |            // regular store
+                              amo_cpl |                   // read-modify-write execution
+                              (is_sc_r & waiting_wr_cpl); // store-conditional operation
 
 
     ////////////////////////////////////////////////////////////////////////
@@ -738,9 +709,23 @@ module friscv_memfy
             memfy_rd_strb <= {XLEN/8{1'b0}};
             memfy_rd_val <= {XLEN{1'b0}};
         end else begin
+            // SC failed on launch
+            if (memfy_valid && memfy_ready && is_sc && 
+                (!lrsc_resv_valid || !lrsc_resv_en)) 
+            begin
+                memfy_rd_wr <= '1;
+                memfy_rd_addr <= rd;
+                memfy_rd_strb <= '1;
+                memfy_rd_val <= 1;
+            // SC succeded on completion
+            end else if (is_sc_r) begin
+                memfy_rd_wr <= bvalid & bready;
+                memfy_rd_addr <= amo_rd;
+                memfy_rd_strb <= '1;
+                memfy_rd_val <= '0;
             // Write into RD once the write channel handshakes with exclusive ack
-            if (amo_cpl) begin
-                memfy_rd_wr <= wvalid & wready;
+            end else if (amo_cpl) begin
+                memfy_rd_wr <= bvalid & bready;
                 memfy_rd_addr <= amo_rd;
                 memfy_rd_strb <= '1;
                 memfy_rd_val <= amo_reg_r;
@@ -757,9 +742,23 @@ module friscv_memfy
     end else begin : RD_WR_COMB
 
         always @ (*) begin
+            // SC failed on launch
+            if (memfy_valid && memfy_ready && is_sc && 
+                (!lrsc_resv_valid || !lrsc_resv_en)) 
+            begin
+                memfy_rd_wr = '1;
+                memfy_rd_addr = rd;
+                memfy_rd_strb = '1;
+                memfy_rd_val = 1;
+            // SC succeded on completion
+            end else if (is_sc_r) begin
+                memfy_rd_wr = bvalid & bready;
+                memfy_rd_addr = amo_rd;
+                memfy_rd_strb = '1;
+                memfy_rd_val = '0;
             // Write into RD once the write channel handshakes with exclusive ack
-            if (amo_cpl) begin
-                memfy_rd_wr = wvalid & wready;
+            end else if (amo_cpl) begin
+                memfy_rd_wr = bvalid & bready;
                 memfy_rd_addr = amo_rd;
                 memfy_rd_strb = '1;
                 memfy_rd_val = amo_reg_r;
@@ -775,8 +774,80 @@ module friscv_memfy
     end
     endgenerate
 
+    ////////////////////////////////////////////////////////////////////////////
+    //
+    // Atomic Operation Support
+    //
+    ////////////////////////////////////////////////////////////////////////////
+
+    generate if (A_EXTENSION) begin: A_SUPPORT
+
+        friscv_amo_op amo_op_inst (
+            .aclk       (aclk),
+            .aresetn    (aresetn),
+            .srst       (srst),
+            .opcode     (funct5_r),
+            .op1        (rdata),
+            .op2        (amo_rs2_val),
+            .rd         (amo_reg),
+            .mem        (amo_mem)
+        );
+
+        assign is_amo = (opcode == `AMO) ? '1 : '0;
+
+        assign is_lr = (is_amo && funct5 == `LR_W) ? '1 : '0;
+
+        assign is_sc = (is_amo && funct5 == `SC_W) ? '1 : '0;
+        
+        // Check the SC uses the same address reserved than the previous LR
+        assign lrsc_resv_valid = (lrsc_resv_addr == addr);
+
+        assign is_valid_sc = lrsc_resv_valid && lrsc_resv_en;
+
+        // Store AMO register value for later use if write receives
+        // EXOKAY to update the processor register
+        always @ (posedge aclk or negedge aresetn) begin
+            if (!aresetn) amo_reg_r <= '0;
+            else if (srst) amo_reg_r <= '0;
+            else if (rvalid & rready) amo_reg_r <= amo_reg;
+        end
+
+    end else begin : NO_A_SUPPORT
+        assign amo_reg = '0;
+        assign amo_reg_r = '0;
+        assign amo_mem = '0;
+        assign is_lr = '0;
+        assign is_sc = '0;
+        assign lrsc_resv_valid = '0;
+    end
+    endgenerate
+
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Opcode decoder
+    ///////////////////////////////////////////////////////////////////////////
+
+    always_comb begin
+
+        // Regular store
+        if (opcode == `STORE)           is_st = '1;
+        // Atomic op, store conditional
+        else if (is_sc)                 is_st = '1;
+        else                            is_st = '0;
+
+        // Regular load
+        if (opcode == `LOAD)                                           is_ld = '1;
+        // Atomic op, load reserved
+        else if (is_lr)                                                is_ld = '1;
+        // Any other atomic op, read-modify-write
+        else if (opcode == `AMO && funct5 != `LR_W && funct5 != `SC_W) is_ld = '1;
+        else                                                           is_ld = '0;
+
+    end
+
     assign memfy_rs1_addr = rs1;
     assign memfy_rs2_addr = rs2;
+
 
 
     /////////////////////////////////////////////////////////////////////////

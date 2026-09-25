@@ -140,9 +140,8 @@ module friscv_processing
 
     logic                        memfy_valid;
     logic                        memfy_ready;
-    logic                        memfy_pending_read;
-    logic                        memfy_pending_write;
-     logic [NB_INT_REG     -1:0] memfy_regs_sts;
+    logic                        memfy_pending_op;
+    logic [NB_INT_REG      -1:0] memfy_regs_sts;
     logic                        ls_inst;
 
     logic                        proc_valid_p;
@@ -187,7 +186,7 @@ module friscv_processing
             end else if (srst) begin
                 proc_busy_r <= 1'b0;
             end else begin
-                if (proc_valid || memfy_pending_read || div_pending) begin
+                if (proc_valid || memfy_pending_op || div_pending) begin
                     proc_busy_r <= 1'b1;
                 end else if (!proc_valid_p && proc_ready_p) begin
                     proc_busy_r <= 1'b0;
@@ -195,7 +194,7 @@ module friscv_processing
             end
         end
 
-        assign proc_busy = proc_busy_r | memfy_pending_read | div_pending;
+        assign proc_busy = proc_busy_r | memfy_pending_op | div_pending;
 
     end else begin: INPUT_PIPELINE_OFF
 
@@ -203,7 +202,7 @@ module friscv_processing
         assign proc_valid_p = proc_valid;
         assign proc_ready = proc_ready_p;
 
-        assign proc_busy = !proc_ready || memfy_pending_read;
+        assign proc_busy = !proc_ready || memfy_pending_op;
         assign proc_busy_r = 1'b0;
 
     end
@@ -343,8 +342,7 @@ module friscv_processing
         .srst                (srst),
         .memfy_valid         (memfy_valid),
         .memfy_ready         (memfy_ready),
-        .memfy_pending_read  (memfy_pending_read),
-        .memfy_pending_write (memfy_pending_write),
+        .memfy_pending_op    (memfy_pending_op),
         .memfy_regs_sts      (memfy_regs_sts),
         .memfy_fenceinfo     (proc_fenceinfo),
         .memfy_instbus       (proc_instbus_p),
