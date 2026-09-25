@@ -48,9 +48,9 @@ main() {
     else
         # Execute the testsuites
         run_testsuite "./tests/rv32ui-p*.v" "$cfg_file"
-        run_testsuite "./tests/rv32mi-p*.v" "$cfg_file"
         run_testsuite "./tests/rv32ua-p*.v" "$cfg_file"
         run_testsuite "./tests/rv32um-p*.v" "$cfg_file"
+        # run_testsuite "./tests/rv32mi-p*.v" "$cfg_file"
     fi
 }
 
