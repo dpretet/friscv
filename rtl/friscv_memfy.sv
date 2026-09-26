@@ -364,7 +364,7 @@ module friscv_memfy
                     end else if (memfy_valid || amo_cpl) begin
 
                         // Not under read-modify-write operation
-                        if (!amo_cpl && !(is_sc && !is_valid_sc)) begin
+                        if (!amo_cpl) begin
                             awaddr <= addr;
                             araddr <= addr;
                             awcache <= acache;
@@ -392,12 +392,7 @@ module friscv_memfy
                                 is_st_r <= '1; // start the store phase
                             end
 
-                            if (is_sc && !is_valid_sc) begin
-                                awvalid <= 1'b0;
-                                wvalid <= 1'b0;
-                                fsm_ready <= 1'b1;
-
-                            end else if (waiting_rd_cpl || arvalid) begin
+                            if (waiting_rd_cpl || arvalid || is_sc) begin
                                 state <= WAIT;
                                 awvalid <= 1'b0;
                                 wvalid <= 1'b0;
@@ -473,7 +468,14 @@ module friscv_memfy
                 // WAIT: Wait for all write completion have been received before moving to LOAD
                 WAIT: begin
 
-                    if (is_ld_r && !waiting_wr_cpl) begin
+                    // Check here the SC reservation validity to avoid a timing loop
+                    // between the instruction bus and the registers
+                    if (is_sc_r && !(lrsc_resv_en && lrsc_resv_valid)) begin
+                        state <= XFER;
+                        fsm_ready <= '1;
+                        is_sc_r <= '0;
+                        lrsc_resv_en <= '0;
+                    end else if (is_ld_r && !waiting_wr_cpl) begin
                         state <= SERVE;
                         arvalid <= 1'b1;
                     end else if (is_st_r && !waiting_rd_cpl) begin
@@ -644,9 +646,19 @@ module friscv_memfy
         end else begin
 
             // Write xfers tracker
-            if (memfy_valid && memfy_ready && ((is_st && !is_sc) || (is_sc && is_valid_sc)) && !bvalid && !max_wr_or && write_allowed) begin
+            if (((memfy_valid && memfy_ready && is_st && !is_sc) ||             // new write request
+                (is_sc_r && state == WAIT && is_valid_sc && lrsc_resv_en)) &&  // new SC.W under validation
+                !bvalid &&                                                     // Don't increment if receiving a write completion
+                !max_wr_or &&                                                  // or if can't send further transactions
+                write_allowed)                                                 // or the trnsaction is forbidden by the MPU
+            begin
                 wr_or_cnt <= wr_or_cnt + 1'b1;
-            end else if (!(memfy_valid && memfy_ready && ((is_st && !is_sc) || (is_sc && is_valid_sc))) && bvalid && wr_or_cnt!={MAX_OR_W{1'b0}}) begin
+            end else
+                if (!((memfy_valid && memfy_ready && is_st && !is_sc) ||
+                      (is_sc_r && state == WAIT && is_valid_sc && lrsc_resv_en)) &&
+                    bvalid &&
+                    wr_or_cnt!={MAX_OR_W{1'b0}}) 
+            begin
                 wr_or_cnt <= wr_or_cnt - 1'b1;
             end
 
@@ -710,11 +722,10 @@ module friscv_memfy
             memfy_rd_val <= {XLEN{1'b0}};
         end else begin
             // SC failed on launch
-            if (memfy_valid && memfy_ready && is_sc && 
-                (!lrsc_resv_valid || !lrsc_resv_en)) 
+            if (state == WAIT && is_sc_r && !is_valid_sc)
             begin
                 memfy_rd_wr <= '1;
-                memfy_rd_addr <= rd;
+                memfy_rd_addr <= amo_rd;
                 memfy_rd_strb <= '1;
                 memfy_rd_val <= 1;
             // SC succeded on completion
@@ -743,11 +754,10 @@ module friscv_memfy
 
         always @ (*) begin
             // SC failed on launch
-            if (memfy_valid && memfy_ready && is_sc && 
-                (!lrsc_resv_valid || !lrsc_resv_en)) 
+            if (state == WAIT && is_sc_r && !is_valid_sc)
             begin
                 memfy_rd_wr = '1;
-                memfy_rd_addr = rd;
+                memfy_rd_addr = amo_rd;
                 memfy_rd_strb = '1;
                 memfy_rd_val = 1;
             // SC succeded on completion
@@ -800,7 +810,7 @@ module friscv_memfy
         assign is_sc = (is_amo && funct5 == `SC_W) ? '1 : '0;
         
         // Check the SC uses the same address reserved than the previous LR
-        assign lrsc_resv_valid = (lrsc_resv_addr == addr);
+        assign lrsc_resv_valid = (lrsc_resv_addr == awaddr);
 
         assign is_valid_sc = lrsc_resv_valid && lrsc_resv_en;
 
@@ -819,6 +829,7 @@ module friscv_memfy
         assign is_lr = '0;
         assign is_sc = '0;
         assign lrsc_resv_valid = '0;
+        assign is_valid_sc = '0;
     end
     endgenerate
 
