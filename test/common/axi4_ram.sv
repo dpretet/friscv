@@ -10,12 +10,18 @@
 // A simple AXI4 RAM model, simulation only
 //
 // TODO: Manage independant write address and data channel in compliance mode
-// TODO: Write response should use LSFR and support compliance vs speed mode
 // TODO: Support r/w burst mode
 // TODO: Log r/w collision for debug
 // TODO: Random out-of-order completion
 // TODO: Support RESP randomess for testing mode (Okay, Exokay, SlvErr, DecErr)
 // TODO: Data width conversion
+// TODO: Handle OKAY and not EXOKAY in AR / R Channels on read atomic acces
+//       - Check that the address is aligned to the transfer size (ARSIZE)
+//         for exclusive accesses, otherwise return OKAY instead of EXOKAY
+
+//       - Check that the transfer size/length is valid for exclusive access
+//         (must be a power of 2, max 128 bytes total, ARLEN constraints per AXI4 spec),
+//         otherwise return OKAY instead of EXOKAY
 //
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -464,7 +470,7 @@ module axi4_ram
         if (p1_ram_wen) begin
 
             lock_token[p1_ram_awaddr[AXI_ADDR_W-1:ADDR_LSB_AMO_W]] <= '0;
-            lock_id[p1_ram_awaddr[AXI_ADDR_W-1:ADDR_LSB_AMO_W]] <= p1_ram_awid;
+            lock_id[p1_ram_awaddr[AXI_ADDR_W-1:ADDR_LSB_AMO_W]] <= '0;
 
             for (int i=0; i<RAM_DATA_W/8; i++)
                 if (p1_ram_strb[i])
@@ -482,7 +488,7 @@ module axi4_ram
         if (p2_ram_wen) begin
 
             lock_token[p2_ram_awaddr[AXI_ADDR_W-1:ADDR_LSB_AMO_W]] <= '0;
-            lock_id[p2_ram_awaddr[AXI_ADDR_W-1:ADDR_LSB_AMO_W]] <= p2_ram_awid;
+            lock_id[p2_ram_awaddr[AXI_ADDR_W-1:ADDR_LSB_AMO_W]] <= '0;
 
             for (int i=0; i<RAM_DATA_W/8; i++)
                 if (p2_ram_strb[i])
@@ -492,13 +498,18 @@ module axi4_ram
     end
 
     assign p1_ram_rdata = mem[p1_ram_araddr[AXI_ADDR_W-1:ADDR_LSB_RAM_W]];
+
     assign p1_ram_rlock = p1_ram_arlock;
 
     assign p2_ram_rdata = mem[p2_ram_araddr[AXI_ADDR_W-1:ADDR_LSB_RAM_W]];
+
     assign p2_ram_rlock = p2_ram_arlock;
 
-    assign p1_ram_block = (lock_token[p1_ram_awaddr[AXI_ADDR_W-1:ADDR_LSB_AMO_W]] && lock_id[p1_ram_awaddr[AXI_ADDR_W-1:ADDR_LSB_AMO_W]] == p1_ram_awid);
-    assign p2_ram_block = (lock_token[p2_ram_awaddr[AXI_ADDR_W-1:ADDR_LSB_AMO_W]] && lock_id[p2_ram_awaddr[AXI_ADDR_W-1:ADDR_LSB_AMO_W]] == p2_ram_awid);
+    assign p1_ram_block = (lock_token[p1_ram_awaddr[AXI_ADDR_W-1:ADDR_LSB_AMO_W]] && 
+                           lock_id[p1_ram_awaddr[AXI_ADDR_W-1:ADDR_LSB_AMO_W]] == p1_ram_awid);
+
+    assign p2_ram_block = (lock_token[p2_ram_awaddr[AXI_ADDR_W-1:ADDR_LSB_AMO_W]] && 
+                           lock_id[p2_ram_awaddr[AXI_ADDR_W-1:ADDR_LSB_AMO_W]] == p2_ram_awid);
 
 endmodule
 

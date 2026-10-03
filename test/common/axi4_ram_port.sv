@@ -94,22 +94,21 @@ module axi4_ram_port
     );
 
 
-    localparam BUS_RATIO = (RAM_DATA_W == AXI_DATA_W) ? 1 : 
+    localparam BUS_RATIO = (RAM_DATA_W == AXI_DATA_W) ? 1 :
                            (RAM_DATA_W <  AXI_DATA_W) ? (AXI_DATA_W / RAM_DATA_W) :
                            (RAM_DATA_W >  AXI_DATA_W) ? (RAM_DATA_W / AXI_DATA_W) : 0 ;
 
     parameter ADDR_LSB_W = $clog2(BUS_RATIO);
     parameter ADDRW = AXI_ADDR_W-ADDR_LSB_W;
 
-    logic [ADDR_LSB_W   -1:0] rd_position;
     logic [AXI_ADDR_W   -1:0] araddr_s;
     logic [AXI_ID_W     -1:0] arid_s;
     logic [8            -1:0] arlen_s;
     logic                     arlock_s;
 
     logic                     araddr_full;
-    logic                     araddr_pull;
     logic                     araddr_empty;
+    logic                     arpull;
 
     logic                     awaddr_full;
     logic                     awaddr_empty;
@@ -150,7 +149,7 @@ module axi4_ram_port
         .push     (arvalid & arready),
         .full     (araddr_full),
         .data_out ({arid_s, araddr_s, arlen_s, arlock_s}),
-        .pull     (araddr_pull),
+        .pull     (arpull),
         .empty    (araddr_empty)
     );
 
@@ -181,11 +180,17 @@ module axi4_ram_port
     //
     ///////////////////////////////////////////////////////////////////////////
 
-    assign araddr_pull = rvalid & rready & rlast;
+    assign ram_ren = !araddr_empty & rvalid & rready;
+    assign ram_araddr = araddr_s[ADDR_LSB_W+:ADDRW];
+    assign ram_arid = arid_s;
+    assign ram_arlen = arlen_s;
+    assign ram_arlock = arlock_s;
+
+
 
     generate if (MODE=="compliance") begin : READ_COMPLETION_COMPLIANCE
 
-        logic rvalid_rnd;
+        logic rvalid_rnd, rvalid_r;
 
         amba_rnd_valid #(
             RD_DATA_SEED
@@ -195,54 +200,70 @@ module axi4_ram_port
             aclk, aresetn, srst, rvalid, rready, rvalid_rnd
         );
 
-        assign rvalid = rvalid_rnd & ~araddr_empty;
+       always @ (posedge aclk or negedge aresetn) begin
 
-    // Performance Mode
+            if (!aresetn) begin
+                arpull <= 1'b0;
+                rvalid_r <= 1'b0;
+                rid <= '0;
+                rresp <= '0;
+            end else if (srst) begin
+                arpull <= 1'b0;
+                rvalid_r <= 1'b0;
+                rid <= '0;
+                rresp <= '0;
+            end else begin
+
+                // Under B channel handshake
+                if (rvalid_r) begin
+
+                    arpull <= 1'b0;
+
+                    if (rvalid & rready & rlast) begin
+                        rvalid_r <= 1'b0;
+                        rresp <= '0;
+                        rid <= '0;
+                    end
+
+                end else if (!araddr_empty) begin
+
+                    arpull <= !araddr_empty & rlast;
+                    rvalid_r <= !araddr_empty & rlast;
+                    rid <= arid_s;
+                    rdata <= ram_rdata[0+:AXI_DATA_W];
+
+                    if (arlock_s)
+                        if (ram_rlock) rresp <= 2'h1; // EXOKAY
+                        else           rresp <= 2'h0; // OKAY
+
+                end else begin
+                    arpull <= 1'b0;
+                    rvalid_r <= 1'b0;
+                    rresp <= '0;
+                    rid <= '0;
+                end
+            end
+        end
+
+        assign rvalid = rvalid_rnd & rvalid_r;
+        assign rlast = '1;
+
+    // Performance Mode, except RREADY = 1 anytime
     end else begin : READ_COMPLETION_PERFORMANCE
 
+        assign arpull = rvalid & rready & rlast;
         assign rvalid = !araddr_empty;
 
-    end
-    endgenerate
 
-
-
-    generate if (AXI_DATA_W<RAM_DATA_W) begin: RDATA_DOWNSIZE
-
-        assign ram_ren = !araddr_empty & rvalid & rready;
-        assign ram_araddr = araddr_s[ADDR_LSB_W+:ADDRW];
-        assign ram_arid = arid_s;
-        assign ram_arlen = arlen_s;
-        assign ram_arlock = arlock_s;
-
-        // Get the position in the RAM line in bits:
-        //  - araddr_s[0+:ADDR_LSB_W] : get the start address in byte
-        //  - /4 : convert it in instruction index (if 4 instructions per line, can be 0-1-2-3)
-        //         divide by 4 because XLEN = 32 bits = 4 bytes
-        //  - *32 : convert the instruction index in bits
-        assign rd_position = (araddr_s[0+:ADDR_LSB_W]/4)*32;
-        assign rdata = ram_rdata[rd_position+:AXI_DATA_W];
-
-    end else begin: RDATA_NO_CONVERSION
-
-        assign ram_ren = !araddr_empty & rvalid & rready;
-        assign ram_araddr = araddr_s[ADDR_LSB_W+:ADDRW];
-        assign ram_arid = arid_s;
-        assign ram_arlen = arlen_s;
-        assign ram_arlock = arlock_s;
-
-        assign rd_position = '0;
         assign rdata = ram_rdata[0+:AXI_DATA_W];
+        assign rid = arid_s;
+        assign rresp = (ram_rlock & arlock_s) ? 2'h1 : // EXOKAY
+                                                2'h0 ; // OKAY
+        assign rlast = '1;
 
     end
     endgenerate
 
-    assign rid = arid_s;
-
-    assign rresp = (ram_rlock & arlock_s) ? 2'h1 : // EXOKAY
-                                            2'h0 ; // OKAY
-
-    assign rlast = '1;
 
 
 
@@ -320,7 +341,7 @@ module axi4_ram_port
     assign wready = awready;
     assign ram_wen = !awaddr_empty & !wdata_empty & !bvalid;
 
-    generate 
+    generate
 
     // FIXME: bugged code, not tested
     if (AXI_DATA_W<RAM_DATA_W) begin: WDATA_UPSIZE
@@ -372,55 +393,85 @@ module axi4_ram_port
     // Write response channel
     ///////////////////////////////////////////////////////////////////////////
 
-    always @ (posedge aclk or negedge aresetn) begin
+    generate if (MODE=="compliance") begin : WRITE_RESP_COMPLIANCE
 
-        if (!aresetn) begin
-            awpull <= 1'b0;
-            wpull <= 1'b0;
-            bvalid <= 1'b0;
-            bid <= '0;
-            bresp <= '0;
-        end else if (srst) begin
-            awpull <= 1'b0;
-            wpull <= 1'b0;
-            bvalid <= 1'b0;
-            bid <= '0;
-            bresp <= '0;
-        end else begin
+       logic bvalid_rnd, bvalid_r;
 
-            // Under B channel handshake
-            if (bvalid) begin
+        amba_rnd_valid #(
+            RD_DATA_SEED
+        )
+        bvalid_inst
+        (
+            aclk, aresetn, srst, bvalid, bready, bvalid_rnd
+        );
 
+        always @ (posedge aclk or negedge aresetn) begin
+
+            if (!aresetn) begin
                 awpull <= 1'b0;
                 wpull <= 1'b0;
+                bvalid_r <= 1'b0;
+                bid <= '0;
+                bresp <= '0;
+            end else if (srst) begin
+                awpull <= 1'b0;
+                wpull <= 1'b0;
+                bvalid_r <= 1'b0;
+                bid <= '0;
+                bresp <= '0;
+            end else begin
 
-                if (bready) begin
-                    bvalid <= 1'b0;
+                // Under B channel handshake
+                if (bvalid_r) begin
+
+                    awpull <= 1'b0;
+                    wpull <= 1'b0;
+
+                    if (bvalid & bready) begin
+                        bvalid_r <= 1'b0;
+                        bresp <= '0;
+                        bid <= '0;
+                    end
+
+                end else if (!awaddr_empty) begin
+
+                    awpull <= !wdata_empty & wlast;
+                    wpull <= !wdata_empty;
+
+                    bvalid_r <= !wdata_empty & wlast;
+                    bid <= awid_s;
+
+                    if (awlock_s)
+                        if (ram_block) bresp <= 2'h1; // EXOKAY
+                        else           bresp <= 2'h0; // OKAY
+
+                end else begin
+                    awpull <= 1'b0;
+                    wpull <= 1'b0;
+                    bvalid_r <= 1'b0;
                     bresp <= '0;
                     bid <= '0;
                 end
-
-            end else if (!awaddr_empty) begin
-
-                awpull <= !wdata_empty & wlast;
-                wpull <= !wdata_empty;
-
-                bvalid <= !wdata_empty & wlast;
-                bid <= awid_s;
-
-                if (awlock_s)
-                    if (ram_block) bresp <= 2'h1; // EXOKAY 
-                    else           bresp <= 2'h0; // OKAY
-
-            end else begin
-                awpull <= 1'b0;
-                wpull <= 1'b0;
-                bvalid <= 1'b0;
-                bresp <= '0;
-                bid <= '0;
             end
         end
+
+        assign bvalid = bvalid_r & bvalid_rnd;
+
+    // Performance mode, except BREADY = 1 anytime
+    end else begin : WRITE_RESP_PERF_MODE
+
+        assign awpull = bvalid & bready;
+        assign wpull = awpull;
+
+        assign bid = awid_s;
+
+        assign bresp = (ram_block & awlock_s) ? 2'h1 : // EXOKAY
+                                                2'h0 ; // OKAY
+        assign bvalid = !awaddr_empty;
+
     end
+    endgenerate
+
 endmodule
 
 `resetall

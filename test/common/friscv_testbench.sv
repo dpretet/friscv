@@ -110,7 +110,7 @@ module friscv_testbench(
     `ifdef MPU_SUPPORT
     // PMP / PMA supported
     //  = 0, no PMP
-    //  = 1, PMP available but fixed synthesis thus at boot time
+    //  = 1, PMP available but fixed at boot time
     //  > 1, PMP available and configurable at runtime
     parameter MPU_SUPPORT = `MPU_SUPPORT;
     // Number of physical memory protection regions
@@ -216,12 +216,6 @@ module friscv_testbench(
     parameter WFI_TW = `WFI_TW;
     `else
     parameter WFI_TW = 0;
-    `endif
-
-    `ifdef RAM_MODE_PERF
-    parameter RAM_MODE = 1;
-    `else
-    parameter RAM_MODE = 0;
     `endif
 
 `ifndef VERILATOR

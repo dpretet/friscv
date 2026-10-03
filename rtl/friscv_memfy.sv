@@ -514,9 +514,9 @@ module friscv_memfy
                             !awvalid && wready ||   // addr has been acked before data
                             !wvalid && awready      // data has been acked before addr
                         ) begin
-                            if (amo_cpl && bvalid || 
+                            if (amo_cpl && bvalid ||
                                 is_sc_r && bvalid ||
-                                !amo_cpl && !is_sc_r) 
+                                !amo_cpl && !is_sc_r)
                             begin
                                 state <= XFER;
                                 fsm_ready <= 1'b1;
@@ -657,7 +657,7 @@ module friscv_memfy
                 if (!((memfy_valid && memfy_ready && is_st && !is_sc) ||
                       (is_sc_r && state == WAIT && is_valid_sc && lrsc_resv_en)) &&
                     bvalid &&
-                    wr_or_cnt!={MAX_OR_W{1'b0}}) 
+                    wr_or_cnt!={MAX_OR_W{1'b0}})
             begin
                 wr_or_cnt <= wr_or_cnt - 1'b1;
             end
@@ -808,7 +808,7 @@ module friscv_memfy
         assign is_lr = (is_amo && funct5 == `LR_W) ? '1 : '0;
 
         assign is_sc = (is_amo && funct5 == `SC_W) ? '1 : '0;
-        
+
         // Check the SC uses the same address reserved than the previous LR
         assign lrsc_resv_valid = (lrsc_resv_addr == awaddr);
 
@@ -960,7 +960,7 @@ module friscv_memfy
     //////////////////////////////////////////////////////////////////////////
 
     generate if (A_EXTENSION) begin: A_SUPPORT_ALOCK
-        assign alock = is_amo_r;
+        assign alock = is_amo;
     end else begin: NO_ALOCK
         assign alock = '0;
     end
