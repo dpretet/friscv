@@ -619,10 +619,15 @@ module friscv_control
                     //
                     if (trap_occuring) begin
 
-                        // Get a new ID for the new batch
-                        arid <= next_id(arid, MAX_ID, AXI_ID_MASK);
-                        // Jump to trap handler
-                        araddr <= mtvec;
+                        if (arvalid) begin
+                            // Get a new ID for the new batch
+                            arid <= next_id(arid, MAX_ID, AXI_ID_MASK);
+                            // Jump to trap handler
+                            araddr <= mtvec;
+                            arvalid <= !cant_trap;
+                        end else begin
+                            arvalid <= !cant_trap;
+                        end
 
                     //
                     //   - ECALL / MRET / JALR / Any branching

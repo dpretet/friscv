@@ -37,7 +37,7 @@
         else if (cause=='h0)  get_mcause_desc = "Instruction address misaligned";
         else if (cause=='h4)  get_mcause_desc = "LOAD address misaligned";
         else if (cause=='h6)  get_mcause_desc = "STORE address misaligned";
-        else if (cause=='h10) get_mcause_desc = "Instruction decoding error";
+        else if (cause=='h18) get_mcause_desc = "Instruction decoding error";
         else if (cause=='h8)  get_mcause_desc = "Environment call (U-mode)";
         else if (cause=='hB)  get_mcause_desc = "Environment call (M-mode)";
         else if (cause=='h2)  get_mcause_desc = "Illegal instruction";
