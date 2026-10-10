@@ -1,5 +1,9 @@
-# distributed under the mit license
+# Distributed under the MIT license.
 # https://opensource.org/licenses/mit-license.php
+
+# RV32U wrapper for Test 4: machine-mode access faults under PMP/MPRV.
+# The implementation is shared with the RV64U test; redefining RVTEST_RV64U
+# selects the RV32U test environment before the implementation is included.
 
 #include "riscv_test.h"
 #undef RVTEST_RV64U

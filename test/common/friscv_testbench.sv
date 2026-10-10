@@ -747,6 +747,7 @@ module friscv_testbench(
             .mem_awlock  (mem_awlock),
             .mem_wvalid  (mem_wvalid),
             .mem_wready  (mem_wready),
+            .mem_wlast   (mem_wlast),
             .mem_wdata   (mem_wdata),
             .mem_wstrb   (mem_wstrb),
             .mem_bvalid  (mem_bvalid),

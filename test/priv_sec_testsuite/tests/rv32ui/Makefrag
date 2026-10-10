@@ -1,5 +1,6 @@
 #=======================================================================
-# Makefrag for rv64ui tests
+# Makefrag for the RV32U test suite.
+# The individual wrappers select RV32U while reusing shared test sources.
 #-----------------------------------------------------------------------
 
 rv32ui_sc_tests = \

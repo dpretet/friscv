@@ -435,10 +435,10 @@ module axi4_ram_port
 
                 end else if (!awaddr_empty) begin
 
-                    awpull <= !wdata_empty & wlast;
+                    awpull <= !wdata_empty;
                     wpull <= !wdata_empty;
 
-                    bvalid_r <= !wdata_empty & wlast;
+                    bvalid_r <= !wdata_empty;
                     bid <= awid_s;
 
                     if (awlock_s)

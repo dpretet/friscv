@@ -117,7 +117,7 @@ TEST1:
     // check data is read
     li t0, 0x55555555
     li t1, 0x55555555
-    csrr t0, mcycle
+    csrr t0, cycle
     beq t0, t1, fail
     // check it didn't experience an illegal instruction
     bne s0, zero, fail
@@ -138,7 +138,7 @@ TEST2:
     // check data is read
     li t0, 0x55555555
     li t1, 0x55555555
-    csrr t0, mcycle
+    csrr t0, cycle
 TEST2_CHECK:
     bne t0, t1, fail
     // check it didn't experience an illegal instruction

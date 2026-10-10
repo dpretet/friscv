@@ -239,7 +239,7 @@ module friscv_control
     logic                   illegal_instruction;
     logic                   illegal_csr;
     logic                   wfi_tw;
-    logic                   trap_occuring;
+    logic                   trap_occuring, trap_occuring_r;
     logic                   sync_trap_occuring;
     logic                   async_trap_occuring;
     logic                   ecall_umode;
@@ -566,6 +566,7 @@ module friscv_control
             flush_blocks <= 1'b0;
             flush_pipe <= 1'b0;
             priv_mode <= `MMODE;
+            trap_occuring_r <= '0;
         end else if (srst == 1'b1) begin
             cfsm <= BOOT;
             arvalid <= 1'b0;
@@ -578,6 +579,7 @@ module friscv_control
             flush_blocks <= 1'b0;
             flush_pipe <= 1'b0;
             priv_mode <= `MMODE;
+            trap_occuring_r <= '0;
         end else begin
 
             case (cfsm)
@@ -617,7 +619,7 @@ module friscv_control
                     //
                     // Any trap handling, asynchronous and synchronous
                     //
-                    if (trap_occuring) begin
+                    if (trap_occuring || trap_occuring_r) begin
 
                         if (arvalid) begin
                             // Get a new ID for the new batch
@@ -625,8 +627,10 @@ module friscv_control
                             // Jump to trap handler
                             araddr <= mtvec;
                             arvalid <= !cant_trap;
+                            trap_occuring_r <= cant_trap;
                         end else begin
                             arvalid <= !cant_trap;
+                            trap_occuring_r <= cant_trap;
                         end
 
                     //
@@ -680,13 +684,14 @@ module friscv_control
                     // interrupt, a wrong instruction, ...
                     if (trap_occuring) begin
 
+                        flush_pipe <= 1'b1;
+
                         if (!cant_trap) begin
                             `ifdef TRACE_CONTROL
                             print_mcause("Handling a trap -> MCAUSE=0x", mcause_code);
                             print_instruction;
                             `endif
                             status[3] <= 1'b1;
-                            flush_pipe <= 1'b1;
                             if (USER_MODE) priv_mode <= `MMODE;
                             pc_reg <= mtvec;
                         end
