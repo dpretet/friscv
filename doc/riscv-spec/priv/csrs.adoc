@@ -1,0 +1,755 @@
+[[priv-csrs]]
+== Control and Status Registers (CSRs)
+
+The SYSTEM major opcode is used to encode all privileged instructions in
+the RISC-V ISA. These can be divided into two main classes: those that
+atomically read-modify-write control and status registers (CSRs), which
+are defined in the ext:zicsr[] extension, and all other privileged
+instructions. The privileged architecture requires the ext:zicsr[] extension;
+which other privileged instructions are required depends on the
+privileged-architecture feature set.
+
+In addition to the unprivileged state described in Volume I of this
+manual, an implementation may contain additional CSRs, accessible by
+some subset of the privilege levels using the CSR instructions described
+in extlink:zicsr[]. In this chapter, we map out the CSR address space. The
+following chapters describe the function of each of the CSRs according
+to privilege level, as well as the other privileged instructions which
+are generally closely associated with a particular privilege level. Note
+that [#norm:Zicsr_higher_priv]#although CSRs and instructions are associated with one privilege
+level, they are also accessible at all higher privilege levels.#
+
+[#norm:Zicsr_no_read_side_effects]#Standard CSRs do not have side effects on reads but may have side
+effects on writes.#
+
+=== CSR Address Mapping Conventions
+
+The standard RISC-V ISA sets aside a 12-bit encoding space (csr[11:0])
+for up to 4,096 CSRs. The upper qty:4[bits] of the CSR address
+(csr[11:8]) are used to encode the read and write accessibility of the
+CSRs according to privilege level as shown in <<csrrwpriv>>. [#norm:Zicsr_rw]#The top two bits (csr[11:10]) indicate whether the register is read/write (`00`,`01`, or `10`) or read-only (`11`).#
+[#norm:Zicsr_access]#The next two bits (csr[9:8]) encode the lowest privilege level that can access the CSR, with the pattern `10` representing hypervisor CSRs.#
+
+[NOTE]
+====
+The CSR address convention uses the upper bits of the CSR address to
+encode default access privileges. This simplifies error checking in the
+hardware and provides a larger CSR space, but does constrain the mapping
+of CSRs into the address space.
+
+Implementations might allow a more-privileged level to trap otherwise
+permitted CSR accesses by a less-privileged level to allow these
+accesses to be intercepted. This change should be transparent to the
+less-privileged software.
+====
+
+[#norm:Zicsr_illegal_mode]#Attempts to access a CSR address without sufficient privilege
+raise illegal-instruction exceptions or, as described in
+<<sec:hcauses>>, virtual-instruction exceptions.#
+[#norm:Zicsr_illegal_acc]#Attempts to write a read-only CSR address raise illegal-instruction exceptions.#
+[#norm:Zicsr_write_ro]#A read/write register might also contain some bits that are
+read-only, in which case writes to the read-only bits are ignored.#
+
+[#norm:Zicsr_nonexistent_rsv]#Instructions that access a non-existent CSR address are reserved.#
+
+<<csrrwpriv>> also indicates the convention to
+allocate CSR addresses between standard and custom uses. The CSR
+addresses designated for custom uses will not be redefined by future
+standard extensions.
+
+[#norm:Zicsr_debug_range]#Machine-mode standard read-write CSRs `0x7A0`{endash}``0x7BF`` are reserved for
+use by the debug system. Of these CSRs, `0x7A0`{endash}``0x7AF`` are accessible
+to machine mode, whereas#
+[#norm:Zicsr_debug_illegal]#`0x7B0`{endash}``0x7BF`` are only visible to debug mode.
+Implementations must raise illegal-instruction exceptions on
+machine-mode access to the latter set of registers.#
+
+[NOTE]
+====
+Effective virtualization requires that as many instructions run natively
+as possible inside a virtualized environment, while any privileged
+accesses trap to the virtual machine monitor. cite:[goldbergvm] CSRs that are read-only
+at some lower privilege level are shadowed into separate CSR addresses
+if they are made read-write at a higher privilege level. This avoids
+trapping permitted lower-privilege accesses while still causing traps on
+illegal accesses. Currently, the counters are the only shadowed CSRs.
+====
+
+[[csrrwpriv]]
+.Allocation of RISC-V CSR address ranges.
+[%autowidth,float="center",align="center",cols="^,^,^,^,<,<,<,<"]
+[.monofont]
+|===
+3+^|CSR Address 2.2+|Hex 3.2+|Use and Accessibility
+|[11:10] |[9:8] |[7:4]
+8+|Unprivileged and User-Level CSRs
+m|`00` m|`00` m|`XXXX` 2+m| `0x000`{endash}``0x0FF`` 3+|Standard read/write
+|`01` |`00` |`XXXX` 2+| `0x400`{endash}``0x4FF`` 3+|Standard read/write
+|`10` |`00` |`XXXX` 2+| `0x800`{endash}``0x8FF`` 3+|Custom read/write
+|`11` |`00` |`0XXX` 2+| `0xC00`{endash}``0xC7F`` 3+|Standard read-only
+|`11` |`00` |`10XX` 2+| `0xC80`{endash}``0xCBF`` 3+|Standard read-only
+|`11` |`00` |`11XX` 2+| `0xCC0`{endash}``0xCFF`` 3+|Custom read-only
+8+|Supervisor-Level CSRs
+|`00` |`01` |`XXXX` 2+| `0x100`{endash}``0x1FF`` 3+|Standard read/write
+|`01` |`01` |`0XXX` 2+| `0x500`{endash}``0x57F`` 3+|Standard read/write
+|`01` |`01` |`10XX` 2+| `0x580`{endash}``0x5BF`` 3+|Standard read/write
+|`01` |`01` |`11XX` 2+| `0x5C0`{endash}``0x5FF`` 3+|Custom read/write
+|`10` |`01` |`0XXX` 2+| `0x900`{endash}``0x97F`` 3+|Standard read/write
+|`10` |`01` |`10XX` 2+| `0x980`{endash}``0x9BF`` 3+|Standard read/write
+|`10` |`01` |`11XX` 2+| `0x9C0`{endash}``0x9FF`` 3+|Custom read/write
+|`11` |`01` |`0XXX` 2+| `0xD00`{endash}``0xD7F`` 3+|Standard read-only
+|`11` |`01` |`10XX` 2+| `0xD80`{endash}``0xDBF`` 3+|Standard read-only
+|`11` |`01` |`11XX` 2+| `0xDC0`{endash}``0xDFF`` 3+|Custom read-only
+8+|Hypervisor and VS CSRs
+|`00` |`10` |`XXXX` 2+| `0x200`{endash}``0x2FF`` 3+|Standard read/write
+|`01` |`10` |`0XXX` 2+| `0x600`{endash}``0x67F`` 3+|Standard read/write
+|`01` |`10` |`10XX` 2+| `0x680`{endash}``0x6BF`` 3+|Standard read/write
+|`01` |`10` |`11XX` 2+| `0x6C0`{endash}``0x6FF`` 3+|Custom read/write
+|`10` |`10` |`0XXX` 2+| `0xA00`{endash}``0xA7F`` 3+|Standard read/write
+|`10` |`10` |`10XX` 2+| `0xA80`{endash}``0xABF`` 3+|Standard read/write
+|`10` |`10` |`11XX` 2+| `0xAC0`{endash}``0xAFF`` 3+|Custom read/write
+|`11` |`10` |`0XXX` 2+| `0xE00`{endash}``0xE7F`` 3+|Standard read-only
+|`11` |`10` |`10XX` 2+| `0xE80`{endash}``0xEBF`` 3+|Standard read-only
+|`11` |`10` |`11XX` 2+| `0xEC0`{endash}``0xEFF`` 3+|Custom read-only
+8+|Machine-Level CSRs
+|`00` |`11` |`XXXX` 2+|`0x300`{endash}``0x3FF`` 3+|Standard read/write
+|`01` |`11` |`0XXX` 2+|`0x700`{endash}``0x77F`` 3+|Standard read/write
+|`01` |`11` |`100X` 2+|`0x780`{endash}``0x79F`` 3+|Standard read/write
+|`01` |`11` |`1010` 2+|`0x7A0`{endash}``0x7AF`` 3+|Standard read/write debug CSRs
+|`01` |`11` |`1011` 2+|`0x7B0`{endash}``0x7BF`` 3+|Debug-mode-only CSRs
+|`01` |`11` |`11XX` 2+|`0x7C0`{endash}``0x7FF`` 3+|Custom read/write
+|`10` |`11` |`0XXX` 2+|`0xB00`{endash}``0xB7F`` 3+|Standard read/write
+|`10` |`11` |`10XX` 2+|`0xB80`{endash}``0xBBF`` 3+|Standard read/write
+|`10` |`11` |`11XX` 2+|`0xBC0`{endash}``0xBFF`` 3+|Custom read/write
+|`11` |`11` |`0XXX` 2+|`0xF00`{endash}``0xF7F`` 3+|Standard read-only
+|`11` |`11` |`10XX` 2+|`0xF80`{endash}``0xFBF`` 3+|Standard read-only
+|`11` |`11` |`11XX` 2+|`0xFC0`{endash}``0xFFF`` 3+|Custom read-only
+|===
+
+<<<
+
+=== CSR Listing
+
+<<ucsrnames>>{endash}<<mcsrnames>> list the CSRs that
+have currently been allocated CSR addresses. The timers, counters, and
+floating-point CSRs are standard unprivileged CSRs. The other registers
+are used by privileged code, as described in the following chapters.
+Note that not all registers are required on all implementations.
+
+==== Currently allocated RISC-V unprivileged CSR addresses
+
+[[ucsrnames]]
+.Currently allocated RISC-V unprivileged CSR addresses
+[float="center",align="center",cols="<10%,<10%,<20%,<60%",options="header"]
+|===
+|Number |Privilege |Name |Description
+4+^|Unprivileged Floating-Point CSRs
+
+|`0x001` |URW |csr:fflags[] |Floating-Point Accrued Exceptions
+|`0x002` |URW |csr:frm[]    |Floating-Point Dynamic Rounding Mode
+|`0x003` |URW |csr:fcsr[]   |Floating-Point Control and Status Register (csr:frm[] + csr:fflags[])
+
+4+^|Unprivileged Vector CSRs
+
+|`0x008` |URW |csr:vstart[] |Vector start position
+|`0x009` |URW |csr:vxsat[]  |Fixed-point accrued saturation flag
+|`0x00A` |URW |csr:vxrm[]   |Fixed-point rounding mode
+|`0x00F` |URW |csr:vcsr[]   |Vector control and status register
+|`0xC20` |URO |csr:vl[]     |Vector length
+|`0xC21` |URO |csr:vtype[]  |Vector data type register
+|`0xC22` |URO |csr:vlenb[]  |Vector register length in bytes
+
+4+^|Unprivileged ext:zicfiss[] Extension CSR
+
+|`0x011` |URW |csr:ssp[] |Shadow Stack Pointer
+
+4+^|Unprivileged ext:zkr[] Extension CSR
+
+|`0x015` |URW |csr:seed[] |Seed for cryptographic random bit generators
+
+4+^|Unprivileged ext:zcmt[] Extension CSR
+
+|`0x017` |URW |csr:jvt[] |Table jump base vector and control register
+
+4+^|Unprivileged Counter/Timers
+
+|`0xC00` |URO |csr:cycle[]         |Cycle counter for insn:rdcycle[] instruction
+|`0xC01` |URO |csr:time[]          |Timer for insn:rdtime[] instruction
+|`0xC02` |URO |csr:instret[]       |Instructions-retired counter for insn:rdinstret[] instruction
+|`0xC03` |URO |csr:hpmcounter3[]   |Performance-monitoring counter
+|`0xC04` |URO |csr:hpmcounter4[]   |Performance-monitoring counter
+|        |    |{vertical-ellipsis} |
+|`0xC1F` |URO |csr:hpmcounter31[]  |Performance-monitoring counter
+|`0xC80` |URO |csr:cycleh[]        |Upper qty:32[bits] of csr:cycle[], RV32 only
+|`0xC81` |URO |csr:timeh[]         |Upper qty:32[bits] of csr:time[], RV32 only
+|`0xC82` |URO |csr:instreth[]      |Upper qty:32[bits] of csr:instret[], RV32 only
+|`0xC83` |URO |csr:hpmcounter3h[]  |Upper qty:32[bits] of csr:hpmcounter3[], RV32 only
+|`0xC84` |URO |csr:hpmcounter4h[]  |Upper qty:32[bits] of csr:hpmcounter4[], RV32 only
+|        |    |{vertical-ellipsis} |
+|`0xC9F` |URO |csr:hpmcounter31h[] |Upper qty:32[bits] of csr:hpmcounter31[], RV32 only
+
+|===
+
+<<<
+
+==== Currently allocated RISC-V supervisor-level CSR addresses
+
+[[scsrnames]]
+.Currently allocated RISC-V supervisor-level CSR addresses
+[%autowidth,float="center",align="center",cols="<,<,<,<",options="header"]
+|===
+|Number |Privilege |Name |Description
+4+^|Supervisor Trap Setup
+
+|`0x100` |SRW |csr:sstatus[]    |Supervisor status register
+|`0x104` |SRW |csr:sie[]        |Supervisor interrupt-enable register
+|`0x105` |SRW |csr:stvec[]      |Supervisor trap handler base address
+|`0x106` |SRW |csr:scounteren[] |Supervisor counter enable
+|`0x114` |SRW |csr:sieh[]       |Upper qty:32[bits] of csr:sie[], RV32 only
+
+4+^|Supervisor Configuration
+
+|`0x10A` |SRW |csr:senvcfg[] |Supervisor environment configuration register
+
+4+^|Supervisor Counter Setup
+
+|`0x120` |SRW |csr:scountinhibit[] |Supervisor counter-inhibit register
+
+4+^|Supervisor Trap Handling
+
+|`0x140` |SRW |csr:sscratch[]  |Supervisor scratch register
+|`0x141` |SRW |csr:sepc[]      |Supervisor exception program counter
+|`0x142` |SRW |csr:scause[]    |Supervisor trap cause
+|`0x143` |SRW |csr:stval[]     |Supervisor trap value
+|`0x144` |SRW |csr:sip[]       |Supervisor interrupt pending
+|`0x154` |SRW |csr:siph[]      |Upper qty:32[bits] of csr:sip[], RV32 only
+|`0x15C` |SRW |csr:stopei[]    |Supervisor top external interrupt
+|`0xDA0` |SRO |csr:scountovf[] |Supervisor count overflow
+|`0xDB0` |SRO |csr:stopi[]     |Supervisor top interrupt
+
+4+^|Supervisor Indirect
+
+|`0x150` |SRW |csr:siselect[] |Supervisor indirect register select
+|`0x151` |SRW |csr:sireg[]    |Supervisor indirect register alias
+|`0x152` |SRW |csr:sireg2[]   |Supervisor indirect register alias 2
+|`0x153` |SRW |csr:sireg3[]   |Supervisor indirect register alias 3
+|`0x155` |SRW |csr:sireg4[]   |Supervisor indirect register alias 4
+|`0x156` |SRW |csr:sireg5[]   |Supervisor indirect register alias 5
+|`0x157` |SRW |csr:sireg6[]   |Supervisor indirect register alias 6
+
+4+^|Supervisor Protection and Translation
+
+|`0x180` |SRW |csr:satp[] |Supervisor address translation and protection
+
+4+^|Supervisor Timer Compare
+
+|`0x14D` |SRW |csr:stimecmp[]  |Supervisor timer compare
+|`0x15D` |SRW |csr:stimecmph[] |Upper qty:32[bits] of csr:stimecmp[], RV32 only
+
+4+^|Debug/Trace Registers
+
+|`0x5A8` |SRW |csr:scontext[] |Supervisor-mode context register
+
+4+^|Supervisor Resource Management Configuration
+
+|`0x181` |SRW |csr:srmcfg[] |Supervisor Resource Management Configuration
+
+4+^|Supervisor State Enable Registers
+
+|`0x10C` |SRW |csr:sstateen0[] |Supervisor State Enable 0 Register
+|`0x10D` |SRW |csr:sstateen1[] |Supervisor State Enable 1 Register
+|`0x10E` |SRW |csr:sstateen2[] |Supervisor State Enable 2 Register
+|`0x10F` |SRW |csr:sstateen3[] |Supervisor State Enable 3 Register
+
+4+^|Supervisor Control Transfer Records Configuration
+
+|`0x14E` |SRW |csr:sctrctl[]    |Supervisor Control Transfer Records Control Register
+|`0x14F` |SRW |csr:sctrstatus[] |Supervisor Control Transfer Records Status Register
+|`0x15F` |SRW |csr:sctrdepth[]  |Supervisor Control Transfer Records Depth Register
+
+|===
+
+<<<
+
+==== Currently allocated RISC-V hypervisor and VS CSR addresses
+
+[[hcsrnames]]
+.Currently allocated RISC-V hypervisor and VS CSR addresses
+[%autowidth,float="center",align="center",cols="<,<,<,<",options="header"]
+|===
+|Number |Privilege |Name |Description
+4+^|Hypervisor Trap Setup
+
+|`0x600` |HRW |csr:hstatus[]    |Hypervisor status register
+|`0x602` |HRW |csr:hedeleg[]    |Hypervisor exception delegation register
+|`0x603` |HRW |csr:hideleg[]    |Hypervisor interrupt delegation register
+|`0x604` |HRW |csr:hie[]        |Hypervisor interrupt-enable register
+|`0x606` |HRW |csr:hcounteren[] |Hypervisor counter enable
+|`0x607` |HRW |csr:hgeie[]      |Hypervisor guest external interrupt-enable register
+|`0x608` |HRW |csr:hvien[]      |Hypervisor virtual interrupt enables
+|`0x609` |HRW |csr:hvictl[]     |Hypervisor virtual interrupt control
+|`0x612` |HRW |csr:hedelegh[]   |Upper qty:32[bits] of csr:hedeleg[], RV32 only
+|`0x613` |HRW |csr:hidelegh[]   |Upper qty:32[bits] of csr:hideleg[], RV32 only
+|`0x618` |HRW |csr:hvienh[]     |Upper qty:32[bits] of csr:hvien[], RV32 only
+|`0x646` |HRW |csr:hviprio1[]   |Hypervisor VS-level interrupt priorities
+|`0x647` |HRW |csr:hviprio2[]   |Hypervisor VS-level interrupt priorities
+|`0x656` |HRW |csr:hviprio1h[]  |Upper qty:32[bits] of csr:hviprio1[], RV32 only
+|`0x657` |HRW |csr:hviprio2h[]  |Upper qty:32[bits] of csr:hviprio2[], RV32 only
+
+4+^|Hypervisor Trap Handling
+
+|`0x643` |HRW |csr:htval[]  |Hypervisor trap value
+|`0x644` |HRW |csr:hip[]    |Hypervisor interrupt pending
+|`0x645` |HRW |csr:hvip[]   |Hypervisor virtual interrupt pending
+|`0x64A` |HRW |csr:htinst[] |Hypervisor trap instruction (transformed)
+|`0x655` |HRW |csr:hviph[]  |Upper qty:32[bits] of csr:hvip[], RV32 only
+|`0xE12` |HRO |csr:hgeip[]  |Hypervisor guest external interrupt pending
+
+4+^|Hypervisor Configuration
+
+|`0x60A` |HRW |csr:henvcfg[]  |Hypervisor environment configuration register
+|`0x61A` |HRW |csr:henvcfgh[] |Upper qty:32[bits] of csr:henvcfg[], RV32 only
+
+4+^|Hypervisor Protection and Translation
+
+|`0x680` |HRW |csr:hgatp[] |Hypervisor guest address translation and protection
+
+4+^|Debug/Trace Registers
+
+|`0x6A8` |HRW |csr:hcontext[] |Hypervisor-mode context register
+
+4+^|Hypervisor Counter/Timer Virtualization Registers
+
+|`0x605` |HRW |csr:htimedelta[]  |Delta for VS/VU-mode timer
+|`0x615` |HRW |csr:htimedeltah[] |Upper qty:32[bits] of csr:htimedelta[], RV32 only
+
+4+^|Hypervisor State Enable Registers
+
+|`0x60C` |HRW |csr:hstateen0[]  |Hypervisor State Enable 0 Register
+|`0x60D` |HRW |csr:hstateen1[]  |Hypervisor State Enable 1 Register
+|`0x60E` |HRW |csr:hstateen2[]  |Hypervisor State Enable 2 Register
+|`0x60F` |HRW |csr:hstateen3[]  |Hypervisor State Enable 3 Register
+|`0x61C` |HRW |csr:hstateen0h[] |Upper qty:32[bits] of Hypervisor State Enable 0 Register, RV32 only
+|`0x61D` |HRW |csr:hstateen1h[] |Upper qty:32[bits] of Hypervisor State Enable 1 Register, RV32 only
+|`0x61E` |HRW |csr:hstateen2h[] |Upper qty:32[bits] of Hypervisor State Enable 2 Register, RV32 only
+|`0x61F` |HRW |csr:hstateen3h[] |Upper qty:32[bits] of Hypervisor State Enable 3 Register, RV32 only
+
+4+^|Virtual Supervisor Registers
+
+|`0x200` |HRW |csr:vsstatus[]  |Virtual supervisor status register
+|`0x204` |HRW |csr:vsie[]      |Virtual supervisor interrupt-enable register
+|`0x205` |HRW |csr:vstvec[]    |Virtual supervisor trap handler base address
+|`0x214` |HRW |csr:vsieh[]     |Upper qty:32[bits] of csr:vsie[], RV32 only
+|`0x240` |HRW |csr:vsscratch[] |Virtual supervisor scratch register
+|`0x241` |HRW |csr:vsepc[]     |Virtual supervisor exception program counter
+|`0x242` |HRW |csr:vscause[]   |Virtual supervisor trap cause
+|`0x243` |HRW |csr:vstval[]    |Virtual supervisor trap value
+|`0x244` |HRW |csr:vsip[]      |Virtual supervisor interrupt pending
+|`0x254` |HRW |csr:vsiph[]     |Upper qty:32[bits] of csr:vsip[], RV32 only
+|`0x25C` |HRW |csr:vstopei[]   |Virtual supervisor top external interrupt
+|`0x280` |HRW |csr:vsatp[]     |Virtual supervisor address translation and protection
+|`0xEB0` |HRO |csr:vstopi[]    |Virtual supervisor top interrupt
+
+4+^|Virtual Supervisor Indirect
+
+|`0x250` |HRW |csr:vsiselect[] |Virtual supervisor indirect register select
+|`0x251` |HRW |csr:vsireg[]    |Virtual supervisor indirect register alias
+|`0x252` |HRW |csr:vsireg2[]   |Virtual supervisor indirect register alias 2
+|`0x253` |HRW |csr:vsireg3[]   |Virtual supervisor indirect register alias 3
+|`0x255` |HRW |csr:vsireg4[]   |Virtual supervisor indirect register alias 4
+|`0x256` |HRW |csr:vsireg5[]   |Virtual supervisor indirect register alias 5
+|`0x257` |HRW |csr:vsireg6[]   |Virtual supervisor indirect register alias 6
+4+^|Virtual Supervisor Timer Compare
+
+|`0x24D` |HRW |csr:vstimecmp[]  |Virtual supervisor timer compare
+|`0x25D` |HRW |csr:vstimecmph[] |Upper qty:32[bits] of csr:vstimecmp[], RV32 only
+
+4+^|Virtual Supervisor Control Transfer Records Configuration
+
+|`0x24E` |HRW |csr:vsctrctl[] |Virtual Supervisor Control Transfer Records Control Register
+
+|===
+
+<<<
+
+==== Currently allocated RISC-V machine-level CSR addresses
+
+[[mcsrnames]]
+[.monocell]
+.Currently allocated RISC-V machine-level CSR addresses
+[%autowidth,float="center",align="center",cols="<,<,<,<",options="header"]
+|===
+|Number |Privilege |Name |Description
+4+^|Machine Information Registers
+
+|`0xF11` |MRO |csr:mvendorid[]  |Vendor ID
+|`0xF12` |MRO |csr:marchid[]    |Architecture ID
+|`0xF13` |MRO |csr:mimpid[]     |Implementation ID
+|`0xF14` |MRO |csr:mhartid[]    |Hardware thread ID
+|`0xF15` |MRO |csr:mconfigptr[] |Pointer to configuration data structure
+
+4+^|Machine Trap Setup
+
+|`0x300` |MRW |csr:mstatus[]    |Machine status register
+|`0x301` |MRW |csr:misa[]       |ISA and extensions
+|`0x302` |MRW |csr:medeleg[]    |Machine exception delegation register
+|`0x303` |MRW |csr:mideleg[]    |Machine interrupt delegation register
+|`0x304` |MRW |csr:mie[]        |Machine interrupt-enable register
+|`0x305` |MRW |csr:mtvec[]      |Machine trap-handler base address
+|`0x306` |MRW |csr:mcounteren[] |Machine counter enable
+|`0x308` |MRW |csr:mvien[]      |Machine virtual interrupt enables
+|`0x309` |MRW |csr:mvip[]       |Machine virtual interrupt-pending bits
+|`0x310` |MRW |csr:mstatush[]   |Upper qty:32[bits] of csr:mstatus[], RV32 only
+|`0x312` |MRW |csr:medelegh[]   |Upper qty:32[bits] of csr:medeleg[], RV32 only
+|`0x313` |MRW |csr:midelegh[]   |Upper qty:32[bits] of csr:mideleg[], RV32 only
+|`0x314` |MRW |csr:mieh[]       |Upper qty:32[bits] of csr:mie[], RV32 only
+|`0x318` |MRW |csr:mvienh[]     |Upper qty:32[bits] of csr:mvien[], RV32 only
+|`0x319` |MRW |csr:mviph[]      |Upper qty:32[bits] of csr:mvip[], RV32 only
+
+4+^|Machine Trap Handling
+
+|`0x340` |MRW |csr:mscratch[] |Machine scratch register
+|`0x341` |MRW |csr:mepc[]     |Machine exception program counter
+|`0x342` |MRW |csr:mcause[]   |Machine trap cause
+|`0x343` |MRW |csr:mtval[]    |Machine trap value
+|`0x344` |MRW |csr:mip[]      |Machine interrupt pending
+|`0x34A` |MRW |csr:mtinst[]   |Machine trap instruction (transformed)
+|`0x34B` |MRW |csr:mtval2[]   |Machine second trap value
+|`0x354` |MRW |csr:miph[]     |Upper qty:32[bits] of csr:mip[], RV32 only
+|`0x35C` |MRW |csr:mtopei[]   |Machine top external interrupt
+|`0xFB0` |MRO |csr:mtopi[]    |Machine top interrupt
+
+4+^|Machine Indirect
+
+|`0x350` |MRW |csr:miselect[] |Machine indirect register select
+|`0x351` |MRW |csr:mireg[]    |Machine indirect register alias
+|`0x352` |MRW |csr:mireg2[]   |Machine indirect register alias 2
+|`0x353` |MRW |csr:mireg3[]   |Machine indirect register alias 3
+|`0x355` |MRW |csr:mireg4[]   |Machine indirect register alias 4
+|`0x356` |MRW |csr:mireg5[]   |Machine indirect register alias 5
+|`0x357` |MRW |csr:mireg6[]   |Machine indirect register alias 6
+
+4+^|Machine Configuration
+
+|`0x30A` |MRW |csr:menvcfg[]  |Machine environment configuration register
+|`0x31A` |MRW |csr:menvcfgh[] |Upper qty:32[bits] of csr:menvcfg[], RV32 only
+|`0x747` |MRW |csr:mseccfg[]  |Machine security configuration register
+|`0x757` |MRW |csr:mseccfgh[] |Upper qty:32[bits] of csr:mseccfg[], RV32 only
+
+4+^|Machine Memory Protection
+
+|`0x3A0` |MRW |csr:pmpcfg0[]       |Physical memory protection configuration
+|`0x3A1` |MRW |csr:pmpcfg1[]       |Physical memory protection configuration, RV32 only
+|`0x3A2` |MRW |csr:pmpcfg2[]       |Physical memory protection configuration
+|`0x3A3` |MRW |csr:pmpcfg3[]       |Physical memory protection configuration, RV32 only
+|        |    |{vertical-ellipsis} |
+|`0x3AE` |MRW |csr:pmpcfg14[]      |Physical memory protection configuration
+|`0x3AF` |MRW |csr:pmpcfg15[]      |Physical memory protection configuration, RV32 only
+|`0x3B0` |MRW |csr:pmpaddr0[]      |Physical memory protection address register
+|`0x3B1` |MRW |csr:pmpaddr1[]      |Physical memory protection address register
+|        |    |{vertical-ellipsis} |
+|`0x3EF` |MRW |csr:pmpaddr63[]     |Physical memory protection address register
+
+4+^|Machine State Enable Registers
+
+|`0x30C` |MRW |csr:mstateen0[]  |Machine State Enable 0 Register
+|`0x30D` |MRW |csr:mstateen1[]  |Machine State Enable 1 Register
+|`0x30E` |MRW |csr:mstateen2[]  |Machine State Enable 2 Register
+|`0x30F` |MRW |csr:mstateen3[]  |Machine State Enable 3 Register
+|`0x31C` |MRW |csr:mstateen0h[] |Upper qty:32[bits] of Machine State Enable 0 Register, RV32 only
+|`0x31D` |MRW |csr:mstateen1h[] |Upper qty:32[bits] of Machine State Enable 1 Register, RV32 only
+|`0x31E` |MRW |csr:mstateen2h[] |Upper qty:32[bits] of Machine State Enable 2 Register, RV32 only
+|`0x31F` |MRW |csr:mstateen3h[] |Upper qty:32[bits] of Machine State Enable 3 Register, RV32 only
+
+4+^|Machine Non-Maskable Interrupt Handling
+
+|`0x740` |MRW |csr:mnscratch[] |Resumable NMI scratch register
+|`0x741` |MRW |csr:mnepc[]     |Resumable NMI program counter
+|`0x742` |MRW |csr:mncause[]   |Resumable NMI cause
+|`0x744` |MRW |csr:mnstatus[]  |Resumable NMI status
+
+4+^|Machine Counter/Timers
+
+|`0xB00` |MRW |csr:mcycle[]         |Machine cycle counter
+|`0xB02` |MRW |csr:minstret[]       |Machine instructions-retired counter
+|`0xB03` |MRW |csr:mhpmcounter3[]   |Machine performance-monitoring counter
+|`0xB04` |MRW |csr:mhpmcounter4[]   |Machine performance-monitoring counter
+|        |    |{vertical-ellipsis}  |
+|`0xB1F` |MRW |csr:mhpmcounter31[]  |Machine performance-monitoring counter
+|`0xB80` |MRW |csr:mcycleh[]        |Upper qty:32[bits] of csr:mcycle[], RV32 only
+|`0xB82` |MRW |csr:minstreth[]      |Upper qty:32[bits] of csr:minstret[], RV32 only
+|`0xB83` |MRW |csr:mhpmcounter3h[]  |Upper qty:32[bits] of csr:mhpmcounter3[], RV32 only
+|`0xB84` |MRW |csr:mhpmcounter4h[]  |Upper qty:32[bits] of csr:mhpmcounter4[], RV32 only
+|        |    |{vertical-ellipsis}  |
+|`0xB9F` |MRW |csr:mhpmcounter31h[] |Upper qty:32[bits] of csr:mhpmcounter31[], RV32 only
+
+4+^|Machine Counter Setup
+
+|`0x320` |MRW |csr:mcountinhibit[] |Machine counter-inhibit register
+|`0x321` |MRW |csr:mcyclecfg[]     |Machine cycle counter configuration register
+|`0x322` |MRW |csr:minstretcfg[]   |Machine instret counter configuration register
+|`0x323` |MRW |csr:mhpmevent3[]    |Machine performance-monitoring event selector
+|`0x324` |MRW |csr:mhpmevent4[]    |Machine performance-monitoring event selector
+|        |    |{vertical-ellipsis} |
+|`0x33F` |MRW |csr:mhpmevent31[]   |Machine performance-monitoring event selector
+|`0x721` |MRW |csr:mcyclecfgh[]    |Upper qty:32[bits] of csr:mcyclecfg[], RV32 only
+|`0x722` |MRW |csr:minstretcfgh[]  |Upper qty:32[bits] of csr:minstretcfg[], RV32 only
+|`0x723` |MRW |csr:mhpmevent3h[]   |Upper qty:32[bits] of csr:mhpmevent3[], RV32 only
+|`0x724` |MRW |csr:mhpmevent4h[]   |Upper qty:32[bits] of csr:mhpmevent4[], RV32 only
+|        |    |{vertical-ellipsis} |
+|`0x73F` |MRW |csr:mhpmevent31h[]  |Upper qty:32[bits] of csr:mhpmevent31[], RV32 only
+
+4+^|Machine Control Transfer Records Configuration
+
+|`0x34E` |MRW |csr:mctrctl[] |Machine Control Transfer Records Control Register
+
+4+^|Debug/Trace Registers (shared with Debug Mode)
+
+|`0x7A0` |MRW |csr:tselect[]  |Debug/Trace trigger register select
+|`0x7A1` |MRW |csr:tdata1[]   |First Debug/Trace trigger data register
+|`0x7A2` |MRW |csr:tdata2[]   |Second Debug/Trace trigger data register
+|`0x7A3` |MRW |csr:tdata3[]   |Third Debug/Trace trigger data register
+|`0x7A4` |MRW |csr:tinfo[]    |Trigger info register
+|`0x7A5` |MRW |csr:tcontrol[] |Trigger control register
+|`0x7A8` |MRW |csr:mcontext[] |Machine-mode context register
+
+4+^|Debug Mode Registers
+
+|`0x7B0` |DRW |csr:dcsr[]      |Debug control and status register
+|`0x7B1` |DRW |csr:dpc[]       |Debug program counter
+|`0x7B2` |DRW |csr:dscratch0[] |Debug scratch register 0
+|`0x7B3` |DRW |csr:dscratch1[] |Debug scratch register 1
+
+|===
+
+<<<
+
+==== Currently allocated RISC-V indirect CSR (ext:smcsrind[]) mappings
+
+[[indcsrs-m]]
+.Currently allocated RISC-V indirect CSR (ext:smcsrind[]) mappings - M-mode
+[float="center",align="center",options="header"]
+|===
+| csr:miselect[]  | csr:mireg[]  | csr:mireg2[]  | csr:mireg3[]  | csr:mireg4[]  | csr:mireg5[]  | csr:mireg6[]
+| 0x30 | csr:iprio0[] | none | none | none | none | none
+| {vertical-ellipsis} | {vertical-ellipsis} | {vertical-ellipsis} | {vertical-ellipsis} | {vertical-ellipsis} | {vertical-ellipsis} | {vertical-ellipsis}
+| 0x3F | csr:iprio15[] | none | none | none | none | none
+| 0x70 | csr:eidelivery[] | none | none | none | none | none
+| 0x71 | 0 | none | none | none | none | none
+| 0x72 | csr:eithreshold[] | none | none | none | none | none
+| 0x73 | 0 | none | none | none | none | none
+| {vertical-ellipsis} | {vertical-ellipsis} | {vertical-ellipsis} | {vertical-ellipsis} | {vertical-ellipsis} | {vertical-ellipsis} | {vertical-ellipsis}
+| 0x7F | 0 | none | none | none | none | none
+| 0x80 | csr:eip0[] | none | none | none | none | none
+| {vertical-ellipsis} | {vertical-ellipsis} | {vertical-ellipsis} | {vertical-ellipsis} | {vertical-ellipsis} | {vertical-ellipsis} | {vertical-ellipsis}
+| 0xBF | csr:eip63[] | none | none | none | none | none
+| 0xC0 | csr:eie0[] | none | none | none | none | none
+| {vertical-ellipsis} | {vertical-ellipsis} | {vertical-ellipsis} | {vertical-ellipsis} | {vertical-ellipsis} | {vertical-ellipsis} | {vertical-ellipsis}
+| 0xFF | csr:eie63[] | none | none | none | none | none
+|===
+
+[[indcsrs-s]]
+.Currently allocated RISC-V indirect CSR (ext:smcsrind[]/ext:sscsrind[]) mappings - S-mode
+[float="center",align="center",options="header"]
+|===
+| csr:siselect[]  | csr:sireg[]  | csr:sireg2[]  | csr:sireg3[]  | csr:sireg4[]  | csr:sireg5[]  | csr:sireg6[]
+| 0x30 | csr:iprio0[] | none | none | none | none | none
+| {vertical-ellipsis} | {vertical-ellipsis} | {vertical-ellipsis} | {vertical-ellipsis} | {vertical-ellipsis} | {vertical-ellipsis} | {vertical-ellipsis}
+| 0x3F | csr:iprio15[] | none | none | none | none | none
+| 0x40 | csr:cycle[] | csr:cyclecfg[] | none | csr:cycleh[] | csr:cyclecfgh[] | none
+| 0x41 | none | none | none | none | none | none
+| 0x42 | csr:instret[] | csr:instretcfg[] | none | csr:instreth[] | csr:instretcfgh[] | none
+| 0x43 | csr:hpmcounter3[] | csr:hpmevent3[] | none | csr:hpmcounter3h[] | csr:hpmevent3h[] | none
+| {vertical-ellipsis} | {vertical-ellipsis} | {vertical-ellipsis} | {vertical-ellipsis} | {vertical-ellipsis} | {vertical-ellipsis} | {vertical-ellipsis}
+| 0x5F | csr:hpmcounter31[] | csr:hpmevent31[] | none | csr:hpmcounter31h[] | csr:hpmevent31h[] | none
+| 0x70 | csr:eidelivery[] | none | none | none | none | none
+| 0x71 | 0 | none | none | none | none | none
+| 0x72 | csr:eithreshold[] | none | none | none | none | none
+| 0x73 | 0 | none | none | none | none | none
+| {vertical-ellipsis} | {vertical-ellipsis} | {vertical-ellipsis} | {vertical-ellipsis} | {vertical-ellipsis} | {vertical-ellipsis} | {vertical-ellipsis}
+| 0x7F | 0 | none | none | none | none | none
+| 0x80 | csr:eip0[] | none | none | none | none | none
+| {vertical-ellipsis} | {vertical-ellipsis} | {vertical-ellipsis} | {vertical-ellipsis} | {vertical-ellipsis} | {vertical-ellipsis} | {vertical-ellipsis}
+| 0xBF | csr:eip63[] | none | none | none | none | none
+| 0xC0 | csr:eie0[] | none | none | none | none | none
+| {vertical-ellipsis} | {vertical-ellipsis} | {vertical-ellipsis} | {vertical-ellipsis} | {vertical-ellipsis} | {vertical-ellipsis} | {vertical-ellipsis}
+| 0xFF | csr:eie63[] | none | none | none | none | none
+| 0x200 | csr:ctrsource0[] | csr:ctrtarget0[] | csr:ctrdata0[] | 0 | 0 | 0
+| {vertical-ellipsis} | {vertical-ellipsis} | {vertical-ellipsis} | {vertical-ellipsis} | {vertical-ellipsis} | {vertical-ellipsis} | {vertical-ellipsis}
+| 0x2FF | csr:ctrsource255[] | csr:ctrtarget255[] | csr:ctrdata255[] | 0 | 0 | 0
+|===
+
+[[indcsrs-vs]]
+.Currently allocated RISC-V indirect CSR (Smcsrind/Sscsrind) mappings - VS-mode
+[float="center",align="center",options="header"]
+|===
+| csr:vsiselect[]  | csr:vsireg[]  | csr:vsireg2[]  | csr:vsireg3[]  | csr:vsireg4[]  | csr:vsireg5[]  | csr:vsireg6[]
+| 0x30 | csr:iprio0[] | none | none | none | none | none
+| {vertical-ellipsis} | {vertical-ellipsis} | {vertical-ellipsis} | {vertical-ellipsis} | {vertical-ellipsis} | {vertical-ellipsis} | {vertical-ellipsis}
+| 0x3F | csr:iprio15[] | none | none | none | none | none
+| 0x70 | csr:eidelivery[] | none | none | none | none | none
+| 0x71 | 0 | none | none | none | none | none
+| 0x72 | csr:eithreshold[] | none | none | none | none | none
+| 0x73 | 0 | none | none | none | none | none
+| {vertical-ellipsis} | {vertical-ellipsis} | {vertical-ellipsis} | {vertical-ellipsis} | {vertical-ellipsis} | {vertical-ellipsis} | {vertical-ellipsis}
+| 0x7F | 0 | none | none | none | none | none
+| 0x80 | csr:eip0[] | none | none | none | none | none
+| {vertical-ellipsis} | {vertical-ellipsis} | {vertical-ellipsis} | {vertical-ellipsis} | {vertical-ellipsis} | {vertical-ellipsis} | {vertical-ellipsis}
+| 0xBF | csr:eip63[] | none | none | none | none | none
+| 0xC0 | csr:eie0[] | none | none | none | none | none
+| {vertical-ellipsis} | {vertical-ellipsis} | {vertical-ellipsis} | {vertical-ellipsis} | {vertical-ellipsis} | {vertical-ellipsis} | {vertical-ellipsis}
+| 0xFF | csr:eie63[] | none | none | none | none | none
+| 0x200 | csr:ctrsource0[] | csr:ctrtarget0[] | csr:ctrdata0[] | 0 | 0 | 0
+| {vertical-ellipsis} | {vertical-ellipsis} | {vertical-ellipsis} | {vertical-ellipsis} | {vertical-ellipsis} | {vertical-ellipsis} | {vertical-ellipsis}
+| 0x2FF | csr:ctrsource255[] | csr:ctrtarget255[] | csr:ctrdata255[] | 0 | 0 | 0
+|===
+
+=== CSR Field Specifications
+
+The following definitions and abbreviations are used in specifying the
+behavior of fields within the CSRs.
+
+==== Reserved Writes Preserve Values, Reads Ignore Values (WPRI)
+
+Some whole read/write fields are reserved for future use. Software
+should ignore the values read from these fields, and should preserve the
+values held in these fields when writing values to other fields of the
+same register. [#norm:Zicsr_wpri_roz]#For forward compatibility, implementations that do not
+furnish these fields must make them read-only zero. These fields are
+labeled *WPRI* in the register descriptions.#
+
+[NOTE]
+====
+To simplify the software model, any backward-compatible future
+definition of previously reserved fields within a CSR must cope with the
+possibility that a non-atomic read/modify/write sequence is used to
+update other fields in the CSR. Alternatively, the original CSR
+definition must specify that subfields can only be updated atomically,
+which may require a two-instruction clear bit/set bit sequence in
+general that can be problematic if intermediate values are not legal.
+====
+
+==== Write/Read Only Legal Values (WLRL)
+
+Some read/write CSR fields specify behavior for only a subset of
+possible bit encodings, with other bit encodings reserved.
+[#norm:Zicsr_wlrl]#Software
+should not write anything other than legal values to such a field, and
+should not assume a read will return a legal value unless the last write
+was of a legal value, or the register has not been written since another
+operation (e.g., reset) set the register to a legal value. These fields
+are labeled *WLRL* in the register descriptions.#
+
+[NOTE]
+====
+Hardware implementations need only implement enough state bits to
+differentiate between the supported values, but must always return the
+complete specified bit-encoding of any supported value when read.
+====
+
+[#norm:Zicsr_wlrl_exception]#Implementations are permitted but not required to raise an
+illegal-instruction exception if an instruction attempts to write a
+non-supported value to a *WLRL* field.#
+[#norm:Zicsr_wlrl_deterministic]#Implementations can return arbitrary
+bit patterns on the read of a *WLRL* field when the last write was of an
+illegal value, but the value returned should deterministically depend on
+the illegal written value and the value of the field prior to the write.#
+
+==== Write Any Values, Reads Legal Values (WARL)
+
+[#norm:Zicsr_warl_def]#Some read/write CSR fields are only defined for a subset of bit
+encodings, but allow any value to be written while guaranteeing to
+return a legal value whenever read.# Assuming that writing the CSR has no
+other side effects, the range of supported values can be determined by
+attempting to write a desired setting then reading to see if the value
+was retained. These fields are labeled *WARL* in the register descriptions.
+
+
+[#norm:Zicsr_warl]#Implementations will not raise an exception on writes of unsupported
+values to a *WARL* field.# [#norm:Zicsr_warl_deterministic]#Implementations can return any legal value on the
+read of a *WARL* field when the last write was of an illegal value, but the
+legal value returned should deterministically depend on the illegal
+written value and the architectural state of the hart.#
+
+=== CSR Field Modulation
+
+[#norm:Zicsr_field_modulation]#If a write to one CSR changes the set of legal values allowed for a
+field of a second CSR, then unless specified otherwise, the second CSR's
+field immediately gets an UNSPECIFIED value from among its new legal values. This
+is true even if the field's value before the write remains legal after
+the write; the value of the field may be changed in consequence of the
+write to the controlling CSR.#
+
+[NOTE]
+====
+As a special case of this rule, the value written to one CSR may control
+whether a field of a second CSR is writable (with multiple legal values)
+or is read-only. When a write to the controlling CSR causes the second
+CSR's field to change from previously read-only to now writable, that
+field immediately gets an UNSPECIFIED but legal value, unless specified otherwise.
+
+***
+Some CSR fields are, when writable, defined as aliases of other CSR
+fields. Let _x_ be such a CSR field, and let _y_ be the CSR field it aliases when writable. If a write to a controlling CSR causes field _x_ to change from previously read-only to now writable, the new value of _x_ is not UNSPECIFIED but instead immediately reflects the existing value of its alias _y_, as required.
+====
+
+[#norm:Zicsr_field_modulation_no_side_effects]#A change to the value of a CSR for this reason is not a write to the
+affected CSR and thus does not trigger any side effects specified for
+that CSR.#
+
+=== Implicit Reads of CSRs
+
+Implementations sometimes perform _implicit_ reads of CSRs. (For
+example, all S-mode instruction fetches implicitly read the `satp` CSR.)
+[#norm:Zicsr_implicit_read]#Unless otherwise specified, the value returned by an implicit read of a
+CSR is the same value that would have been returned by an explicit read
+of the CSR, using a CSR-access instruction in a sufficient privilege
+mode.#
+
+[[csrwidthmodulation]]
+=== CSR Width Modulation
+
+[[norm:Zicsr_width_modulation]]
+If the width of a CSR is changed (for example, by changing SXLEN or
+UXLEN, as described in <<xlen-control>>), the
+values of the _writable_ fields and bits of the new-width CSR are,
+unless specified otherwise, determined from the previous-width CSR as
+though by this algorithm:
+
+. The value of the previous-width CSR is copied to a temporary register
+of the same width.
+. For the read-only bits of the previous-width CSR, the bits at the same
+positions in the temporary register are set to zeros.
+. The width of the temporary register is changed to the new width. If
+the new width _W_ is narrower than the previous width, the
+least-significant _W_ bits of the temporary register are
+retained and the more-significant bits are discarded. If the new width
+is wider than the previous width, the temporary register is
+zero-extended to the wider width.
+. Each writable field of the new-width CSR takes the value of the bits
+at the same positions in the temporary register.
+
+[#norm:Zicsr_width_modulation_no_side_effects]#Changing the width of a CSR is not a read or write of the CSR and thus
+does not trigger any side effects.#
+
+=== Explicit Accesses to CSRs Wider than XLEN
+
+[#norm:Zicsr_wide_csr_access]#If a standard CSR is wider than XLEN bits, then an explicit read
+of the CSR returns the register's least-significant XLEN bits,
+and an explicit write to the CSR modifies only the register's
+least-significant XLEN bits, leaving the upper bits unchanged.#
+
+Some standard CSRs, such as the counter CSRs of extension
+ext:zicntr[], are always 64-bit, even when XLEN=32 (RV32).
+For each such 64-bit CSR (for example, counter csr:time[]),
+a corresponding 32-bit _high-half CSR_ is usually defined with
+the same name but with the letter '`h`' appended at the end (csr:timeh[]).
+[#norm:Zicsr_high_half_alias]#The high-half CSR aliases bits 63:32 of its namesake
+64-bit CSR, thus providing a way for RV32 software
+to read and modify the otherwise-unreachable qty:32[bits].#
+
+[#norm:Zicsr_high_half_rv64_rsv]#Standard high-half CSRs are accessible only when
+the base RISC-V instruction set is RV32 (XLEN=32).
+For RV64 (when XLEN=64), the addresses of all standard high-half CSRs
+are reserved, so an attempt to access a high-half CSR
+typically raises an illegal-instruction exception.#

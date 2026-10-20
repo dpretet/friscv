@@ -1,0 +1,61 @@
+= The RISC-V Instruction Set Manual
+:doctype: book
+:description: The RISC-V Instruction Set Manual
+:colophon:
+:preface-title: Preamble
+:appendix-caption: Appendix
+:imagesdir: ../docs-resources/images
+:title-logo-image: image:risc-v_logo.svg["RISC-V International Logo",pdfwidth=3.25in,align=center]
+ifdef::draft-watermark[]
+:page-background-image: image:draft.svg[opacity=20%]
+endif::[]
+:back-cover-image: image:riscv-horizontal-color.svg[opacity=25%]
+:experimental:
+:reproducible:
+:imagesoutdir: {docdir}/../build/images-out
+// Default output format for asciidoctor-diagram blocks (wavedrom, etc.) that do
+// not specify one; without it wavedrom would fall back to PNG.
+:diagram-format: svg
+:bibtex-file: src/resources/riscv-spec.bib
+:bibtex-order: alphabetical
+:bibtex-style: apa
+:bibtex-format: asciidoc
+:bibtex-throw: false
+:icons: font
+:lang: en
+:example-caption: Example
+:listing-caption: Listing
+:sectnums:
+:partnums:
+:sectnumlevels: 4
+:sectlinks:
+:toc: left
+:toclevels: 2
+:source-highlighter: rouge
+:table-caption: Table
+:figure-caption: Figure
+:xrefstyle: short
+:chapter-refsig: Chapter
+:section-refsig: Section
+:appendix-refsig: Appendix
+:data-uri:
+:hide-uri-scheme:
+:footnote:
+:imagesdir: images
+
+include::symbols.adoc[]
+include::contributors.adoc[]
+include::license.adoc[]
+
+:imagesdir: unpriv/images
+include::unpriv/unpriv.adoc[]
+:imagesdir: priv/images
+include::priv/priv.adoc[]
+:imagesdir: profiles/images
+include::profiles/profiles.adoc[]
+
+:imagesdir: images
+include::index.adoc[]
+// this is generated from index markers.
+include::bibliography.adoc[]
+// this references the riscv-spec.bib file that has been copied into the resources directory

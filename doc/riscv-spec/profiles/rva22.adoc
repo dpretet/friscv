@@ -1,0 +1,255 @@
+== RVA22 Profiles
+
+The RVA22 profiles are intended to be used for 64-bit application
+processors running rich OS stacks.  Only user-mode (RVA22U64) and
+supervisor-mode (RVA22S64) profiles are specified in this family.
+
+=== RVA22U64 Profile
+
+The RVA22U64 profile specifies the ISA features available to user-mode
+execution environments in 64-bit applications processors.  This is the
+most important profile within the application processor family in
+terms of the amount of software that targets this profile.
+
+==== RVA22U64 Mandatory Base
+
+RV64I is the mandatory base ISA for RVA22U64 and is little-endian.
+
+As per the unprivileged architecture specification, the `ecall`
+instruction causes a requested trap to the execution environment.
+
+==== RVA22U64 Mandatory Extensions
+
+The following mandatory extensions were present in RVA20U64.
+
+- extlink:m[] Integer multiplication and division.
+- extlink:a[] Atomic instructions.
+- extlink:f[] Single-precision floating-point instructions.
+- extlink:d[] Double-precision floating-point instructions.
+- extlink:c[] Compressed Instructions.
+- extlink:zicsr[]  CSR instructions.  These are implied by presence of F.
+- extlink:zicntr[] Base counters and timers.
+
+- extlink:ziccif[] Main memory regions with both the coherence and
+  cacheability PMAs must support instruction fetch, and any instruction fetches
+  of naturally aligned power-of-2 sizes up to min(ILEN,XLEN) (i.e., 32 bits for
+  RVA22) are atomic.
+
+- extlink:ziccrse[] Main memory regions with both the coherence and cacheability
+  PMAs must support RsrvEventual.
+
+- extlink:ziccamoa[] Main memory regions with both the coherence and
+  cacheability PMAs must support AMOArithmetic.
+
+- extlink:zicclsm[] Misaligned loads and stores to main memory regions with both
+  the coherence and cacheability PMAs must be supported.
+
+NOTE: Even though mandated, misaligned loads and stores might execute extremely
+slowly. Standard software distributions should assume their existence only for
+correctness, not for performance.
+
+The following mandatory feature was further restricted in RVA22U64:
+
+- extlink:za64rs[] Reservation sets must be contiguous, naturally aligned, and a
+  maximum of 64 bytes.
+
+NOTE: The maximum reservation size has been reduced to match the required cache
+block size.  The minimum reservation size is effectively set by the instructions
+in the mandatory ext:zalrsc[] extension.
+
+The following mandatory extensions are new for RVA22U64.
+
+- extlink:b[] Bit-manipulation instructions.
+
+- extlink:zihpm[] Hardware performance counters.
+
+NOTE: ext:zihpm[] was optional in RVA20U64.
+
+- extlink:zihintpause[] Pause instruction.
+
+NOTE: While the insn:pause[] instruction is a HINT that can be implemented as a
+insn:nop[] and hence trivially supported by hardware implementers, its
+inclusion in the mandatory extension list signifies that software
+should use the instruction whenever it would make sense and that
+implementers are expected to exploit this information to optimize
+hardware execution.
+
+- extlink:zic64b[] Cache blocks must be 64 bytes in size, naturally aligned
+  in the address space.
+
+NOTE: While the general RISC-V specifications are agnostic to cache block size,
+selecting a common cache block size simplifies the specification and use of the
+following cache-block extensions within the application processor profile.
+Software does not have to query a discovery mechanism and/or provide dynamic
+dispatch to the appropriate code. We choose 64 bytes as it is effectively an
+industry standard. Implementations may use longer cache blocks to reduce tag
+cost provided they use 64-byte sub-blocks to remain compatible. Implementations
+may use shorter cache blocks provided they sequence cache operations across the
+multiple cache blocks comprising a 64-byte block to remain compatible.
+
+- extlink:zicbom[] Cache-Block Management Operations.
+- extlink:zicbop[] Cache-Block Prefetch Operations.
+
+NOTE: As with other HINTS, the inclusion of prefetches in the
+mandatory set of extensions indicates that software should generate
+these instructions where they are expected to be useful, and hardware
+is expected to exploit that information.
+
+- extlink:zicboz[] Cache-Block Zero Operations.
+
+- extlink:zfhmin[] Scalar half-precision floating-point transfer and convert.
+
+NOTE: The hardware cost for ext:zfhmin[] is low, and mandating it avoids adding an
+option to the profile.
+
+- extlink:zkt[] Data-independent execution time.
+
+NOTE: Mandating ext:zkt[] enables portable libraries for safe basic cryptographic
+operations. It is expected that application processors will naturally have this
+property and so implementation cost is low, if not zero, in most systems that
+would support RVA22.
+
+==== RVA22U64 Optional Extensions
+
+RVA22U64 has four profile options (ext:zfh[], ext:v[], ext:zkn[], ext:zks[]):
+
+- extlink:zfh[] Scalar half-precision floating-point.
+
+NOTE: A future profile might mandate ext:zfh[].
+
+- <<vector,**V**>> Vector Extension.
+
+NOTE: The smaller vector extensions (ext:zve32f[], ext:zve32x[], ext:zve64d[], ext:zve64f[],
+ext:zve64x[]) are not provided as separately supported profile options. The
+full V extension is specified as the only supported profile option.
+
+- extlink:zkn[] Scalar Crypto NIST Algorithms.
+- extlink:zks[] Scalar Crypto ShangMi Algorithms.
+
+NOTE: The smaller component scalar crypto extensions (ext:zbc[], ext:zbkb[], ext:zbkc[],
+ext:zbkx[], ext:zknd[], ext:zkne[], ext:zknh[], ext:zksed[], ext:zksh[]) are not provided as separate
+options in the profile.  Profile implementers should provide all of
+the instructions in a given algorithm suite as part of the ext:zkn[] or ext:zks[]
+supported options.
+
+NOTE: Access to the entropy source (ext:zkr[]) in a system is usually
+carefully controlled.  While the design supports unprivileged access
+to the entropy source, this is unlikely to be commonly used in an
+application processor, and so ext:zkr[] was not added as a profile option.
+This also means the roll-up ext:zk[] was not added as a profile option.
+
+NOTE: The ext:zfinx[], ext:zdinx[], ext:zhinx[], ext:zhinxmin[] extensions are incompatible
+with the profile mandates to support the F and D extensions.
+
+==== RVA22U64 Recommendations
+
+Recommendations are not strictly mandated but are included to guide
+implementers making design choices.
+
+Implementations are strongly recommended to raise illegal-instruction
+exceptions on attempts to execute unimplemented opcodes.
+
+=== RVA22S64 Profile
+
+The RVA22S64 profile specifies the ISA features available to a
+supervisor-mode execution environment in 64-bit applications
+processors.  RVA22S64 is based on privileged architecture version
+1.12.
+
+==== RVA22S64 Mandatory Base
+
+RV64I is the mandatory base ISA for RVA22S64 and is little-endian.
+
+The `ecall` instruction operates as per the unprivileged architecture
+specification.  An `ecall` in user mode causes a contained trap to
+supervisor mode.  An `ecall` in supervisor mode causes a requested
+trap to the execution environment.
+
+==== RVA22S64 Mandatory Extensions
+
+The following unprivileged extensions are mandatory:
+
+- The RVA22S64 mandatory unprivileged extensions include all the
+mandatory unprivileged extensions in RVA22U64.
+
+- extlink:zifencei[] Instruction-fetch fence.
+
+NOTE: ext:zifencei[] is mandated as it is the only standard way to support
+instruction-cache coherence in RVA22 application processors.  A new
+instruction-cache coherence mechanism is under development which might
+be added as an option in the future.
+
+The following privileged extensions are mandatory:
+
+- *Ss1p12*  Privileged Architecture version 1.12.
+
+NOTE: Ss1p12 supersedes Ss1p11.
+
+- <<svbare,**Svbare**>> The `satp` mode Bare must be supported.
+
+- <<sv39,**Sv39**>> Page-Based 39-bit Virtual-Memory System.
+
+- <<svade,**Svade**>> Page-fault exceptions are raised when a page is accessed
+  when A bit is clear, or written when D bit is clear.
+
+- <<ssccptr,**Ssccptr**>> Main memory regions with both the cacheability and
+  coherence PMAs must support hardware page-table reads.
+
+- <<sstvecd,**Sstvecd**>> `stvec.MODE` must be capable of holding the value 0
+  (Direct).  When `stvec.MODE=Direct`, `stvec.BASE` must be capable of holding
+  any valid four-byte-aligned address.
+
+- <<sstvala,**Sstvala**>> stval must be written with the faulting virtual
+  address for load, store, and instruction page-fault, access-fault, and
+  misaligned exceptions, and for breakpoint exceptions other than those caused
+  by execution of the EBREAK or C.EBREAK instructions. For virtual-instruction
+  and illegal-instruction exceptions, stval must be written with the faulting
+  instruction.
+
+- <<sscounterenw,**Sscounterenw**>> For any hpmcounter that is not read-only
+  zero, the corresponding bit in scounteren must be writable.
+
+- extlink:svpbmt[] Page-Based Memory Types
+
+- extlink:svinval[] Fine-Grained Address-Translation Cache Invalidation.
+
+==== RVA22S64 Optional Extensions
+
+RVA22S64 has four unprivileged options (ext:zfh[], ext:v[], ext:zkn[], ext:zks[]) from RVA22U64, and
+eight privileged options (Sv48, Sv57, Svnapot, Ssu64xl, Sstc, Sscofpmf, ext:zkr[], H).
+
+The privileged optional extensions are:
+
+- <<sv48,**Sv48**>> Page-Based 48-bit Virtual-Memory System.
+
+- <<sv57,**Sv57**>> Page-Based 57-bit Virtual-Memory System.
+
+- extlink:svnapot[] NAPOT Translation Contiguity.
+
+- <<ssu64xl,**Ssu64xl**>> `sstatus.UXL` must be capable of holding the value 2
+  (i.e., UXLEN=64 must be supported).
+
+- <<Sstc,**Sstc**>> supervisor-mode timer interrupts.
+
+NOTE: Sstc was not made mandatory in RVA22S64 as it is a more disruptive change
+affecting system-level architecture, and will take longer for implementations to
+adopt.
+
+- <<Sscofpmf,**Sscofpmf**>> Count Overflow and Mode-Based Filtering.
+
+NOTE: Platforms may choose to mandate the presence of Sscofpmf.
+
+- extlink:zkr[]  Entropy CSR.
+
+NOTE: Technically, ext:zk[] is also a privileged-mode option capturing that
+ext:zkr[], ext:zkn[], and ext:zkt[] are all implemented.  However, the ext:zk[] rollup is less
+descriptive than specifying the individual extensions explicitly.
+
+- <<sha,**Sha**>> The augmented hypervisor extension.
+
+==== RVA22S64 Recommendations
+
+- Implementations are strongly recommended to raise illegal-instruction
+  exceptions when attempting to execute unimplemented opcodes.
+
+//

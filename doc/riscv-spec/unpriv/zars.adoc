@@ -1,0 +1,20 @@
+[[ext:za128rs]]
+=== ext:za128rs[] Extension for Reservation-Set Size
+
+[[norm:Za128rs_res_set_req]]
+The ext:za128rs[] extension requires that the reservation sets used by the
+instructions in the ext:zalrsc[] extension be contiguous, naturally aligned, and at
+most 128 bytes in size.
+
+[[ext:za64rs]]
+=== ext:za64rs[] Extension for Reservation-Set Size
+
+[[norm:Za64rs_res_set_req]]
+The ext:za64rs[] extension requires that the reservation sets used by the
+instructions in the ext:zalrsc[] extension be contiguous, naturally aligned, and at
+most 64 bytes in size.
+
+[[norm:Za64rs_implies_Za128rs]]
+The ext:za64rs[] extension implies the ext:za128rs[] extension.
+
+//

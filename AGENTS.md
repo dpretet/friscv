@@ -1,9 +1,26 @@
 # FRISCV project guidance
 
 FRISCV is a SystemVerilog RISC-V core and platform. `README.md` is an overview,
-not a complete specification: confirm feature support and behavior in the RTL,
-tests, and relevant `doc/` pages before making claims or changes. The repo map
-and OpenCode workflow are in `.opencode/README.md`.
+not a complete specification: confirm FRISCV behavior in the RTL, tests, and
+relevant `doc/friscv-arch/` pages. For architectural requirements, also search
+the local RISC-V sources in `doc/riscv-spec/`. The repo map and OpenCode workflow
+are in `.opencode/README.md`.
+
+## Documentation lookup
+
+- Use `doc/friscv-arch/` for FRISCV-specific architecture, interfaces, and
+  implementation behavior. Verify behavior against the RTL and tests as well.
+- Use `doc/riscv-spec/` for RISC-V ISA and privileged-architecture requirements.
+  It contains searchable AsciiDoc sources; search them by topic/section (for
+  example, `rg -n -i 'pmp|access-fault' doc/riscv-spec --glob '*.adoc'`) and
+  follow relevant `include::` directives to their source files.
+- When a conclusion depends on the specification, cite its volume and section
+  and check that volume's preface for ratification/version status. Do not treat
+  the spec as evidence that FRISCV implements a feature; distinguish normative
+  requirements from implementation support and verify the latter in FRISCV RTL,
+  docs, and tests. The imported upstream revision is not pinned; if an exact
+  official version governs, verify it against that release or ask which version
+  is intended rather than assuming this snapshot is current.
 
 Before changing RTL, read the relevant module and architecture notes; preserve
 existing interfaces, parameter behavior, reset behavior, and bus/protocol

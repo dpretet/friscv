@@ -1,0 +1,29 @@
+// Macros that can be used in place of unicode characters to make writing them
+// easier, e.g. "X {ge} Y".
+:le: ≤
+:ge: ≥
+:ne: ≠
+:approx: ≈
+:inf: ∞
+:circ: ○
+:bullet: ∙
+:times: ×
+:check: ✓
+:vertical-ellipsis: ⋮
+:ellipsis: ⋯
+:prime: ′
+:interpunct: ·
+:pm: ±
+:rightarrow: →
+:asterisk: &#42;
+// https://docs.asciidoctor.org/asciidoc/latest/subs/replacements/
+// https://github.com/asciidoctor/asciidoctor/issues/1578
+:emdash: &#8212;&#8203;
+// https://en.wikipedia.org/wiki/Template:Non_breaking_en_dash
+// https://github.com/asciidoctor/asciidoctor/issues/1174
+ifdef::backend-pdf[]
+:endash: &#8211;
+endif::[]
+ifndef::backend-pdf[]
+:endash: &#8205;&#8211;&#8205;
+endif::[]

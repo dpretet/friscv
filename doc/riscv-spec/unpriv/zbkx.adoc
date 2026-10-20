@@ -1,0 +1,36 @@
+[[ext:zbkx]]
+=== ext:zbkx[] Extension for Crossbar Permutations
+
+[#norm:Zbkx_lookup_table_model]#These instructions implement a "`lookup table`" for 4- and 8-bit elements
+inside the general purpose registers.#
+_rs1_ is used as a vector of N-bit words, and _rs2_ as a vector of N-bit
+indices into _rs1_.
+[#norm:Zbkx_indexing_behavior]#Each element of the result is formed by using the
+corresponding index element from _rs2_ to select an element from _rs1_, or zero if the
+index element is out of bounds.#
+
+These instructions are useful for expressing N-bit to N-bit boolean
+operations, and implementing cryptographic code with secret
+dependent memory accesses (particularly SBoxes) such that the execution
+latency does not depend on the (secret) data being operated on.
+
+[%header,cols="^1,^1,4,8"]
+|===
+|RV32
+|RV64
+|Mnemonic
+|Instruction
+
+|{check}
+|{check}
+|insn:xperm4[rd,rs1,rs2]
+|<<#insns-xperm4>>
+
+|{check}
+|{check}
+|insn:xperm8[rd,rs1,rs2]
+|<<#insns-xperm8>>
+
+|===
+
+//

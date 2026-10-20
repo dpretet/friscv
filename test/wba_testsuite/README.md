@@ -61,3 +61,18 @@ Check multiply /division extension
 ## Test 10: LOAD/STORE collision
 
 Stresses out read / write with memfy and check collisions don't occur
+
+## Test 11: AMO allocation failures
+
+Designed to run with the AXI RAM model's exclusive-allocation denial mode
+enabled, randomly returning `OKAY`. The trap handler counts failed operations;
+the test counts successful operations and checks that memory was updated only
+for successes. Both counts must reach the configured minimum.
+
+## Test 12: AMO, LR, and SC allocation failures
+
+Exercises the remaining AMO operators and LR/SC with the AXI RAM model's
+exclusive-allocation denial mode enabled. Each AMO operator must reach
+the minimum success and trap counts, and its returned old values and final
+memory contents are checked. LR failures are counted by the trap handler; SC
+success/failure results and memory updates are checked separately.

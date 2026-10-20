@@ -12,8 +12,13 @@ requested behavior before proposing an implementation. Treat `README.md` as an
 overview and development-plan/backlog documents as ideas, not implemented
 requirements.
 
-Inspect the relevant RTL hierarchy, instantiations, parameters, architecture
-docs, test READMEs, and CI commands. For a proposed change, return:
+Inspect the relevant RTL hierarchy, instantiations, parameters, FRISCV
+architecture docs under `doc/friscv-arch/`, test READMEs, and CI commands. For
+RISC-V ISA or privileged-architecture requirements, search the AsciiDoc sources
+under `doc/riscv-spec/`, follow relevant `include::` directives, and check the
+volume preface for version/ratification status. Cite the volume and section, and
+separate normative requirements from what FRISCV actually implements. For a
+proposed change, return:
 
 1. Requirements and unresolved questions.
 2. A design contract, including observable behavior, reset/error behavior,

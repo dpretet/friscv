@@ -39,11 +39,11 @@ FRISCV is a SystemVerilog implementation of the [RISCV ISA](https://riscv.org):
 The core is [compliant](./test/riscv-tests/README.md) with the official RISCV testsuite.
 
 
-# [Architecture](./doc/architecture.md)
+# [Architecture](./doc/friscv-arch/architecture.md)
 
 <p align="center">
   <!--img width="100" height="100" src=""-->
-  <img src="doc/assets/friscv-core-top.png">
+  <img src="doc/friscv-arch/assets/friscv-core-top.png">
 </p>
 
 The IP is decribed in two layers:
@@ -59,8 +59,8 @@ The core is compact and composed by:
 - the memory protection unit for less-privilege mode memory access
 
 More details of the architecture can be found in the:
-- Architecture [chapter](./doc/architecture.md).
-- IOs and parameters [chapter](./doc/ios_params.md)
+- Architecture [chapter](./doc/friscv-arch/architecture.md).
+- IOs and parameters [chapter](./doc/friscv-arch/ios_params.md)
 
 
 ## Verification environment
@@ -116,8 +116,8 @@ is available in [syn](./syn) folder.
 
 # Development plan
 
-- [HW development plan](doc/project_mgt_hw.md)
-- [SW development plan](doc/project_mgt_sw.md)
+- [HW development plan](doc/friscv-arch/project_mgt_hw.md)
+- [SW development plan](doc/friscv-arch/project_mgt_sw.md)
 
 
 # License

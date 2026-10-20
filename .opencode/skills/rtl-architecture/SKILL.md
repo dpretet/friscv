@@ -11,15 +11,21 @@ description: Translate a FRISCV feature or bug request into a requirements-backe
    they are unspecified.
 2. Identify whether the change belongs to the hart, platform, a peripheral,
    verification infrastructure, or software/test content.
-3. Trace relevant RTL modules and their instantiations. Read the corresponding
-   documentation, including `doc/architecture.md`, `doc/ios_params.md`, and
-   protocol/feature-specific documents as applicable.
+3. Trace relevant RTL modules and their instantiations. Search and read the
+   corresponding FRISCV documentation under `doc/friscv-arch/`, including
+   `architecture.md`, `ios_params.md`, and protocol/feature-specific documents.
+   When requirements depend on RISC-V architectural behavior, search the
+   AsciiDoc sources under `doc/riscv-spec/` by topic/section, follow relevant
+   `include::` directives, and check the volume preface for ratification and
+   version status. Cite the spec volume/section in the plan. Keep specification
+   requirements distinct from behavior actually implemented in FRISCV RTL.
 4. Check the relevant test-suite README and existing tests. Use
    `.github/workflows/ci.yaml` and `flow.sh` to identify actual verification
    entry points.
-5. Consult `doc/project_mgt_hw.md` or `doc/project_mgt_sw.md` only as context for
-   project direction. Backlog entries are not implementation requirements and
-   may be stale; verify current behavior in RTL and tests.
+5. Consult `doc/friscv-arch/project_mgt_hw.md` or
+   `doc/friscv-arch/project_mgt_sw.md` only as context for project direction.
+   Backlog entries are not implementation requirements and may be stale; verify
+   current behavior in RTL and tests.
 6. Produce a design plan with:
    - requirements and open questions;
    - proposed behavior and compatibility constraints;
@@ -28,5 +34,6 @@ description: Translate a FRISCV feature or bug request into a requirements-backe
    - synthesis impact and risks.
 7. Do not edit files. Do not claim tests or implementation have been performed.
 
-For RISC-V ISA or bus-spec behavior, identify the relevant spec/version or ask
-which requirement governs when the repository docs and request do not settle it.
+For RISC-V ISA or bus-spec behavior, consult the relevant local spec source when
+available and identify its version/section; ask which requirement governs when
+the sources and request do not settle it.

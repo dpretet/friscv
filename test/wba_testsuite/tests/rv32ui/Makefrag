@@ -14,6 +14,8 @@ rv32ui_sc_tests = \
     test8 \
     test9 \
     test10 \
+    test11 \
+    test12 \
 
 rv32ui_p_tests = $(addprefix rv32ui-p-, $(rv32ui_sc_tests))
 rv32ui_v_tests = $(addprefix rv32ui-v-, $(rv32ui_sc_tests))

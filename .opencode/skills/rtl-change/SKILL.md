@@ -19,13 +19,20 @@ description: Plan or implement SystemVerilog RTL changes in FRISCV while preserv
 3. Read the target module and its instantiations. Trace the relevant path through
    the core/platform instead of treating a module in isolation.
 4. Read the relevant design references, as applicable:
-   - `doc/architecture.md` for block relationships and core/platform structure.
-   - `doc/ios_params.md` for parameters and interfaces.
-   - `doc/axi.md` for handshake, channels, IDs, and outstanding transactions.
-   - `doc/cache_layers.md`, `doc/dcache.md`, or `doc/ordering_cache.md` for cache
-     behavior and ordering.
-   - `doc/privilege.md`, `doc/traps.md`, or `doc/registers.md` for privilege,
-     exceptions, and CSR behavior.
+   - `doc/friscv-arch/architecture.md` for block relationships and core/platform
+     structure.
+   - `doc/friscv-arch/ios_params.md` for parameters and interfaces.
+   - `doc/friscv-arch/axi.md` for handshake, channels, IDs, and outstanding
+     transactions.
+   - `doc/friscv-arch/cache_layers.md`, `dcache.md`, or `ordering_cache.md` for
+     cache behavior and ordering.
+    - `doc/friscv-arch/privilege.md`, `traps.md`, or `registers.md` for privilege,
+      exceptions, and CSR behavior.
+   For behavior defined by the RISC-V ISA or privileged architecture, search
+   `doc/riscv-spec/` (AsciiDoc sources), follow relevant `include::` directives,
+   and check the volume preface for version/ratification status. Cite the volume
+   and section in reasoning or reports. Treat the spec as requirements, not
+   evidence that FRISCV implements the feature; verify support in RTL and tests.
 5. Preserve existing interface and parameter behavior unless the task requests a
    change. In particular, check reset behavior, backpressure, transaction
    ordering/IDs, and every relevant configuration path.
