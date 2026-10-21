@@ -98,14 +98,15 @@ The core implements the following CSR registers into the dedicated module:
 - rdtime (RO)
 - rdinstret (RO)
 
-Next CSRs are available as a memory-mapped peripheral:
+The platform CLINT exposes the following memory-mapped registers (these are not
+CSRs):
 
-- mtime (RO)
+- mtime (RW)
 - mtimecmp (RW)
 
-They are not available if using only the [core](../rtl/friscv_rv32i_core.sv) module but only its
-ready-to-use [platform](../rtl/friscv_rv32i_platform.sv) module including the core and an AXI4
-crossbar to connect the peripherals.
+They are available through the [platform](../../rtl/friscv_rv32i_platform.sv),
+not when using only the [core](../../rtl/friscv_rv32i_core.sv) module. The
+platform includes the core and an AXI4 crossbar to connect the peripherals.
 
 
 ## Processing Unit

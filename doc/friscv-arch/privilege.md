@@ -2,12 +2,11 @@
 
 ## Overview
 
-FRISCV supports machine mode as default mode. it's always implemented as required by the
-specification. The core can also support user, supervisor and hypervisor modes, activable
-all by paramters, `USER_MODE`, `SUPERVISOR_MODE`, `HYPERVISOR_MODE`.
+FRISCV always implements machine mode. User mode is optional and is enabled with
+`USER_MODE`. Supervisor and Hypervisor modes are not supported; keep
+`SUPERVISOR_MODE` and `HYPERVISOR_MODE` set to 0.
 
-All modes use the same `XLEN` width. If `XLEN` = 32 bits, `MXLEN`, `SXLEN`, `UXLEN` and
-`HXLEN` will be setup to 32 bits.
+The implemented privilege modes use the same `XLEN` width.
 
 The software navigates through the privilege levels with ECALL / xRET instructions
 
@@ -17,12 +16,6 @@ The software navigates through the privilege levels with ECALL / xRET instructio
                    └────────────────────────────────┘
                         │                     ▲
                  MRET   │                     │  ECALL
-                        ▼                     │
-                   ┌────────────────────────────────┐
-                   │           SUPERVISOR           │
-                   └────────────────────────────────┘
-                        │                     ▲
-                 SRET   │                     │   ECALL
                         ▼                     │
                    ┌────────────────────────────────┐
                    │              USER              │
@@ -62,10 +55,15 @@ in mstatus is set and the MPP field in mstatus contains S or U.
 
 Optionally, PMP checks may additionally apply to M-mode accesses, in which case the PMP registers
 themselves are locked, so that even M-mode software cannot change them until the hart is reset. In
-effect, PMP can grant permissions to S and U modes, which by default have none, and can revoke
-permissions from M-mode, which by default has full permissions.
+effect, PMP can grant permissions to lower-privilege modes, which by default have none, and can
+revoke permissions from M-mode, which by default has full permissions. FRISCV supports U-mode as its
+lower-privilege mode; S-mode behavior described by the specification is not implemented.
 
-pmpcfg0–pmpcfg15 hold the configurations for the 64 PMP entries:
+The core defaults to 16 PMP regions (`NB_PMP_REGION=16`,
+`MAX_PMP_REGION=16`). It exposes four configuration CSRs, `pmpcfg0`–`pmpcfg3`,
+with four 8-bit entry configurations in each CSR:
+
+PMP checks are disabled by default (`MPU_SUPPORT=0`).
 
 ```
  31     24  23    16  15     8  7      0
@@ -75,18 +73,21 @@ pmpcfg0–pmpcfg15 hold the configurations for the 64 PMP entries:
 ┌─────────┬─────────┬─────────┬─────────┐
 │ pmp7cfg │ pmp6cfg │ pmp5cfg │ pmp4cfg │ pmpcfg1
 └─────────┴─────────┴─────────┴─────────┘
- ........................................
 ┌─────────┬─────────┬─────────┬─────────┐
-│pmp63cfg │pmp62cfg │pmp61cfg │pmp60cfg │ pmpcfg15
+│pmp11cfg │pmp10cfg │pmp9cfg  │pmp8cfg  │ pmpcfg2
+└─────────┴─────────┴─────────┴─────────┘
+┌─────────┬─────────┬─────────┬─────────┐
+│pmp15cfg │pmp14cfg │pmp13cfg │pmp12cfg │ pmpcfg3
 └─────────┴─────────┴─────────┴─────────┘
 ```
 
-The PMP address registers are CSRs named pmpaddr0–pmpaddr63. Each PMP address register encodes bits
-33–2 of a 34-bit physical address for RV32:
+The corresponding PMP address CSRs are `pmpaddr0`–`pmpaddr15`. In the default
+RV32 configuration without an MMU, each register represents address bits
+`[31:2]`:
 
 ```
 ┌───────────────────────────────────────┐
-│         address[33:2] (WARL)          │
+│         address[31:2] (WARL)          │
 └───────────────────────────────────────┘
 ```
 

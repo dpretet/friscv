@@ -51,19 +51,17 @@
     - default: 0, no multiply/divide support
 
 - USER_MODE
-    - activate user mode support
+    - enable optional user mode support
     - 0 or 1
-    - default: 0, not supported
+    - default: 0, disabled
 
 - SUPERVISOR_MODE
-    - activate supervisor mode support
-    - 0 or 1
-    - default: 0, not supported
+    - Supervisor mode is not supported; must remain 0
+    - default: 0
 
 - HYPERVISOR_MODE
-    - activate hypervisor mode support
-    - 0 or 1
-    - default: 0, not supported
+    - Hypervisor mode is not supported; must remain 0
+    - default: 0
 
 - PROCESSING_BUS_PIPELINE
     - insert a pipeline at processing unit input bus
@@ -82,13 +80,13 @@
 
 - AXI_IMEM_W
     - wideness of any AXI data bus for instruction
-    - 32 (bits)
-    - default: `XLEN`, 32 bits
+    - 32-bit instruction words; default bus width is `XLEN*4` (128 bits at the default `XLEN=32`)
+    - default: `XLEN*4`
 
 - AXI_DMEM_W
     - wideness of any AXI data bus for data
-    - 32 or 64 (bits)
-    - default: `XLEN`, 32 bits
+    - default bus width is `XLEN*4` (128 bits at the default `XLEN=32`)
+    - default: `XLEN*4`
 
 - AXI_IMEM_MASK
     - mask applied to instruction AXI ID bus to identify it
@@ -103,7 +101,7 @@
 - CACHE_EN
     - enable both instruction and data cache stages
     - 0 or 1
-    - default: 0, disabled
+    - default: 1, enabled
 
 - ICACHE_PREFETCH_EN
     - enable next instrutction prefetch on continuous address parsing
@@ -138,7 +136,7 @@
 - IO_MAP_NB
     - number of I/O (device) memory map (to bypass data cache fetch)
     - any value equal or greater than 0
-    - default: 0, no device mapped
+    - default: 1
 
 - IO_MAP
     - Start / End address of the IO (device) memory map

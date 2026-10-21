@@ -34,8 +34,10 @@ ACACHE signal indicates the property of a transaction to drive an AXI interconne
 hanlding.
 
 AxCACHE[0]: Bufferability
-- AxCACHE[0] = 0 indicates a completion can be issued from an intermediate point
-- AxCACHE[0] = 1 indicates a completion must be issued from the destination
+- AxCACHE[0] = 0 indicates a non-bufferable request; with no allocation hints,
+  the write response must come from the final destination.
+- AxCACHE[0] = 1 indicates a bufferable request; a write response may come from
+  an intermediate point.
 
 AxCACHE[1]: Cacheability
 - AxCACHE[1] = 0 defines a request to a device region or a memory region
@@ -48,7 +50,7 @@ AxCACHE[3:2]: Allocation hint
 
 ## Core Design
 
-CPU load-store [module](../rtl/friscv_memfy.sv), in order to drive correctly the cache must:
+CPU load-store [module](../../rtl/friscv_memfy.sv), in order to drive correctly the cache must:
 - tracks the addresses it issues and avoid concurrent read/write to the same memory regions
   to prevent memory corruption in the cache. Therefore, a read-then-write or write-then-read
   sequence are blocking the CPU pipeline.
