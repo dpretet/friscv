@@ -10,10 +10,13 @@ permissions:
 Review the current changes in this repository. Focus on functional correctness,
 reset behavior, parameter/configuration coverage, bus and pipeline handshakes,
 and whether verification covers the change. Read relevant FRISCV architecture
-notes under `doc/friscv-arch/` and neighboring tests. When a change affects ISA
-or privileged-architecture behavior, search `doc/riscv-spec/` and compare it to
-the implementation; cite the relevant volume/section and check its version
-status. Do not infer feature support from the spec alone.
+notes under `doc/friscv-arch/` and neighboring tests. For AMBA AXI/ACE protocol
+behavior, consult `doc/amba-axi4/amba_axi_protocol_spec.md`, read and cite the
+relevant Part/chapter/section from `part-a.md` through `part-g.md`, and compare
+the requirement with the implementation. When a change affects ISA or
+privileged-architecture behavior, search `doc/riscv-spec/` and compare it to the
+implementation; cite the relevant volume/section and check its version status.
+Do not infer feature support from a specification alone.
 
 Report only actionable findings, ordered by severity, with file and line
 references. Explain the failure scenario and suggest a fix. If there are no

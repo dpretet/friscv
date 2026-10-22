@@ -10,6 +10,12 @@ are in `.opencode/README.md`.
 
 - Use `doc/friscv-arch/` for FRISCV-specific architecture, interfaces, and
   implementation behavior. Verify behavior against the RTL and tests as well.
+- For AMBA AXI/ACE protocol requirements, start at
+  `doc/amba-axi4/amba_axi_protocol_spec.md` and read the relevant Part file
+  (`part-a.md` through `part-g.md`) and chapter/section. Cite the Part and
+  chapter/section when the conclusion depends on the protocol. This is Arm
+  IHI 0022H.c; distinguish its normative requirements from FRISCV support, which
+  must be checked in `doc/friscv-arch/`, the RTL, and tests.
 - Use `doc/riscv-spec/` for RISC-V ISA and privileged-architecture requirements.
   It contains searchable AsciiDoc sources; search them by topic/section (for
   example, `rg -n -i 'pmp|access-fault' doc/riscv-spec --glob '*.adoc'`) and

@@ -24,10 +24,15 @@ description: Plan or implement SystemVerilog RTL changes in FRISCV while preserv
    - `doc/friscv-arch/ios_params.md` for parameters and interfaces.
    - `doc/friscv-arch/axi.md` for handshake, channels, IDs, and outstanding
      transactions.
+   - For AMBA AXI/ACE protocol requirements, use
+     `doc/amba-axi4/amba_axi_protocol_spec.md` to navigate to the relevant
+     chapter/section in `part-a.md` through `part-g.md`. Check that protocol
+     requirements against FRISCV docs, RTL, and tests; the spec alone does not
+     establish implementation support.
    - `doc/friscv-arch/cache_layers.md`, `dcache.md`, or `ordering_cache.md` for
      cache behavior and ordering.
-    - `doc/friscv-arch/privilege.md`, `traps.md`, or `registers.md` for privilege,
-      exceptions, and CSR behavior.
+   - `doc/friscv-arch/privilege.md`, `traps.md`, or `registers.md` for privilege,
+     exceptions, and CSR behavior.
    For behavior defined by the RISC-V ISA or privileged architecture, search
    `doc/riscv-spec/` (AsciiDoc sources), follow relevant `include::` directives,
    and check the volume preface for version/ratification status. Cite the volume

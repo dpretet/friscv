@@ -5,7 +5,7 @@
     - [X] Support U-mode
     - [X] Support PMP/PMA
     - [X] https://github.com/eembc/coremark
-    - [ ] Atomic operations
+    - [/] Atomic operations
         - stage to execute the instruction, controlling ldst Stages
         - memfy exposes two interfaces for requests.
         - memfy drives back response along register write channel
@@ -14,7 +14,6 @@
             - support in-order for same tag (don't always subsitute)
             - exclusive can't be cachable
         - support exclusive access in memory, track the ID with a LUT
-    - [ ] Zc extension
 
 
 # BACKLOG
@@ -76,6 +75,7 @@ Any new features should be carefully study to ensure a proper exception and inte
 
 ## Miscellanous
 
+- [ ] Zc extension
 - [ ] Add test for vector table
 - [ ] Test MSTATUS.TW
 - [ ] mcountinhibit: stop a specific counter

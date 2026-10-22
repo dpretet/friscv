@@ -14,6 +14,11 @@ requirements.
 
 Inspect the relevant RTL hierarchy, instantiations, parameters, FRISCV
 architecture docs under `doc/friscv-arch/`, test READMEs, and CI commands. For
+AMBA AXI/ACE protocol requirements, consult the index
+`doc/amba-axi4/amba_axi_protocol_spec.md`, then read and cite the relevant Part
+and chapter/section in `part-a.md` through `part-g.md`. Treat Arm IHI 0022H.c as
+the protocol requirement source, not evidence that FRISCV implements the
+behavior; check FRISCV documentation, RTL, and tests. For
 RISC-V ISA or privileged-architecture requirements, search the AsciiDoc sources
 under `doc/riscv-spec/`, follow relevant `include::` directives, and check the
 volume preface for version/ratification status. Cite the volume and section, and

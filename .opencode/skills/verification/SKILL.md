@@ -10,6 +10,11 @@ practical. Use neighboring tests and each suite README for style and harness
 details. Select the smallest meaningful check based on changed modules, tests,
 and `.github/workflows/ci.yaml`.
 
+When expected behavior depends on AMBA AXI/ACE, consult
+`doc/amba-axi4/amba_axi_protocol_spec.md` and the relevant Part/chapter/section
+in `part-a.md` through `part-g.md`. Derive protocol expectations from the spec,
+but verify FRISCV support and existing coverage in its docs, RTL, and tests.
+
 Inspect `git status` first: some flows update logs, build products, or test
 outputs. Do not delete or overwrite user changes.
 

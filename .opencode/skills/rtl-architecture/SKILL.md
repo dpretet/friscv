@@ -14,6 +14,11 @@ description: Translate a FRISCV feature or bug request into a requirements-backe
 3. Trace relevant RTL modules and their instantiations. Search and read the
    corresponding FRISCV documentation under `doc/friscv-arch/`, including
    `architecture.md`, `ios_params.md`, and protocol/feature-specific documents.
+   When a requirement concerns AMBA AXI/ACE protocol behavior, consult
+   `doc/amba-axi4/amba_axi_protocol_spec.md` and read the relevant Part and
+   chapter/section in `part-a.md` through `part-g.md`. Cite the protocol section
+   and keep its requirements distinct from FRISCV support, which must be
+   confirmed in the implementation and tests.
    When requirements depend on RISC-V architectural behavior, search the
    AsciiDoc sources under `doc/riscv-spec/` by topic/section, follow relevant
    `include::` directives, and check the volume preface for ratification and
@@ -36,4 +41,5 @@ description: Translate a FRISCV feature or bug request into a requirements-backe
 
 For RISC-V ISA or bus-spec behavior, consult the relevant local spec source when
 available and identify its version/section; ask which requirement governs when
-the sources and request do not settle it.
+the sources and request do not settle it. The local AMBA document is Arm IHI
+0022H.c; do not assume another edition governs if the request specifies otherwise.

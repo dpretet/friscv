@@ -15,6 +15,10 @@ depend on each contributor's environment.
   `ios_params.md` for module parameters and interfaces, and `axi.md` for
   handshakes and transaction behavior. Also consult `ordering_cache.md`,
   `dcache.md`, `privilege.md`, or other focused documents for the affected block.
+- `doc/amba-axi4/`: the converted Arm AMBA AXI/ACE protocol specification
+  (IHI 0022H.c). Use `amba_axi_protocol_spec.md` as the index, then read the
+  relevant `part-a.md` through `part-g.md` chapter/section when a task depends
+  on protocol requirements. This specifies the protocol, not FRISCV support.
 - `doc/riscv-spec/`: local searchable AsciiDoc sources for RISC-V architectural
   requirements. Search relevant topics and follow included source files; check
   each volume's preface for version/ratification status before citing it. The
