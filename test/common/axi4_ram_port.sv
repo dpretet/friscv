@@ -180,7 +180,7 @@ module axi4_ram_port
     //
     ///////////////////////////////////////////////////////////////////////////
 
-    assign ram_ren = !araddr_empty & rvalid & rready;
+    assign ram_ren = !araddr_empty;
     assign ram_araddr = araddr_s[ADDR_LSB_W+:ADDRW];
     assign ram_arid = arid_s;
     assign ram_arlen = arlen_s;

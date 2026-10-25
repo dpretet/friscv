@@ -36,6 +36,11 @@ module axi4_ram
         //  - performance: complete ASAP a read or write request
         parameter MODE = "compliance",
 
+        // Randomly inject a wrong result on xRESP
+        // if the transaction tried to lock a region or
+        // read a locked region
+        parameter RANDOM_LOCK = 0,
+
         // Seeds used in LSFR, per channel and port
         parameter P1_RD_ADDR_SEED = 32'h215F0617,
         parameter P1_RD_DATA_SEED = 32'h986A23CC,
@@ -155,10 +160,9 @@ module axi4_ram
     parameter RAM_DATA_W = (AXI1_DATA_W>AXI2_DATA_W) ? AXI1_DATA_W : AXI2_DATA_W;
 
     parameter ADDR_LSB_RAM_W = $clog2(RAM_DATA_W/8);
-    parameter ADDR_LSB_AMO_W = $clog2(AMO_W/8);
     parameter ADDRW = AXI_ADDR_W-ADDR_LSB_RAM_W;
 
-    logic                      p1_ram_wen;
+    logic                      p1_ram_wen, p1_ram_wen_r;
     logic [AXI_ADDR_W    -1:0] p1_ram_awaddr;
     logic [AXI_ID_W      -1:0] p1_ram_awid;
     logic [8             -1:0] p1_ram_awlen;
@@ -174,7 +178,7 @@ module axi4_ram
     logic [RAM_DATA_W    -1:0] p1_ram_rdata;
     logic                      p1_ram_rlock;
 
-    logic                      p2_ram_wen;
+    logic                      p2_ram_wen, p2_ram_wen_r;
     logic [AXI_ADDR_W    -1:0] p2_ram_awaddr;
     logic [AXI_ID_W      -1:0] p2_ram_awid;
     logic [8             -1:0] p2_ram_awlen;
@@ -193,12 +197,13 @@ module axi4_ram
     // the memory array
     logic [RAM_DATA_W-1:0] mem [2**ADDRW-1:0];
     // the lock array to track exclusive access
-    logic                  lock_token [2**(AXI_ADDR_W)-1:0];
-    logic [AXI_ID_W  -1:0] lock_id [2**(AXI_ADDR_W)-1:0];
+    logic                  lock_token;
+    logic [AXI_ID_W  -1:0] lock_id;
+    logic [AXI_ADDR_W  -1:0] lock_addr;
+    logic [31:0] rnd_lock;
 
     integer f;
     string msg;
-
 
     // Logger setup
     `ifdef TRACE_TB_RAM
@@ -215,15 +220,14 @@ module axi4_ram
 
     `endif
     initial $readmemh(INIT, mem, 0, 2**ADDRW-1);
-
-    // init lock array to unreserved
-    initial begin
-        for (int i=0; i<2**(AXI_ADDR_W); i++) begin
-            lock_token[i] = '0;
-            lock_id[i] = '0;
-        end
-    end
-
+    
+    lfsr32 #(
+        .KEY (32'h12345678)
+    )
+    random_lock_inst
+        (
+            aclk, aresetn, srst, '1, rnd_lock
+        );
 
     axi4_ram_port
 
@@ -239,7 +243,7 @@ module axi4_ram
         .AXI_DATA_W   (AXI1_DATA_W),
         .RAM_DATA_W   (RAM_DATA_W),
         .OSTDREQ_NUM  (OSTDREQ_NUM)
-    ) p1_rd_inst (
+    ) p1_inst (
 
       .aclk        (aclk),
       .aresetn     (aresetn),
@@ -314,7 +318,7 @@ module axi4_ram
         .AXI_DATA_W   (AXI2_DATA_W),
         .RAM_DATA_W   (RAM_DATA_W),
         .OSTDREQ_NUM  (OSTDREQ_NUM)
-    ) p2_rd_inst (
+    ) p2_inst (
 
       .aclk        (aclk),
       .aresetn     (aresetn),
@@ -380,77 +384,88 @@ module axi4_ram
     always @ (posedge aclk)
     begin
 
-        if (p1_ram_ren) begin
+        if (!aresetn) begin
 
-            $sformat(msg, "Read Port1: Addr=%x, ID=%x, Len=%x, Lock=%x",
-                p1_ram_araddr, p1_ram_arid, p1_ram_arlen, p1_ram_arlock
-            );
-            log.info(msg);
+            p1_ram_wen_r <= '0;
+            p2_ram_wen_r <= '0;
 
-            if (p1_ram_arlock) begin
-                log.info("Read Port1: Exclusive access granted");
-            end
-        end
+        end else begin
 
-        if (p2_ram_ren) begin
+            p1_ram_wen_r <= p1_ram_wen;
+            p2_ram_wen_r <= p2_ram_wen;
 
-            $sformat(msg, "Read Port2: Addr=%x, ID=%x, Len=%x, Lock=%x",
-                p2_ram_araddr, p2_ram_arid, p2_ram_arlen, p2_ram_arlock
-            );
+            if (p1_ram_ren) begin
 
-            log.info(msg);
+                $sformat(msg, "Read Port1: Addr=%x, ID=%x, Len=%x, Lock=%x",
+                    p1_ram_araddr, p1_ram_arid, p1_ram_arlen, p1_ram_arlock
+                );
+                log.info(msg);
 
-            if (p2_ram_arlock) begin
-                log.info("Read Port2: Exclusive access granted");
+                if (p1_ram_arlock) begin
+                    log.info("Read Port1: Exclusive access granted");
+                end
             end
 
-        end
+            if (p2_ram_ren) begin
 
-        if (p1_ram_wen) begin
+                $sformat(msg, "Read Port2: Addr=%x, ID=%x, Len=%x, Lock=%x",
+                    p2_ram_araddr, p2_ram_arid, p2_ram_arlen, p2_ram_arlock
+                );
 
-            $sformat(msg, "Write Port1: Addr=%x, ID=%x, Len=%x, Lock=%x",
-                p1_ram_awaddr, p1_ram_awid, p1_ram_awlen, p1_ram_awlock
-            );
-            log.info(msg);
+                log.info(msg);
 
-            if (p1_ram_awlock && lock_token[p1_ram_awaddr] && p1_ram_awid == lock_id[p1_ram_awaddr]) begin
-                log.info("Write Port1: complete the exclusive access");
+                if (p2_ram_arlock) begin
+                    log.info("Read Port2: Exclusive access granted");
+                end
+
             end
 
-            if (p1_ram_awlock && lock_token[p1_ram_awaddr] && lock_id[p1_ram_awaddr] != p1_ram_awid) begin
-                log.error("Write Port1: try to complete an exclusive access with the wrong ID");
+            if (p1_ram_wen && !p1_ram_wen_r) begin
+
+                $sformat(msg, "Write Port1: Addr=%x, ID=%x, Len=%x, Lock=%x",
+                    p1_ram_awaddr, p1_ram_awid, p1_ram_awlen, p1_ram_awlock
+                );
+                log.info(msg);
+
+                if (p1_ram_awlock && lock_token && p1_ram_awid == lock_id) begin
+                    log.info("Write Port1: complete the exclusive access");
+                end
+
+                if (p1_ram_awlock && lock_token && lock_id != p1_ram_awid) begin
+                    log.error("Write Port1: try to complete an exclusive access with the wrong ID");
+                end
+
+                if (p1_ram_awlock && !lock_token) begin
+                    log.error("Write Port1: try to complete an exclusive access on unreserved register");
+                end
+
+                if (!p1_ram_awlock && lock_token) begin
+                    log.error("Write Port1: Exclusive access reservation broken a non-exclusive write access");
+                end
             end
 
-            if (p1_ram_awlock && !lock_token[p1_ram_awaddr]) begin
-                log.error("Write Port1: try to complete an exclusive access on unreserved register");
-            end
+            if (p2_ram_wen && !p2_ram_wen_r) begin
 
-            if (!p1_ram_awlock && lock_token[p1_ram_awaddr]) begin
-                log.error("Write Port1: Exclusive access reservation broken a non-exclusive write access");
-            end
-        end
+                $sformat(msg, "Write Port2: Addr=%x, ID=%x, Len=%x, Lock=%x",
+                    p2_ram_awaddr, p2_ram_awid, p2_ram_awlen, p2_ram_awlock
+                );
+                log.info(msg);
 
-        if (p2_ram_wen) begin
+                if (p2_ram_awlock && lock_token && p2_ram_awid == lock_id) begin
+                    log.info("Write Port2: complete the exclusive access");
+                end
 
-            $sformat(msg, "Write Port2: Addr=%x, ID=%x, Len=%x, Lock=%x",
-                p2_ram_awaddr, p2_ram_awid, p2_ram_awlen, p2_ram_awlock
-            );
-            log.info(msg);
+                if (p2_ram_awlock && lock_token && lock_id != p2_ram_awid) begin
+                    log.error("Write Port2: try to complete an exclusive access with the wrong ID");
+                end
 
-            if (p2_ram_awlock && lock_token[p2_ram_awaddr] && p2_ram_awid == lock_id[p2_ram_awaddr]) begin
-                log.info("Write Port2: complete the exclusive access");
-            end
+                if (p2_ram_awlock && !lock_token) begin
+                    log.error("Write Port2: try to complete an exclusive access on unreserved register");
+                end
 
-            if (p2_ram_awlock && lock_token[p2_ram_awaddr] && lock_id[p2_ram_awaddr] != p2_ram_awid) begin
-                log.error("Write Port2: try to complete an exclusive access with the wrong ID");
-            end
-
-            if (p2_ram_awlock && !lock_token[p2_ram_awaddr]) begin
-                log.error("Write Port2: try to complete an exclusive access on unreserved register");
-            end
-
-            if (!p2_ram_awlock && lock_token[p2_ram_awaddr]) begin
-                log.error("Write Port2: Exclusive access reservation broken a non-exclusive write access");
+                if (!p2_ram_awlock && lock_token) begin
+                    log.error("Write Port2: Exclusive access reservation broken a non-exclusive write access");
+                end
             end
         end
     end
@@ -460,17 +475,25 @@ module axi4_ram
 
     always @ (posedge aclk) begin
 
+        if (!aresetn) begin
+            lock_token <= '0;
+            lock_addr <= '0;
+            lock_token <= '0;
+
+        end else begin
+
         if (p1_ram_ren) begin
             if (p1_ram_arlock) begin
-                lock_token[p1_ram_araddr[AXI_ADDR_W-1:ADDR_LSB_AMO_W]] <= '1;
-                lock_id[p1_ram_araddr[AXI_ADDR_W-1:ADDR_LSB_AMO_W]] <= p1_ram_arid;
+                lock_token <= '1;
+                lock_id <= p1_ram_arid;
+                lock_addr <= p1_ram_araddr;
             end
         end
 
         if (p1_ram_wen) begin
 
-            lock_token[p1_ram_awaddr[AXI_ADDR_W-1:ADDR_LSB_AMO_W]] <= '0;
-            lock_id[p1_ram_awaddr[AXI_ADDR_W-1:ADDR_LSB_AMO_W]] <= '0;
+            lock_token <= '0;
+            lock_id <= '0;
 
             for (int i=0; i<RAM_DATA_W/8; i++)
                 if (p1_ram_strb[i])
@@ -480,36 +503,51 @@ module axi4_ram
 
         if (p2_ram_ren) begin
             if (p2_ram_arlock) begin
-                lock_token[p2_ram_araddr[AXI_ADDR_W-1:ADDR_LSB_AMO_W]] <= '1;
-                lock_id[p2_ram_araddr[AXI_ADDR_W-1:ADDR_LSB_AMO_W]] <= p2_ram_arid;
+                lock_token <= '1;
+                lock_id <= p2_ram_arid;
+                lock_addr <= p2_ram_araddr;
             end
         end
 
         if (p2_ram_wen) begin
 
-            lock_token[p2_ram_awaddr[AXI_ADDR_W-1:ADDR_LSB_AMO_W]] <= '0;
-            lock_id[p2_ram_awaddr[AXI_ADDR_W-1:ADDR_LSB_AMO_W]] <= '0;
+            lock_token <= '0;
+            lock_id <= '0;
 
             for (int i=0; i<RAM_DATA_W/8; i++)
                 if (p2_ram_strb[i])
                     mem[p2_ram_awaddr[AXI_ADDR_W-1:ADDR_LSB_RAM_W]][8*i+:8] <= p2_ram_wdata[8*i+:8];
+        end
         end
 
     end
 
     assign p1_ram_rdata = mem[p1_ram_araddr[AXI_ADDR_W-1:ADDR_LSB_RAM_W]];
 
-    assign p1_ram_rlock = p1_ram_arlock;
-
     assign p2_ram_rdata = mem[p2_ram_araddr[AXI_ADDR_W-1:ADDR_LSB_RAM_W]];
 
-    assign p2_ram_rlock = p2_ram_arlock;
+    generate if (RANDOM_LOCK) begin
+        assign p1_ram_rlock = p1_ram_arlock & rnd_lock[0];
 
-    assign p1_ram_block = (lock_token[p1_ram_awaddr[AXI_ADDR_W-1:ADDR_LSB_AMO_W]] && 
-                           lock_id[p1_ram_awaddr[AXI_ADDR_W-1:ADDR_LSB_AMO_W]] == p1_ram_awid);
+        assign p2_ram_rlock = p2_ram_arlock & rnd_lock[0];
 
-    assign p2_ram_block = (lock_token[p2_ram_awaddr[AXI_ADDR_W-1:ADDR_LSB_AMO_W]] && 
-                           lock_id[p2_ram_awaddr[AXI_ADDR_W-1:ADDR_LSB_AMO_W]] == p2_ram_awid);
+        assign p1_ram_block = (lock_token && lock_id == p1_ram_awid && lock_addr == p1_ram_awaddr && rnd_lock[0]);
+
+        assign p2_ram_block = (lock_token && lock_id == p2_ram_awid && lock_addr == p2_ram_awaddr && rnd_lock[0]);
+
+    end else begin
+
+        assign p1_ram_rlock = p1_ram_arlock;
+
+        assign p2_ram_rlock = p2_ram_arlock;
+
+        assign p1_ram_block = (lock_token && lock_id == p1_ram_awid && lock_addr == p1_ram_awaddr);
+
+        assign p2_ram_block = (lock_token && lock_id == p2_ram_awid && lock_addr == p2_ram_awaddr);
+
+    end 
+    endgenerate
+
 
 endmodule
 

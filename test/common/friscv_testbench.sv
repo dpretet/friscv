@@ -75,6 +75,10 @@ module friscv_testbench(
     `define USER_MODE 0
     `endif
 
+    `ifndef RANDOM_LOCK
+    `define RANDOM_LOCK 0
+    `endif
+
     parameter TB_CHOICE = (`TB_CHOICE==0) ? "CORE" : "PLATFORM";
 
     // Instruction length
@@ -217,6 +221,7 @@ module friscv_testbench(
     `else
     parameter WFI_TW = 0;
     `endif
+    parameter RANDOM_LOCK = `RANDOM_LOCK;
 
 `ifndef VERILATOR
     logic                      aclk;
@@ -539,6 +544,7 @@ module friscv_testbench(
             `else
              .MODE ("compliance"),
             `endif
+            .RANDOM_LOCK      (RANDOM_LOCK),
             .INIT             ("test.v"),
             .AXI_ADDR_W       (AXI_ADDR_W),
             .AXI_ID_W         (AXI_ID_W),
@@ -783,6 +789,7 @@ module friscv_testbench(
             `else
             .MODE ("compliance"),
             `endif
+            .RANDOM_LOCK      (RANDOM_LOCK),
             .INIT             ("test.v"),
             .AXI_ADDR_W       (AXI_ADDR_W),
             .AXI_ID_W         (AXI_ID_W),
