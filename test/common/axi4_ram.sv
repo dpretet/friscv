@@ -495,9 +495,11 @@ module axi4_ram
             lock_token <= '0;
             lock_id <= '0;
 
-            for (int i=0; i<RAM_DATA_W/8; i++)
-                if (p1_ram_strb[i])
-                    mem[p1_ram_awaddr[AXI_ADDR_W-1:ADDR_LSB_RAM_W]][8*i+:8] <= p1_ram_wdata[8*i+:8];
+            if (!p1_ram_awlock || p1_ram_block) begin
+                for (int i=0; i<RAM_DATA_W/8; i++)
+                    if (p1_ram_strb[i])
+                        mem[p1_ram_awaddr[AXI_ADDR_W-1:ADDR_LSB_RAM_W]][8*i+:8] <= p1_ram_wdata[8*i+:8];
+            end
 
         end
 
@@ -514,9 +516,11 @@ module axi4_ram
             lock_token <= '0;
             lock_id <= '0;
 
-            for (int i=0; i<RAM_DATA_W/8; i++)
-                if (p2_ram_strb[i])
-                    mem[p2_ram_awaddr[AXI_ADDR_W-1:ADDR_LSB_RAM_W]][8*i+:8] <= p2_ram_wdata[8*i+:8];
+            if (!p2_ram_awlock || p2_ram_block) begin
+                for (int i=0; i<RAM_DATA_W/8; i++)
+                    if (p2_ram_strb[i])
+                        mem[p2_ram_awaddr[AXI_ADDR_W-1:ADDR_LSB_RAM_W]][8*i+:8] <= p2_ram_wdata[8*i+:8];
+            end
         end
         end
 
