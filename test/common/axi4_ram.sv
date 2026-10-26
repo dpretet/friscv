@@ -202,6 +202,9 @@ module axi4_ram
     logic [AXI_ADDR_W  -1:0] lock_addr;
     logic [31:0] rnd_lock;
 
+    parameter LOCK_TIMEOUT = 200;
+    integer lock_timer;
+
     integer f;
     string msg;
 
@@ -476,54 +479,69 @@ module axi4_ram
     always @ (posedge aclk) begin
 
         if (!aresetn) begin
+
             lock_token <= '0;
             lock_addr <= '0;
-            lock_token <= '0;
+            lock_id <= '0;
+            lock_timer <= '0;
 
         end else begin
 
-        if (p1_ram_ren) begin
-            if (p1_ram_arlock) begin
-                lock_token <= '1;
-                lock_id <= p1_ram_arid;
-                lock_addr <= p1_ram_araddr;
+            if (p1_ram_ren) begin
+                if (p1_ram_arlock) begin
+                    lock_token <= '1;
+                    lock_id <= p1_ram_arid;
+                    lock_addr <= p1_ram_araddr;
+                end
+            end
+
+            if (p1_ram_wen) begin
+
+                lock_token <= '0;
+                lock_id <= '0;
+
+                if (!p1_ram_awlock || p1_ram_block) begin
+                    for (int i=0; i<RAM_DATA_W/8; i++)
+                        if (p1_ram_strb[i])
+                            mem[p1_ram_awaddr[AXI_ADDR_W-1:ADDR_LSB_RAM_W]][8*i+:8] <= p1_ram_wdata[8*i+:8];
+                end
+
+            end
+
+            if (p2_ram_ren) begin
+                if (p2_ram_arlock) begin
+                    lock_token <= '1;
+                    lock_id <= p2_ram_arid;
+                    lock_addr <= p2_ram_araddr;
+                end
+            end
+
+            if (p2_ram_wen) begin
+
+                lock_token <= '0;
+                lock_id <= '0;
+
+                if (!p2_ram_awlock || p2_ram_block) begin
+                    for (int i=0; i<RAM_DATA_W/8; i++)
+                        if (p2_ram_strb[i])
+                            mem[p2_ram_awaddr[AXI_ADDR_W-1:ADDR_LSB_RAM_W]][8*i+:8] <= p2_ram_wdata[8*i+:8];
+                end
             end
         end
 
-        if (p1_ram_wen) begin
+        // Release the lock reservation if not reclaimed by a write after a certain time
+        if (lock_token) begin
 
-            lock_token <= '0;
-            lock_id <= '0;
+            lock_timer <= lock_timer + 1;
 
-            if (!p1_ram_awlock || p1_ram_block) begin
-                for (int i=0; i<RAM_DATA_W/8; i++)
-                    if (p1_ram_strb[i])
-                        mem[p1_ram_awaddr[AXI_ADDR_W-1:ADDR_LSB_RAM_W]][8*i+:8] <= p1_ram_wdata[8*i+:8];
+            if (lock_timer == LOCK_TIMEOUT) begin
+                lock_token <= '0;
+                lock_timer <= '0;
             end
 
+        end else begin
+            lock_timer <= '0;
         end
-
-        if (p2_ram_ren) begin
-            if (p2_ram_arlock) begin
-                lock_token <= '1;
-                lock_id <= p2_ram_arid;
-                lock_addr <= p2_ram_araddr;
-            end
-        end
-
-        if (p2_ram_wen) begin
-
-            lock_token <= '0;
-            lock_id <= '0;
-
-            if (!p2_ram_awlock || p2_ram_block) begin
-                for (int i=0; i<RAM_DATA_W/8; i++)
-                    if (p2_ram_strb[i])
-                        mem[p2_ram_awaddr[AXI_ADDR_W-1:ADDR_LSB_RAM_W]][8*i+:8] <= p2_ram_wdata[8*i+:8];
-            end
-        end
-        end
-
     end
 
     assign p1_ram_rdata = mem[p1_ram_araddr[AXI_ADDR_W-1:ADDR_LSB_RAM_W]];
