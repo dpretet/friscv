@@ -683,13 +683,14 @@ module friscv_memfy
                 write_allowed)                                                 // or the trnsaction is forbidden by the MPU
             begin
                 wr_or_cnt <= wr_or_cnt + 1'b1;
-            end else
+            end else begin
                 if (!((memfy_valid && memfy_ready && is_st && !is_sc) ||
                       (is_sc_r && state == WAIT && is_valid_sc && lrsc_resv_en)) &&
                     bvalid &&
                     wr_or_cnt!={MAX_OR_W{1'b0}})
-            begin
-                wr_or_cnt <= wr_or_cnt - 1'b1;
+                begin
+                    wr_or_cnt <= wr_or_cnt - 1'b1;
+                end
             end
 
             // Read xfers tracker
