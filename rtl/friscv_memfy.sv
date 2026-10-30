@@ -152,9 +152,13 @@ module friscv_memfy
     logic                           rl;
     logic                           priv_bit;
     logic        [3           -1:0] aprot;
-
+    logic                           memfy_rd_wr_s;
+    logic [5                  -1:0] memfy_rd_addr_s;
+    logic [XLEN               -1:0] memfy_rd_val_s;
+    logic [XLEN/8             -1:0] memfy_rd_strb_s;
     // read response channel
     logic                           push_rd_or;
+    logic                           pull_rd_or;
     logic                           rd_or_full;
     logic                           rd_or_empty;
     logic        [2           -1:0] offset;
@@ -427,7 +431,7 @@ module friscv_memfy
 
                             if (!(is_amo || amo_retry))
                                 amo_cpl <= '0;
-                            else if (funct5 == `LR_W) begin
+                            else if (is_ld && funct5 == `LR_W) begin
                                 amo_cpl <= '0;
                                 lrsc_resv_en <= '1;
                                 lrsc_resv_addr <= addr;
@@ -516,7 +520,7 @@ module friscv_memfy
                                 wdata <= amo_mem;
                                 wstrb <= '1;
                                 state <= XFER;
-                                fsm_ready <= 1'b1;
+                                fsm_ready <= (rresp == `EXOKAY);
                             end
                         end else begin
                             state <= XFER;
@@ -542,7 +546,7 @@ module friscv_memfy
                                 state <= XFER;
                                 fsm_ready <= 1'b1;
                                 amo_cpl <= '0;
-                                if (is_amo_r) begin
+                                if (is_amo_r && amo_cpl) begin
                                     if (bresp != `EXOKAY) begin
                                         amo_retry <= '1;
                                         is_amo_r <= '1;
@@ -551,6 +555,9 @@ module friscv_memfy
                                         amo_retry <= '0;
                                         is_amo_r <= '0;
                                     end
+                                end else begin
+                                    amo_retry <= '0;
+                                    is_amo_r <= '0;
                                 end
                                 is_st_r <= '0;
                                 is_sc_r <= '0;
@@ -599,19 +606,13 @@ module friscv_memfy
         .full     (rd_or_full),
         .afull    (),
         .data_out ({rd_r, funct3_r, offset}),
-        .pull     (rvalid & rready),
+        .pull     (pull_rd_or),
         .empty    (rd_or_empty),
         .aempty   ()
     );
 
-    always @ (posedge aclk) begin
-        `ifdef FRISCV_SIM
-        if (aresetn && rvalid && rready && rd_or_empty)
-            $error("ERROR: (@ %0t) - %s: Receive a read completion but none expected", $realtime, "Memfy");
-        `endif
-    end
-
-
+    assign pull_rd_or = rvalid & rready & !amo_cpl ||
+                        bvalid & bready & amo_cpl & (bresp == `EXOKAY);
 
 
     ////////////////////////////////////////////////////////////////////////
@@ -640,13 +641,24 @@ module friscv_memfy
             end else begin
                 if ((memfy_valid && memfy_ready && is_ld && !max_rd_or && rd == i[4:0] && mpu_allow[`ALW_R] && !load_misaligned) &&
                    !(rvalid & rready && rd_r==i[4:0]))
-               begin
+                begin
                     regs_or[i] <= regs_or[i] + 1;
 
                 end else if (!(memfy_valid && memfy_ready && is_ld && !max_rd_or && rd == i[4:0]) &&
-                              (rvalid & rready && rd_r==i[4:0]))
+                              amo_cpl && (bvalid & bready & bresp == `EXOKAY) && rd_r==i[4:0])
                 begin
                     regs_or[i] <= regs_or[i] - 1;
+                end else if (!(memfy_valid && memfy_ready && is_ld && !max_rd_or && rd == i[4:0]) &&
+                              !amo_cpl && (rvalid & rready && rd_r==i[4:0]))
+                begin
+                    if (!rd_or_empty) begin
+                        regs_or[i] <= regs_or[i] - 1;
+                    `ifdef FRISCV_SIM
+                    end else begin
+                        $display("ERROR: (@ %0t) - %s: Receive a read completion but none expected", $realtime, "Memfy");
+                        // $finish();
+                    `endif
+                    end
                 end
             end
         end
@@ -738,80 +750,61 @@ module friscv_memfy
     //
     ////////////////////////////////////////////////////////////////////////
 
-    generate if (SYNC_RD_WR) begin : RD_WR_FFD
-
-    always @ (posedge aclk or negedge aresetn) begin
-        if (!aresetn) begin
-            memfy_rd_wr <= 1'b0;
-            memfy_rd_addr <= 5'b0;
-            memfy_rd_strb <= {XLEN/8{1'b0}};
-            memfy_rd_val <= {XLEN{1'b0}};
-        end else if (srst) begin
-            memfy_rd_wr <= 1'b0;
-            memfy_rd_addr <= 5'b0;
-            memfy_rd_strb <= {XLEN/8{1'b0}};
-            memfy_rd_val <= {XLEN{1'b0}};
+    always @ (*) begin
+        // SC failed on launch
+        if (state == WAIT && is_sc_r && !is_valid_sc)
+        begin
+            memfy_rd_wr_s = '1;
+            memfy_rd_addr_s = amo_rd;
+            memfy_rd_strb_s = '1;
+            memfy_rd_val_s = 1;
+        // SC succeded on completion
+        end else if (is_sc_r) begin
+            memfy_rd_wr_s = bvalid & bready;
+            memfy_rd_addr_s = amo_rd;
+            memfy_rd_strb_s = '1;
+            memfy_rd_val_s = (bresp == `EXOKAY) ? '0 : '1;
+        // Write into RD once the write channel handshakes with exclusive ack
+        end else if (amo_cpl) begin
+            memfy_rd_wr_s = bvalid & bready & (bresp == `EXOKAY);
+            memfy_rd_addr_s = amo_rd;
+            memfy_rd_strb_s = '1;
+            memfy_rd_val_s = amo_reg_r;
+        // Write into RD once the read data channel handshakes
         end else begin
-            // SC failed on launch
-            if (state == WAIT && is_sc_r && !is_valid_sc)
-            begin
-                memfy_rd_wr <= '1;
-                memfy_rd_addr <= amo_rd;
-                memfy_rd_strb <= '1;
-                memfy_rd_val <= 1;
-            // SC succeded on completion
-            end else if (is_sc_r) begin
-                memfy_rd_wr <= bvalid & bready;
-                memfy_rd_addr <= amo_rd;
-                memfy_rd_strb <= '1;
-                memfy_rd_val <= (bresp == `EXOKAY) ? '0 : '1;
-            // Write into RD once the write channel handshakes with exclusive ack
-            end else if (amo_cpl) begin
-                memfy_rd_wr <= bvalid & bready & (bresp == `EXOKAY);
-                memfy_rd_addr <= amo_rd;
-                memfy_rd_strb <= '1;
-                memfy_rd_val <= amo_reg_r;
-            // Write into RD once the read data channel handshakes
-            end else begin
-                memfy_rd_wr <= rvalid & rready;
-                memfy_rd_addr <= rd_r;
-                memfy_rd_strb <= get_rd_strb(funct3_r, offset);
-                memfy_rd_val <= get_rd_val(funct3_r, rdata, offset);
-            end
+            memfy_rd_wr_s = rvalid & rready;
+            memfy_rd_addr_s = rd_r;
+            memfy_rd_strb_s = get_rd_strb(funct3_r, offset);
+            memfy_rd_val_s = get_rd_val(funct3_r, rdata, offset);
         end
     end
 
-    end else begin : RD_WR_COMB
+    generate if (SYNC_RD_WR) begin : RD_WR_FFD
 
-        always @ (*) begin
-            // SC failed on launch
-            if (state == WAIT && is_sc_r && !is_valid_sc)
-            begin
-                memfy_rd_wr = '1;
-                memfy_rd_addr = amo_rd;
-                memfy_rd_strb = '1;
-                memfy_rd_val = 1;
-            // SC succeded on completion
-            end else if (is_sc_r) begin
-                memfy_rd_wr = bvalid & bready;
-                memfy_rd_addr = amo_rd;
-                memfy_rd_strb = '1;
-                memfy_rd_val = (bresp == `EXOKAY) ? '0 : '1;
-            // Write into RD once the write channel handshakes with exclusive ack
-            end else if (amo_cpl) begin
-                memfy_rd_wr = bvalid & bready & (bresp == `EXOKAY);
-                memfy_rd_addr = amo_rd;
-                memfy_rd_strb = '1;
-                memfy_rd_val = amo_reg_r;
-            // Write into RD once the read data channel handshakes
+        always @ (posedge aclk or negedge aresetn) begin
+            if (!aresetn) begin
+                memfy_rd_wr <= 1'b0;
+                memfy_rd_addr <= 5'b0;
+                memfy_rd_strb <= {XLEN/8{1'b0}};
+                memfy_rd_val <= {XLEN{1'b0}};
+            end else if (srst) begin
+                memfy_rd_wr <= 1'b0;
+                memfy_rd_addr <= 5'b0;
+                memfy_rd_strb <= {XLEN/8{1'b0}};
+                memfy_rd_val <= {XLEN{1'b0}};
             end else begin
-                memfy_rd_wr = rvalid & rready;
-                memfy_rd_addr = rd_r;
-                memfy_rd_strb = get_rd_strb(funct3_r, offset);
-                memfy_rd_val = get_rd_val(funct3_r, rdata, offset);
+                memfy_rd_wr <= memfy_rd_wr_s;
+                memfy_rd_addr <= memfy_rd_addr_s;
+                memfy_rd_strb <= memfy_rd_strb_s;
+                memfy_rd_val <= memfy_rd_val_s;
             end
         end
 
+    end else begin : RD_WR_COMB
+        assign memfy_rd_wr = memfy_rd_wr_s;
+        assign memfy_rd_addr = memfy_rd_addr_s;
+        assign memfy_rd_strb = memfy_rd_strb_s;
+        assign memfy_rd_val = memfy_rd_val_s;
     end
     endgenerate
 
