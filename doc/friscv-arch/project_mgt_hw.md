@@ -5,20 +5,21 @@
     - [X] Support U-mode
     - [X] Support PMP/PMA
     - [X] https://github.com/eembc/coremark
-    - [/] Atomic operations
-        - stage to execute the instruction, controlling ldst Stages
-        - memfy exposes two interfaces for requests.
-        - memfy drives back response along register write channel
-        - memfy supports two tags, one for regular, one for exclusive
-        - support exclusive access in cache
-            - support in-order for same tag (don't always subsitute)
-            - exclusive can't be cachable
-        - support exclusive access in memory, track the ID with a LUT
-
+    - [X] Atomic operations
 
 # BACKLOG
 
 Any new features should be carefully study to ensure a proper exception and interrupt handling
+
+
+## Processing
+
+- [ ] Support F extension: https://bellard.org/softfp/
+- [ ] RVV for machine learning
+- [ ] Move LUI into processing to prepare future extension support
+    - [ ] Read ASM to be sure its used for processing and not control
+    - [ ] Benchmark waveform doesn’t reveal high usage
+
 
 ## Memory
 
@@ -28,12 +29,6 @@ Any new features should be carefully study to ensure a proper exception and inte
     - Manages concurrency with read request
     - Manages hazard
     - https://medium.com/@ryoungsunpark/why-axi-has-a-write-response-channel-a0fe26eebf7d
-- [ ] Better manage ACACHE attribute
-    - [ ] Correct value driven from memfy
-    - [ ] Use it correctly across the cache
-    - [ ] Read/write allocate based on memory map
-    - [ ] Check impossible combination
-    - [ ] IO map bufferable / non-bufferable
 - [ ] Make memory mapping of the core with:
     - [ ] Normal vs device
     - [ ] Inst vs data zone for cacheability / executability
@@ -41,12 +36,6 @@ Any new features should be carefully study to ensure a proper exception and inte
     - [ ] Support exception code for memory access error
     - [ ] Manage write response from cache or interco, don’t wait endpoint
     - [ ] Raise exception also from cache
-- [ ] Support AXI response
-    - drive APROT with priv_mode
-    - raise an exception (which one? a custom mcause?)
-    - test with mapping outside interconnect memory region
-    - manage in a clic controller and so avoid custom spec implementation
-      could be used for other purpose later
 - [ ] Support fine-grain permission over memory range
     - RISCV doesn't define privilege permission over PMP region
     - raise an exception
@@ -57,8 +46,9 @@ Any new features should be carefully study to ensure a proper exception and inte
 
 ## Cache Stages
 
-- [ ] Add dedicated RAM for cache, not connected thru AXI interconnect
+- [ ] Add dedicated RAM interface, not connected thru AXI interconnect
 - [ ] AXI4 + Wrap mode for read
+- [ ] Support ARLEN / AWLEN in prefetch and AXI4 Ram
 - [ ] Support datapath adaptation from memory controller
     - [ ] Narrow transfer support?
     - [ ] Gather/merge multiple continuous transactions?
@@ -74,7 +64,9 @@ Any new features should be carefully study to ensure a proper exception and inte
 
 
 ## Miscellanous
-
+- [ ] Rework tracing among hierarchy
+    - Utiliser svlogger partout.
+    - Plus de fwrite et drop dans un fichier avec la ROUTE dans un file.
 - [ ] Zc extension
 - [ ] Add test for vector table
 - [ ] Test MSTATUS.TW
@@ -83,8 +75,8 @@ Any new features should be carefully study to ensure a proper exception and inte
 - [ ] Machine Configuration Pointer Register (mconfigptr)
 - [ ] Create a HW test platform
     - [ ] Analogue pocket
-    - [C] Cloud
-- [ ] Add registers to configure the core in platform (use custom CSR)
+    - [ ] Cloud
+- [ ] Add registers to configure the core in platform
     - Caches
     - Interconnect
     - processing: scheduling, hazard detection
@@ -100,38 +92,6 @@ Any new features should be carefully study to ensure a proper exception and inte
         - io/mem
     - HW isolation by CPU / Thread IDs
 - [ ] Support https://riscof.readthedocs.io/en/latest/intro.html
-
-
-
-## Next-Gen Architecture
-
-- [ ] High-end architecture
-    - [ ] Supervisor mode
-        - https://danielmangum.com/posts/risc-v-bytes-privilege-levels/
-        - https://mobile.twitter.com/hasheddan/status/1514581031092899843?s=12&t=MMNTY_iRC48CjykLQBdTkQ
-        - https://man7.org/linux/man-pages/man2/syscall.2.html
-        - https://www.youtube.com/watch?app=desktop&v=1-8oYzL_Thk
-        - https://jborza.com/emulation/2021/04/22/ecalls-and-syscalls.html
-    - [ ] 64 bits support
-    - [ ] Support MMU extension
-- [ ] Multi-core platform:
-    - [ ] Counters and timers should be reworked
-    - [ ] Nb core configurable
-    - [ ] PLIC controller
-    - [ ] Extended atomic operation support
-    - [ ] Implement a L2 cache stage
-    - [ ] Extended Security / Sandboxing
-- [ ] Debug Support / JTAG interface / GDB Usage / OpenOCD
-        - https://tomverbeure.github.io/2021/07/18/VexRiscv-OpenOCD-and-Traps.html
-        - https://tomverbeure.github.io/2022/02/20/GDBWave-Post-Simulation-RISCV-SW-Debugging.html
-        - https://github.com/BLangOS/VexRiscV_with_HW-GDB_Server
-- [ ] Features for high-end processor:
-    - out-of-order execution
-    - prefetching
-    - superscalar parallelism
-    - speculative execution
-    - branch prediction
-    - multi-core designs
 
 
 ## AXI4 Infrastructure
@@ -153,40 +113,10 @@ Any new features should be carefully study to ensure a proper exception and inte
 ## Control / CSR
 
 - [ ] Detect IO requests to forward info for FENCE execution
-- [ ] Branch prediction
-    - [ ] https://en.wikipedia.org/wiki/Branch_target_predictor
-    - [ ] https://www.tutorialspoint.com/what-are-the-types-of-dynamic-branch-prediction
-    - [ ] https://www.youtube.com/watch?app=desktop&v=hl4eiN8ZMJg
-    - [ ] https://github.com/tommythorn/yarvi/blob/master/rtl/yarvi.v#L184
-    - [ ] https://danluu.com/branch-prediction
-    - jump ease prefetch and branch prediction
-- [ ] Rewind pipeline (L0 local cache)
 - [ ] Pipeline PMP CSR up to MPU setup path and stop the core with csr_ready during few cycles
-
-
-## Processing
-
-- [ ] Parameter to deactivate hazard detection, save logic and measure gain
-- [ ] Memfy:
-    - If not ready, and request present, the FSM can’t drive further data
-    - Manage RRESP/BRESP in the exception bus
-- [ ] Support F extension: https://bellard.org/softfp/
-- [ ] Division
-    - [ ] Save bandwidth by removing dead cycles
-    - [ ] Manage pow2 division by shifting
-    - [ ] Start division from first non-zero digit
-- [ ] OoO execution with Tomasulo algorithm
-    - [ ] https://en.m.wikipedia.org/wiki/Hazard_(computer_architecture)#Data_hazards
-    - [ ] https://en.m.wikipedia.org/wiki/Tomasulo%27s_algorithm
-- [ ] RVV for machine learning
-- [ ] Move LUI into processing to prepare future extension support
-    - [ ] Read ASM to be sure its used for processing and not control
-    - [ ] Benchmark waveform doesn’t reveal high usage
-
 
 ## Verification/Validation
 
-- [ ] Drop lxt2 waveform
 - [ ] Create app per benchmark
 - [ ] Testcase C ASM cache stress
 - [ ] Update synthesis flow
@@ -202,40 +132,25 @@ Any new features should be carefully study to ensure a proper exception and inte
     - [ ] Shared bus des CSRs, privilege mode, event, …
     - [ ] Stream the event like a write memory error
     - [ ] log error in a file
-    - [ ] Support GDB:  https://tomverbeure.github.io/2021/07/18/VexRiscv-OpenOCD-and-Traps.html
-- [ ] Update RISCV testsuite sources
-- [ ] SV Testbench: be able to assert or not a flush req along a new request on the same cycle
-- [ ] Revoir la RAM AXI pour les temps de réponses write compliance et speed
+    - [ ] Support GDB: https://tomverbeure.github.io/2021/07/18/VexRiscv-OpenOCD-and-Traps.html
 
-
-## Hardware Tests
-
-- [ ] Support LiteX: https://github.com/litex-hub/litex-boards, https://pcotret.gitlab.io/blog/processor_in_litex/
-- [ ] Azure: https://www.xilinx.com/products/boards-and-kits/alveo/cloud-solutions/microsoft-azure.html
-- [ ] AWS: https://www.xilinx.com/products/design-tools/acceleration-zone/aws.html
-- [ ] Openlane submission
 
 
 # Ideas / Applications
 
 - [ ] Include a DMA in platform
     - must respect PMP / PMA
-- [ ] Next CPU architecture:
-    - Super scalar architecture
-        - https://en.m.wikipedia.org/wiki/Instruction-level_parallelism
-        - https://en.m.wikipedia.org/wiki/Data_dependency
-        - https://www.youtube.com/channel/UCPSsA8oxlSBjidJsSPdpjsQ/videos
-    - SIMD architecture
-    - Vector architecture
-    - Application to GPGPU area
-    - Many-core / NoC architecture (power/interrupt consideration)
-    - Support float16 & float8, more generaly low-precision arithmetic like int8...
 - [ ] Build a testing platform to validate IPs
 - [ ] Secure platform https://msrc-blog.microsoft.com/2022/09/06/whats-the-smallest-variety-of-cheri/
 
 
 # DONE
 
+- [ ] v1.7.0: Atomic Operations support, first version capable to execute a kernel
+    - Port RAM model to AXI4
+    - RAM rework to support compliance and speed mode on both response channel
+    - Support A extension in Memfy
+    - Update RISCV testsuite sources
 - [X] v1.6.0: User Mode
     - [X] Design
         - [X] Support U-mode:

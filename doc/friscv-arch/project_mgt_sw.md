@@ -1,6 +1,7 @@
-# DOING
+# BACKLOG
 
-- [-] Benchmark
+- [ ] Booter Linux
+- [ ] Benchmark
     - [ ] Compression
     - [ ] Fractals generation
     - [ ] FFT
@@ -18,9 +19,15 @@
     - [ ] Dhrystone https://github.com/Keith-S-Thompson/dhrystone
     - [ ] Embench https://github.com/embench/embench-iot
 
-# BACKLOG
-
 C Apps
+- [ ] App C TestCase avec std atomic.h
+    - [ ] Test de threads, deux threads incremente un compteur jusqu’à N, chacun avec une loop de N/2
+        - [ ] L’amo garantit le comptage correct jusqu’a N
+        - [ ] Sans amo le scheduler interrompant les instructions peuvent rendre le résultat incorrect
+        - [ ] Voir avec Peterson's algorithm [https://youtu.be/QAzuAn3nFGo?si=XRvzyuazbB_qqCf4](https://youtu.be/QAzuAn3nFGo?si=XRvzyuazbB_qqCf4)
+    - I propose to fix the Implementation of Relaxed Atomics in GCC and LLVM.
+      [https://lukegeeson.com/blog/2023-10-17-A-Proposal-For-Relaxed-Atomics/](https://lukegeeson.com/blog/2023-10-17-A-Proposal-For-Relaxed-Atomics/)
+
 - [ ] Micro kernel
     - [ ] Interrupt
         - [ ] EIP SIP générée depuis le cpp
