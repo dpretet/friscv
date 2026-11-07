@@ -111,6 +111,7 @@ module friscv_cache_pusher
     logic [XLEN/8         -1:0] wstrb;
 
     logic [AXI_ID_W       -1:0] cache_rid;
+    logic [3              -1:0] cache_wprot;
     logic [AXI_ID_W       -1:0] cpl_bid;
     logic [2              -1:0] cpl_bresp;
     logic                       push_addr_data;
@@ -150,6 +151,7 @@ module friscv_cache_pusher
         if (!aresetn) begin
             cache_waddr <= '0;
             cache_rid <= '0;
+            cache_wprot <= '0;
             cache_wdata <= '0;
             cache_wstrb <= '0;
             push_addr_data <= '0;
@@ -157,6 +159,7 @@ module friscv_cache_pusher
         end else if (srst) begin
             cache_waddr <= '0;
             cache_rid <= '0;
+            cache_wprot <= '0;
             cache_wdata <= '0;
             cache_wstrb <= '0;
             push_addr_data <= '0;
@@ -166,6 +169,7 @@ module friscv_cache_pusher
             push_addr_data <= mst_awvalid && awready && mst_wvalid && wready;
             cache_waddr <= mst_awaddr;
             cache_rid <= mst_awid;
+            cache_wprot <= mst_awprot;
             cache_wdata <= {SCALE{mst_wdata}};
             wstrb <= mst_wstrb;
 
@@ -206,7 +210,7 @@ module friscv_cache_pusher
     #(
         .PASS_THRU  (0),
         .ADDR_WIDTH ($clog2(OSTDREQ_NUM)),
-        .DATA_WIDTH (AXI_ADDR_W+AXI_ID_W)
+        .DATA_WIDTH (AXI_ADDR_W+AXI_ID_W+3)
     )
     addr_fifo
     (
@@ -214,11 +218,11 @@ module friscv_cache_pusher
         .aresetn  (aresetn),
         .srst     (srst),
         .flush    (1'b0),
-        .data_in  ({cache_rid, cache_waddr}),
+        .data_in  ({cache_rid, cache_wprot, cache_waddr}),
         .push     (push_addr_data),
         .full     (addr_fifo_full),
         .afull    (addr_fifo_afull),
-        .data_out ({memctrl_awid, memctrl_awaddr}),
+        .data_out ({memctrl_awid, memctrl_awprot, memctrl_awaddr}),
         .pull     (memctrl_awready),
         .empty    (addr_fifo_empty),
         .aempty   ()
@@ -251,7 +255,6 @@ module friscv_cache_pusher
 
     assign wready = !data_fifo_full & !data_fifo_afull;
     assign memctrl_wvalid = !data_fifo_empty;
-    assign memctrl_awprot = 3'b0;
     
     assign mst_awready = awready & wready;
     assign mst_wready = awready & wready;
