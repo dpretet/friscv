@@ -68,7 +68,36 @@ TEST3:
     csrr t0, mstatus
     and t0, t0, t1
     csrw mstatus, t0
+    mv t2, s0
+    csrw mcause, zero
     wfi
+    bne t2, s0, fail
+    csrr t0, mcause
+    li t1, 0x8000000b
+    bne t0, t1, fail
+
+# A locally enabled pending interrupt must not override an ECALL when MIE=0.
+    li t0, 0x8
+    csrs mie, t0
+WAIT_MEIP:
+    csrr t0, mip
+    li t1, 0x800
+    and t0, t0, t1
+    beqz t0, WAIT_MEIP
+    la t0, ECALL_SERVICE
+    csrw mtvec, t0
+    csrw mcause, zero
+    ecall
+    csrr t0, mcause
+    li t1, 11
+    bne t0, t1, fail
+    j TEST4
+
+ECALL_SERVICE:
+    csrr t0, mepc
+    addi t0, t0, 4
+    csrw mepc, t0
+    mret
 
 # Wait for interrupt without any enabled, a NOP
 TEST4:

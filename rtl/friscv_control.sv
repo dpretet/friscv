@@ -232,6 +232,7 @@ module friscv_control
     logic                   csr_ro_wr;
     logic                   inst_addr_misaligned;
     logic [XLEN       -1:0] mcause_code;
+    logic [XLEN       -1:0] pending_interrupt_code;
     logic [XLEN       -1:0] mtval_info;
     logic                   load_misaligned;
     logic                   store_misaligned;
@@ -865,7 +866,7 @@ module friscv_control
                 WFI: begin
                     if (sb_msip&sb_msie || sb_mtip&sb_mtie || sb_meip&sb_meie) begin
                         `ifdef TRACE_CONTROL
-                        print_mcause("WFI -> MCAUSE=0x", mcause_code);
+                        print_mcause("WFI -> MCAUSE=0x", pending_interrupt_code);
                         `endif
                         status <= 5'b0;
                         flush_pipe <= 1'b1;
@@ -1003,12 +1004,12 @@ module friscv_control
             end else if (cfsm==WFI && (sb_msip&sb_msie || sb_mtip&sb_mtie || sb_meip&sb_meie)) begin
 
                 mcause_wr <= 1'b1;
-                mcause <= mcause_code;
+                mcause <= pending_interrupt_code;
                 mtval_wr <= 1'b1;
                 mtval <= mtval_info;
                 mstatus_wr <= 1'b1;
                 mstatus <= mstatus_for_trap;
-                clr_meip <= (mcause_code == 'h8000000B);
+                clr_meip <= (pending_interrupt_code == 'h8000000B);
 
             end else begin
                 mepc_wr <= 1'b0;
@@ -1346,12 +1347,17 @@ module friscv_control
     //
     ///////////////////////////////////////////////////////////////////////////
 
-    // MCAUSE switching logic based on above listed priorities
-    assign mcause_code = // aync exceptions have highest priority
+    // Preserve the pending interrupt cause for WFI wakeups, which can occur
+    // while global interrupts are disabled.
+    assign pending_interrupt_code =
                          (sb_msip & sb_msie)    ? {1'b1, {XLEN-5{1'b0}}, 4'h3} :
                          (sb_mtip & sb_mtie)    ? {1'b1, {XLEN-5{1'b0}}, 4'h7} :
                          (sb_meip & sb_meie)    ? {1'b1, {XLEN-5{1'b0}}, 4'hB} :
-                         // then follow sync exceptions
+                                                  '0;
+
+    // Select an interrupt cause only when the interrupt is actually taken;
+    // otherwise report the synchronous exception, if any.
+    assign mcause_code = async_trap_occuring ? pending_interrupt_code :
                          (inst_access_fault)    ? {{XLEN-4{1'b0}}, 4'h1}  :
                          (illegal_instruction)  ? {{XLEN-4{1'b0}}, 4'h2}  :
                          (csr_ro_wr)            ? {{XLEN-4{1'b0}}, 4'h2}  :
