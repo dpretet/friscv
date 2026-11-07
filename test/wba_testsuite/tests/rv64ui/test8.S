@@ -79,10 +79,11 @@ TEST3:
 # A locally enabled pending interrupt must not override an ECALL when MIE=0.
     li t0, 0x8
     csrs mie, t0
-WAIT_MSIP:
+WAIT_MEIP:
     csrr t0, mip
-    andi t0, t0, 0x8
-    beqz t0, WAIT_MSIP
+    li t1, 0x800
+    and t0, t0, t1
+    beqz t0, WAIT_MEIP
     la t0, ECALL_SERVICE
     csrw mtvec, t0
     csrw mcause, zero
