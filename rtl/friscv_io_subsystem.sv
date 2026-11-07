@@ -199,7 +199,7 @@ module friscv_io_subsystem
                             mst_wr <= 1'b1;
                             mst_wdata <= slv_wdata[ix*XLEN+:XLEN];
                             mst_strb <= slv_wstrb[ix*XLEN/8+:XLEN/8];
-                            cfsm <= WAIT_BRESP;
+                            cfsm <= WAIT_WDATA;
                         end
 
                     end else if (slv_arvalid) begin
